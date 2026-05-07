@@ -3,10 +3,11 @@ services:
     image: postgres:16-alpine
     container_name: psalter-db
     restart: unless-stopped
+    env_file: /home/services/.env.production
     environment:
       POSTGRES_DB: psalter
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - psalter_db_data:/var/lib/postgresql/data
     healthcheck:
