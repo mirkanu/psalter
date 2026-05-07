@@ -61,7 +61,7 @@ All sizes use Geist Sans. Geist Mono is used only for psalm numbers in the card 
 | Heading | 20px | 600 (semibold) | 1.2 | Psalm card first line, section headings within tabs, tune page title |
 | Display | 28px | 600 (semibold) | 1.15 | Psalm detail page title (Bible title), homepage "Today's Reading" heading |
 
-Psalm numbers: 14px Geist Mono, weight 500, `tabular-nums`. Used in psalm card (top-left), daily plan list, and psalm detail header alongside the Bible title.
+Psalm numbers: 14px Geist Mono, weight 400 (regular), `tabular-nums`. Used in psalm card (top-left), daily plan list, and psalm detail header alongside the Bible title. Geist Mono at 400 with `tabular-nums` provides sufficient visual distinction at 14px without a third weight.
 
 Source: CONTEXT.md (Geist font, shadcn Nova preset) — sizes defaulted to 8-point-compatible scale.
 
@@ -75,14 +75,14 @@ All color values use the existing CSS variables from `src/app/globals.css` (Nova
 |------|-------------|--------------|-------|
 | Dominant (60%) | `--background` | oklch(1 0 0) — white | Page background, main content area |
 | Secondary (30%) | `--card` / `--muted` | oklch(1 0 0) / oklch(0.97 0 0) — near-white / light gray | Psalm cards, nav bar surface, daily plan row backgrounds |
-| Accent (10%) | `--primary` | oklch(0.205 0 0) — near-black | Reserved for: today's reading highlight border, active tab indicator underline, "Read Psalm" link on homepage card |
+| Accent (10%) | `--primary` | oklch(0.205 0 0) — near-black | Reserved for: today's reading highlight border, active tab indicator underline, "Read Psalm {N}" link on homepage card |
 | Destructive | `--destructive` | oklch(0.577 0.245 27.325) — red | Not used in Phase 2 (no destructive actions on public browse) |
 
 Accent reserved for:
 1. Today's reading card left border stripe on `/daily`
 2. Active tab underline indicator on psalm detail tabs
 3. Psalm number in the homepage "Today's Reading" card
-4. "View Psalm" CTA link text on homepage devotional card
+4. "Read Psalm {N}" CTA link text on homepage devotional card
 
 Border color: `--border` (oklch(0.922 0 0) — light gray). Used on psalm cards, tab separator, header bottom border.
 
@@ -99,7 +99,7 @@ Components to use from shadcn official registry (already installed or to be adde
 | Component | Used For |
 |-----------|----------|
 | `card` | Psalm list cards, tune detail card, homepage daily reading card |
-| `button` | "View Psalm" CTA, tab trigger fallback (if not using Tabs component) |
+| `button` | "Read Psalm {N}" CTA, tab trigger fallback (if not using Tabs component) |
 | `tabs` | Psalm detail page — Overview / Lyrics / Study / Messianic |
 | `badge` | Meter display on psalm cards and tune detail (e.g. "CM", "LM") |
 | `separator` | Section dividers within psalm detail tabs |
@@ -122,7 +122,7 @@ No third-party registry blocks. No registry vetting gate required.
 ### Homepage (`/`)
 - Two-column layout at `lg` breakpoint (≥1024px); single column on mobile
 - Left/primary: "Today's Reading" card — day number, psalm number (linked), psalm title, first verse of the day's psalm
-- Right/secondary: Psalm quick-search widget — input field + "Go" button (Phase 3 adds full search; Phase 2 shows psalm number lookup only)
+- Right/secondary: Psalm quick-search widget — input field + icon button (lucide `Search` icon, `aria-label="Find Psalm"`) for psalm number lookup only (Phase 3 adds full search)
 - Vertical spacing: `py-12` above the two-column block, `gap-8` between columns
 
 ### Psalm List (`/psalms`)
@@ -166,6 +166,7 @@ No third-party registry blocks. No registry vetting gate required.
 | Homepage heading | "Today's Reading" |
 | Homepage subheading | "Day {N} of 365 — Psalm {N}" |
 | Primary CTA (homepage) | "Read Psalm {N}" |
+| Homepage quick-search button | Icon button (`aria-label="Find Psalm"`) — no visible text label |
 | Psalm list page title | "Psalms" |
 | Psalm list book filter label | "Filter by book" |
 | Psalm list book filter placeholder | "All Books" |
