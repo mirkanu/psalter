@@ -125,7 +125,7 @@ async function checkLocalImages(): Promise<void> {
   // Check files exist on local filesystem (only if any paths are stored)
   if (withPath.length > 0) {
     const { existsSync } = await import('node:fs')
-    const TUNES_DIR = process.env.TUNES_DIR ?? '/data/home/psalter/public/tunes'
+    const TUNES_DIR = process.env.TUNES_DIR ?? './public/tunes'
     const sample = withPath.slice(0, 5)
     for (const { url } of sample) {
       if (!url) continue

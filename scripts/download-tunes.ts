@@ -7,7 +7,7 @@
 import { writeFile, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 
-const TUNES_DIR = process.env.TUNES_DIR ?? '/app/public/tunes'
+const TUNES_DIR = process.env.TUNES_DIR ?? './public/tunes'
 
 export function slugifyTuneName(name: string): string {
   return name
