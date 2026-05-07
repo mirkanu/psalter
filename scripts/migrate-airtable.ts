@@ -250,7 +250,11 @@ async function migratePsalmVersions(psalmIdMap: Map<string, number>): Promise<{
       },
     }).returning({ id: schema.psalmVersions.id })
     psalmVersionIdMap.set(r.id, row.id)
-    if (psalmId !== null) psalmVersionToPsalmIdMap.set(r.id, psalmId)
+    if (psalmId !== null) {
+      psalmVersionToPsalmIdMap.set(r.id, psalmId)
+    } else {
+      console.warn(`  Psalm version ${r.id} has no linked psalm — service items referencing it will have null psalm_id`)
+    }
   }
   console.log(`  Psalm Versions: ${psalmVersionIdMap.size} records`)
   return { psalmVersionIdMap, psalmVersionToPsalmIdMap }
