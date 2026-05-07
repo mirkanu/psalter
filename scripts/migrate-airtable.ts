@@ -152,6 +152,7 @@ async function migratePsalms(): Promise<Map<string, number>> {
     }).onConflictDoUpdate({
       target: schema.psalms.airtableId,
       set: {
+        id: sql`excluded.id`,
         book: sql`excluded.book`,
         bibleTitle: sql`excluded.bible_title`,
         haddingtonIntro: sql`excluded.haddington_intro`,
