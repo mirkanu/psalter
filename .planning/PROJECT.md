@@ -74,11 +74,11 @@ Tune score sheets are **JPG photos of printed sheets** stored as Airtable attach
 
 ### Validated
 
-(None yet — migrating existing functionality)
+- [x] Migrate all Airtable data to PostgreSQL (all tables, relationships, attachments) — Validated in Phase 1: Foundation
 
 ### Active
 
-- [ ] Migrate all Airtable data to PostgreSQL (all tables, relationships, attachments)
+- [ ] Public psalm browsing — list/search all 150 psalms
 - [ ] Public psalm browsing — list/search all 150 psalms
 - [ ] Psalm detail page — Overview, Study, Messianic tabs with all current metadata
 - [ ] Metrical lyrics display (Scottish Psalter versification)
@@ -117,4 +117,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-07 after initialization*
+*Last updated: 2026-05-07 — Phase 1 complete: Airtable→PostgreSQL migration verified, 137/172 tune JPGs downloaded*
