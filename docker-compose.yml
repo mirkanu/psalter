@@ -19,3 +19,4 @@ services:
 
 volumes:
   psalter_db_data:
+  psalter_tunes:
