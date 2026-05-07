@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Plan 01-01 complete — psalter-db running, psalter_tunes volume declared, .env populated. Ready to run plan 01-02.
-last_updated: "2026-05-07T14:00:00.000Z"
-last_activity: 2026-05-07 -- Phase 01 Plan 01 complete
+stopped_at: Plan 01-02 complete — Next.js 16.2.5 scaffolded, Drizzle ORM client configured, all pinned deps installed. Ready to run plan 01-03 (Drizzle schema).
+last_updated: "2026-05-07T15:24:00.000Z"
+last_activity: 2026-05-07 -- Phase 01 Plan 02 complete
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 5
-  completed_plans: 1
-  percent: 4
+  completed_plans: 2
+  percent: 8
 ---
 
 # Project State
@@ -26,29 +26,29 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 ## Current Position
 
 Phase: 01 (Foundation) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Executing Phase 01
-Last activity: 2026-05-07 -- Phase 01 Plan 01 complete
+Last activity: 2026-05-07 -- Phase 01 Plan 02 complete
 
-Progress: [█░░░░░░░░░] 4%
+Progress: [██░░░░░░░░] 8%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 1
-- Average duration: 20 min
-- Total execution time: 0.3 hours
+- Total plans completed: 2
+- Average duration: 28 min
+- Total execution time: 0.9 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01 Foundation | 1/5 | 20 min | 20 min |
+| 01 Foundation | 2/5 | 56 min | 28 min |
 
 **Recent Trend:**
 
-- Last 5 plans: 01-01 (20 min)
+- Last 5 plans: 01-01 (20 min), 01-02 (36 min)
 - Trend: -
 
 *Updated after each plan completion*
@@ -66,6 +66,9 @@ Recent decisions affecting current work:
 - [Init]: Admin UI (Directus/NocoDB) deferred post-launch; Airtable continues editorial role
 - [01-01]: psalter_tunes Docker named volume replaces Cloudflare R2 for tune JPG storage — simpler, no external dependency
 - [01-01]: Port 5435 for psalter-db to avoid conflict with other DB containers on this server
+- [01-02]: shadcn Nova preset used (--style new-york flag removed from shadcn v4.7.0 CLI; Nova is equivalent)
+- [01-02]: DATABASE_URL never hardcoded — always via process.env in src/db/index.ts
+- [01-02]: tw-animate-css@1.4.0 replaces deprecated tailwindcss-animate for Tailwind CSS 4 compatibility
 
 ### Pending Todos
 
@@ -88,5 +91,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-05-07
-Stopped at: Plan 01-01 complete — psalter-db running, psalter_tunes volume declared, .env populated. Ready to run plan 01-02.
+Stopped at: Plan 01-02 complete — Next.js 16.2.5 scaffolded, Drizzle ORM client configured, all pinned deps installed. Ready to run plan 01-03 (Drizzle schema).
 Resume file: None
