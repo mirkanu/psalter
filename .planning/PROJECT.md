@@ -61,6 +61,7 @@ Tune score sheets are **JPG photos of printed sheets** stored as Airtable attach
 | Four-part harmony deferred | Copyright status needs further legal check | Deferred |
 | Admin UI post-launch | Airtable continues to serve editorial needs short-term | Deferred |
 | Next.js + shadcn/ui | Project-wide convention; fast, accessible, self-hosted | Decided |
+| Deploy to psalter.gsdlabs.dev | Hetzner VPS via Cloudflare Tunnel; port 3005; psalter-db PostgreSQL container | Decided |
 
 ## Constraints
 
