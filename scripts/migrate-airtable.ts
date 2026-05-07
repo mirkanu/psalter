@@ -32,10 +32,15 @@ const db = drizzle({ client, schema })
 
 function normaliseMeter(raw: string | null | undefined): string | null {
   if (!raw) return null
+  const trimmed = raw.trim()
+  // Already a short abbreviation (e.g. "CM", "LM", "SM", "CMD")
+  if (/^[A-Z]{1,4}(\.[0-9]+)*$/.test(trimmed)) return trimmed
   // "Common Meter (CM, 86 86)" → "CM"
   // "Long Meter (LM, 88 88)" → "LM"
-  const match = raw.match(/\(([A-Z]{1,4})[,\s)]/)
-  return match ? match[1] : raw.trim()
+  const match = trimmed.match(/\(([A-Z]{1,4})[,\s)]/)
+  if (match) return match[1]
+  console.warn(`  normaliseMeter: unrecognised format — returning raw value: "${trimmed}"`)
+  return trimmed
 }
 
 function parsePosition(raw: string | null | undefined): number | null {
