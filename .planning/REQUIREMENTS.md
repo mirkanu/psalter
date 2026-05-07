@@ -80,11 +80,34 @@ Generated: 2026-05-07
 
 ## Traceability
 
-| REQ-ID | Phase |
-|--------|-------|
-| MIGR-01 to MIGR-04 | Phase 1: Foundation |
-| PSALM-01 to PSALM-06, TUNE-01 to TUNE-04, PLAN-01 | Phase 2: Public Browse |
-| SRCH-01 to SRCH-04 | Phase 3: Search |
-| TUNE-02 to TUNE-04 (ABC rendering) | Phase 4: Notation |
-| AUTH-01 to AUTH-02, PREC-01 to PREC-06 | Phase 5: Precentor Portal |
-| PERF-01 to PERF-02 | Phase 6: Polish |
+| REQ-ID | Phase | Status |
+|--------|-------|--------|
+| MIGR-01 | Phase 1: Foundation | Pending |
+| MIGR-02 | Phase 1: Foundation | Pending |
+| MIGR-03 | Phase 1: Foundation | Pending |
+| MIGR-04 | Phase 1: Foundation | Pending |
+| PSALM-01 | Phase 2: Public Browse | Pending |
+| PSALM-02 | Phase 2: Public Browse | Pending |
+| PSALM-03 | Phase 2: Public Browse | Pending |
+| PSALM-04 | Phase 2: Public Browse | Pending |
+| PSALM-05 | Phase 2: Public Browse | Pending |
+| PSALM-06 | Phase 2: Public Browse | Pending |
+| TUNE-01 | Phase 2: Public Browse | Pending |
+| PLAN-01 | Phase 2: Public Browse | Pending |
+| SRCH-01 | Phase 3: Search | Pending |
+| SRCH-02 | Phase 3: Search | Pending |
+| SRCH-03 | Phase 3: Search | Pending |
+| SRCH-04 | Phase 3: Search | Pending |
+| TUNE-02 | Phase 4: Notation | Pending |
+| TUNE-03 | Phase 4: Notation | Pending |
+| TUNE-04 | Phase 4: Notation | Pending |
+| AUTH-01 | Phase 5: Precentor Portal | Pending |
+| AUTH-02 | Phase 5: Precentor Portal | Pending |
+| PREC-01 | Phase 5: Precentor Portal | Pending |
+| PREC-02 | Phase 5: Precentor Portal | Pending |
+| PREC-03 | Phase 5: Precentor Portal | Pending |
+| PREC-04 | Phase 5: Precentor Portal | Pending |
+| PREC-05 | Phase 5: Precentor Portal | Pending |
+| PREC-06 | Phase 5: Precentor Portal | Pending |
+| PERF-01 | Phase 6: Polish | Pending |
+| PERF-02 | Phase 6: Polish | Pending |
