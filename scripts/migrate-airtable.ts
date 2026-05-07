@@ -22,7 +22,10 @@ import { downloadTuneScores } from './download-tunes'
 const BASE_ID = 'appY3dB1EHtex0fUJ'
 const base = new Airtable({ apiKey: process.env.AIRTABLE_PAT }).base(BASE_ID)
 
-const client = postgres(process.env.DATABASE_URL!)
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL environment variable is not set')
+}
+const client = postgres(process.env.DATABASE_URL)
 const db = drizzle({ client, schema })
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -552,8 +555,8 @@ async function main() {
   await client.end()
 }
 
-main().catch((err) => {
+main().catch(async (err) => {
   console.error('Migration failed:', err)
-  client.end()
+  await client.end()
   process.exit(1)
 })
