@@ -266,7 +266,7 @@ async function migrateVerses(psalmIdMap: Map<string, number>): Promise<Map<strin
     const [row] = await db.insert(schema.verses).values({
       airtableId: r.id,
       psalmId,
-      verseNumber: r.get('Verse') as number | null,
+      verseNumber: typeof r.get('Verse') === 'number' ? r.get('Verse') as number : null,
       kjvText: str(r.get('KJV')),
       metricalText: str(r.get('Scottish Psalter')),
     }).onConflictDoUpdate({
@@ -344,7 +344,7 @@ async function migrateSectionHeadings(psalmIdMap: Map<string, number>): Promise<
     await db.insert(schema.sectionHeadings).values({
       airtableId: r.id,
       psalmId,
-      verseStart: r.get('Verse Start') as number | null,
+      verseStart: typeof r.get('Verse Start') === 'number' ? r.get('Verse Start') as number : null,
       heading: str(r.get('Section Heading')),
     }).onConflictDoUpdate({
       target: schema.sectionHeadings.airtableId,
@@ -368,7 +368,7 @@ async function migrateDailyReadings(psalmIdMap: Map<string, number>): Promise<vo
       airtableId: r.id,
       psalmId,
       // Actual field names verified via Airtable Meta API
-      dayNumber: r.get('Day of the Year') as number | null,
+      dayNumber: typeof r.get('Day of the Year') === 'number' ? r.get('Day of the Year') as number : null,
       readingDate: null,  // No date field in 365 Days table
       notes: null,
     }).onConflictDoUpdate({
