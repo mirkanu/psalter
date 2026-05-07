@@ -43,7 +43,7 @@ Plans:
 - [x] 01-03-PLAN.md — Drizzle schema: all 13 tables + junction tables in src/db/schema.ts, drizzle-kit push to psalter-db [BLOCKING]
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 01-04-PLAN.md — Migration scripts: two-pass migrate-airtable.ts (R2 upload inline) + r2-upload.ts helper
+- [x] 01-04-PLAN.md — Migration scripts: two-pass migrate-airtable.ts (R2 upload inline) + r2-upload.ts helper
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 01-05-PLAN.md — Verification: verify-migration.ts, run migration, spot-checks, idempotency test (human checkpoint)
@@ -117,7 +117,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 3/5 | In progress | - |
+| 1. Foundation | 4/5 | In Progress|  |
 | 2. Public Browse | 0/TBD | Not started | - |
 | 3. Search | 0/TBD | Not started | - |
 | 4. Notation | 0/TBD | Not started | - |

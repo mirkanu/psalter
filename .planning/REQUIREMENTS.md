@@ -6,10 +6,10 @@ Generated: 2026-05-07
 
 ### Data Migration
 
-- [ ] **MIGR-01**: All Airtable tables migrated to PostgreSQL with foreign-key relationships intact
-- [ ] **MIGR-02**: Tune score sheet JPGs downloaded from Airtable and re-hosted on Cloudflare R2 (permanent URLs)
+- [x] **MIGR-01**: All Airtable tables migrated to PostgreSQL with foreign-key relationships intact
+- [x] **MIGR-02**: Tune score sheet JPGs downloaded from Airtable and re-hosted on Cloudflare R2 (permanent URLs)
 - [ ] **MIGR-03**: Row counts and spot-check records verified against Airtable before cutover
-- [ ] **MIGR-04**: Delta migration run immediately before launch to capture any post-snapshot Airtable changes
+- [x] **MIGR-04**: Delta migration run immediately before launch to capture any post-snapshot Airtable changes
 
 ### Psalm Browsing
 
@@ -82,10 +82,10 @@ Generated: 2026-05-07
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| MIGR-01 | Phase 1: Foundation | Pending |
-| MIGR-02 | Phase 1: Foundation | Pending |
+| MIGR-01 | Phase 1: Foundation | Complete |
+| MIGR-02 | Phase 1: Foundation | Complete |
 | MIGR-03 | Phase 1: Foundation | Pending |
-| MIGR-04 | Phase 1: Foundation | Pending |
+| MIGR-04 | Phase 1: Foundation | Complete |
 | PSALM-01 | Phase 2: Public Browse | Pending |
 | PSALM-02 | Phase 2: Public Browse | Pending |
 | PSALM-03 | Phase 2: Public Browse | Pending |

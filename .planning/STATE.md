@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Plan 01-03 complete — Drizzle schema (18 tables) pushed to psalter-db. Ready to run plan 01-04 (migration scripts).
-last_updated: "2026-05-07T16:00:00.000Z"
-last_activity: 2026-05-07 -- Phase 01 Plan 03 complete
+stopped_at: Plan 01-04 complete — all 18 tables in psalter-db populated; migration scripts committed
+last_updated: "2026-05-07T16:43:28.036Z"
+last_activity: 2026-05-07
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 5
-  completed_plans: 3
-  percent: 12
+  completed_plans: 4
+  percent: 80
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 ## Current Position
 
 Phase: 01 (Foundation) — EXECUTING
-Plan: 4 of 5
-Status: Executing Phase 01
-Last activity: 2026-05-07 -- Phase 01 Plan 03 complete
+Plan: 5 of 5
+Status: Ready to execute
+Last activity: 2026-05-07
 
 Progress: [███░░░░░░░] 12%
 
@@ -52,6 +52,7 @@ Progress: [███░░░░░░░] 12%
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 01 P04 | 49 | - tasks | - files |
 
 ## Accumulated Context
 
@@ -72,6 +73,8 @@ Recent decisions affecting current work:
 - [01-03]: psalms.id = integer PK (actual psalm number 1-150) — stable URL slugs, meaningful FK references
 - [01-03]: tunes.score_jpg_url stores local Docker volume paths (not R2 URLs) per Plan 01-01 decision
 - [01-03]: additional_score_urls as jsonb on tunes handles multi-attachment tune records
+- [Phase ?]: SKIP_IMAGES=1 env flag added to migration — tune JPGs total ~1.1GB, larger than 38GB VPS root partition can accommodate; disk must be expanded before full image download
+- [Phase ?]: Airtable field names must be verified via Meta API before migration — research-phase assumptions were incorrect for 6 fields across 4 tables
 
 ### Pending Todos
 
@@ -80,6 +83,7 @@ None yet.
 ### Blockers/Concerns
 
 - ABC notation source: No existing ABC files for Scottish Psalter tunes. Phase 4 requires sourcing public-domain ABC or encoding from printed editions. The Session API lookup spike is the first plan in Phase 4.
+- Tune JPG download incomplete — 172 tunes have NULL score_jpg_url. VPS root filesystem is 97% full (38GB). Expand disk before running migrate-airtable.ts without SKIP_IMAGES=1.
 
 ## Deferred Items
 
@@ -93,6 +97,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-07
-Stopped at: Plan 01-02 complete — Next.js 16.2.5 scaffolded, Drizzle ORM client configured, all pinned deps installed. Ready to run plan 01-03 (Drizzle schema).
+Last session: 2026-05-07T16:42:22.421Z
+Stopped at: Plan 01-04 complete — all 18 tables in psalter-db populated; migration scripts committed
 Resume file: None
