@@ -254,6 +254,18 @@ export const versesRelations = relations(verses, ({ one, many }) => ({
   verseDoctrines: many(verseDoctrines),
 }))
 
+export const sectionHeadingsRelations = relations(sectionHeadings, ({ one }) => ({
+  psalm: one(psalms, { fields: [sectionHeadings.psalmId], references: [psalms.id] }),
+}))
+
+export const messianicPsalmsRelations = relations(messianicPsalms, ({ one }) => ({
+  psalm: one(psalms, { fields: [messianicPsalms.psalmId], references: [psalms.id] }),
+}))
+
+export const dailyReadingsRelations = relations(dailyReadings, ({ one }) => ({
+  psalm: one(psalms, { fields: [dailyReadings.psalmId], references: [psalms.id] }),
+}))
+
 export const eventsRelations = relations(events, ({ many }) => ({
   serviceItems: many(serviceItems),
 }))
@@ -278,4 +290,29 @@ export const moodsRelations = relations(moods, ({ many }) => ({
 
 export const doctrinesRelations = relations(doctrines, ({ many }) => ({
   verseDoctrines: many(verseDoctrines),
+}))
+
+export const psalmTopicsRelations = relations(psalmTopics, ({ one }) => ({
+  psalm: one(psalms, { fields: [psalmTopics.psalmId], references: [psalms.id] }),
+  topic: one(topics, { fields: [psalmTopics.topicId], references: [topics.id] }),
+}))
+
+export const psalmVersionTunesRelations = relations(psalmVersionTunes, ({ one }) => ({
+  psalmVersion: one(psalmVersions, { fields: [psalmVersionTunes.psalmVersionId], references: [psalmVersions.id] }),
+  tune: one(tunes, { fields: [psalmVersionTunes.tuneId], references: [tunes.id] }),
+}))
+
+export const tuneMoodsRelations = relations(tuneMoods, ({ one }) => ({
+  tune: one(tunes, { fields: [tuneMoods.tuneId], references: [tunes.id] }),
+  mood: one(moods, { fields: [tuneMoods.moodId], references: [moods.id] }),
+}))
+
+export const verseNavesTopicsRelations = relations(verseNavesTopics, ({ one }) => ({
+  verse: one(verses, { fields: [verseNavesTopics.verseId], references: [verses.id] }),
+  navesTopic: one(navesTopics, { fields: [verseNavesTopics.navesTopicId], references: [navesTopics.id] }),
+}))
+
+export const verseDoctrinesRelations = relations(verseDoctrines, ({ one }) => ({
+  verse: one(verses, { fields: [verseDoctrines.verseId], references: [verses.id] }),
+  doctrine: one(doctrines, { fields: [verseDoctrines.doctrineId], references: [doctrines.id] }),
 }))
