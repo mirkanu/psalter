@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { db } from "@/db"
 import { eq, asc } from "drizzle-orm"
 import { tunes } from "@/db/schema"
@@ -16,7 +17,11 @@ export async function fetchAllTunes() {
   }).from(tunes).orderBy(asc(tunes.name))
 }
 
-export async function fetchTuneDetail(id: number) {
+/**
+ * Memoised with React cache() so that generateMetadata and the page
+ * component share a single DB query per request rather than making two.
+ */
+export const fetchTuneDetail = cache(async function fetchTuneDetail(id: number) {
   return db.query.tunes.findFirst({
     where: eq(tunes.id, id),
     with: {
@@ -26,6 +31,6 @@ export async function fetchTuneDetail(id: number) {
       tuneMoods: { with: { mood: true } },
     },
   })
-}
+})
 
 export type TuneDetail = NonNullable<Awaited<ReturnType<typeof fetchTuneDetail>>>
