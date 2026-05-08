@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { db } from "@/db"
 import { eq, asc } from "drizzle-orm"
 import { psalms } from "@/db/schema"
@@ -7,7 +8,11 @@ export async function fetchPsalmIds(): Promise<number[]> {
   return rows.map((r) => r.id)
 }
 
-export async function fetchPsalmDetail(id: number) {
+/**
+ * Memoised with React cache() so that generateMetadata and the page
+ * component share a single DB query per request rather than making two.
+ */
+export const fetchPsalmDetail = cache(async function fetchPsalmDetail(id: number) {
   return db.query.psalms.findFirst({
     where: eq(psalms.id, id),
     with: {
@@ -29,6 +34,6 @@ export async function fetchPsalmDetail(id: number) {
       messianicPsalms: true,
     },
   })
-}
+})
 
 export type PsalmDetail = NonNullable<Awaited<ReturnType<typeof fetchPsalmDetail>>>
