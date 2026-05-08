@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { fetchTuneDetail, fetchTuneIds } from "@/db/queries/tunes"
@@ -68,12 +69,14 @@ export default async function TunePage({ params }: PageProps) {
           Score
         </h2>
         {tune.scoreJpgUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={tune.scoreJpgUrl}
-            alt={`Score for ${tune.name ?? `tune ${tune.id}`}`}
-            className="w-full max-w-2xl mx-auto rounded-md border border-border object-contain"
-          />
+          <div className="relative w-full max-w-2xl mx-auto aspect-[3/2]">
+            <Image
+              src={tune.scoreJpgUrl}
+              alt={`Score for ${tune.name ?? `tune ${tune.id}`}`}
+              fill
+              className="object-contain rounded-md border border-border"
+            />
+          </div>
         ) : (
           <p className="text-muted-foreground italic">No score available for this tune.</p>
         )}
