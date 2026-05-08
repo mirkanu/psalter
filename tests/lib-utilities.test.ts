@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { getDayOfYear } from '@/lib/daily'
 import { toEmbedUrl } from '@/lib/youtube'
+import { extractVerse1, syllabifyForAbc } from '@/lib/lyrics'
 
 describe('getDayOfYear', () => {
   it('returns 1 for January 1', () => {
@@ -28,5 +29,64 @@ describe('toEmbedUrl', () => {
   })
   it('returns null for non-YouTube URL', () => {
     expect(toEmbedUrl('https://hymnary.org/foo')).toBeNull()
+  })
+})
+
+describe('lyrics helpers (TUNE-03)', () => {
+  // --- extractVerse1 ---
+
+  it('extractVerse1: returns empty string for null', () => {
+    expect(extractVerse1(null)).toBe('')
+  })
+
+  it('extractVerse1: returns empty string for undefined', () => {
+    expect(extractVerse1(undefined)).toBe('')
+  })
+
+  it('extractVerse1: returns empty string for empty string', () => {
+    expect(extractVerse1('')).toBe('')
+  })
+
+  it('extractVerse1: strips leading verse digit and collapses internal newline to space', () => {
+    // Single stanza with internal newline; leading "1" stripped
+    expect(extractVerse1('1Praise ye the Lord:\na new song')).toBe('Praise ye the Lord: a new song')
+  })
+
+  it('extractVerse1: returns only first stanza when multiple stanzas present', () => {
+    // Double-newline separates stanzas; only first stanza returned; leading "1" stripped
+    expect(extractVerse1('1Praise the Lord\nin sweet psalms\n\n2Let Israel joy')).toBe(
+      'Praise the Lord in sweet psalms',
+    )
+  })
+
+  it('extractVerse1: handles multi-digit verse number prefix', () => {
+    // Verse number "10" stripped from "10Behold and see"
+    expect(extractVerse1('10Behold and see')).toBe('Behold and see')
+  })
+
+  // --- syllabifyForAbc ---
+
+  it('syllabifyForAbc: returns empty string for empty input', () => {
+    expect(syllabifyForAbc('')).toBe('')
+  })
+
+  it('syllabifyForAbc: syllabifies multi-syllable words with hyphens', () => {
+    // actual nlp-syllables 0.0.5 segmentation:
+    //   beautiful -> ["beau","ti","ful"]
+    //   assembly  -> ["as","sem","bly"]
+    expect(syllabifyForAbc('beautiful assembly')).toBe('beau- ti- ful as- sem- bly')
+  })
+
+  it('syllabifyForAbc: single-syllable words are returned as-is', () => {
+    // actual nlp-syllables 0.0.5 segmentation:
+    //   ye -> ["ye"], the -> ["the"], Lord -> ["lord"]
+    // Note: "Praise" is 2 syllables per nlp-syllables (["prai","se"]),
+    // so the full phrase produces hyphens for Praise only
+    expect(syllabifyForAbc('Praise ye the Lord')).toBe('prai- se ye the Lord')
+  })
+
+  it('syllabifyForAbc: preserves single-syllable word with trailing punctuation', () => {
+    // "Lord:" stripped to "Lord" -> ["lord"] (1 syllable) -> re-attached -> "Lord:"
+    expect(syllabifyForAbc('Lord:')).toBe('Lord:')
   })
 })
