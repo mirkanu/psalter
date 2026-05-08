@@ -16,9 +16,14 @@ export function TodayCard({ readings }: { readings: ReadingProp[] }) {
     setToday(getDayOfYear())
   }, [])
 
-  // Server render shows day 1 placeholder; client hydration corrects to today
-  const day = today ?? 1
-  const reading = readings.find((r) => r.dayNumber === day) ?? readings[0]
+  // Render a neutral skeleton until the client knows today's date.
+  // Avoids a hydration mismatch from server rendering day 1's data
+  // when the actual day differs.
+  if (today === null) {
+    return <div className="bg-card border border-border rounded-2xl p-6 animate-pulse h-40" />
+  }
+
+  const reading = readings.find((r) => r.dayNumber === today)
   if (!reading) {
     return (
       <div className="bg-card border border-border rounded-2xl p-6">
