@@ -67,7 +67,7 @@ Plans:
 
 **Wave 2** *(parallel — depends on Wave 1)*
 - [x] 02-03-PLAN.md — /psalms list (book filter) + /psalms/[id] detail with 4 tabs (Overview/Lyrics/Study/Messianic), static
-- [ ] 02-04-PLAN.md — /tunes list + /tunes/[id] detail (score JPG, YouTube embed, reverse psalm links), static
+- [x] 02-04-PLAN.md — /tunes list + /tunes/[id] detail (score JPG, YouTube embed, reverse psalm links), static
 - [ ] 02-05-PLAN.md — Homepage devotional dashboard (TodayCard + PsalmSearchWidget) + /daily 365-row plan + /daily/[day]
 **UI hint**: yes
 
@@ -128,7 +128,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 5/5 | Complete | 2026-05-07 |
-| 2. Public Browse | 3/5 | In progress | - |
+| 2. Public Browse | 4/5 | In progress | - |
 | 3. Search | 0/TBD | Not started | - |
 | 4. Notation | 0/TBD | Not started | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |

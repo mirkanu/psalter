@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 02 Plan 03 complete — /psalms list + /psalms/[id] detail (4 tabs) done
-last_updated: "2026-05-08T07:00:00.000Z"
-last_activity: 2026-05-08 -- Phase 2 Plan 03 complete
+stopped_at: Phase 02 Plan 04 complete — /tunes list + /tunes/[id] detail (score JPG, YouTube, reverse psalm links) done
+last_updated: "2026-05-08T07:05:00.000Z"
+last_activity: 2026-05-08 -- Phase 2 Plan 04 complete
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 10
-  completed_plans: 5
-  percent: 50
+  completed_plans: 6
+  percent: 60
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 ## Current Position
 
 Phase: 2
-Plan: 04 (next)
+Plan: 05 (next)
 Status: Executing
-Last activity: 2026-05-08 -- Phase 2 Plan 03 complete
+Last activity: 2026-05-08 -- Phase 2 Plan 04 complete
 
 Progress: [██████████████] 30% (Phase 01 complete; 02-03 done; 7/10 plans done)
 
@@ -88,6 +88,9 @@ Recent decisions affecting current work:
 - [02-03]: Schema uses lyrics (not stanzas) and versionLabel (not versionName) on psalmVersions; sectionHeadings has no verseEnd column — components use actual schema field names
 - [02-03]: PsalmTabs isTabValue() type guard restricts ?tab= to 4 known values; unknown values fall back to "overview" (T-02-08 mitigated)
 - [02-03]: Base UI Select onValueChange wraps setter in arrow function to handle null value and discard eventDetails argument
+- [02-04]: YouTubeEmbed kept as RSC — toEmbedUrl runs server-side, no client state needed; iframe sandbox restricts capabilities (T-02-13)
+- [02-04]: soundcloudUrl ignored in Phase 2 — all 27 DB values are placeholder text ("missing", "need to upload")
+- [02-04]: youtubeUrl field stores both YouTube and non-YouTube media URLs; toEmbedUrl returns null for non-YouTube, enabling plain link fallback
 
 ### Pending Todos
 
