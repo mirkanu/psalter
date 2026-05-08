@@ -81,7 +81,7 @@ export const verses = pgTable('verses', {
 export const dailyReadings = pgTable('daily_readings', {
   id: serial('id').primaryKey(),
   airtableId: text('airtable_id').notNull().unique(),
-  dayNumber: integer('day_number'),              // 1-365
+  dayNumber: integer('day_number').notNull(),    // 1-365
   psalmId: integer('psalm_id').references(() => psalms.id),
   readingDate: date('reading_date'),             // optional fixed calendar date
   notes: text('notes'),
