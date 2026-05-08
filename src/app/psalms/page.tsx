@@ -1,0 +1,46 @@
+import { db } from "@/db"
+import { psalms, psalmVersions } from "@/db/schema"
+import { eq, asc } from "drizzle-orm"
+import { PsalmGrid } from "@/components/PsalmGrid"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Psalms | CPRC Psalter",
+  description: "Browse all 150 psalms of the Scottish Psalter.",
+}
+
+export default async function PsalmsPage() {
+  const rows = await db
+    .select({
+      id: psalms.id,
+      bibleTitle: psalms.bibleTitle,
+      book: psalms.book,
+      firstLine: psalmVersions.firstLine,
+      meter: psalmVersions.meter,
+    })
+    .from(psalms)
+    .leftJoin(psalmVersions, eq(psalmVersions.psalmId, psalms.id))
+    .orderBy(asc(psalms.id))
+
+  // Deduplicate: keep only the FIRST version row per psalm
+  const seen = new Set<number>()
+  const uniqueRows = rows.filter((r) => {
+    if (seen.has(r.id)) return false
+    seen.add(r.id)
+    return true
+  })
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+      <div className="mb-6 mt-4">
+        <h1 className="font-sans text-3xl md:text-4xl font-bold text-foreground mb-3">
+          Psalms
+        </h1>
+        <p className="text-muted-foreground text-base">
+          Browse all 150 psalms of the Scottish Psalter.
+        </p>
+      </div>
+      <PsalmGrid psalms={uniqueRows} />
+    </div>
+  )
+}
