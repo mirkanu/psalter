@@ -26,7 +26,12 @@ export const fetchTuneDetail = cache(async function fetchTuneDetail(id: number) 
     where: eq(tunes.id, id),
     with: {
       psalmVersionTunes: {
-        with: { psalmVersion: { with: { psalm: true } } },
+        with: {
+          psalmVersion: {
+            columns: { id: true, lyrics: true },
+            with: { psalm: true },
+          },
+        },
       },
       tuneMoods: { with: { mood: true } },
     },
