@@ -43,3 +43,38 @@ describe('Tune detail data shape (TUNE-01)', () => {
     expect(foundEmbeddable).toBe(true)
   })
 })
+
+describe('Seeded ABC notation (TUNE-02)', () => {
+  it('at least one tune has non-null abc_notation after Phase 4 seed', async () => {
+    const allIds = await fetchTuneIds()
+    let foundWithAbc = 0
+    let sampleAbc: string | null = null
+    for (const id of allIds) {
+      const t = await fetchTuneDetail(id)
+      if (t?.abcNotation) {
+        foundWithAbc++
+        sampleAbc = t.abcNotation
+        if (foundWithAbc >= 1 && sampleAbc.length > 50) break
+      }
+    }
+    expect(foundWithAbc).toBeGreaterThanOrEqual(1)
+    expect(sampleAbc).toBeTruthy()
+    expect(sampleAbc!.length).toBeGreaterThan(50)
+    expect(sampleAbc).toMatch(/^X:/m)
+    expect(sampleAbc).toMatch(/^K:/m)
+  })
+
+  it('seed covers at least one Common Meter tune', async () => {
+    // CM tunes seeded: Dundee, French, Elgin (meter value in DB is 'CM')
+    const allIds = await fetchTuneIds()
+    let cmWithAbc = false
+    for (const id of allIds) {
+      const t = await fetchTuneDetail(id)
+      if (t?.abcNotation && t.meter === 'CM') {
+        cmWithAbc = true
+        break
+      }
+    }
+    expect(cmWithAbc).toBe(true)
+  })
+})
