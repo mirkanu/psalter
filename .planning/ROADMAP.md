@@ -111,7 +111,7 @@ Plans:
 
 Plans:
 **Wave 1** *(parallel — independent foundation work)*
-- [ ] 04-01-PLAN.md — Install abcjs + nlp-syllables; create src/lib/lyrics.ts (extractVerse1, syllabifyForAbc) + unit tests
+- [x] 04-01-PLAN.md — Install abcjs + nlp-syllables; create src/lib/lyrics.ts (extractVerse1, syllabifyForAbc) + unit tests
 - [ ] 04-02-PLAN.md — scripts/seed-abc-notation.ts: seed 5 tunes (CM/LM/SM coverage) with ABC + embedded w: fields; add TUNE-02 data assertion
 
 **Wave 2** *(depends on Wave 1)*
@@ -156,6 +156,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Foundation | 5/5 | Complete | 2026-05-07 |
 | 2. Public Browse | 5/5 | Complete | 2026-05-08 |
 | 3. Search | 6/6 | Complete    | 2026-05-08 |
-| 4. Notation | 0/TBD | Not started | - |
+| 4. Notation | 1/4 | In progress | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
