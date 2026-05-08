@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - Drizzle schema, Airtable→PostgreSQL migration, R2 JPG storage
 - [x] **Phase 2: Public Browse** - Psalm list/detail (3 tabs), tune pages, daily reading plan, static rendering
-- [ ] **Phase 3: Search** - Full-text search over lyrics/KJV, topic browse, tune meter filter
+- [x] **Phase 3: Search** - Full-text search over lyrics/KJV, topic browse, tune meter filter (completed 2026-05-08)
 - [ ] **Phase 4: Notation** - abcjs live SVG rendering with hymnal layout, JPG fallback, mobile-responsive
 - [ ] **Phase 5: Precentor Portal** - Better Auth login, service event CRUD, set list builder, live service view
 - [ ] **Phase 6: Polish** - Loading skeletons on every route, click feedback, OG images, bundle review
@@ -144,7 +144,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Foundation | 5/5 | Complete | 2026-05-07 |
 | 2. Public Browse | 5/5 | Complete | 2026-05-08 |
-| 3. Search | 6/6 | Complete | 2026-05-08 |
+| 3. Search | 6/6 | Complete    | 2026-05-08 |
 | 4. Notation | 0/TBD | Not started | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |

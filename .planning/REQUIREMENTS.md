@@ -29,10 +29,10 @@ Generated: 2026-05-07
 
 ### Search
 
-- [ ] **SRCH-01**: User can find a psalm by number (instant lookup)
-- [ ] **SRCH-02**: User can search psalms by keyword across metrical lyrics and KJV text (PostgreSQL full-text)
-- [ ] **SRCH-03**: User can browse psalms by Nave's topic / thematic tag
-- [ ] **SRCH-04**: User can filter tunes by meter (CM, LM, SM, etc.)
+- [x] **SRCH-01**: User can find a psalm by number (instant lookup)
+- [x] **SRCH-02**: User can search psalms by keyword across metrical lyrics and KJV text (PostgreSQL full-text)
+- [x] **SRCH-03**: User can browse psalms by Nave's topic / thematic tag
+- [x] **SRCH-04**: User can filter tunes by meter (CM, LM, SM, etc.)
 
 ### Daily Reading Plan
 
@@ -94,10 +94,10 @@ Generated: 2026-05-07
 | PSALM-06 | Phase 2: Public Browse | Pending |
 | TUNE-01 | Phase 2: Public Browse | Pending |
 | PLAN-01 | Phase 2: Public Browse | Pending |
-| SRCH-01 | Phase 3: Search | Pending |
-| SRCH-02 | Phase 3: Search | Pending |
-| SRCH-03 | Phase 3: Search | Pending |
-| SRCH-04 | Phase 3: Search | Pending |
+| SRCH-01 | Phase 3: Search | Complete |
+| SRCH-02 | Phase 3: Search | Complete |
+| SRCH-03 | Phase 3: Search | Complete |
+| SRCH-04 | Phase 3: Search | Complete |
 | TUNE-02 | Phase 4: Notation | Pending |
 | TUNE-03 | Phase 4: Notation | Pending |
 | TUNE-04 | Phase 4: Notation | Pending |
