@@ -65,7 +65,11 @@ export default async function TunePage({ params }: PageProps) {
   const allStanzas = lyricsSource
     ? lyricsSource.split('\n\n').map((s) => s.trim()).filter(Boolean)
     : []
-  const remainingStanzas = allStanzas.slice(1).map((s) => s.replace(/^\d+\s+/, '').trim())
+  // When ABC notation is present, verse 1 appears under the staff via w: fields → show verses 2+.
+  // When no ABC, verse 1 would be invisible if we skip it → show all stanzas.
+  const stanzasToShow = allStanzas
+    .slice(tune.abcNotation ? 1 : 0)
+    .map((s) => s.replace(/^\d+\s+/, '').trim())
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-8">
@@ -96,14 +100,17 @@ export default async function TunePage({ params }: PageProps) {
         )}
       </section>
 
-      {remainingStanzas.length > 0 && (
+      {stanzasToShow.length > 0 && (
         <section>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
             Verses
           </h2>
-          <ol start={2} className="list-decimal list-outside pl-8 space-y-4 max-w-3xl mx-auto">
-            {remainingStanzas.map((stanza, idx) => (
-              <li key={idx + 2} className="text-foreground leading-relaxed">
+          <ol
+            start={tune.abcNotation ? 2 : 1}
+            className="list-decimal list-outside pl-8 space-y-4 max-w-3xl mx-auto"
+          >
+            {stanzasToShow.map((stanza, idx) => (
+              <li key={idx + (tune.abcNotation ? 2 : 1)} className="text-foreground leading-relaxed">
                 {stanza.split('\n').map((line, lineIdx) => (
                   <span key={lineIdx} className="block">
                     {line}
