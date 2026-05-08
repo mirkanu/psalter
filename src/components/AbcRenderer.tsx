@@ -1,7 +1,10 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import abcjs from 'abcjs'
+import * as abcjsModule from 'abcjs'
+// abcjs uses CJS module.exports — in bundlers the default may be nested under .default
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const abcjs = (abcjsModule as any).default ?? abcjsModule
 
 interface AbcRendererProps {
   abc: string
