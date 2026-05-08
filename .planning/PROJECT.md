@@ -75,10 +75,12 @@ Tune score sheets are **JPG photos of printed sheets** stored as Airtable attach
 ### Validated
 
 - [x] Migrate all Airtable data to PostgreSQL (all tables, relationships, attachments) — Validated in Phase 1: Foundation
+- [x] Keyword full-text search (/search page, PostgreSQL FTS via plainto_tsquery) — Validated in Phase 3: Search
+- [x] Topic/Nave's/messianic/author browse (/explore hub + sub-routes, generateStaticParams) — Validated in Phase 3: Search
+- [x] Tune meter filter (TuneGrid client component, URL-synced, /tunes page) — Validated in Phase 3: Search
 
 ### Active
 
-- [ ] Public psalm browsing — list/search all 150 psalms
 - [ ] Public psalm browsing — list/search all 150 psalms
 - [ ] Psalm detail page — Overview, Study, Messianic tabs with all current metadata
 - [ ] Metrical lyrics display (Scottish Psalter versification)
@@ -86,7 +88,6 @@ Tune score sheets are **JPG photos of printed sheets** stored as Airtable attach
 - [ ] abcjs live notation rendering replacing static JPG score images
 - [ ] Lyrics beneath notation (hymnal-style layout) for precentor use
 - [ ] 365-day daily reading plan
-- [ ] Keyword/topic/topical search
 - [ ] Precentor login
 - [ ] Precentor: create/manage service events
 - [ ] Precentor: assign psalm+tune pairs to a service
