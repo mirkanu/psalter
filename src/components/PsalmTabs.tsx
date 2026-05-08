@@ -1,5 +1,4 @@
 'use client'
-import { Suspense, useState, useEffect } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -14,45 +13,19 @@ function isTabValue(v: string | null): v is TabValue {
   return v !== null && (TAB_VALUES as readonly string[]).includes(v)
 }
 
-/**
- * Isolated inner component that reads useSearchParams and syncs the active tab.
- * Keeping useSearchParams in this child — wrapped in <Suspense> below — prevents
- * the psalm detail page from opting out of static rendering at build time.
- */
-function TabController({
-  onTabChange,
-  onSetTab,
-}: {
-  onTabChange: (tab: TabValue) => void
-  onSetTab: (fn: (tab: string) => void) => void
-}) {
+export function PsalmTabs({ psalm }: { psalm: PsalmDetail }) {
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
 
-  useEffect(() => {
-    const raw = searchParams.get("tab")
-    onTabChange(isTabValue(raw) ? raw : "overview")
-  }, [searchParams, onTabChange])
+  const raw = searchParams.get("tab")
+  const activeTab: TabValue = isTabValue(raw) ? raw : "overview"
 
-  useEffect(() => {
-    onSetTab((tab: string) => {
-      const params = new URLSearchParams(searchParams.toString())
-      params.set("tab", tab)
-      router.replace(`${pathname}?${params.toString()}`)
-    })
-  }, [searchParams, pathname, router, onSetTab])
-
-  return null
-}
-
-export function PsalmTabs({ psalm }: { psalm: PsalmDetail }) {
-  const [activeTab, setActiveTab] = useState<TabValue>("overview")
-  const [setTab, setSetTab] = useState<(tab: string) => void>(
-    () => (tab: string) => {
-      if (isTabValue(tab)) setActiveTab(tab)
-    }
-  )
+  function handleTabChange(tab: string) {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("tab", tab)
+    router.replace(`${pathname}?${params.toString()}`)
+  }
 
   const primaryVersion = psalm.psalmVersions[0]
   const additionalVersions = psalm.psalmVersions.slice(1)
@@ -84,17 +57,7 @@ export function PsalmTabs({ psalm }: { psalm: PsalmDetail }) {
 
   return (
     <>
-      {/* TabController is isolated in its own Suspense boundary so that
-          useSearchParams() does not force the entire psalm page to opt out
-          of static rendering (Next.js 15 App Router requirement). */}
-      <Suspense fallback={null}>
-        <TabController
-          onTabChange={setActiveTab}
-          onSetTab={(fn) => setSetTab(() => fn)}
-        />
-      </Suspense>
-
-      <Tabs value={activeTab} onValueChange={setTab} className="mt-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-6">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="lyrics">Lyrics</TabsTrigger>

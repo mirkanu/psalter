@@ -18,18 +18,40 @@ function slugify(name: string): string {
     .replace(/^-+|-+$/g, '')
 }
 
+function buildTopicSlugMap(
+  topics: Array<{ id: number; name: string }>
+): Map<number, string> {
+  const slugCount = new Map<string, number>()
+  for (const t of topics) {
+    const base = slugify(t.name)
+    slugCount.set(base, (slugCount.get(base) ?? 0) + 1)
+  }
+  const result = new Map<number, string>()
+  for (const t of topics) {
+    const base = slugify(t.name)
+    result.set(t.id, (slugCount.get(base) ?? 1) > 1 ? `${base}-${t.id}` : base)
+  }
+  return result
+}
+
 export async function generateStaticParams() {
   const topics = await fetchTopicsWithCounts()
+  const slugMap = buildTopicSlugMap(
+    topics.filter((t): t is typeof t & { name: string } => t.name !== null)
+  )
   return topics
     .filter((t) => t.name)
-    .map((t) => ({ slug: slugify(t.name ?? '') }))
+    .map((t) => ({ slug: slugMap.get(t.id) ?? '' }))
     .filter((p) => p.slug !== '')
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
   const topics = await fetchTopicsWithCounts()
-  const topic = topics.find((t) => t.name && slugify(t.name) === slug)
+  const slugMap = buildTopicSlugMap(
+    topics.filter((t): t is typeof t & { name: string } => t.name !== null)
+  )
+  const topic = topics.find((t) => t.name && slugMap.get(t.id) === slug)
   return {
     title: topic ? `${topic.name} | Explore | CPRC Psalter` : "Topic | CPRC Psalter",
   }
@@ -38,7 +60,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function TopicPage({ params }: PageProps) {
   const { slug } = await params
   const topics = await fetchTopicsWithCounts()
-  const topic = topics.find((t) => t.name && slugify(t.name) === slug)
+  const slugMap = buildTopicSlugMap(
+    topics.filter((t): t is typeof t & { name: string } => t.name !== null)
+  )
+  const topic = topics.find((t) => t.name && slugMap.get(t.id) === slug)
   if (!topic) notFound()
 
   const psalms = await fetchPsalmsByTopic(topic.id)

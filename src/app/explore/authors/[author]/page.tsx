@@ -23,7 +23,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function AuthorPage({ params }: PageProps) {
   const { author } = await params
-  const decodedAuthor = decodeURIComponent(author)
+  let decodedAuthor: string
+  try {
+    decodedAuthor = decodeURIComponent(author)
+  } catch {
+    notFound()
+    return
+  }
 
   const psalms = await fetchPsalmsByAuthor(decodedAuthor)
   if (psalms.length === 0) notFound()

@@ -15,7 +15,7 @@ import {
 
 // --- Topics (Themes) ---
 
-export async function fetchTopicsWithCounts() {
+export const fetchTopicsWithCounts = cache(async function fetchTopicsWithCounts() {
   return db
     .select({ id: topics.id, name: topics.name, count: count(psalmTopics.psalmId) })
     .from(topics)
@@ -23,23 +23,30 @@ export async function fetchTopicsWithCounts() {
     .where(isNotNull(topics.name))
     .groupBy(topics.id, topics.name)
     .orderBy(desc(count(psalmTopics.psalmId)))
-}
+})
 
+// WR-04: use DISTINCT ON (p.id) to avoid duplicate rows when a psalm has multiple versions
 export const fetchPsalmsByTopic = cache(async function fetchPsalmsByTopic(topicId: number) {
-  return db
-    .select({ id: psalms.id, firstLine: psalmVersions.firstLine, meter: psalmVersions.meter })
-    .from(psalmTopics)
-    .innerJoin(psalms, eq(psalms.id, psalmTopics.psalmId))
-    .leftJoin(psalmVersions, eq(psalmVersions.psalmId, psalms.id))
-    .where(eq(psalmTopics.topicId, topicId))
-    .orderBy(asc(psalms.id))
+  const rows = await db.execute(sql`
+    SELECT DISTINCT ON (p.id)
+      p.id,
+      pv.first_line AS "firstLine",
+      pv.meter
+    FROM psalm_topics pt
+    JOIN psalms p ON p.id = pt.psalm_id
+    LEFT JOIN psalm_versions pv ON pv.psalm_id = p.id
+    WHERE pt.topic_id = ${topicId}
+    ORDER BY p.id, pv.id
+  `)
+  return rows as unknown as Array<{ id: number; firstLine: string | null; meter: string | null }>
 })
 
 // --- Nave's Topics ---
 // IMPORTANT: No direct naves_topics → psalms link in schema.
 // Join chain: naves_topics → verse_naves_topics → verses → psalm_id
 
-export async function fetchNavesTopicsWithCounts() {
+// WR-03: wrapped in cache() to deduplicate calls across generateStaticParams / generateMetadata / page
+export const fetchNavesTopicsWithCounts = cache(async function fetchNavesTopicsWithCounts() {
   const rows = await db.execute(sql`
     SELECT nt.id, nt.name, COUNT(DISTINCT v.psalm_id)::integer AS psalm_count
     FROM naves_topics nt
@@ -49,7 +56,7 @@ export async function fetchNavesTopicsWithCounts() {
     ORDER BY psalm_count DESC
   `)
   return rows as unknown as Array<{ id: number; name: string; psalm_count: number }>
-}
+})
 
 export const fetchPsalmsByNavesTopic = cache(async function fetchPsalmsByNavesTopic(topicId: number) {
   const rows = await db.execute(sql`
@@ -63,33 +70,44 @@ export const fetchPsalmsByNavesTopic = cache(async function fetchPsalmsByNavesTo
 })
 
 // For the /explore/naves/[slug] detail page — returns psalm rows for display
+// WR-07: use DISTINCT ON (p.id) to guarantee one row per psalm (not one per version)
 export const fetchPsalmDetailsByNavesTopic = cache(async function fetchPsalmDetailsByNavesTopic(topicId: number) {
   const rows = await db.execute(sql`
-    SELECT DISTINCT p.id, pv.first_line AS "firstLine", pv.meter
+    SELECT DISTINCT ON (p.id)
+      p.id,
+      pv.first_line AS "firstLine",
+      pv.meter
     FROM verse_naves_topics vnt
     JOIN verses v ON v.id = vnt.verse_id
     JOIN psalms p ON p.id = v.psalm_id
     LEFT JOIN psalm_versions pv ON pv.psalm_id = p.id
     WHERE vnt.naves_topic_id = ${topicId}
-    ORDER BY p.id
+    ORDER BY p.id, pv.id
   `)
   return rows as unknown as Array<{ id: number; firstLine: string | null; meter: string | null }>
 })
 
 // --- Messianic Psalms ---
 
-export async function fetchMessianicPsalms() {
-  return db
-    .select({
-      psalmId: messianicPsalms.psalmId,
-      classification: messianicPsalms.classification,
-      firstLine: psalmVersions.firstLine,
-      meter: psalmVersions.meter,
-    })
-    .from(messianicPsalms)
-    .leftJoin(psalmVersions, eq(psalmVersions.psalmId, messianicPsalms.psalmId))
-    .orderBy(asc(messianicPsalms.psalmId))
-}
+// WR-04: use DISTINCT ON (p.id) to avoid duplicate rows when a psalm has multiple versions
+export const fetchMessianicPsalms = cache(async function fetchMessianicPsalms() {
+  const rows = await db.execute(sql`
+    SELECT DISTINCT ON (mp.psalm_id)
+      mp.psalm_id AS "psalmId",
+      mp.classification,
+      pv.first_line AS "firstLine",
+      pv.meter
+    FROM messianic_psalms mp
+    LEFT JOIN psalm_versions pv ON pv.psalm_id = mp.psalm_id
+    ORDER BY mp.psalm_id, pv.id
+  `)
+  return rows as unknown as Array<{
+    psalmId: number
+    classification: string | null
+    firstLine: string | null
+    meter: string | null
+  }>
+})
 
 // --- Authors ---
 // Note: psalmVersions has no 'author' column — author is on psalms table.
@@ -104,11 +122,17 @@ export async function fetchDistinctAuthors() {
   return rows.map((r) => r.author).filter((a): a is string => a !== null)
 }
 
+// WR-04: use DISTINCT ON (p.id) to avoid duplicate rows when a psalm has multiple versions
 export const fetchPsalmsByAuthor = cache(async function fetchPsalmsByAuthor(author: string) {
-  return db
-    .select({ id: psalms.id, firstLine: psalmVersions.firstLine, meter: psalmVersions.meter })
-    .from(psalms)
-    .leftJoin(psalmVersions, eq(psalmVersions.psalmId, psalms.id))
-    .where(eq(psalms.author, author))
-    .orderBy(asc(psalms.id))
+  const rows = await db.execute(sql`
+    SELECT DISTINCT ON (p.id)
+      p.id,
+      pv.first_line AS "firstLine",
+      pv.meter
+    FROM psalms p
+    LEFT JOIN psalm_versions pv ON pv.psalm_id = p.id
+    WHERE p.author = ${author}
+    ORDER BY p.id, pv.id
+  `)
+  return rows as unknown as Array<{ id: number; firstLine: string | null; meter: string | null }>
 })

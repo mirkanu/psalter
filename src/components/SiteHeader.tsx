@@ -12,7 +12,8 @@ const navLinks = [
 
 export function SiteHeader() {
   const pathname = usePathname()
-  const isActive = (href: string) => pathname.startsWith(href)
+  const isActive = (href: string) =>
+    href === '/' ? pathname === '/' : pathname.startsWith(href)
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border">

@@ -25,7 +25,7 @@ function slugify(name: string): string {
     .replace(/^-+|-+$/g, '')
 }
 
-function buildNavesSlugMap(
+function buildDisambiguatedSlugMap(
   topics: Array<{ id: number; name: string }>
 ): Map<number, string> {
   const slugCount = new Map<string, number>()
@@ -49,7 +49,11 @@ export default async function ExplorePage() {
     fetchDistinctAuthors(),
   ])
 
-  const navesSlugMap = buildNavesSlugMap(navesTopics)
+  const topicsSlugMap = buildDisambiguatedSlugMap(
+    topics.filter((t): t is typeof t & { name: string } => t.name !== null)
+  )
+
+  const navesSlugMap = buildDisambiguatedSlugMap(navesTopics)
 
   const navesTopicsWithSlugs = navesTopics.map((t) => ({
     ...t,
@@ -76,7 +80,7 @@ export default async function ExplorePage() {
           {topics.map((topic) => (
             <Link
               key={topic.id}
-              href={`/explore/topics/${slugify(topic.name ?? '')}`}
+              href={`/explore/topics/${topicsSlugMap.get(topic.id) ?? slugify(topic.name ?? '')}`}
               className="inline-flex items-center justify-between px-3 py-2 rounded-md border border-border text-sm hover:bg-muted hover:border-primary/30 transition-colors min-h-[44px]"
             >
               <span className="truncate">{topic.name}</span>

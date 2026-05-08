@@ -630,17 +630,13 @@ Step 2.5: SKIPPED — This is a new-feature phase (no rename/refactor/migration 
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Topics schema fields: add `topicType` and `description` to schema?**
-   - What we know: Airtable `Topics - Psalms` has `Topic Type` (singleSelect) and `Description` (singleLineText) fields not currently in the schema
-   - What's unclear: Whether the planner should add a schema migration to include these columns, or defer until they're surfaced in UI
-   - Recommendation: Add both columns in Wave 0 schema migration — they cost nothing to store and may be useful for sub-categorizing the /explore/topics list
+   - RESOLVED: Yes — Plan 03-01 Task 1 adds both `topic_type` and `description` columns to the `topics` table via schema migration.
 
 2. **How to handle `naves_topics` where Nave's psalm count could be misleading**
-   - What we know: "Psalms" is a Nave's topic with 83 psalms (nearly all), "Praise" has 78 — these dominate the list
-   - What's unclear: Whether to show "Psalms" topic on the /explore hub (it contains almost everything, so it adds little discovery value)
-   - Recommendation: Show all topics; the user can decide if they want to filter by count after seeing the live page
+   - RESOLVED: Show all topics — Plan 03-05 Task 1 renders the full list; the user can decide after seeing the live page.
 
 ---
 
