@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 01 complete — all 5 plans done; verification passed, 18 tables confirmed in psalter-db
-last_updated: "2026-05-08T00:19:32.445Z"
-last_activity: 2026-05-08 -- Phase 2 planning complete
+stopped_at: Phase 02 Plan 02 complete — SiteHeader, lib/daily.ts, lib/youtube.ts done
+last_updated: "2026-05-08T06:36:00.000Z"
+last_activity: 2026-05-08 -- Phase 2 Plan 02 complete
 progress:
   total_phases: 6
   completed_phases: 1
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 ## Current Position
 
 Phase: 2
-Plan: 02 (next)
+Plan: 03 (next)
 Status: Executing
-Last activity: 2026-05-08 -- Phase 2 Plan 01 complete
+Last activity: 2026-05-08 -- Phase 2 Plan 02 complete
 
-Progress: [██████████] 17% (Phase 01 complete; 5/5 plans done)
+Progress: [████████████] 20% (Phase 01 complete; 02-02 done; 6/10 plans done)
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Progress: [██████████] 17% (Phase 01 complete; 5/5 plans don
 *Updated after each plan completion*
 | Phase 01 P04 | 49 | - tasks | - files |
 | Phase 01 P05 | 15 | 1 task | 1 file |
+| Phase 02 P02 | 10 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,9 @@ Recent decisions affecting current work:
 - [02-01]: vitest.config.mts (not .ts) required — vite-tsconfig-paths is ESM-only; .mts extension forces ESM module resolution
 - [02-01]: Three reverse relations (sectionHeadingsRelations, messianicPsalmsRelations, dailyReadingsRelations) were missing from schema — added as part of plan execution
 - [02-01]: psalter-db postgres password was out of sync with .env; reset via ALTER USER to restore test connectivity
+- [02-02]: SiteHeader is RSC (no 'use client') — no auth state or active-link detection needed in Phase 2
+- [02-02]: getDayOfYear wraps day 366 to day 1 via modulo to keep 365-entry plan bounded on leap years
+- [02-02]: toEmbedUrl regex restricts extracted video IDs to [\w-]+ — mitigates T-02-04 injection risk
 
 ### Pending Todos
 
@@ -102,6 +106,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-08T06:28:00.000Z
-Stopped at: Phase 02 Plan 01 complete — junction relations, query helpers, shadcn components, vitest all done
+Last session: 2026-05-08T06:36:00.000Z
+Stopped at: Phase 02 Plan 02 complete — SiteHeader, lib/daily.ts, lib/youtube.ts done
 Resume file: None
