@@ -4,9 +4,9 @@
  * Pure function — works in both Node and browser.
  */
 export function getDayOfYear(date: Date = new Date()): number {
-  const start = new Date(date.getFullYear(), 0, 0)
-  const diff = date.getTime() - start.getTime()
-  const oneDay = 1000 * 60 * 60 * 24
-  const dayOfYear = Math.floor(diff / oneDay)
+  const year = date.getFullYear()
+  const startOfYear = Date.UTC(year, 0, 1)
+  const dayMs = Date.UTC(year, date.getMonth(), date.getDate())
+  const dayOfYear = Math.floor((dayMs - startOfYear) / (1000 * 60 * 60 * 24)) + 1
   return ((dayOfYear - 1) % 365) + 1
 }
