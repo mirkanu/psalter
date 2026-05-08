@@ -31,8 +31,18 @@ export default async function TunePage({ params }: PageProps) {
   if (!tune) notFound()
 
   const youtubeUrl = tune.youtubeUrl
+
+  function isSafeExternalUrl(url: string): boolean {
+    try {
+      const parsed = new URL(url)
+      return parsed.protocol === 'https:' || parsed.protocol === 'http:'
+    } catch {
+      return false
+    }
+  }
+
   const isYouTube = youtubeUrl != null && toEmbedUrl(youtubeUrl) !== null
-  const isOtherMedia = youtubeUrl != null && !isYouTube
+  const isOtherMedia = youtubeUrl != null && !isYouTube && isSafeExternalUrl(youtubeUrl)
 
   // Deduplicate psalm references (a tune can be linked from multiple versions of the same psalm)
   const psalmsUsingTune = new Map<number, string>()
