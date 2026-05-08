@@ -147,6 +147,8 @@ export const topics = pgTable('topics', {
   id: serial('id').primaryKey(),
   airtableId: text('airtable_id').notNull().unique(),
   name: text('name'),
+  topicType: text('topic_type'),
+  description: text('description'),
 })
 
 /**

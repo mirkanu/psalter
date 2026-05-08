@@ -108,10 +108,16 @@ async function migrateTopics(): Promise<Map<string, number>> {
   for (const r of records) {
     const [row] = await db.insert(schema.topics).values({
       airtableId: r.id,
-      name: str(r.get('Name')),
+      name: str(r.get('Topic (Psalm)')),
+      topicType: str(r.get('Topic Type')),
+      description: str(r.get('Description')),
     }).onConflictDoUpdate({
       target: schema.topics.airtableId,
-      set: { name: sql`excluded.name` },
+      set: {
+        name: sql`excluded.name`,
+        topicType: sql`excluded.topic_type`,
+        description: sql`excluded.description`,
+      },
     }).returning({ id: schema.topics.id })
     idMap.set(r.id, row.id)
   }
