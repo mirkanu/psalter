@@ -12,21 +12,24 @@ describe('PsalmSearchWidget psalm number nav', () => {
 // SRCH-02: fetchSearchResults FTS query
 describe('fetchSearchResults', () => {
   it('returns empty array for blank query without hitting DB', async () => {
-    const { fetchSearchResults } = await import('@/db/queries/search')
-    const results = await fetchSearchResults('')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mod = await import('@/db/queries/search' as any)
+    const results = await mod.fetchSearchResults('')
     expect(results).toEqual([])
   })
 
   it('returns results containing Psalm 23 for query "shepherd"', async () => {
-    const { fetchSearchResults } = await import('@/db/queries/search')
-    const results = await fetchSearchResults('shepherd')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mod = await import('@/db/queries/search' as any)
+    const results = await mod.fetchSearchResults('shepherd')
     expect(results.length).toBeGreaterThan(0)
-    expect(results.some((r) => r.id === 23)).toBe(true)
+    expect(results.some((r: { id: number }) => r.id === 23)).toBe(true)
   })
 
   it('returns empty array for query with no matches', async () => {
-    const { fetchSearchResults } = await import('@/db/queries/search')
-    const results = await fetchSearchResults('zzznomatch')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mod = await import('@/db/queries/search' as any)
+    const results = await mod.fetchSearchResults('zzznomatch')
     expect(results).toEqual([])
   })
 })
