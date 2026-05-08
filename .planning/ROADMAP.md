@@ -13,7 +13,7 @@ Rebuild of psalter.cprc.co.uk from Airtable + Softr to a self-hosted Next.js 15 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - Drizzle schema, Airtable→PostgreSQL migration, R2 JPG storage
-- [ ] **Phase 2: Public Browse** - Psalm list/detail (3 tabs), tune pages, daily reading plan, static rendering
+- [x] **Phase 2: Public Browse** - Psalm list/detail (3 tabs), tune pages, daily reading plan, static rendering
 - [ ] **Phase 3: Search** - Full-text search over lyrics/KJV, topic browse, tune meter filter
 - [ ] **Phase 4: Notation** - abcjs live SVG rendering with hymnal layout, JPG fallback, mobile-responsive
 - [ ] **Phase 5: Precentor Portal** - Better Auth login, service event CRUD, set list builder, live service view
@@ -80,7 +80,22 @@ Plans:
   2. Searching a keyword returns matching psalms ranked by relevance across metrical lyrics and KJV text (PostgreSQL full-text index)
   3. Browsing the Nave's topic index shows all psalms tagged to a chosen topic
   4. The tune list can be filtered to a single meter (CM, LM, SM, etc.) and shows only matching tunes
-**Plans**: TBD
+**Plans**: 6 plans
+
+Plans:
+**Wave 0** *(blocking prerequisites)*
+- [x] 03-01-PLAN.md — Topics migration fix (r.get('Topic (Psalm)')), GIN indexes, schema topicType/description, shadcn input+skeleton, test scaffolds [BLOCKING]
+
+**Wave 1** *(parallel — depends on Wave 0)*
+- [ ] 03-02-PLAN.md — Query layer: src/db/queries/search.ts (FTS) + src/db/queries/explore.ts (taxonomy queries)
+- [ ] 03-03-PLAN.md — TuneGrid client component (meter filter + URL sync) + SiteHeader upgrade (Search/Explore nav links, usePathname)
+
+**Wave 2** *(parallel — depends on Wave 1)*
+- [ ] 03-04-PLAN.md — /search dynamic page (FTS results, 3 states) + loading skeleton + globals.css [data-snippet] rule
+- [ ] 03-05-PLAN.md — /explore hub + /explore/topics/[slug] + /explore/naves/[slug] + /explore/messianic + /explore/authors/[author] + loading skeletons
+
+**Wave 3** *(depends on Wave 1 + Wave 2)*
+- [ ] 03-06-PLAN.md — /tunes page delegation to TuneGrid + loading skeleton
 **UI hint**: yes
 
 ### Phase 4: Notation
@@ -129,7 +144,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Foundation | 5/5 | Complete | 2026-05-07 |
 | 2. Public Browse | 5/5 | Complete | 2026-05-08 |
-| 3. Search | 0/TBD | Not started | - |
+| 3. Search | 1/6 | In Progress|  |
 | 4. Notation | 0/TBD | Not started | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
