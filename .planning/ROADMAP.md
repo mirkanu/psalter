@@ -62,7 +62,7 @@ Plans:
 
 Plans:
 **Wave 1** *(parallel — schema, components, layout, utilities)*
-- [ ] 02-01-PLAN.md — Schema junction relations + shadcn components (tabs/badge/select/separator/card) + vitest setup + db query helpers
+- [x] 02-01-PLAN.md — Schema junction relations + shadcn components (tabs/badge/select/separator/card) + vitest setup + db query helpers
 - [ ] 02-02-PLAN.md — Root layout with SiteHeader sticky nav + lib/daily.ts + lib/youtube.ts utilities
 
 **Wave 2** *(parallel — depends on Wave 1)*
@@ -128,7 +128,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 5/5 | Complete | 2026-05-07 |
-| 2. Public Browse | 0/5 | Not started | - |
+| 2. Public Browse | 1/5 | In progress | - |
 | 3. Search | 0/TBD | Not started | - |
 | 4. Notation | 0/TBD | Not started | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |

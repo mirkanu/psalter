@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 ## Current Position
 
 Phase: 2
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-08 -- Phase 2 planning complete
+Plan: 02 (next)
+Status: Executing
+Last activity: 2026-05-08 -- Phase 2 Plan 01 complete
 
 Progress: [██████████] 17% (Phase 01 complete; 5/5 plans done)
 
@@ -77,6 +77,9 @@ Recent decisions affecting current work:
 - [01-03]: additional_score_urls as jsonb on tunes handles multi-attachment tune records
 - [Phase ?]: SKIP_IMAGES=1 env flag added to migration — tune JPGs total ~1.1GB, larger than 38GB VPS root partition can accommodate; disk must be expanded before full image download
 - [Phase ?]: Airtable field names must be verified via Meta API before migration — research-phase assumptions were incorrect for 6 fields across 4 tables
+- [02-01]: vitest.config.mts (not .ts) required — vite-tsconfig-paths is ESM-only; .mts extension forces ESM module resolution
+- [02-01]: Three reverse relations (sectionHeadingsRelations, messianicPsalmsRelations, dailyReadingsRelations) were missing from schema — added as part of plan execution
+- [02-01]: psalter-db postgres password was out of sync with .env; reset via ALTER USER to restore test connectivity
 
 ### Pending Todos
 
@@ -99,6 +102,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-07T17:10:00.000Z
-Stopped at: Phase 01 complete — all 5 plans done; verification passed, 18 tables confirmed in psalter-db
+Last session: 2026-05-08T06:28:00.000Z
+Stopped at: Phase 02 Plan 01 complete — junction relations, query helpers, shadcn components, vitest all done
 Resume file: None
