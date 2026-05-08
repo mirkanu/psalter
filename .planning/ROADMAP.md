@@ -115,7 +115,7 @@ Plans:
 - [x] 04-02-PLAN.md — scripts/seed-abc-notation.ts: seed 5 tunes (CM/LM/SM coverage) with ABC + embedded w: fields; add TUNE-02 data assertion
 
 **Wave 2** *(depends on Wave 1)*
-- [ ] 04-03-PLAN.md — src/components/AbcRenderer.tsx ('use client', useRef + useEffect, abcjs.renderAbc with responsive:resize)
+- [x] 04-03-PLAN.md — src/components/AbcRenderer.tsx ('use client', useRef + useEffect, abcjs.renderAbc with responsive:resize)
 
 **Wave 3** *(depends on Wave 2)*
 - [ ] 04-04-PLAN.md — Wire AbcRenderer into /tunes/[id]/page.tsx (next/dynamic ssr:false + Suspense); three-way fallback; human-verify TUNE-04 at 375/768/1200px
@@ -156,6 +156,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Foundation | 5/5 | Complete | 2026-05-07 |
 | 2. Public Browse | 5/5 | Complete | 2026-05-08 |
 | 3. Search | 6/6 | Complete    | 2026-05-08 |
-| 4. Notation | 2/4 | In progress | - |
+| 4. Notation | 3/4 | In progress | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
