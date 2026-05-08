@@ -128,3 +128,8 @@
     @apply font-sans;
   }
 }
+
+/* Search result snippet — scope ts_headline <b> tags to avoid polluting other bold elements */
+[data-snippet] b {
+  font-weight: 600;
+}
