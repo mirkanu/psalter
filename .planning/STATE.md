@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: completed 03-02 query modules (2026-05-08)
+stopped_at: completed 03-03 TuneGrid + SiteHeader upgrade (2026-05-08)
 last_updated: "2026-05-08T16:48:20.682Z"
 last_activity: 2026-05-08
 progress:
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 ## Current Position
 
 Phase: 03 (search) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
 Last activity: 2026-05-08
 
-Progress: [████████████████] 75% (Phase 01+02 complete; 03-01+03-02 done; 12/16 plans done)
+Progress: [█████████████████] 75% (Phase 01+02 complete; 03-01+03-02+03-03 done; 13/16 plans done)
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Progress: [████████████████] 75% (Phase 01+02 co
 | Phase 02 P02 | 10 | 2 tasks | 5 files |
 | Phase 02 P03 | 25 | 2 tasks | 6 files |
 | Phase 03 P02 | 5 | 2 tasks | 2 files |
+| Phase 03 P03 | 8 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -96,6 +97,9 @@ Recent decisions affecting current work:
 - [02-05]: DailyPlanClient reveals today-badge by DOM mutation (removes 'hidden'), not React state — avoids hydration race on static /daily page
 - [02-05]: dailyReadings.dayNumber is nullable in schema — RSC filters null entries before passing to TodayCard ReadingProp (dayNumber: number)
 - [02-05]: data-[today]: Tailwind selector (empty-string attribute set by DailyPlanClient) used for today row highlight — no inline script needed
+- [03-03]: SiteHeader converted to 'use client' — usePathname() requires client boundary; minimal impact as header is already at the root of every page layout
+- [03-03]: TuneGrid initialises meter from useSearchParams on mount — enables sharing filtered tune URLs
+- [03-03]: encodeURIComponent applied to meter value in router.replace — defensive encoding for meter strings with special characters
 
 ### Pending Todos
 

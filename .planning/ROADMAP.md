@@ -88,7 +88,7 @@ Plans:
 
 **Wave 1** *(parallel — depends on Wave 0)*
 - [x] 03-02-PLAN.md — Query layer: src/db/queries/search.ts (FTS) + src/db/queries/explore.ts (taxonomy queries)
-- [ ] 03-03-PLAN.md — TuneGrid client component (meter filter + URL sync) + SiteHeader upgrade (Search/Explore nav links, usePathname)
+- [x] 03-03-PLAN.md — TuneGrid client component (meter filter + URL sync) + SiteHeader upgrade (Search/Explore nav links, usePathname)
 
 **Wave 2** *(parallel — depends on Wave 1)*
 - [ ] 03-04-PLAN.md — /search dynamic page (FTS results, 3 states) + loading skeleton + globals.css [data-snippet] rule
@@ -144,7 +144,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Foundation | 5/5 | Complete | 2026-05-07 |
 | 2. Public Browse | 5/5 | Complete | 2026-05-08 |
-| 3. Search | 2/6 | In Progress|  |
+| 3. Search | 3/6 | In Progress|  |
 | 4. Notation | 0/TBD | Not started | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
