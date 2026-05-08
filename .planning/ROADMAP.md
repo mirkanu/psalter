@@ -107,7 +107,18 @@ Plans:
   2. Verse 1 lyrics are syllable-aligned under the notation staff using abcjs `w:` fields; remaining verses display as numbered stanzas below the SVG
   3. Tunes without an ABC string still display the R2-hosted JPG score image (no broken layout)
   4. The notation SVG reflows correctly at 375 px, 768 px, and 1200 px viewport widths (`responsive: "resize"`)
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+**Wave 1** *(parallel — independent foundation work)*
+- [ ] 04-01-PLAN.md — Install abcjs + nlp-syllables; create src/lib/lyrics.ts (extractVerse1, syllabifyForAbc) + unit tests
+- [ ] 04-02-PLAN.md — scripts/seed-abc-notation.ts: seed 5 tunes (CM/LM/SM coverage) with ABC + embedded w: fields; add TUNE-02 data assertion
+
+**Wave 2** *(depends on Wave 1)*
+- [ ] 04-03-PLAN.md — src/components/AbcRenderer.tsx ('use client', useRef + useEffect, abcjs.renderAbc with responsive:resize)
+
+**Wave 3** *(depends on Wave 2)*
+- [ ] 04-04-PLAN.md — Wire AbcRenderer into /tunes/[id]/page.tsx (next/dynamic ssr:false + Suspense); three-way fallback; human-verify TUNE-04 at 375/768/1200px
 **UI hint**: yes
 
 ### Phase 5: Precentor Portal
