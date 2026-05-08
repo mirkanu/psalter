@@ -5,6 +5,7 @@ import type { Metadata } from "next"
 import { fetchTuneDetail, fetchTuneIds } from "@/db/queries/tunes"
 import { YouTubeEmbed } from "@/components/YouTubeEmbed"
 import { Badge } from "@/components/ui/badge"
+import { AbcNotationSection } from "@/components/AbcNotationSection"
 import { toEmbedUrl } from "@/lib/youtube"
 
 interface PageProps {
@@ -55,6 +56,17 @@ export default async function TunePage({ params }: PageProps) {
   }
   const psalmList = Array.from(psalmsUsingTune.entries()).sort(([a], [b]) => a - b)
 
+  // TUNE-03 second part: render verses 2+ as numbered stanzas below the notation.
+  // Choose the first linked psalmVersion (by id) with non-empty lyrics — same source used by Plan 02 for verse 1 in the ABC w: field.
+  const sortedPvts = [...tune.psalmVersionTunes].sort(
+    (a, b) => (a.psalmVersion?.id ?? 0) - (b.psalmVersion?.id ?? 0)
+  )
+  const lyricsSource = sortedPvts.find((pvt) => pvt.psalmVersion?.lyrics)?.psalmVersion?.lyrics ?? null
+  const allStanzas = lyricsSource
+    ? lyricsSource.split('\n\n').map((s) => s.trim()).filter(Boolean)
+    : []
+  const remainingStanzas = allStanzas.slice(1).map((s) => s.replace(/^\d+\s+/, '').trim())
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-8">
       <header className="flex items-baseline gap-3 flex-wrap">
@@ -68,7 +80,9 @@ export default async function TunePage({ params }: PageProps) {
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
           Score
         </h2>
-        {tune.scoreJpgUrl ? (
+        {tune.abcNotation ? (
+          <AbcNotationSection abc={tune.abcNotation} title={tune.name ?? undefined} />
+        ) : tune.scoreJpgUrl ? (
           <div className="relative w-full max-w-2xl mx-auto aspect-[3/2]">
             <Image
               src={tune.scoreJpgUrl}
@@ -78,9 +92,28 @@ export default async function TunePage({ params }: PageProps) {
             />
           </div>
         ) : (
-          <p className="text-muted-foreground italic">No score available for this tune.</p>
+          <p className="text-muted-foreground italic">Score image not yet available.</p>
         )}
       </section>
+
+      {remainingStanzas.length > 0 && (
+        <section>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+            Verses
+          </h2>
+          <ol start={2} className="list-decimal list-outside pl-8 space-y-4 max-w-3xl mx-auto">
+            {remainingStanzas.map((stanza, idx) => (
+              <li key={idx + 2} className="text-foreground leading-relaxed">
+                {stanza.split('\n').map((line, lineIdx) => (
+                  <span key={lineIdx} className="block">
+                    {line}
+                  </span>
+                ))}
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
       {isYouTube && youtubeUrl && (
         <section>
