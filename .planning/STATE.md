@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 02 Plan 04 complete — /tunes list + /tunes/[id] detail (score JPG, YouTube, reverse psalm links) done
-last_updated: "2026-05-08T07:05:00.000Z"
-last_activity: 2026-05-08 -- Phase 2 Plan 04 complete
+stopped_at: Phase 02 Plan 05 complete — Homepage dashboard (TodayCard + PsalmSearchWidget) + /daily + /daily/[day] done
+last_updated: "2026-05-08T07:28:00.000Z"
+last_activity: 2026-05-08 -- Phase 2 Plan 05 complete — Phase 2 fully done
 progress:
   total_phases: 6
   completed_phases: 1
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 ## Current Position
 
 Phase: 2
-Plan: 05 (next)
-Status: Executing
-Last activity: 2026-05-08 -- Phase 2 Plan 04 complete
+Plan: 05 (complete — Phase 2 done)
+Status: Phase 2 complete
+Last activity: 2026-05-08 -- Phase 2 Plan 05 complete
 
 Progress: [██████████████] 30% (Phase 01 complete; 02-03 done; 7/10 plans done)
 
@@ -91,6 +91,10 @@ Recent decisions affecting current work:
 - [02-04]: YouTubeEmbed kept as RSC — toEmbedUrl runs server-side, no client state needed; iframe sandbox restricts capabilities (T-02-13)
 - [02-04]: soundcloudUrl ignored in Phase 2 — all 27 DB values are placeholder text ("missing", "need to upload")
 - [02-04]: youtubeUrl field stores both YouTube and non-YouTube media URLs; toEmbedUrl returns null for non-YouTube, enabling plain link fallback
+- [02-05]: TodayCard is 'use client' — today detection must run on mount; useState(null) initial avoids static-render mismatch
+- [02-05]: DailyPlanClient reveals today-badge by DOM mutation (removes 'hidden'), not React state — avoids hydration race on static /daily page
+- [02-05]: dailyReadings.dayNumber is nullable in schema — RSC filters null entries before passing to TodayCard ReadingProp (dayNumber: number)
+- [02-05]: data-[today]: Tailwind selector (empty-string attribute set by DailyPlanClient) used for today row highlight — no inline script needed
 
 ### Pending Todos
 
