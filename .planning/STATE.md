@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 02 Plan 02 complete — SiteHeader, lib/daily.ts, lib/youtube.ts done
-last_updated: "2026-05-08T06:36:00.000Z"
-last_activity: 2026-05-08 -- Phase 2 Plan 02 complete
+stopped_at: Phase 02 Plan 03 complete — /psalms list + /psalms/[id] detail (4 tabs) done
+last_updated: "2026-05-08T07:00:00.000Z"
+last_activity: 2026-05-08 -- Phase 2 Plan 03 complete
 progress:
   total_phases: 6
   completed_phases: 1
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 ## Current Position
 
 Phase: 2
-Plan: 03 (next)
+Plan: 04 (next)
 Status: Executing
-Last activity: 2026-05-08 -- Phase 2 Plan 02 complete
+Last activity: 2026-05-08 -- Phase 2 Plan 03 complete
 
-Progress: [████████████] 20% (Phase 01 complete; 02-02 done; 6/10 plans done)
+Progress: [██████████████] 30% (Phase 01 complete; 02-03 done; 7/10 plans done)
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [████████████] 20% (Phase 01 complete; 02-02 d
 | Phase 01 P04 | 49 | - tasks | - files |
 | Phase 01 P05 | 15 | 1 task | 1 file |
 | Phase 02 P02 | 10 | 2 tasks | 5 files |
+| Phase 02 P03 | 25 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,9 @@ Recent decisions affecting current work:
 - [02-02]: SiteHeader is RSC (no 'use client') — no auth state or active-link detection needed in Phase 2
 - [02-02]: getDayOfYear wraps day 366 to day 1 via modulo to keep 365-entry plan bounded on leap years
 - [02-02]: toEmbedUrl regex restricts extracted video IDs to [\w-]+ — mitigates T-02-04 injection risk
+- [02-03]: Schema uses lyrics (not stanzas) and versionLabel (not versionName) on psalmVersions; sectionHeadings has no verseEnd column — components use actual schema field names
+- [02-03]: PsalmTabs isTabValue() type guard restricts ?tab= to 4 known values; unknown values fall back to "overview" (T-02-08 mitigated)
+- [02-03]: Base UI Select onValueChange wraps setter in arrow function to handle null value and discard eventDetails argument
 
 ### Pending Todos
 
@@ -106,6 +110,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-08T06:36:00.000Z
-Stopped at: Phase 02 Plan 02 complete — SiteHeader, lib/daily.ts, lib/youtube.ts done
+Last session: 2026-05-08T07:00:00.000Z
+Stopped at: Phase 02 Plan 03 complete — /psalms list + /psalms/[id] detail (4 tabs) done
 Resume file: None
