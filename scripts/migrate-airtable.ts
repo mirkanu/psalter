@@ -368,11 +368,17 @@ async function migrateDailyReadings(psalmIdMap: Map<string, number>): Promise<vo
     const linkedPsalmIds = (r.get('Psalm') as string[] | null) ?? []
     const psalmId = linkedPsalmIds.length > 0 ? psalmIdMap.get(linkedPsalmIds[0]) ?? null : null
 
+    const dayNumber = typeof r.get('Day of the Year') === 'number' ? r.get('Day of the Year') as number : null
+    if (dayNumber === null) {
+      console.warn(`  Skipping daily reading ${r.id}: missing Day of the Year`)
+      continue
+    }
+
     await db.insert(schema.dailyReadings).values({
       airtableId: r.id,
       psalmId,
       // Actual field names verified via Airtable Meta API
-      dayNumber: typeof r.get('Day of the Year') === 'number' ? r.get('Day of the Year') as number : null,
+      dayNumber,
       readingDate: null,  // No date field in 365 Days table
       notes: null,
     }).onConflictDoUpdate({
