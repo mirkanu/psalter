@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 ## Current Position
 
 Phase: 4
-Plan: 1
+Plan: 2
 Status: In progress
 Last activity: 2026-05-08
 
-Progress: [████████████████████] 94% (Phase 01+02+03 complete + 04-01 done; 17/20 plans done)
+Progress: [████████████████████] 95% (Phase 01+02+03 complete + 04-01 + 04-02 done; 18/20 plans done)
 
 ## Performance Metrics
 
@@ -61,6 +61,7 @@ Progress: [████████████████████] 94% (Ph
 | Phase 03 P02 | 5 | 2 tasks | 2 files |
 | Phase 03 P03 | 8 | 2 tasks | 2 files |
 | Phase 04 P01 | 15 | 2 tasks | 4 files |
+| Phase 04 P02 | 20 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,9 @@ Recent decisions affecting current work:
 - [03-03]: TuneGrid initialises meter from useSearchParams on mount — enables sharing filtered tune URLs
 - [03-03]: encodeURIComponent applied to meter value in router.replace — defensive encoding for meter strings with special characters
 - [03-06]: /tunes page delegates to TuneGrid client component via Suspense boundary; RSC retains fetchAllTunes data fetch
+- [04-02]: "Old 100th" is the exact DB name for Old Hundredth tune; LM meter stored as "LM (long meter, 88 88)" not abbreviated "LM"
+- [04-02]: St. Michael absent from DB; Trentham (SM) substituted to maintain CM(3)+LM(1)+SM(1) coverage
+- [04-02]: Pre-existing score_jpg_url test failure is out-of-scope disk constraint from Phase 1 — not fixed in Phase 4
 
 ### Pending Todos
 
@@ -125,6 +129,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-08T21:30:00.000Z
-Stopped at: 04-01-PLAN.md complete (2 tasks, 2 commits)
+Last session: 2026-05-08T21:44:00.000Z
+Stopped at: 04-02-PLAN.md complete (2 tasks, 2 commits)
 Resume file: None
