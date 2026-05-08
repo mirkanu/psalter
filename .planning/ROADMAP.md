@@ -58,7 +58,17 @@ Plans:
   3. Each tune detail page shows name, meter, a score image (JPG from R2), and any YouTube or audio links
   4. The 365-day reading plan page is visible and today's entry is visually highlighted without a runtime database query
   5. All public psalm and tune pages are statically pre-rendered at build time (Next.js `generateStaticParams`); no runtime DB queries for read-only browse
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+**Wave 1** *(parallel — schema, components, layout, utilities)*
+- [ ] 02-01-PLAN.md — Schema junction relations + shadcn components (tabs/badge/select/separator/card) + vitest setup + db query helpers
+- [ ] 02-02-PLAN.md — Root layout with SiteHeader sticky nav + lib/daily.ts + lib/youtube.ts utilities
+
+**Wave 2** *(parallel — depends on Wave 1)*
+- [ ] 02-03-PLAN.md — /psalms list (book filter) + /psalms/[id] detail with 4 tabs (Overview/Lyrics/Study/Messianic), static
+- [ ] 02-04-PLAN.md — /tunes list + /tunes/[id] detail (score JPG, YouTube embed, reverse psalm links), static
+- [ ] 02-05-PLAN.md — Homepage devotional dashboard (TodayCard + PsalmSearchWidget) + /daily 365-row plan + /daily/[day]
 **UI hint**: yes
 
 ### Phase 3: Search
@@ -118,7 +128,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 5/5 | Complete | 2026-05-07 |
-| 2. Public Browse | 0/TBD | Not started | - |
+| 2. Public Browse | 0/5 | Not started | - |
 | 3. Search | 0/TBD | Not started | - |
 | 4. Notation | 0/TBD | Not started | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
