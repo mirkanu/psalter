@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as abcjsModule from 'abcjs'
 // abcjs uses CJS module.exports — in bundlers the default may be nested under .default
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,17 +22,30 @@ interface AbcRendererProps {
  */
 export default function AbcRenderer({ abc, title }: AbcRendererProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const [renderError, setRenderError] = useState<string | null>(null)
 
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
     // Clear prior render (abcjs appends; without clearing, prop changes stack SVGs)
     el.innerHTML = ''
-    abcjs.renderAbc(el, abc, {
-      responsive: 'resize',
-      add_classes: true,
-    })
+    setRenderError(null)
+    try {
+      abcjs.renderAbc(el, abc, {
+        responsive: 'resize',
+        add_classes: true,
+      })
+    } catch (e) {
+      console.error('abcjs render failed:', e)
+      setRenderError('Could not render notation.')
+    }
   }, [abc])
+
+  if (renderError) {
+    return (
+      <p className="text-sm text-muted-foreground italic">{renderError}</p>
+    )
+  }
 
   return (
     <div
