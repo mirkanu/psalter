@@ -2,7 +2,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Menu } from 'lucide-react'
-import { Sheet, SheetTrigger, SheetContent } from '@/components/ui/sheet'
+import { Sheet, SheetTrigger, SheetContent, SheetClose } from '@/components/ui/sheet'
 
 const navLinks = [
   { href: "/psalms", label: "Psalms" },
@@ -26,11 +26,13 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
-          <Link
-            href="/"
-            className="font-semibold text-foreground text-base hover:text-primary transition-colors"
-          >
-            CPRC Psalter
+          <Link href="/" className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
+            <span className="font-semibold text-foreground text-base tracking-tight">
+              CPRC Psalter
+            </span>
+            <span className="text-[10px] font-semibold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full border border-primary/20 leading-none tracking-wide">
+              beta
+            </span>
           </Link>
 
           {/* Desktop nav — hidden on mobile */}
@@ -53,9 +55,12 @@ export function SiteHeader() {
             <SheetContent side="right" className="w-64">
               <nav className="flex flex-col gap-1 pt-6" aria-label="Mobile primary">
                 {navLinks.map((link) => (
-                  <Link key={link.href} href={link.href} className={linkClass(link.href)}>
+                  <SheetClose
+                    key={link.href}
+                    render={<Link href={link.href} className={linkClass(link.href)} />}
+                  >
                     {link.label}
-                  </Link>
+                  </SheetClose>
                 ))}
               </nav>
             </SheetContent>

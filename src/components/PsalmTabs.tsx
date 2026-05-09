@@ -1,5 +1,6 @@
 'use client'
 
+import { useRef, useEffect } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { PsalmNotationPlayerClient } from '@/components/PsalmNotationPlayerClient'
@@ -321,6 +322,14 @@ const DESKTOP_TABS = MOBILE_TABS.filter((t) => t.value !== 'sing')
 // ── Main component ───────────────────────────────────────────────────────────
 
 export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
+  const mobileTabsRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (mobileTabsRef.current) {
+      mobileTabsRef.current.scrollLeft = 0
+    }
+  }, [])
+
   const primaryVersion = psalm.psalmVersions.slice().sort((a, b) => a.id - b.id)[0] ?? null
   const dailyEntry = psalm.dailyReadings?.[0] ?? null
   const primaryTuneId = primaryTune?.id ?? null
@@ -391,48 +400,35 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
 
   return (
     <>
-      {/* ══ MOBILE LAYOUT (< md) ════════════════════════════════════════════ */}
-      <div className="md:hidden">
+      {/* ══ MOBILE LAYOUT (< lg) ════════════════════════════════════════════ */}
+      <div className="lg:hidden">
         <Tabs defaultValue="sing">
-          {/* Top scrollable tab list */}
-          <TabsList
-            className="flex h-auto gap-1 mb-4 bg-transparent p-0 w-full overflow-x-auto [&::-webkit-scrollbar]:hidden"
+          {/* Top scrollable tab list — horizontal scroll only */}
+          <div
+            ref={mobileTabsRef}
+            className="overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden mb-4"
             style={{
               maskImage: 'linear-gradient(to right, black calc(100% - 2.5rem), transparent)',
             }}
           >
-            {MOBILE_TABS.map(({ value, label }) => (
-              <TabsTrigger key={value} value={value} className="flex-shrink-0">
-                {label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          <TabsContent value="sing" className="pb-16">
-            {singPanel}
-          </TabsContent>
-          {sharedTabContents('pb-16')}
-
-          {/* Sticky bottom nav */}
-          <div className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur border-t border-border">
-            <TabsList
-              className="flex h-auto gap-0 bg-transparent p-0 w-full overflow-x-auto [&::-webkit-scrollbar]:hidden"
-              style={{
-                maskImage: 'linear-gradient(to right, black calc(100% - 3rem), transparent)',
-              }}
-            >
+            <TabsList className="flex h-auto gap-1 bg-transparent p-0 w-max">
               {MOBILE_TABS.map(({ value, label }) => (
-                <TabsTrigger key={value} value={value} className="flex-shrink-0 px-4 py-3 text-xs">
+                <TabsTrigger key={value} value={value} className="flex-shrink-0">
                   {label}
                 </TabsTrigger>
               ))}
             </TabsList>
           </div>
+
+          <TabsContent value="sing" className="pb-4">
+            {singPanel}
+          </TabsContent>
+          {sharedTabContents('pb-4')}
         </Tabs>
       </div>
 
-      {/* ══ DESKTOP / LANDSCAPE LAYOUT (≥ md) ══════════════════════════════ */}
-      <div className="hidden md:grid md:grid-cols-2 gap-8 items-start">
+      {/* ══ DESKTOP / LANDSCAPE LAYOUT (≥ lg) ══════════════════════════════ */}
+      <div className="hidden lg:grid lg:grid-cols-2 gap-8 items-start">
         {/* Left: Sing content — always visible */}
         <div>{singPanel}</div>
 
