@@ -416,7 +416,7 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
                 <TabsTrigger
                   key={value}
                   value={value}
-                  className="flex-shrink-0 text-base font-semibold px-4 py-2 h-auto rounded-none border-b-[3px] border-transparent -mb-px data-[active]:border-foreground data-[active]:bg-transparent data-[active]:text-foreground"
+                  className="flex-shrink-0 text-base font-semibold px-4 py-2 h-auto rounded-none border-b-[3px] border-b-transparent -mb-px data-[active]:border-b-foreground data-[active]:bg-transparent data-[active]:text-foreground"
                 >
                   {label}
                 </TabsTrigger>
@@ -439,9 +439,13 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
         {/* Right: tabs (no Sing tab) */}
         <div>
           <Tabs defaultValue="overview">
-            <TabsList className="flex flex-wrap h-auto gap-1 mb-6 bg-transparent p-0">
+            <TabsList className="flex flex-wrap h-auto gap-0 mb-6 bg-transparent p-0 border-b border-border">
               {DESKTOP_TABS.map(({ value, label }) => (
-                <TabsTrigger key={value} value={value}>
+                <TabsTrigger
+                  key={value}
+                  value={value}
+                  className="rounded-none border-b-[3px] border-b-transparent -mb-px data-[active]:border-b-foreground data-[active]:bg-transparent data-[active]:text-foreground"
+                >
                   {label}
                 </TabsTrigger>
               ))}
