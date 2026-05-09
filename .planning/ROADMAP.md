@@ -186,7 +186,7 @@ Plans:
 - [x] 04.7-01-PLAN.md — Playwright test stubs (PLR-01/02/03), shadcn Checkbox install, globals.css [data-snippet] b → font-weight: 700
 
 **Wave 1** *(depends on Wave 0)*
-- [ ] 04.7-02-PLAN.md — PsalmNumberBox + PsalmListingGrid components + page.tsx wiring (query + kjvExcerpt + component swap)
+- [x] 04.7-02-PLAN.md — PsalmNumberBox + PsalmListingGrid components + page.tsx wiring (query + kjvExcerpt + component swap)
 
 **Wave 2** *(depends on Wave 1)*
 - [ ] 04.7-03-PLAN.md — loading.tsx dense skeleton update + delete PsalmGrid/PsalmCard + Playwright UAT (human checkpoint)

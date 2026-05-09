@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Phase 4.7 planned — 3 plans ready to execute
-last_updated: "2026-05-09T15:00:00.000Z"
+stopped_at: Phase 4.7 Plan 02 complete — Wave 1 core components done; PLR-01/02/03 all pass
+last_updated: "2026-05-09T15:40:00.000Z"
 last_activity: 2026-05-09
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 26
-  completed_plans: 23
-  percent: 85
+  completed_plans: 24
+  percent: 88
 ---
 
 # Project State
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 ## Current Position
 
 Phase: 4.7
-Plan: 01 complete
-Status: Wave 0 complete — 04.7-01 done; Wave 1 (04.7-02) ready to execute
+Plan: 02 complete
+Status: Wave 1 complete — 04.7-02 done; Wave 2 UAT (04.7-03) ready to execute
 Last activity: 2026-05-09
 
 Progress: [█████████████████░░░] 83% (Phase 01+02+03+04+04.5 complete; Phase 4.6 next)
@@ -65,6 +65,7 @@ Progress: [█████████████████░░░] 83% (Ph
 | Phase 04 P03 | 5 | 1 task | 1 file |
 | Phase 04.5 P03 | 15 | 2 tasks | 3 files |
 | Phase 04.5 P04 | 15 | 2 tasks | 1 file |
+| Phase 04.7 P02 | 25 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -112,6 +113,8 @@ Recent decisions affecting current work:
 - [04-02]: Pre-existing score_jpg_url test failure is out-of-scope disk constraint from Phase 1 — not fixed in Phase 4
 - [04.5-04]: Two-effect localStorage pattern used in PsalmNotationPlayer: separate restore-on-mount and persist-on-change effects to avoid race conditions
 - [04.5-04]: psalter-db container password mismatch diagnosed and fixed via ALTER USER — db was initialised with stale credentials; production verified via E2E curl tests
+- [04.7-02]: renderSnippet uses strong (not b) — Wave 0 Playwright stub selects [data-psalm-box] strong; globals.css updated to target both b and strong
+- [04.7-02]: psalter-db password re-fixed via ALTER USER (regressed between sessions); .env password is 'postgres'
 
 ### Pending Todos
 
