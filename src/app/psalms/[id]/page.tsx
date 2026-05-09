@@ -15,7 +15,11 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
-  const psalm = await fetchPsalmDetail(Number(id))
+  const psalmId = Number(id)
+  if (!Number.isFinite(psalmId) || psalmId < 1 || psalmId > 150) {
+    return { title: `Psalm ${id} | CPRC Psalter` }
+  }
+  const psalm = await fetchPsalmDetail(psalmId)
   return {
     title: psalm?.bibleTitle
       ? `${psalm.bibleTitle} | CPRC Psalter`
@@ -101,6 +105,7 @@ export default async function PsalmPage({ params }: PageProps) {
               width="100%"
               height="96"
               allow="autoplay"
+              sandbox="allow-scripts allow-same-origin"
               src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(primaryTune.soundcloudUrl)}&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false`}
               className="rounded-md border border-border"
             />

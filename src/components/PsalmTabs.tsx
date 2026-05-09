@@ -75,6 +75,7 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
                 width="100%"
                 height="96"
                 allow="autoplay"
+                sandbox="allow-scripts allow-same-origin"
                 src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(primaryTune.soundcloudUrl)}&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false`}
                 className="rounded-md border border-border"
               />
