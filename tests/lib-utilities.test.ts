@@ -90,3 +90,21 @@ describe('lyrics helpers (TUNE-03)', () => {
     expect(syllabifyForAbc('Lord:')).toBe('Lord:')
   })
 })
+
+describe('stanza number display fix (D-07)', () => {
+  it('inserts space between digit and immediately following letter', () => {
+    expect('1All people'.replace(/^(\d+)([A-Za-z])/, '$1 $2')).toBe('1 All people')
+  })
+  it('handles multi-digit stanza numbers', () => {
+    expect('10Behold'.replace(/^(\d+)([A-Za-z])/, '$1 $2')).toBe('10 Behold')
+  })
+  it('handles lowercase letter immediately after digit', () => {
+    expect('2yea'.replace(/^(\d+)([A-Za-z])/, '$1 $2')).toBe('2 yea')
+  })
+  it('does not modify stanzas that already have a space', () => {
+    expect('1 All people'.replace(/^(\d+)([A-Za-z])/, '$1 $2')).toBe('1 All people')
+  })
+  it('does not modify stanzas with no leading digit', () => {
+    expect('All people'.replace(/^(\d+)([A-Za-z])/, '$1 $2')).toBe('All people')
+  })
+})
