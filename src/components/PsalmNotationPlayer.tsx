@@ -54,18 +54,16 @@ export function PsalmNotationPlayer({
 
   // State
   const [groupIndex, setGroupIndex] = useState(0)
-  // Staff|Solfège toggle (D-09) — localStorage persistence added in Plan 04
-  const [scoreMode, setScoreMode] = useState<ScoreMode>('staff')
+  // Staff|Solfège toggle (D-09) — lazy init reads localStorage to avoid flash
+  const [scoreMode, setScoreMode] = useState<ScoreMode>(() => {
+    try {
+      return localStorage.getItem('psalter-score-mode') === 'solfege' ? 'solfege' : 'staff'
+    } catch {
+      return 'staff'
+    }
+  })
   // Show notation|Lyrics only toggle (D-10)
   const [displayMode, setDisplayMode] = useState<DisplayMode>('notation')
-
-  // Restore Staff|Solfège preference from localStorage on mount (D-09)
-  useEffect(() => {
-    const stored = localStorage.getItem('psalter-score-mode')
-    if (stored === 'solfege') {
-      setScoreMode('solfege')
-    }
-  }, [])
 
   // Persist Staff|Solfège preference to localStorage on change (D-09)
   useEffect(() => {
@@ -91,7 +89,7 @@ export function PsalmNotationPlayer({
   const lastStanzaNum = groupIndex * 4 + currentGroup.length
   const counterLabel =
     stanzas.length <= 1
-      ? `Stanza 1 / 1`
+      ? `Stanza ${stanzas.length} / ${stanzas.length}`
       : `Stanzas ${firstStanzaNum}–${lastStanzaNum} / ${stanzas.length}`
 
   // Build ABC string with current stanza group lyrics (D-08)
@@ -152,7 +150,9 @@ export function PsalmNotationPlayer({
       {/* ── Lyrics only mode (D-10): all stanzas as scrollable text ──────── */}
       {displayMode === 'lyrics-only' ? (
         <div className="space-y-4 py-2">
-          {stanzas.map((stanza, i) => (
+          {stanzas.length === 0 ? (
+            <p className="text-sm text-muted-foreground italic">No lyrics available.</p>
+          ) : stanzas.map((stanza, i) => (
             <p
               key={i}
               className="text-foreground leading-relaxed whitespace-pre-line text-sm"
