@@ -411,9 +411,13 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
               maskImage: 'linear-gradient(to right, black calc(100% - 2.5rem), transparent)',
             }}
           >
-            <TabsList className="flex h-auto gap-1 bg-transparent p-0 w-max">
+            <TabsList className="flex h-auto gap-0 bg-transparent p-0 w-max border-b border-border">
               {MOBILE_TABS.map(({ value, label }) => (
-                <TabsTrigger key={value} value={value} className="flex-shrink-0 text-base font-semibold px-4 py-2 h-auto">
+                <TabsTrigger
+                  key={value}
+                  value={value}
+                  className="flex-shrink-0 text-base font-semibold px-4 py-2 h-auto rounded-none border-b-[3px] border-transparent -mb-px data-[active]:border-foreground data-[active]:bg-transparent data-[active]:text-foreground"
+                >
                   {label}
                 </TabsTrigger>
               ))}
