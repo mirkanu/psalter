@@ -400,8 +400,8 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
 
   return (
     <>
-      {/* ══ MOBILE LAYOUT (< lg) ════════════════════════════════════════════ */}
-      <div className="lg:hidden">
+      {/* ══ MOBILE LAYOUT (< md) ════════════════════════════════════════════ */}
+      <div className="md:hidden">
         <Tabs defaultValue="sing">
           {/* Top scrollable tab list — horizontal scroll only */}
           <div
@@ -427,8 +427,8 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
         </Tabs>
       </div>
 
-      {/* ══ DESKTOP / LANDSCAPE LAYOUT (≥ lg) ══════════════════════════════ */}
-      <div className="hidden lg:grid lg:grid-cols-2 gap-8 items-start">
+      {/* ══ DESKTOP / LANDSCAPE LAYOUT (≥ md) ══════════════════════════════ */}
+      <div className="hidden md:grid md:grid-cols-2 gap-8 items-start">
         {/* Left: Sing content — always visible */}
         <div>{singPanel}</div>
 
