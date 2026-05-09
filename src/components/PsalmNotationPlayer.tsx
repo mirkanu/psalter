@@ -20,7 +20,9 @@ function chunk<T>(arr: T[], size: number): T[][] {
  * Replaces all existing w: lines so abcjs renders the correct stanzas.
  */
 function buildAbcWithStanzas(baseAbc: string, stanzaGroup: string[]): string {
-  const withoutW = baseAbc.replace(/^w:.*$/gm, '').replace(/\n{3,}/g, '\n\n').trim()
+  // Strip w: lines then collapse blank lines — blank lines in ABC mean "new tune"
+  // which causes abcjs to only render the first voice line
+  const withoutW = baseAbc.replace(/^w:.*$/gm, '').replace(/\n\n+/g, '\n').trim()
   const wLines = stanzaGroup.map((s) => `w: ${s.replace(/\n/g, ' ')}`).join('\n')
   return `${withoutW}\n${wLines}`
 }
