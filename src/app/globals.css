@@ -131,5 +131,5 @@
 
 /* Search result snippet — scope ts_headline <b> tags to avoid polluting other bold elements */
 [data-snippet] b {
-  font-weight: 600;
+  font-weight: 700;
 }
