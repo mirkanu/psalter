@@ -57,7 +57,7 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
       </TabsList>
 
       {/* ── TAB: TUNE (mobile only — D-06) ────────────────────────────────── */}
-      <TabsContent value="tune" className="space-y-4">
+      <TabsContent value="tune" className="space-y-6">
         {primaryTune ? (
           <>
             <div className="space-y-1">
@@ -88,7 +88,7 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
 
       {/* ── TAB 1: OVERVIEW — metadata only (D-07) ────────────────────────── */}
       {/* NO lyrics. NO SoundCloud. Those live below the tabs in page.tsx.    */}
-      <TabsContent value="overview" className="space-y-4">
+      <TabsContent value="overview" className="space-y-6">
         <div className="space-y-2">
           {psalm.book && (
             <p className="text-sm text-muted-foreground">
@@ -148,7 +148,7 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
       </TabsContent>
 
       {/* ── TAB 2: 365 DAYS ─────────────────────────────────────────────────── */}
-      <TabsContent value="365days">
+      <TabsContent value="365days" className="space-y-6">
         {dailyEntry ? (
           <div className="space-y-2">
             <p className="text-foreground">
@@ -235,9 +235,9 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
       </TabsContent>
 
       {/* ── TAB 4: MESSIANIC ────────────────────────────────────────────────── */}
-      <TabsContent value="messianic">
+      <TabsContent value="messianic" className="space-y-6">
         {messianic ? (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {messianic.classification && (
               <div>
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-1">
@@ -271,7 +271,7 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
       </TabsContent>
 
       {/* ── TAB 5: PARALLEL ─────────────────────────────────────────────────── */}
-      <TabsContent value="parallel">
+      <TabsContent value="parallel" className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
@@ -279,14 +279,17 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
             </h2>
             {lyrics ? (
               <div className="space-y-3">
-                {lyrics.split('\n\n').filter(Boolean).map((stanza, i) => (
-                  <p
-                    key={i}
-                    className="text-foreground leading-relaxed whitespace-pre-line text-sm"
-                  >
-                    {stanza}
-                  </p>
-                ))}
+                {lyrics.split('\n\n').filter(Boolean).map((stanza, i) => {
+                  const display = stanza.trim().replace(/^(\d+)([A-Za-z])/, '$1 $2')
+                  return (
+                    <p
+                      key={i}
+                      className="text-foreground leading-relaxed whitespace-pre-line text-sm"
+                    >
+                      {display}
+                    </p>
+                  )
+                })}
               </div>
             ) : (
               <p className="text-muted-foreground italic text-sm">
@@ -317,7 +320,7 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
       </TabsContent>
 
       {/* ── TAB 6: BACKUP TUNES ─────────────────────────────────────────────── */}
-      <TabsContent value="backup-tunes">
+      <TabsContent value="backup-tunes" className="space-y-6">
         {backupTunes.length > 0 ? (
           <ul className="space-y-3">
             {backupTunes.map((tune) => (
@@ -338,7 +341,7 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
       </TabsContent>
 
       {/* ── TAB 7: HISTORICAL TUNES ─────────────────────────────────────────── */}
-      <TabsContent value="historical-tunes">
+      <TabsContent value="historical-tunes" className="space-y-6">
         <p className="text-muted-foreground italic">No historical tunes recorded.</p>
       </TabsContent>
     </Tabs>

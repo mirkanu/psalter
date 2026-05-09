@@ -50,7 +50,7 @@ export function PsalmNotationPlayer({
   // Split lyrics into stanzas, then group by 4 (D-08)
   const stanzas = lyrics
     .split('\n\n')
-    .map((s) => s.trim())
+    .map((s) => s.trim().replace(/^(\d+)([A-Za-z])/, '$1 $2'))
     .filter(Boolean)
   const stanzaGroups = chunk(stanzas, 4)
 
