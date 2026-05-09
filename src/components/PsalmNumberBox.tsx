@@ -56,7 +56,7 @@ export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, s
       {hasContent ? (
         <>
           <div className="flex items-start justify-between w-full">
-            <span className="text-lg font-bold font-mono tabular-nums text-foreground leading-none">
+            <span className="text-sm font-semibold font-mono tabular-nums text-foreground leading-none">
               {psalm.id}
             </span>
             {showMeter && psalm.meter && (
@@ -77,7 +77,7 @@ export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, s
         </>
       ) : (
         <>
-          <span className="text-lg font-bold font-mono tabular-nums text-foreground leading-none">
+          <span className="text-sm font-semibold font-mono tabular-nums text-foreground leading-none">
             {psalm.id}
           </span>
           {showMeter && psalm.meter && (
