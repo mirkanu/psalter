@@ -17,6 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Search** - Full-text search over lyrics/KJV, topic browse, tune meter filter (completed 2026-05-08)
 - [x] **Phase 4: Notation** - abcjs live SVG rendering with hymnal layout, JPG fallback, mobile-responsive (completed 2026-05-08)
 - [x] **Phase 4.5 (INSERTED): Psalm Detail Overhaul** - 7-tab psalm page matching psalter.cprc.co.uk; lyrics + score + audio in Overview; abcjs stanza navigation; Staff/Solfège toggle; loading skeletons on psalm and tune routes (completed 2026-05-09)
+- [ ] **Phase 4.6 (INSERTED): Psalm Detail UI Polish** - UI review and fix pass on the single psalm view; address layout clutter, spacing, hierarchy, and visual polish surfaced by GSD UI review
 - [ ] **Phase 5: Precentor Portal** - Better Auth login, service event CRUD, psalm+tune set list builder, live service view with pre-loaded notation
 - [ ] **Phase 6: Polish** - OG images, Lighthouse 90+, bundle analysis, click feedback, loading skeletons on remaining routes
 
@@ -148,6 +149,18 @@ Plans:
 - [x] 04.5-04-PLAN.md — Add Staff/Solfège toggle to PsalmNotationPlayer; human-verify all 7 tabs + notation + toggle on mobile
 **UI hint**: yes
 
+### Phase 4.6 (INSERTED): Psalm Detail UI Polish
+**Goal**: The single psalm view is clean, readable, and visually coherent — layout clutter removed, spacing and hierarchy fixed, mobile and desktop both polished
+**Depends on**: Phase 4.5
+**Requirements**: UI-01 (psalm detail layout), UI-02 (score area presentation), UI-03 (mobile readability)
+**Success Criteria** (what must be TRUE):
+  1. GSD UI review of /psalms/[id] passes all 6 pillars (or all findings addressed)
+  2. Score controls (Staff/Solfège/Show notation/Lyrics only) are visually grouped and clearly separated from lyrics content
+  3. The page has no obvious clutter, overcrowded sections, or broken spacing at 375px, 768px, and 1280px
+  4. Typography hierarchy is clear: psalm title > section labels > body text
+**Plans**: TBD (2-3 plans)
+**UI hint**: yes
+
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
 **Depends on**: Phase 4.5
@@ -185,5 +198,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 5 → 6
 | 3. Search | 6/6 | Complete | 2026-05-08 |
 | 4. Notation | 4/4 | Complete | 2026-05-08 |
 | 4.5. Psalm Detail Overhaul | 4/4 | Complete | 2026-05-09 |
+| 4.6. Psalm Detail UI Polish | 0/TBD | Not started | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |

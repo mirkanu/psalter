@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Phase 4.5 complete — Phase 5 (Precentor Portal) next
-last_updated: "2026-05-09T12:00:00.000Z"
+stopped_at: Phase 4.6 (Psalm Detail UI Polish) inserted — ready to plan
+last_updated: "2026-05-09T13:00:00.000Z"
 last_activity: 2026-05-09
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 5
   total_plans: 20
   completed_plans: 20
-  percent: 97
+  percent: 83
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 
 ## Current Position
 
-Phase: 4.5
-Plan: 4
-Status: Complete — Phase 4.5 fully delivered; Phase 5 next
+Phase: 4.6
+Plan: —
+Status: Not started — Phase 4.5 closed; Phase 4.6 (Psalm Detail UI Polish) inserted
 Last activity: 2026-05-09
 
-Progress: [████████████████████] 97% (Phase 01+02+03+04+04.5 complete; Phase 5 next)
+Progress: [█████████████████░░░] 83% (Phase 01+02+03+04+04.5 complete; Phase 4.6 next)
 
 ## Performance Metrics
 
