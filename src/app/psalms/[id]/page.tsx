@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { fetchPsalmDetail, fetchPsalmIds } from '@/db/queries/psalms'
 import { PsalmTabs } from '@/components/PsalmTabs'
+import { PsalmNotationPlayerClient } from '@/components/PsalmNotationPlayerClient'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -78,11 +79,14 @@ export default async function PsalmPage({ params }: PageProps) {
             </section>
           )}
 
-          {/* NOTATION PLAYER SLOT — PsalmNotationPlayer wired here in Plan 03 */}
+          {/* PsalmNotationPlayer — loaded client-side only (abcjs requires DOM) */}
           {primaryTune && (
-            <div className="mt-2 p-4 border border-dashed border-muted-foreground/30 rounded-md text-muted-foreground text-sm">
-              Notation player (coming in Plan 03)
-            </div>
+            <PsalmNotationPlayerClient
+              abc={primaryTune.abcNotation ?? null}
+              lyrics={lyrics ?? ''}
+              solfegeJpgUrl={primaryTune.solfegeJpgUrl ?? null}
+              tuneName={primaryTune.name}
+            />
           )}
         </div>
 
