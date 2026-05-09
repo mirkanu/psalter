@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Notation** - abcjs live SVG rendering with hymnal layout, JPG fallback, mobile-responsive (completed 2026-05-08)
 - [x] **Phase 4.5 (INSERTED): Psalm Detail Overhaul** - 7-tab psalm page matching psalter.cprc.co.uk; lyrics + score + audio in Overview; abcjs stanza navigation; Staff/Solfège toggle; loading skeletons on psalm and tune routes (completed 2026-05-09)
 - [ ] **Phase 4.6 (INSERTED): Psalm Detail UI Polish** - UI review and fix pass on the single psalm view; address layout clutter, spacing, hierarchy, and visual polish surfaced by GSD UI review
-- [ ] **Phase 4.7 (INSERTED): Psalm Listing Overhaul** - Redesign /psalms page: dense numbered-box grid, instant free-type search (number lookup + lyric/KJV text search with bold match + relevance sort + Enter to open), collapsible Advanced panel (first-line toggle, meter toggle, meter filter), remove existing filter controls
+- [x] **Phase 4.7 (INSERTED): Psalm Listing Overhaul** - Redesign /psalms page: dense numbered-box grid, instant free-type search (number lookup + lyric/KJV text search with bold match + relevance sort + Enter to open), collapsible Advanced panel (first-line toggle, meter toggle, meter filter), remove existing filter controls
 - [ ] **Phase 5: Precentor Portal** - Better Auth login, service event CRUD, psalm+tune set list builder, live service view with pre-loaded notation
 - [ ] **Phase 6: Polish** - OG images, Lighthouse 90+, bundle analysis, click feedback, loading skeletons on remaining routes
 
@@ -189,7 +189,7 @@ Plans:
 - [x] 04.7-02-PLAN.md — PsalmNumberBox + PsalmListingGrid components + page.tsx wiring (query + kjvExcerpt + component swap)
 
 **Wave 2** *(depends on Wave 1)*
-- [ ] 04.7-03-PLAN.md — loading.tsx dense skeleton update + delete PsalmGrid/PsalmCard + Playwright UAT (human checkpoint)
+- [x] 04.7-03-PLAN.md — loading.tsx dense skeleton update + delete PsalmGrid/PsalmCard + Playwright UAT (human checkpoint)
 **UI hint**: yes
 
 ### Phase 5: Precentor Portal
@@ -230,6 +230,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 →
 | 4. Notation | 4/4 | Complete | 2026-05-08 |
 | 4.5. Psalm Detail Overhaul | 4/4 | Complete | 2026-05-09 |
 | 4.6. Psalm Detail UI Polish | 0/3 | Not started | - |
-| 4.7. Psalm Listing Overhaul | 1/3 | In progress | - |
+| 4.7. Psalm Listing Overhaul | 3/3 | Complete | 2026-05-09 |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
