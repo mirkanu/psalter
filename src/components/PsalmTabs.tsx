@@ -413,7 +413,7 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
           >
             <TabsList className="flex h-auto gap-1 bg-transparent p-0 w-max">
               {MOBILE_TABS.map(({ value, label }) => (
-                <TabsTrigger key={value} value={value} className="flex-shrink-0">
+                <TabsTrigger key={value} value={value} className="flex-shrink-0 text-base font-semibold px-4 py-2 h-auto">
                   {label}
                 </TabsTrigger>
               ))}
