@@ -129,7 +129,8 @@
   }
 }
 
-/* Search result snippet — scope ts_headline <b> tags to avoid polluting other bold elements */
-[data-snippet] b {
+/* Search result snippet — scope ts_headline <b>/<strong> tags to avoid polluting other bold elements */
+[data-snippet] b,
+[data-snippet] strong {
   font-weight: 700;
 }
