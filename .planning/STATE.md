@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Phase 4.6 (Psalm Detail UI Polish) inserted — ready to plan
-last_updated: "2026-05-09T13:00:00.000Z"
+stopped_at: Phase 4.6 planned — 3 plans ready to execute
+last_updated: "2026-05-09T14:00:00.000Z"
 last_activity: 2026-05-09
 progress:
   total_phases: 7
   completed_phases: 5
-  total_plans: 20
+  total_plans: 23
   completed_plans: 20
   percent: 83
 ---
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 
 Phase: 4.6
 Plan: —
-Status: Not started — Phase 4.5 closed; Phase 4.6 (Psalm Detail UI Polish) inserted
+Status: Ready to execute — 3 plans planned (Wave 1: layout restructure; Wave 2: A± toggle + mobile nav)
 Last activity: 2026-05-09
 
 Progress: [█████████████████░░░] 83% (Phase 01+02+03+04+04.5 complete; Phase 4.6 next)
