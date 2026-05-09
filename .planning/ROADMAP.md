@@ -183,7 +183,7 @@ Plans:
 
 Plans:
 **Wave 0**
-- [ ] 04.7-01-PLAN.md — Playwright test stubs (PLR-01/02/03), shadcn Checkbox install, globals.css [data-snippet] b → font-weight: 700
+- [x] 04.7-01-PLAN.md — Playwright test stubs (PLR-01/02/03), shadcn Checkbox install, globals.css [data-snippet] b → font-weight: 700
 
 **Wave 1** *(depends on Wave 0)*
 - [ ] 04.7-02-PLAN.md — PsalmNumberBox + PsalmListingGrid components + page.tsx wiring (query + kjvExcerpt + component swap)
@@ -230,6 +230,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 →
 | 4. Notation | 4/4 | Complete | 2026-05-08 |
 | 4.5. Psalm Detail Overhaul | 4/4 | Complete | 2026-05-09 |
 | 4.6. Psalm Detail UI Polish | 0/3 | Not started | - |
-| 4.7. Psalm Listing Overhaul | 0/3 | Not started | - |
+| 4.7. Psalm Listing Overhaul | 1/3 | In progress | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
