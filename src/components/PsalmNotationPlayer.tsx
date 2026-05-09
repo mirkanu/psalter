@@ -31,6 +31,7 @@ function buildAbcWithStanzas(baseAbc: string, stanzaGroup: string[]): string {
 
 type ScoreMode = 'staff' | 'solfege'
 type DisplayMode = 'notation' | 'lyrics-only'
+type LyricsSize = 'sm' | 'base' | 'lg'
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -67,10 +68,27 @@ export function PsalmNotationPlayer({
   // Show notation|Lyrics only toggle (D-10)
   const [displayMode, setDisplayMode] = useState<DisplayMode>('notation')
 
+  // A±  font size toggle (D-08/D-09) — lazy init reads localStorage to avoid flash
+  const [lyricsSize, setLyricsSize] = useState<LyricsSize>(() => {
+    try {
+      const stored = localStorage.getItem('psalter-lyrics-size')
+      if (stored === 'sm' || stored === 'lg') return stored
+    } catch { /* ignore */ }
+    return 'base'
+  })
+
   // Persist Staff|Solfège preference to localStorage on change (D-09)
   useEffect(() => {
     localStorage.setItem('psalter-score-mode', scoreMode)
   }, [scoreMode])
+
+  // Persist lyrics font size preference to localStorage on change (D-08)
+  useEffect(() => {
+    localStorage.setItem('psalter-lyrics-size', lyricsSize)
+  }, [lyricsSize])
+
+  // Lyrics size class mapping (D-10)
+  const lyricsSizeClass = { sm: 'text-sm', base: 'text-base', lg: 'text-lg' }[lyricsSize]
 
   // Fallback chain (D-13)
   const hasAbc = abc !== null && abc.trim().length > 0
@@ -147,6 +165,28 @@ export function PsalmNotationPlayer({
             Lyrics only
           </Button>
         </div>
+
+        {/* A− | A+ font size toggle (D-08/D-09) */}
+        <div className="flex gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setLyricsSize((s) => s === 'lg' ? 'base' : 'sm')}
+            aria-label="Decrease lyrics font size"
+            disabled={lyricsSize === 'sm'}
+          >
+            A−
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setLyricsSize((s) => s === 'sm' ? 'base' : 'lg')}
+            aria-label="Increase lyrics font size"
+            disabled={lyricsSize === 'lg'}
+          >
+            A+
+          </Button>
+        </div>
       </div>
 
       {/* ── Lyrics only mode (D-10): all stanzas as scrollable text ──────── */}
@@ -157,7 +197,7 @@ export function PsalmNotationPlayer({
           ) : stanzas.map((stanza, i) => (
             <p
               key={i}
-              className="text-foreground leading-relaxed whitespace-pre-line text-sm"
+              className={`text-foreground leading-relaxed whitespace-pre-line ${lyricsSizeClass}`}
             >
               <span className="text-xs text-muted-foreground font-mono mr-2">
                 {i + 1}.
