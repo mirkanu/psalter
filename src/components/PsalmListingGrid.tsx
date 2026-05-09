@@ -39,6 +39,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
   const [showFirstLine, setShowFirstLine] = useState(false)
   const [showMeter, setShowMeter] = useState(false)
   const [meterFilter, setMeterFilter] = useState('all')
+  const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
@@ -46,6 +47,8 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
 
   const trimmedQuery = query.trim()
   const isNumeric = /^\d+$/.test(trimmedQuery)
+
+  useEffect(() => { setSelectedIndex(0) }, [trimmedQuery, meterFilter])
 
   const meters = useMemo(() => {
     const unique = Array.from(
@@ -77,7 +80,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
         const kjvSnippet = buildSnippet(p.kjvExcerpt, trimmedQuery)
         const snippet = firstLineSnippet ?? kjvSnippet
         const fl = p.firstLine?.toLowerCase() ?? ''
-        const relevance = fl.split(/\s+/).includes(lowerQuery) ? 0
+        const relevance = (!lowerQuery.includes(' ') && fl.split(/\s+/).includes(lowerQuery)) ? 0
           : fl.includes(lowerQuery) ? 1
           : 2
         return { ...p, snippet, relevance }
@@ -88,18 +91,25 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
     return withMatch.map(({ relevance: _r, ...p }) => p)
   }, [psalms, trimmedQuery, isNumeric, meterFilter])
 
-  const topResult = filteredPsalms[0] ?? null
+  const clampedIndex = Math.min(selectedIndex, Math.max(0, filteredPsalms.length - 1))
+  const selectedPsalm = filteredPsalms[clampedIndex] ?? null
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' && topResult) {
-      router.push(`/psalms/${topResult.id}`)
+    if (e.key === 'Enter' && selectedPsalm) {
+      router.push(`/psalms/${selectedPsalm.id}`)
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setSelectedIndex(i => Math.min(i + 1, filteredPsalms.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setSelectedIndex(i => Math.max(i - 1, 0))
     }
   }
 
-  const hasExpanded = showFirstLine || (trimmedQuery.length > 0 && !isNumeric)
+  const hasExpanded = showFirstLine || showMeter || (trimmedQuery.length > 0 && !isNumeric)
   const gridCols = hasExpanded
     ? "grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10"
-    : "grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-[15]"
+    : "grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-[repeat(15,minmax(0,1fr))]"
 
   return (
     <div className="space-y-4">
@@ -198,11 +208,11 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
         </div>
       ) : (
         <div className={`grid ${gridCols} gap-2`}>
-          {filteredPsalms.map((psalm) => (
+          {filteredPsalms.map((psalm, idx) => (
             <PsalmNumberBox
               key={psalm.id}
               psalm={psalm}
-              isTopResult={topResult?.id === psalm.id}
+              isTopResult={trimmedQuery.length > 0 && idx === clampedIndex}
               showFirstLine={showFirstLine}
               showMeter={showMeter}
               snippet={psalm.snippet ?? null}
