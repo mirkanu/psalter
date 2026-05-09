@@ -37,6 +37,7 @@ type LyricsSize = 'sm' | 'base' | 'lg'
 interface PsalmNotationPlayerProps {
   abc: string | null
   lyrics: string
+  scoreJpgUrl: string | null
   solfegeJpgUrl: string | null
   tuneName: string
 }
@@ -44,6 +45,7 @@ interface PsalmNotationPlayerProps {
 export function PsalmNotationPlayer({
   abc,
   lyrics,
+  scoreJpgUrl,
   solfegeJpgUrl,
   tuneName,
 }: PsalmNotationPlayerProps) {
@@ -86,16 +88,19 @@ export function PsalmNotationPlayer({
 
   // Fallback chain (D-13)
   const hasAbc = abc !== null && abc.trim().length > 0
+  const hasScoreJpg = scoreJpgUrl !== null && scoreJpgUrl.trim().length > 0
   const hasSolfege = solfegeJpgUrl !== null && solfegeJpgUrl.trim().length > 0
 
-  if (!hasAbc && !hasSolfege) {
+  if (!hasAbc && !hasScoreJpg && !hasSolfege) {
     return (
       <p className="text-sm text-muted-foreground italic">Score not yet available.</p>
     )
   }
 
-  // When only solfège is available, force solfège mode and hide Staff toggle
-  const solfegeOnly = !hasAbc && hasSolfege
+  // When ABC is unavailable, images are shown with full lyrics below
+  const imageOnlyMode = !hasAbc
+  // Staff button visible when ABC or a score JPG is available
+  const canShowStaff = hasAbc || hasScoreJpg
 
   // Current stanza group
   const currentGroup = stanzaGroups[groupIndex] ?? []
@@ -120,7 +125,7 @@ export function PsalmNotationPlayer({
 
         {/* Staff | Solfège | Lyrics — unified 3-button toggle */}
         <div className="flex gap-1">
-          {!solfegeOnly && (
+          {canShowStaff && (
             <Button
               variant={viewMode === 'staff' ? 'default' : 'outline'}
               size="xs"
@@ -194,16 +199,48 @@ export function PsalmNotationPlayer({
         <>
           {/* ── Score area ──────────────────────────────────────────────── */}
 
-          {/* Solfège-only fallback: static JPG, no stanza nav */}
-          {solfegeOnly ? (
-            <div className="relative w-full max-w-2xl mx-auto aspect-[3/2]">
-              <Image
-                src={solfegeJpgUrl!}
-                alt={`Solfège score for ${tuneName}`}
-                fill
-                className="object-contain rounded-md border border-border"
-              />
-            </div>
+          {imageOnlyMode ? (
+            /* No ABC: show image for current mode + full lyrics below */
+            <>
+              {viewMode === 'staff' && hasScoreJpg ? (
+                <div className="relative w-full max-w-2xl mx-auto aspect-[3/2]">
+                  <Image
+                    src={scoreJpgUrl!}
+                    alt={`Score for ${tuneName}`}
+                    fill
+                    className="object-contain rounded-md border border-border"
+                  />
+                </div>
+              ) : viewMode === 'staff' ? (
+                <p className="text-sm text-muted-foreground italic">Staff score not yet available.</p>
+              ) : hasSolfege ? (
+                <div className="relative w-full max-w-2xl mx-auto aspect-[3/2]">
+                  <Image
+                    src={solfegeJpgUrl!}
+                    alt={`Solfège score for ${tuneName}`}
+                    fill
+                    className="object-contain rounded-md border border-border"
+                  />
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">Solfège score not yet available.</p>
+              )}
+
+              {/* Full lyrics below the image */}
+              {stanzas.length > 0 && (
+                <div className="space-y-4 py-2 mt-4 border-t border-border">
+                  {stanzas.map((stanza, i) => (
+                    <p
+                      key={i}
+                      className={`text-foreground leading-relaxed whitespace-pre-line ${lyricsSizeClass}`}
+                    >
+                      <span className="text-xs text-muted-foreground font-mono mr-2">{i + 1}.</span>
+                      {stanza}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </>
           ) : viewMode === 'staff' ? (
             /* Staff mode: abcjs SVG with current stanza group lyrics */
             <AbcRenderer abc={abcForRender} title={tuneName} />
@@ -225,8 +262,8 @@ export function PsalmNotationPlayer({
             )
           )}
 
-          {/* ── Stanza group nav BELOW score — hidden in solfège mode and when only one group */}
-          {!solfegeOnly && viewMode === 'staff' && stanzaGroups.length > 1 && (
+          {/* ── Stanza group nav BELOW score — only when ABC is rendering */}
+          {!imageOnlyMode && viewMode === 'staff' && stanzaGroups.length > 1 && (
             <div className="space-y-2 mt-2">
               <p className="text-xs text-muted-foreground text-center">{counterLabel}</p>
               <div className="flex justify-between gap-2">

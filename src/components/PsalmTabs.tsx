@@ -350,6 +350,7 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
         <PsalmNotationPlayerClient
           abc={primaryTune.abcNotation ?? null}
           lyrics={lyrics ?? ''}
+          scoreJpgUrl={primaryTune.scoreJpgUrl ?? null}
           solfegeJpgUrl={primaryTune.solfegeJpgUrl ?? null}
           tuneName={primaryTune.name}
         />
