@@ -139,7 +139,7 @@ Plans:
 - [x] 04.5-01-PLAN.md — Extend fetchPsalmDetail query (dailyEntry + primaryTune + backup/historical tunes); add PsalmDetailSkeleton component; add loading.tsx on /psalms, /psalms/[id], /tunes, /tunes/[id]
 
 **Wave 2** *(depends on Wave 1)*
-- [ ] 04.5-02-PLAN.md — Rewrite PsalmTabs.tsx to implement all 7 tabs with correct data from extended query
+- [x] 04.5-02-PLAN.md — Rewrite PsalmTabs.tsx to implement all 7 tabs with correct data from extended query
 
 **Wave 3** *(depends on Wave 2)*
 - [ ] 04.5-03-PLAN.md — Create PsalmNotationPlayer.tsx: stanza navigation, abcjs rendering per stanza, fallback to solfège JPG when no ABC
@@ -184,6 +184,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 5 → 6
 | 2. Public Browse | 5/5 | Complete | 2026-05-08 |
 | 3. Search | 6/6 | Complete | 2026-05-08 |
 | 4. Notation | 4/4 | Complete | 2026-05-08 |
-| 4.5. Psalm Detail Overhaul | 1/4 | In progress | - |
+| 4.5. Psalm Detail Overhaul | 2/4 | In progress | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
