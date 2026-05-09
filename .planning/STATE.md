@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: context exhaustion at 91% (2026-05-08)
-last_updated: "2026-05-09T00:00:00.000Z"
+status: in-progress
+stopped_at: Phase 4.5 complete — Phase 5 (Precentor Portal) next
+last_updated: "2026-05-09T12:00:00.000Z"
 last_activity: 2026-05-09
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 20
-  completed_plans: 19
-  percent: 95
+  completed_plans: 20
+  percent: 97
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-07)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 03 — search
+**Current focus:** Phase 5 — Precentor Portal
 
 ## Current Position
 
 Phase: 4.5
 Plan: 4
-Status: Awaiting human checkpoint (04.5-04 Task 2)
+Status: Complete — Phase 4.5 fully delivered; Phase 5 next
 Last activity: 2026-05-09
 
-Progress: [████████████████████] 95% (Phase 01+02+03+04 complete + 04.5-01 through 04.5-04 Task 1 done; awaiting checkpoint)
+Progress: [████████████████████] 97% (Phase 01+02+03+04+04.5 complete; Phase 5 next)
 
 ## Performance Metrics
 
@@ -64,7 +64,7 @@ Progress: [████████████████████] 95% (Ph
 | Phase 04 P02 | 20 | 2 tasks | 2 files |
 | Phase 04 P03 | 5 | 1 task | 1 file |
 | Phase 04.5 P03 | 15 | 2 tasks | 3 files |
-| Phase 04.5 P04 | 10 | 1 task | 1 file |
+| Phase 04.5 P04 | 15 | 2 tasks | 1 file |
 
 ## Accumulated Context
 
@@ -110,6 +110,8 @@ Recent decisions affecting current work:
 - [04-02]: "Old 100th" is the exact DB name for Old Hundredth tune; LM meter stored as "LM (long meter, 88 88)" not abbreviated "LM"
 - [04-02]: St. Michael absent from DB; Trentham (SM) substituted to maintain CM(3)+LM(1)+SM(1) coverage
 - [04-02]: Pre-existing score_jpg_url test failure is out-of-scope disk constraint from Phase 1 — not fixed in Phase 4
+- [04.5-04]: Two-effect localStorage pattern used in PsalmNotationPlayer: separate restore-on-mount and persist-on-change effects to avoid race conditions
+- [04.5-04]: psalter-db container password mismatch diagnosed and fixed via ALTER USER — db was initialised with stale credentials; production verified via E2E curl tests
 
 ### Pending Todos
 
@@ -132,6 +134,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-09T00:00:00.000Z
-Stopped at: 04.5-04-PLAN.md Task 1 complete — awaiting human checkpoint (Task 2)
+Last session: 2026-05-09T12:00:00.000Z
+Stopped at: Phase 4.5 complete — 04.5-04-PLAN.md fully verified; Phase 5 (Precentor Portal) ready to begin
 Resume file: None
