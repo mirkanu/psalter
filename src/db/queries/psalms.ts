@@ -32,8 +32,20 @@ export const fetchPsalmDetail = cache(async function fetchPsalmDetail(id: number
       },
       sectionHeadings: { orderBy: (s, { asc }) => [asc(s.verseStart)] },
       messianicPsalms: true,
+      dailyReadings: {
+        columns: { id: true, dayNumber: true, readingDate: true, notes: true },
+        limit: 1,
+      },
+      psalmTopics: {
+        with: { topic: { columns: { id: true, name: true, topicType: true } } },
+      },
     },
   })
 })
 
 export type PsalmDetail = NonNullable<Awaited<ReturnType<typeof fetchPsalmDetail>>>
+
+export type PsalmDailyEntry = NonNullable<PsalmDetail['dailyReadings']>[number]
+export type PsalmTuneLink = NonNullable<
+  PsalmDetail['psalmVersions'][number]['psalmVersionTunes'][number]
+>
