@@ -18,6 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Notation** - abcjs live SVG rendering with hymnal layout, JPG fallback, mobile-responsive (completed 2026-05-08)
 - [x] **Phase 4.5 (INSERTED): Psalm Detail Overhaul** - 7-tab psalm page matching psalter.cprc.co.uk; lyrics + score + audio in Overview; abcjs stanza navigation; Staff/Solfège toggle; loading skeletons on psalm and tune routes (completed 2026-05-09)
 - [ ] **Phase 4.6 (INSERTED): Psalm Detail UI Polish** - UI review and fix pass on the single psalm view; address layout clutter, spacing, hierarchy, and visual polish surfaced by GSD UI review
+- [ ] **Phase 4.7 (INSERTED): Psalm Listing Overhaul** - Redesign /psalms page: dense numbered-box grid, instant free-type search (number lookup + lyric/KJV text search with bold match + relevance sort + Enter to open), collapsible Advanced panel (first-line toggle, meter toggle, meter filter), remove existing filter controls
 - [ ] **Phase 5: Precentor Portal** - Better Auth login, service event CRUD, psalm+tune set list builder, live service view with pre-loaded notation
 - [ ] **Phase 6: Polish** - OG images, Lighthouse 90+, bundle analysis, click feedback, loading skeletons on remaining routes
 
@@ -169,6 +170,28 @@ Plans:
 - [ ] 04.6-03-PLAN.md — shadcn Sheet install, SiteHeader hamburger menu (mobile), sticky bottom tab bar, Study tab link colors, Playwright UAT
 **UI hint**: yes
 
+### Phase 4.7 (INSERTED): Psalm Listing Overhaul
+**Goal**: The /psalms listing page is fast to scan and navigate — a dense grid of numbered boxes lets users spot any psalm instantly; real-time search across numbers, lyrics, and KJV text narrows results with bold inline matches; an Advanced panel exposes display options and meter filtering without cluttering the default view
+**Depends on**: Phase 4.6
+**Requirements**: PLR-01, PLR-02, PLR-03
+**Success Criteria** (what must be TRUE):
+  1. The default /psalms page shows all 150 psalms as a dense grid of numbered boxes (large psalm numbers, many visible at once) with no filters applied on load and existing filter controls removed
+  2. The search bar filters on every keystroke: number input sorts by numeric proximity; text input queries lyrics + KJV, injects the best matching line (search term bold) into each matching box, sorted by relevance; the top result box is visually highlighted; pressing Enter navigates to the top result
+  3. An "Advanced" collapsible (collapsed by default) sits between the search bar and the grid; it exposes: "Show first line" checkbox (dynamically resizes boxes), "Show meter" checkbox (shows CM/LM/SM etc. in box), and a meter filter dropdown (hides non-matching psalms)
+  4. GSD UI review of /psalms passes all 6 pillars (or all findings addressed)
+**Plans**: 3 plans
+
+Plans:
+**Wave 0**
+- [ ] 04.7-01-PLAN.md — Playwright test stubs (PLR-01/02/03), shadcn Checkbox install, globals.css [data-snippet] b → font-weight: 700
+
+**Wave 1** *(depends on Wave 0)*
+- [ ] 04.7-02-PLAN.md — PsalmNumberBox + PsalmListingGrid components + page.tsx wiring (query + kjvExcerpt + component swap)
+
+**Wave 2** *(depends on Wave 1)*
+- [ ] 04.7-03-PLAN.md — loading.tsx dense skeleton update + delete PsalmGrid/PsalmCard + Playwright UAT (human checkpoint)
+**UI hint**: yes
+
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
 **Depends on**: Phase 4.5
@@ -197,7 +220,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 5 → 6
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -207,5 +230,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 5 → 6
 | 4. Notation | 4/4 | Complete | 2026-05-08 |
 | 4.5. Psalm Detail Overhaul | 4/4 | Complete | 2026-05-09 |
 | 4.6. Psalm Detail UI Polish | 0/3 | Not started | - |
+| 4.7. Psalm Listing Overhaul | 0/3 | Not started | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
