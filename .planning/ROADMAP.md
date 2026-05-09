@@ -158,7 +158,15 @@ Plans:
   2. Score controls (Staff/Solfège/Show notation/Lyrics only) are visually grouped and clearly separated from lyrics content
   3. The page has no obvious clutter, overcrowded sections, or broken spacing at 375px, 768px, and 1280px
   4. Typography hierarchy is clear: psalm title > section labels > body text
-**Plans**: TBD (2-3 plans)
+**Plans**: 3 plans
+
+Plans:
+**Wave 1**
+- [ ] 04.6-01-PLAN.md — Layout restructure (notation first, tabs below), remove static stanzas, stanza number fix, space-y-6 standardisation
+
+**Wave 2** *(parallel — both depend on Wave 1)*
+- [ ] 04.6-02-PLAN.md — A−/A+ font size toggle in notation player, AbcRenderer error boundary, psalm detail error.tsx
+- [ ] 04.6-03-PLAN.md — shadcn Sheet install, SiteHeader hamburger menu (mobile), sticky bottom tab bar, Study tab link colors, Playwright UAT
 **UI hint**: yes
 
 ### Phase 5: Precentor Portal
@@ -198,6 +206,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 5 → 6
 | 3. Search | 6/6 | Complete | 2026-05-08 |
 | 4. Notation | 4/4 | Complete | 2026-05-08 |
 | 4.5. Psalm Detail Overhaul | 4/4 | Complete | 2026-05-09 |
-| 4.6. Psalm Detail UI Polish | 0/TBD | Not started | - |
+| 4.6. Psalm Detail UI Polish | 0/3 | Not started | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
