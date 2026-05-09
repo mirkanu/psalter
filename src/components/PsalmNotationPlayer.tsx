@@ -245,21 +245,36 @@ export function PsalmNotationPlayer({
             /* Staff mode: abcjs SVG with current stanza group lyrics */
             <AbcRenderer abc={abcForRender} title={tuneName} />
           ) : (
-            /* Solfège mode: R2 JPG — stanza nav hidden in this branch */
-            hasSolfege ? (
-              <div className="relative w-full max-w-2xl mx-auto aspect-[3/2]">
-                <Image
-                  src={solfegeJpgUrl!}
-                  alt={`Solfège score for ${tuneName}`}
-                  fill
-                  className="object-contain rounded-md border border-border"
-                />
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground italic">
-                Solfège score not yet available.
-              </p>
-            )
+            /* Solfège mode: R2 JPG + full lyrics below */
+            <>
+              {hasSolfege ? (
+                <div className="relative w-full max-w-2xl mx-auto aspect-[3/2]">
+                  <Image
+                    src={solfegeJpgUrl!}
+                    alt={`Solfège score for ${tuneName}`}
+                    fill
+                    className="object-contain rounded-md border border-border"
+                  />
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">
+                  Solfège score not yet available.
+                </p>
+              )}
+              {stanzas.length > 0 && (
+                <div className="space-y-4 py-2 mt-4 border-t border-border">
+                  {stanzas.map((stanza, i) => (
+                    <p
+                      key={i}
+                      className={`text-foreground leading-relaxed whitespace-pre-line ${lyricsSizeClass}`}
+                    >
+                      <span className="text-xs text-muted-foreground font-mono mr-2">{i + 1}.</span>
+                      {stanza}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </>
           )}
 
           {/* ── Stanza group nav BELOW score — only when ABC is rendering */}
