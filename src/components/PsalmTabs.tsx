@@ -40,13 +40,13 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
 
   return (
     <Tabs defaultValue="overview" className="w-full">
-      <TabsList className="flex flex-wrap h-auto gap-1 mb-6 bg-transparent p-0">
 
-        {/* ── "Tune" tab — MOBILE ONLY (D-05) — hidden on desktop via CSS ── */}
+      {/* Desktop tab list — hidden on mobile, normal flow */}
+      <TabsList className="hidden md:flex flex-wrap h-auto gap-1 mb-6 bg-transparent p-0">
+        {/* Mobile "Tune" tab trigger hidden on desktop */}
         <TabsTrigger value="tune" className="md:hidden">
           Tune
         </TabsTrigger>
-
         <TabsTrigger value="overview">Overview</TabsTrigger>
         <TabsTrigger value="365days">365 Days</TabsTrigger>
         <TabsTrigger value="study">Study</TabsTrigger>
@@ -56,8 +56,41 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
         <TabsTrigger value="historical-tunes">Historical Tunes</TabsTrigger>
       </TabsList>
 
+      {/* Mobile sticky bottom tab bar — hidden on desktop */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur border-t border-border">
+        <TabsList
+          className="flex h-auto gap-0 bg-transparent p-0 w-full overflow-x-auto [&::-webkit-scrollbar]:hidden"
+          style={{ maskImage: 'linear-gradient(to right, black calc(100% - 3rem), transparent)' }}
+        >
+          <TabsTrigger value="tune" className="flex-shrink-0 px-4 py-3 text-xs">
+            Tune
+          </TabsTrigger>
+          <TabsTrigger value="overview" className="flex-shrink-0 px-4 py-3 text-xs">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="365days" className="flex-shrink-0 px-4 py-3 text-xs">
+            365 Days
+          </TabsTrigger>
+          <TabsTrigger value="study" className="flex-shrink-0 px-4 py-3 text-xs">
+            Study
+          </TabsTrigger>
+          <TabsTrigger value="messianic" className="flex-shrink-0 px-4 py-3 text-xs">
+            Messianic
+          </TabsTrigger>
+          <TabsTrigger value="parallel" className="flex-shrink-0 px-4 py-3 text-xs">
+            Parallel
+          </TabsTrigger>
+          <TabsTrigger value="backup-tunes" className="flex-shrink-0 px-4 py-3 text-xs">
+            Backup Tunes
+          </TabsTrigger>
+          <TabsTrigger value="historical-tunes" className="flex-shrink-0 px-4 py-3 text-xs">
+            Historical Tunes
+          </TabsTrigger>
+        </TabsList>
+      </div>
+
       {/* ── TAB: TUNE (mobile only — D-06) ────────────────────────────────── */}
-      <TabsContent value="tune" className="space-y-6">
+      <TabsContent value="tune" className="space-y-6 pb-16 md:pb-0">
         {primaryTune ? (
           <>
             <div className="space-y-1">
@@ -88,7 +121,7 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
 
       {/* ── TAB 1: OVERVIEW — metadata only (D-07) ────────────────────────── */}
       {/* NO lyrics. NO SoundCloud. Those live below the tabs in page.tsx.    */}
-      <TabsContent value="overview" className="space-y-6">
+      <TabsContent value="overview" className="space-y-6 pb-16 md:pb-0">
         <div className="space-y-2">
           {psalm.book && (
             <p className="text-sm text-muted-foreground">
@@ -148,7 +181,7 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
       </TabsContent>
 
       {/* ── TAB 2: 365 DAYS ─────────────────────────────────────────────────── */}
-      <TabsContent value="365days" className="space-y-6">
+      <TabsContent value="365days" className="space-y-6 pb-16 md:pb-0">
         {dailyEntry ? (
           <div className="space-y-2">
             <p className="text-foreground">
@@ -167,7 +200,7 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
       </TabsContent>
 
       {/* ── TAB 3: STUDY ────────────────────────────────────────────────────── */}
-      <TabsContent value="study" className="space-y-6">
+      <TabsContent value="study" className="space-y-6 pb-16 md:pb-0">
         {psalm.haddingtonIntro && (
           <section>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
@@ -205,7 +238,7 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
                 href={`https://www.sermonaudio.com/search/?keyword=psalm+${psalm.id}&keywordtype=4`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary underline underline-offset-2"
+                className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
               >
                 SermonAudio — Psalm {psalm.id}
               </a>
@@ -215,7 +248,7 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
                 href={`https://www.spurgeon.org/resource-library/treasury-of-david/psalm-${psalm.id}/`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary underline underline-offset-2"
+                className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
               >
                 Spurgeon&apos;s Treasury of David
               </a>
@@ -225,7 +258,7 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
                 href={`https://relight.app/psalm/${psalm.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary underline underline-offset-2"
+                className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
               >
                 Relight.app
               </a>
@@ -235,7 +268,7 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
       </TabsContent>
 
       {/* ── TAB 4: MESSIANIC ────────────────────────────────────────────────── */}
-      <TabsContent value="messianic" className="space-y-6">
+      <TabsContent value="messianic" className="space-y-6 pb-16 md:pb-0">
         {messianic ? (
           <div className="space-y-6">
             {messianic.classification && (
@@ -271,7 +304,7 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
       </TabsContent>
 
       {/* ── TAB 5: PARALLEL ─────────────────────────────────────────────────── */}
-      <TabsContent value="parallel" className="space-y-6">
+      <TabsContent value="parallel" className="space-y-6 pb-16 md:pb-0">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
@@ -320,7 +353,7 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
       </TabsContent>
 
       {/* ── TAB 6: BACKUP TUNES ─────────────────────────────────────────────── */}
-      <TabsContent value="backup-tunes" className="space-y-6">
+      <TabsContent value="backup-tunes" className="space-y-6 pb-16 md:pb-0">
         {backupTunes.length > 0 ? (
           <ul className="space-y-3">
             {backupTunes.map((tune) => (
@@ -341,7 +374,7 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
       </TabsContent>
 
       {/* ── TAB 7: HISTORICAL TUNES ─────────────────────────────────────────── */}
-      <TabsContent value="historical-tunes" className="space-y-6">
+      <TabsContent value="historical-tunes" className="space-y-6 pb-16 md:pb-0">
         <p className="text-muted-foreground italic">No historical tunes recorded.</p>
       </TabsContent>
     </Tabs>
