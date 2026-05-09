@@ -8,16 +8,17 @@ Rebuild of psalter.cprc.co.uk from Airtable + Softr to a self-hosted Next.js 15 
 
 **Phase Numbering:**
 - Integer phases (1, 2, 3): Planned milestone work
-- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+- Decimal phases (2.1, 2.2, 4.5): Urgent insertions (marked with INSERTED)
 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - Drizzle schema, Airtable→PostgreSQL migration, R2 JPG storage
 - [x] **Phase 2: Public Browse** - Psalm list/detail (3 tabs), tune pages, daily reading plan, static rendering
 - [x] **Phase 3: Search** - Full-text search over lyrics/KJV, topic browse, tune meter filter (completed 2026-05-08)
-- [ ] **Phase 4: Notation** - abcjs live SVG rendering with hymnal layout, JPG fallback, mobile-responsive
-- [ ] **Phase 5: Precentor Portal** - Better Auth login, service event CRUD, set list builder, live service view
-- [ ] **Phase 6: Polish** - Loading skeletons on every route, click feedback, OG images, bundle review
+- [x] **Phase 4: Notation** - abcjs live SVG rendering with hymnal layout, JPG fallback, mobile-responsive (completed 2026-05-08)
+- [ ] **Phase 4.5 (INSERTED): Psalm Detail Overhaul** - 7-tab psalm page matching psalter.cprc.co.uk; lyrics + score + audio in Overview; abcjs stanza navigation; Staff/Solfège toggle; loading skeletons on psalm and tune routes
+- [ ] **Phase 5: Precentor Portal** - Better Auth login, service event CRUD, psalm+tune set list builder, live service view with pre-loaded notation
+- [ ] **Phase 6: Polish** - OG images, Lighthouse 90+, bundle analysis, click feedback, loading skeletons on remaining routes
 
 ## Phase Details
 
@@ -118,44 +119,71 @@ Plans:
 - [x] 04-03-PLAN.md — src/components/AbcRenderer.tsx ('use client', useRef + useEffect, abcjs.renderAbc with responsive:resize)
 
 **Wave 3** *(depends on Wave 2)*
-- [ ] 04-04-PLAN.md — Wire AbcRenderer into /tunes/[id]/page.tsx (next/dynamic ssr:false + Suspense); three-way fallback; human-verify TUNE-04 at 375/768/1200px
+- [x] 04-04-PLAN.md — Wire AbcRenderer into /tunes/[id]/page.tsx (next/dynamic ssr:false + Suspense); three-way fallback; human-verify TUNE-04 at 375/768/1200px
+**UI hint**: yes
+
+### Phase 4.5 (INSERTED): Psalm Detail Overhaul
+**Goal**: Restructure the psalm detail page from 4 tabs to 7 tabs matching psalter.cprc.co.uk exactly; move lyrics + score + audio into the Overview tab; add abcjs notation with stanza navigation and Staff/Solfège toggle; add loading.tsx skeletons to /psalms, /psalms/[id], /tunes, and /tunes/[id] routes
+**Depends on**: Phase 4
+**Requirements**: PSLT-01, PSLT-02, PSLT-03, TUNE-05, TUNE-06, TUNE-07, PERF-01
+**Success Criteria** (what must be TRUE):
+  1. Psalm detail has exactly 7 tabs in order: Overview | 365 Days | Study | Messianic | Parallel | Backup Tunes | Historical Tunes
+  2. Below the tab strip: metrical lyrics (left column ~60% on desktop, full-width on mobile) and abcjs notation player always visible; SoundCloud embed in the desktop right column (~40%) and in the mobile Tune tab. Overview tab shows metadata only: NKJV title, category badges, author, book. Neither lyrics nor notation is inside any tab.
+  3. The notation player below the tabs shows up to 4 stanzas as w: lyric lines per abcjs render; Prev/Next buttons page through stanza groups; counter shows e.g. "Stanzas 1–4 / 6"; Staff/Solfège and Show notation/Lyrics only toggles present above the score
+  4. Toggling to Solfège shows the R2 solfège JPG (solfegeJpgUrl) in place of the abcjs SVG; toggling back shows the SVG
+  5. Navigating to /psalms, /psalms/[id], /tunes, /tunes/[id] shows a skeleton placeholder instantly before data loads (loading.tsx files present and rendering)
+**Plans**: 4 plans
+
+Plans:
+**Wave 1**
+- [ ] 04.5-01-PLAN.md — Extend fetchPsalmDetail query (dailyEntry + primaryTune + backup/historical tunes); add PsalmDetailSkeleton component; add loading.tsx on /psalms, /psalms/[id], /tunes, /tunes/[id]
+
+**Wave 2** *(depends on Wave 1)*
+- [ ] 04.5-02-PLAN.md — Rewrite PsalmTabs.tsx to implement all 7 tabs with correct data from extended query
+
+**Wave 3** *(depends on Wave 2)*
+- [ ] 04.5-03-PLAN.md — Create PsalmNotationPlayer.tsx: stanza navigation, abcjs rendering per stanza, fallback to solfège JPG when no ABC
+
+**Wave 4** *(depends on Wave 3)*
+- [ ] 04.5-04-PLAN.md — Add Staff/Solfège toggle to PsalmNotationPlayer; human-verify all 7 tabs + notation + toggle on mobile
 **UI hint**: yes
 
 ### Phase 5: Precentor Portal
-**Goal**: A logged-in precentor can create service events, assign psalm + tune pairs, and view a live service set list with all notation pre-loaded
-**Depends on**: Phase 4
+**Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
+**Depends on**: Phase 4.5
 **Requirements**: AUTH-01, AUTH-02, PREC-01, PREC-02, PREC-03, PREC-04, PREC-05, PREC-06
 **Success Criteria** (what must be TRUE):
-  1. A precentor can log in with email and password; accounts can only be created by an admin (no public self-registration)
-  2. A logged-in precentor can create a service event (date + AM/PM), assign ordered psalm + tune pairs specifying verses/stanzas, and edit or reorder those pairs before the service
+  1. A precentor can log in with email and password; accounts are created by an admin only (no public self-registration)
+  2. A logged-in precentor can create a service event (date + AM/PM), assign ordered psalm+tune pairs specifying verses/stanzas, and edit or reorder those pairs before the service
   3. The service set list overview page shows all assigned psalms in sequence before the service begins
   4. Opening the live service view pre-loads notation for all assigned tunes on page entry — no per-psalm loading delay mid-service
   5. The precentor can trigger melody audio playback for any tune in the portal via the abcjs Web Audio API (requires a user gesture)
-**Plans**: TBD
+**Plans**: TBD (5-6 plans)
 **UI hint**: yes
 
 ### Phase 6: Polish
-**Goal**: Every route transition shows a skeleton placeholder, every clickable element gives immediate visual feedback, and OG images are in place for social sharing
+**Goal**: OG images in place for social sharing; Lighthouse 90+ on key pages; bundle clean; every remaining route transition shows a skeleton; all clickable elements give immediate visual feedback
 **Depends on**: Phase 5
-**Requirements**: PERF-01, PERF-02
+**Requirements**: PERF-02, OG images (next/og), Lighthouse 90+
 **Success Criteria** (what must be TRUE):
-  1. Navigating to any route in the app never shows a blank or frozen screen — a skeleton/shimmer matching the page shape appears within one frame
-  2. Every button, link, and card shows a CSS `:active` state change and a `useTransition` pending indicator when clicked
-  3. Each psalm and tune page generates a dynamic OG image (next/og) visible when the URL is shared on social platforms
-  4. A bundle analysis confirms no unintended large dependencies; Lighthouse performance score is 90+ on the psalm list and psalm detail pages
-**Plans**: TBD
+  1. Each psalm and tune page generates a dynamic OG image (next/og) visible when the URL is shared on social platforms
+  2. A bundle analysis confirms no unintended large dependencies; Lighthouse performance score is 90+ on the psalm list and psalm detail pages
+  3. Navigating to any route not covered by Phase 4.5 skeletons (search, explore, daily, homepage) never shows a blank screen — a skeleton appears within one frame
+  4. Every button, link, and card shows a CSS `:active` state change and a `useTransition` pending indicator when clicked
+**Plans**: TBD (3-4 plans)
 **UI hint**: yes
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 5/5 | Complete | 2026-05-07 |
 | 2. Public Browse | 5/5 | Complete | 2026-05-08 |
-| 3. Search | 6/6 | Complete    | 2026-05-08 |
-| 4. Notation | 3/4 | In progress | - |
+| 3. Search | 6/6 | Complete | 2026-05-08 |
+| 4. Notation | 4/4 | Complete | 2026-05-08 |
+| 4.5. Psalm Detail Overhaul | 0/4 | Not started | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |

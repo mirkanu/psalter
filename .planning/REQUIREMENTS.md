@@ -1,6 +1,7 @@
 # CPRC Psalter — v1 Requirements
 
 Generated: 2026-05-07
+Updated: 2026-05-08 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions for Phase 4.5)
 
 ## v1 Requirements
 
@@ -20,12 +21,21 @@ Generated: 2026-05-07
 - [ ] **PSALM-05**: User can read metrical lyrics (Scottish Psalter versification) for each psalm
 - [ ] **PSALM-06**: Psalm pages are statically pre-rendered at build time (no runtime DB queries for public browse)
 
+### Psalm Detail
+
+- [ ] **PSLT-01**: Psalm detail page uses a responsive layout. Tab strip (7 tabs desktop / 8 tabs mobile) renders first. BELOW the tabs: lyrics + notation player always visible on both viewports (left column ~60% on desktop, full-width on mobile); SoundCloud embed in the right column (~40%) on desktop only. On mobile (<768px): a "Tune" tab is prepended as the FIRST tab (containing SoundCloud + tune metadata); the other 7 tabs follow. Neither lyrics nor notation is inside any tab.
+- [ ] **PSLT-02**: Below-tabs section shows: metrical lyrics (left column / full-width on mobile) and abcjs notation player with stanza group navigation (groups of up to 4 stanzas, counter "Stanzas 1–4 / 6"), Staff/Solfège toggle, and Show notation/Lyrics only toggle. SoundCloud embed appears in the desktop right column and in the mobile Tune tab. Overview tab shows metadata only: NKJV title, category badges, author, book, meter, precenting comment.
+- [ ] **PSLT-03**: 365 Days tab shows the daily reading plan entry for this psalm: day number, calendar date (readingDate), and notes (which holds verse range information from Airtable)
+
 ### Tunes
 
 - [ ] **TUNE-01**: User can view tune detail (name, meter, score display, YouTube and audio links)
 - [ ] **TUNE-02**: Tune score displays as live abcjs SVG notation when ABC string is available; JPG fallback when not
 - [ ] **TUNE-03**: Hymnal-style notation layout: verse 1 lyrics syllable-aligned under staff (abcjs `w:` fields); remaining verses displayed as numbered stanzas below the SVG
 - [ ] **TUNE-04**: Notation layout is mobile-responsive (abcjs `responsive: "resize"`, tested at 375px / 768px / 1200px)
+- [ ] **TUNE-05**: abcjs notation with inline lyrics appears in the below-tabs section of the psalm detail page (not inside any tab), not only on dedicated tune pages
+- [ ] **TUNE-06**: The below-tabs notation player renders up to 4 stanzas as w: lyric lines per abcjs render; Prev/Next buttons page through stanza groups; a counter shows the current group range (e.g. "Stanzas 1–4 / 6")
+- [ ] **TUNE-07**: Staff/Solfège toggle in the below-tabs notation player — Staff mode renders the live abcjs SVG; Solfège mode shows the R2 solfège JPG (solfegeJpgUrl from the tunes table); a second toggle (Show notation/Lyrics only) hides the score and shows all stanzas as plain scrollable text
 
 ### Search
 
@@ -54,8 +64,8 @@ Generated: 2026-05-07
 
 ### Performance
 
-- [ ] **PERF-01**: Every Next.js route has a `loading.tsx` skeleton — no blank screen on navigation
-- [ ] **PERF-02**: All clickable elements show immediate visual feedback (CSS `:active`, `useTransition` for navigation)
+- [ ] **PERF-01**: Every Next.js route that fetches data has a `loading.tsx` file rendering a skeleton matching the page shape — no blank or white screen on navigation. Phase 4.5 covers /psalms, /psalms/[id], /tunes, /tunes/[id]. Phase 6 covers remaining routes (search, explore, daily, homepage).
+- [ ] **PERF-02**: All clickable elements (buttons, links, cards) show immediate visual feedback: CSS `:active` state and `useTransition` pending indicator for navigation actions
 
 ---
 
@@ -101,6 +111,13 @@ Generated: 2026-05-07
 | TUNE-02 | Phase 4: Notation | Pending |
 | TUNE-03 | Phase 4: Notation | Pending |
 | TUNE-04 | Phase 4: Notation | Pending |
+| PSLT-01 | Phase 4.5: Psalm Detail Overhaul | Pending |
+| PSLT-02 | Phase 4.5: Psalm Detail Overhaul | Pending |
+| PSLT-03 | Phase 4.5: Psalm Detail Overhaul | Pending |
+| TUNE-05 | Phase 4.5: Psalm Detail Overhaul | Pending |
+| TUNE-06 | Phase 4.5: Psalm Detail Overhaul | Pending |
+| TUNE-07 | Phase 4.5: Psalm Detail Overhaul | Pending |
+| PERF-01 | Phase 4.5 (partial) + Phase 6 | Pending |
 | AUTH-01 | Phase 5: Precentor Portal | Pending |
 | AUTH-02 | Phase 5: Precentor Portal | Pending |
 | PREC-01 | Phase 5: Precentor Portal | Pending |
@@ -109,5 +126,4 @@ Generated: 2026-05-07
 | PREC-04 | Phase 5: Precentor Portal | Pending |
 | PREC-05 | Phase 5: Precentor Portal | Pending |
 | PREC-06 | Phase 5: Precentor Portal | Pending |
-| PERF-01 | Phase 6: Polish | Pending |
 | PERF-02 | Phase 6: Polish | Pending |
