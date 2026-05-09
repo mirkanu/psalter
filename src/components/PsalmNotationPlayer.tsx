@@ -123,7 +123,7 @@ export function PsalmNotationPlayer({
           {!solfegeOnly && (
             <Button
               variant={viewMode === 'staff' ? 'default' : 'outline'}
-              size="sm"
+              size="xs"
               onClick={() => setViewMode('staff')}
               aria-pressed={viewMode === 'staff'}
             >
@@ -132,7 +132,7 @@ export function PsalmNotationPlayer({
           )}
           <Button
             variant={viewMode === 'solfege' ? 'default' : 'outline'}
-            size="sm"
+            size="xs"
             onClick={() => setViewMode('solfege')}
             aria-pressed={viewMode === 'solfege'}
           >
@@ -140,11 +140,11 @@ export function PsalmNotationPlayer({
           </Button>
           <Button
             variant={viewMode === 'lyrics' ? 'default' : 'outline'}
-            size="sm"
+            size="xs"
             onClick={() => setViewMode('lyrics')}
             aria-pressed={viewMode === 'lyrics'}
           >
-            Lyrics
+            Lyrics only
           </Button>
         </div>
 
@@ -153,7 +153,7 @@ export function PsalmNotationPlayer({
           <div className="flex gap-1">
             <Button
               variant="outline"
-              size="sm"
+              size="xs"
               onClick={() => setLyricsSize((s) => s === 'lg' ? 'base' : 'sm')}
               aria-label="Decrease lyrics font size"
               disabled={lyricsSize === 'sm'}
@@ -162,7 +162,7 @@ export function PsalmNotationPlayer({
             </Button>
             <Button
               variant="outline"
-              size="sm"
+              size="xs"
               onClick={() => setLyricsSize((s) => s === 'sm' ? 'base' : 'lg')}
               aria-label="Increase lyrics font size"
               disabled={lyricsSize === 'lg'}
