@@ -166,27 +166,29 @@ export function PsalmNotationPlayer({
           </Button>
         </div>
 
-        {/* A− | A+ font size toggle (D-08/D-09) */}
-        <div className="flex gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setLyricsSize((s) => s === 'lg' ? 'base' : 'sm')}
-            aria-label="Decrease lyrics font size"
-            disabled={lyricsSize === 'sm'}
-          >
-            A−
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setLyricsSize((s) => s === 'sm' ? 'base' : 'lg')}
-            aria-label="Increase lyrics font size"
-            disabled={lyricsSize === 'lg'}
-          >
-            A+
-          </Button>
-        </div>
+        {/* A− | A+ font size toggle — only visible in lyrics-only mode */}
+        {displayMode === 'lyrics-only' && (
+          <div className="flex gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLyricsSize((s) => s === 'lg' ? 'base' : 'sm')}
+              aria-label="Decrease lyrics font size"
+              disabled={lyricsSize === 'sm'}
+            >
+              A−
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLyricsSize((s) => s === 'sm' ? 'base' : 'lg')}
+              aria-label="Increase lyrics font size"
+              disabled={lyricsSize === 'lg'}
+            >
+              A+
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* ── Lyrics only mode (D-10): all stanzas as scrollable text ──────── */}
