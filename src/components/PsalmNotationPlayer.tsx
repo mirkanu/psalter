@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import AbcRenderer from '@/components/AbcRenderer'
@@ -58,6 +58,19 @@ export function PsalmNotationPlayer({
   const [scoreMode, setScoreMode] = useState<ScoreMode>('staff')
   // Show notation|Lyrics only toggle (D-10)
   const [displayMode, setDisplayMode] = useState<DisplayMode>('notation')
+
+  // Restore Staff|Solfège preference from localStorage on mount (D-09)
+  useEffect(() => {
+    const stored = localStorage.getItem('psalter-score-mode')
+    if (stored === 'solfege') {
+      setScoreMode('solfege')
+    }
+  }, [])
+
+  // Persist Staff|Solfège preference to localStorage on change (D-09)
+  useEffect(() => {
+    localStorage.setItem('psalter-score-mode', scoreMode)
+  }, [scoreMode])
 
   // Fallback chain (D-13)
   const hasAbc = abc !== null && abc.trim().length > 0
