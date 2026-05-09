@@ -1,230 +1,345 @@
 'use client'
-import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import Link from "next/link"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import type { PsalmDetail } from "@/db/queries/psalms"
 
-const TAB_VALUES = ["overview", "lyrics", "study", "messianic"] as const
-type TabValue = typeof TAB_VALUES[number]
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Badge } from '@/components/ui/badge'
+import type { PsalmDetail } from '@/db/queries/psalms'
 
-function isTabValue(v: string | null): v is TabValue {
-  return v !== null && (TAB_VALUES as readonly string[]).includes(v)
+// Tune type derived from the query result
+type TuneRow = NonNullable<
+  PsalmDetail['psalmVersions'][number]['psalmVersionTunes'][number]['tune']
+>
+
+interface PsalmTabsProps {
+  psalm: PsalmDetail
+  primaryTune: TuneRow | null
 }
 
-export function PsalmTabs({ psalm }: { psalm: PsalmDetail }) {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const pathname = usePathname()
+export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
+  // Primary psalmVersion (lowest serial id)
+  const primaryVersion = psalm.psalmVersions.slice().sort((a, b) => a.id - b.id)[0] ?? null
 
-  const raw = searchParams.get("tab")
-  const activeTab: TabValue = isTabValue(raw) ? raw : "overview"
+  // Daily reading entry
+  const dailyEntry = psalm.dailyReadings?.[0] ?? null
 
-  function handleTabChange(tab: string) {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set("tab", tab)
-    router.replace(`${pathname}?${params.toString()}`)
-  }
+  // Backup tunes (non-primary, de-duped)
+  const primaryTuneId = primaryTune?.id ?? null
+  const allPvts = psalm.psalmVersions.flatMap((pv) => pv.psalmVersionTunes)
+  const backupTunes = allPvts
+    .filter((pvt) => !pvt.isPrimary)
+    .map((pvt) => pvt.tune)
+    .filter((t): t is NonNullable<typeof t> => !!t && t.id !== primaryTuneId)
 
-  const primaryVersion = psalm.psalmVersions[0]
-  const additionalVersions = psalm.psalmVersions.slice(1)
-  const primaryTunes = primaryVersion?.psalmVersionTunes ?? []
+  // Messianic data
+  const messianic = psalm.messianicPsalms[0] ?? null
 
-  // Aggregate Nave's topics across all verses (deduped by id)
-  const navesTopicsMap = new Map<number, string>()
-  for (const v of psalm.verses) {
-    for (const link of v.verseNavesTopics) {
-      if (link.navesTopic?.id != null && link.navesTopic.name) {
-        navesTopicsMap.set(link.navesTopic.id, link.navesTopic.name)
-      }
-    }
-  }
-  const navesTopics = Array.from(navesTopicsMap.entries())
+  // KJV verses sorted by verse number
+  const kjvVerses = psalm.verses.slice().sort((a, b) => (a.verseNumber ?? 0) - (b.verseNumber ?? 0))
 
-  // Aggregate doctrines (deduped)
-  const doctrinesMap = new Map<number, string>()
-  for (const v of psalm.verses) {
-    for (const link of v.verseDoctrines) {
-      if (link.doctrine?.id != null && link.doctrine.name) {
-        doctrinesMap.set(link.doctrine.id, link.doctrine.name)
-      }
-    }
-  }
-  const doctrines = Array.from(doctrinesMap.entries())
-
-  const messianic = psalm.messianicPsalms[0]
+  // Scottish Psalter lyrics from primary version (for Parallel tab)
+  const lyrics = primaryVersion?.lyrics ?? null
 
   return (
-    <>
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-6">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="lyrics">Lyrics</TabsTrigger>
-          <TabsTrigger value="study">Study</TabsTrigger>
-          <TabsTrigger value="messianic">Messianic</TabsTrigger>
-        </TabsList>
+    <Tabs defaultValue="overview" className="w-full">
+      <TabsList className="flex flex-wrap h-auto gap-1 mb-6 bg-transparent p-0">
 
-        <TabsContent value="overview" className="pt-6 space-y-6">
-          {psalm.book && <Badge variant="secondary">{psalm.book}</Badge>}
-          {psalm.haddingtonIntro && (
-            <p className="text-base leading-relaxed text-muted-foreground italic">
-              {psalm.haddingtonIntro}
+        {/* ── "Tune" tab — MOBILE ONLY (D-05) — hidden on desktop via CSS ── */}
+        <TabsTrigger value="tune" className="md:hidden">
+          Tune
+        </TabsTrigger>
+
+        <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsTrigger value="365days">365 Days</TabsTrigger>
+        <TabsTrigger value="study">Study</TabsTrigger>
+        <TabsTrigger value="messianic">Messianic</TabsTrigger>
+        <TabsTrigger value="parallel">Parallel</TabsTrigger>
+        <TabsTrigger value="backup-tunes">Backup Tunes</TabsTrigger>
+        <TabsTrigger value="historical-tunes">Historical Tunes</TabsTrigger>
+      </TabsList>
+
+      {/* ── TAB: TUNE (mobile only — D-06) ────────────────────────────────── */}
+      <TabsContent value="tune" className="space-y-4">
+        {primaryTune ? (
+          <>
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">{primaryTune.name}</p>
+              {primaryTune.meter && (
+                <p className="text-sm text-muted-foreground">Meter: {primaryTune.meter}</p>
+              )}
+              {primaryTune.precentingComment && (
+                <p className="text-sm text-muted-foreground">{primaryTune.precentingComment}</p>
+              )}
+            </div>
+            {primaryTune.soundcloudUrl && (
+              <iframe
+                title={`SoundCloud: ${primaryTune.name}`}
+                width="100%"
+                height="96"
+                allow="autoplay"
+                src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(primaryTune.soundcloudUrl)}&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false`}
+                className="rounded-md border border-border"
+              />
+            )}
+          </>
+        ) : (
+          <p className="text-muted-foreground italic">No tune assigned to this psalm.</p>
+        )}
+      </TabsContent>
+
+      {/* ── TAB 1: OVERVIEW — metadata only (D-07) ────────────────────────── */}
+      {/* NO lyrics. NO SoundCloud. Those live below the tabs in page.tsx.    */}
+      <TabsContent value="overview" className="space-y-4">
+        <div className="space-y-2">
+          {psalm.book && (
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">Book:</span> {psalm.book}
             </p>
           )}
-          <Separator />
-          {psalm.verses.length > 0 ? (
-            <div className="prose prose-stone max-w-none space-y-2">
-              {psalm.verses.map((v) => (
-                <p key={v.id} className="text-base leading-relaxed">
-                  <span className="font-mono text-sm tabular-nums text-muted-foreground mr-2 align-top">
+          {psalm.author && (
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">Author:</span> {psalm.author}
+            </p>
+          )}
+          {primaryVersion?.meter && (
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">Meter:</span> {primaryVersion.meter}
+            </p>
+          )}
+          {primaryTune?.precentingComment && (
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">Precenting note:</span>{' '}
+              {primaryTune.precentingComment}
+            </p>
+          )}
+        </div>
+        {psalm.sectionHeadings.length > 0 && (
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+              Divisions
+            </h3>
+            <ul className="space-y-1">
+              {psalm.sectionHeadings.map((sh) => (
+                <li key={sh.id} className="text-sm text-foreground">
+                  {sh.verseStart && (
+                    <span className="text-muted-foreground font-mono text-xs mr-2">
+                      v.{sh.verseStart}
+                    </span>
+                  )}
+                  {sh.heading}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {psalm.psalmTopics.length > 0 && (
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+              Categories
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {psalm.psalmTopics.map((pt) => (
+                <Badge key={pt.topic.id} variant="secondary">
+                  {pt.topic.name}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+      </TabsContent>
+
+      {/* ── TAB 2: 365 DAYS ─────────────────────────────────────────────────── */}
+      <TabsContent value="365days">
+        {dailyEntry ? (
+          <div className="space-y-2">
+            <p className="text-foreground">
+              <span className="font-medium">Day {dailyEntry.dayNumber}</span>
+              {dailyEntry.readingDate && (
+                <span className="text-muted-foreground ml-2">— {dailyEntry.readingDate}</span>
+              )}
+            </p>
+            {dailyEntry.notes && (
+              <p className="text-sm text-muted-foreground">{dailyEntry.notes}</p>
+            )}
+          </div>
+        ) : (
+          <p className="text-muted-foreground italic">No reading plan entry for this psalm.</p>
+        )}
+      </TabsContent>
+
+      {/* ── TAB 3: STUDY ────────────────────────────────────────────────────── */}
+      <TabsContent value="study" className="space-y-6">
+        {psalm.haddingtonIntro && (
+          <section>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+              Haddington Introduction
+            </h2>
+            <p className="text-foreground leading-relaxed whitespace-pre-line">
+              {psalm.haddingtonIntro}
+            </p>
+          </section>
+        )}
+        {kjvVerses.length > 0 && (
+          <section>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+              KJV Text
+            </h2>
+            <div className="space-y-2">
+              {kjvVerses.map((v) => (
+                <p key={v.id} className="text-foreground leading-relaxed">
+                  <span className="text-xs text-muted-foreground font-mono mr-2">
                     {v.verseNumber}
                   </span>
-                  {v.kjvText ?? ""}
+                  {v.kjvText}
                 </p>
               ))}
             </div>
-          ) : psalm.kjvText ? (
-            /* Fallback: per-verse KJV unavailable, render bulk text */
-            <div className="prose prose-stone max-w-none whitespace-pre-line">
-              {psalm.kjvText}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">KJV text unavailable.</p>
-          )}
-        </TabsContent>
+          </section>
+        )}
+        <section>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+            External Resources
+          </h2>
+          <ul className="space-y-1 text-sm">
+            <li>
+              <a
+                href={`https://www.sermonaudio.com/search/?keyword=psalm+${psalm.id}&keywordtype=4`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline underline-offset-2"
+              >
+                SermonAudio — Psalm {psalm.id}
+              </a>
+            </li>
+            <li>
+              <a
+                href={`https://www.spurgeon.org/resource-library/treasury-of-david/psalm-${psalm.id}/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline underline-offset-2"
+              >
+                Spurgeon&apos;s Treasury of David
+              </a>
+            </li>
+            <li>
+              <a
+                href={`https://relight.app/psalm/${psalm.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline underline-offset-2"
+              >
+                Relight.app
+              </a>
+            </li>
+          </ul>
+        </section>
+      </TabsContent>
 
-        <TabsContent value="lyrics" className="pt-6 space-y-6">
-          {primaryVersion ? (
-            <>
+      {/* ── TAB 4: MESSIANIC ────────────────────────────────────────────────── */}
+      <TabsContent value="messianic">
+        {messianic ? (
+          <div className="space-y-4">
+            {messianic.classification && (
               <div>
-                {primaryVersion.versionLabel && (
-                  <h2 className="text-xl font-semibold mb-3">{primaryVersion.versionLabel}</h2>
-                )}
-                {primaryVersion.meter && <Badge variant="outline">{primaryVersion.meter}</Badge>}
-                {primaryVersion.lyrics && (
-                  <div className="mt-4 whitespace-pre-line text-base leading-relaxed">
-                    {primaryVersion.lyrics}
-                  </div>
-                )}
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                  Classification
+                </h2>
+                <p className="text-foreground">{messianic.classification}</p>
               </div>
-              {additionalVersions.length > 0 && (
-                <details className="border-t border-border pt-4">
-                  <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
-                    Additional versions ({additionalVersions.length})
-                  </summary>
-                  <div className="mt-4 space-y-6">
-                    {additionalVersions.map((v) => (
-                      <div key={v.id}>
-                        {v.versionLabel && <h3 className="font-semibold">{v.versionLabel}</h3>}
-                        {v.meter && <Badge variant="outline" className="mt-1">{v.meter}</Badge>}
-                        {v.lyrics && (
-                          <div className="mt-2 whitespace-pre-line text-sm">{v.lyrics}</div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </details>
-              )}
-              {primaryTunes.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-                    Tunes for this Psalm
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {primaryTunes.map((pvt) => (
-                      <Link
-                        key={pvt.tuneId}
-                        href={`/tunes/${pvt.tuneId}`}
-                        className="inline-flex items-center px-3 py-1 rounded-md border border-border bg-card hover:border-primary hover:text-primary transition-colors text-sm"
-                      >
-                        {pvt.tune?.name ?? `Tune ${pvt.tuneId}`}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <p className="text-muted-foreground">No metrical version recorded for this psalm.</p>
-          )}
-        </TabsContent>
+            )}
+            {messianic.ntVerification && (
+              <div>
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                  NT Verification
+                </h2>
+                <p className="text-foreground">{messianic.ntVerification}</p>
+              </div>
+            )}
+            {messianic.messianicVerses && (
+              <div>
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                  Messianic Verses
+                </h2>
+                <p className="text-foreground">{messianic.messianicVerses}</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="text-muted-foreground italic">
+            No messianic data recorded for this psalm.
+          </p>
+        )}
+      </TabsContent>
 
-        <TabsContent value="study" className="pt-6 space-y-6">
-          {psalm.sectionHeadings.length === 0 && navesTopics.length === 0 && doctrines.length === 0 ? (
-            <div>
-              <h3 className="font-semibold text-lg mb-1">No study notes recorded</h3>
-              <p className="text-muted-foreground">Topics and cross-references for this psalm have not yet been added.</p>
-            </div>
-          ) : (
-            <>
-              {psalm.sectionHeadings.length > 0 && (
-                <section>
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2">Section headings</h3>
-                  <ul className="space-y-2">
-                    {psalm.sectionHeadings.map((s) => (
-                      <li key={s.id} className="text-base">
-                        <span className="font-mono text-sm text-muted-foreground mr-2">
-                          v{s.verseStart}
-                        </span>
-                        {s.heading}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-              {navesTopics.length > 0 && (
-                <section>
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2">Nave&apos;s topics</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {navesTopics.map(([id, name]) => (
-                      <Badge key={id} variant="secondary">{name}</Badge>
-                    ))}
-                  </div>
-                </section>
-              )}
-              {doctrines.length > 0 && (
-                <section>
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2">Doctrinal cross-references</h3>
-                  <ul className="list-disc pl-5 space-y-1">
-                    {doctrines.map(([id, name]) => <li key={id}>{name}</li>)}
-                  </ul>
-                </section>
-              )}
-            </>
-          )}
-        </TabsContent>
+      {/* ── TAB 5: PARALLEL ─────────────────────────────────────────────────── */}
+      <TabsContent value="parallel">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+              Scottish Psalter
+            </h2>
+            {lyrics ? (
+              <div className="space-y-3">
+                {lyrics.split('\n\n').filter(Boolean).map((stanza, i) => (
+                  <p
+                    key={i}
+                    className="text-foreground leading-relaxed whitespace-pre-line text-sm"
+                  >
+                    {stanza}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground italic text-sm">
+                No metrical lyrics available.
+              </p>
+            )}
+          </div>
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+              KJV
+            </h2>
+            {kjvVerses.length > 0 ? (
+              <div className="space-y-2">
+                {kjvVerses.map((v) => (
+                  <p key={v.id} className="text-foreground leading-relaxed text-sm">
+                    <span className="text-xs text-muted-foreground font-mono mr-1">
+                      {v.verseNumber}
+                    </span>
+                    {v.kjvText}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground italic text-sm">No KJV text available.</p>
+            )}
+          </div>
+        </div>
+      </TabsContent>
 
-        <TabsContent value="messianic" className="pt-6 space-y-4">
-          {messianic ? (
-            <>
-              {messianic.classification && (
-                <div>
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-1">Classification</h3>
-                  <p className="text-base">{messianic.classification}</p>
-                </div>
-              )}
-              {messianic.ntVerification && (
-                <div>
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-1">NT verification</h3>
-                  <p className="text-base whitespace-pre-line">{messianic.ntVerification}</p>
-                </div>
-              )}
-              {messianic.messianicVerses && (
-                <div>
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-1">Messianic verses</h3>
-                  <p className="text-base whitespace-pre-line">{messianic.messianicVerses}</p>
-                </div>
-              )}
-            </>
-          ) : (
-            <div>
-              <h3 className="font-semibold text-lg mb-1">No Messianic notes recorded</h3>
-              <p className="text-muted-foreground">This psalm has no messianic classification in the current dataset.</p>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-    </>
+      {/* ── TAB 6: BACKUP TUNES ─────────────────────────────────────────────── */}
+      <TabsContent value="backup-tunes">
+        {backupTunes.length > 0 ? (
+          <ul className="space-y-3">
+            {backupTunes.map((tune) => (
+              <li
+                key={tune.id}
+                className="flex items-center justify-between border-b border-border pb-2"
+              >
+                <span className="font-medium text-foreground">{tune.name}</span>
+                {tune.meter && <Badge variant="outline">{tune.meter}</Badge>}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-muted-foreground italic">
+            No backup tunes recorded for this psalm.
+          </p>
+        )}
+      </TabsContent>
+
+      {/* ── TAB 7: HISTORICAL TUNES ─────────────────────────────────────────── */}
+      <TabsContent value="historical-tunes">
+        <p className="text-muted-foreground italic">No historical tunes recorded.</p>
+      </TabsContent>
+    </Tabs>
   )
 }
