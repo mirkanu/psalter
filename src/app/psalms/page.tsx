@@ -1,7 +1,7 @@
 import { db } from "@/db"
 import { psalms, psalmVersions } from "@/db/schema"
-import { eq, asc } from "drizzle-orm"
-import { PsalmGrid } from "@/components/PsalmGrid"
+import { eq, asc, sql } from "drizzle-orm"
+import { PsalmListingGrid } from "@/components/PsalmListingGrid"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -13,10 +13,9 @@ export default async function PsalmsPage() {
   const rows = await db
     .select({
       id: psalms.id,
-      bibleTitle: psalms.bibleTitle,
-      book: psalms.book,
       firstLine: psalmVersions.firstLine,
       meter: psalmVersions.meter,
+      kjvExcerpt: sql<string>`LEFT(${psalms.kjvText}, 120)`.as('kjv_excerpt'),
     })
     .from(psalms)
     .leftJoin(psalmVersions, eq(psalmVersions.psalmId, psalms.id))
@@ -40,7 +39,7 @@ export default async function PsalmsPage() {
           Browse all 150 psalms of the Scottish Psalter.
         </p>
       </div>
-      <PsalmGrid psalms={uniqueRows} />
+      <PsalmListingGrid psalms={uniqueRows} />
     </div>
   )
 }
