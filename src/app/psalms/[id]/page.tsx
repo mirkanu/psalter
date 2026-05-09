@@ -34,16 +34,11 @@ export default async function PsalmPage({ params }: PageProps) {
   const psalm = await fetchPsalmDetail(psalmId)
   if (!psalm) notFound()
 
-  // Derive primary tune and lyrics for below-tabs section
+  // Derive primary tune and lyrics
   const allPvts = psalm.psalmVersions.flatMap((pv) => pv.psalmVersionTunes)
   const primaryTune = allPvts.find((pvt) => pvt.isPrimary)?.tune ?? allPvts[0]?.tune ?? null
   const primaryVersion = psalm.psalmVersions.slice().sort((a, b) => a.id - b.id)[0] ?? null
   const lyrics = primaryVersion?.lyrics ?? null
-
-  // Split lyrics into stanzas for display
-  const stanzas = lyrics
-    ? lyrics.split('\n\n').map((s) => s.trim()).filter(Boolean)
-    : []
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
@@ -57,44 +52,22 @@ export default async function PsalmPage({ params }: PageProps) {
         {psalm.bibleTitle ?? `Psalm ${psalm.id}`}
       </h1>
 
-      {/* Tab strip + tab content (D-04/D-05: 7 desktop / 8 mobile tabs) */}
-      <PsalmTabs psalm={psalm} primaryTune={primaryTune} />
-
-      {/* ── Below-tabs always-visible section (D-01/D-02/D-03) ──────────── */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-6">
-
-        {/* Left column: lyrics heading + stanzas + notation player slot (D-01) */}
+      {/* Notation section FIRST (D-01) — 2-col desktop (D-02) */}
+      <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] gap-6 mb-8">
         <div>
-          {stanzas.length > 0 && (
-            <section>
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-                Metrical Lyrics
-              </h2>
-              <div className="space-y-4 mb-6">
-                {stanzas.map((stanza, i) => (
-                  <p
-                    key={i}
-                    className="text-foreground leading-relaxed whitespace-pre-line"
-                  >
-                    {stanza}
-                  </p>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* PsalmNotationPlayer — loaded client-side only (abcjs requires DOM) */}
-          {primaryTune && (
+          {primaryTune ? (
             <PsalmNotationPlayerClient
               abc={primaryTune.abcNotation ?? null}
               lyrics={lyrics ?? ''}
               solfegeJpgUrl={primaryTune.solfegeJpgUrl ?? null}
               tuneName={primaryTune.name}
             />
+          ) : (
+            <p className="text-sm text-muted-foreground italic">
+              No notation available for this psalm.
+            </p>
           )}
         </div>
-
-        {/* Right column: SoundCloud embed — hidden on mobile (D-03: SoundCloud is in Tune tab on mobile) */}
         {primaryTune?.soundcloudUrl && (
           <div className="hidden md:block">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
@@ -112,6 +85,12 @@ export default async function PsalmPage({ params }: PageProps) {
           </div>
         )}
       </div>
+
+      {/* Divider between notation and tabs */}
+      <hr className="border-border mb-8" />
+
+      {/* Tab section BELOW (D-01) */}
+      <PsalmTabs psalm={psalm} primaryTune={primaryTune} />
     </div>
   )
 }
