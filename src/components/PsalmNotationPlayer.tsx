@@ -29,8 +29,7 @@ function buildAbcWithStanzas(baseAbc: string, stanzaGroup: string[]): string {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type ScoreMode = 'staff' | 'solfege'
-type DisplayMode = 'notation' | 'lyrics-only'
+type ViewMode = 'staff' | 'solfege' | 'lyrics'
 type LyricsSize = 'sm' | 'base' | 'lg'
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -57,18 +56,16 @@ export function PsalmNotationPlayer({
 
   // State
   const [groupIndex, setGroupIndex] = useState(0)
-  // Staff|Solfège toggle (D-09) — lazy init reads localStorage to avoid flash
-  const [scoreMode, setScoreMode] = useState<ScoreMode>(() => {
+  // Unified view mode: staff | solfege | lyrics
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
     try {
-      return localStorage.getItem('psalter-score-mode') === 'solfege' ? 'solfege' : 'staff'
-    } catch {
-      return 'staff'
-    }
+      const stored = localStorage.getItem('psalter-score-mode')
+      if (stored === 'solfege' || stored === 'lyrics') return stored
+    } catch { /* ignore */ }
+    return 'staff'
   })
-  // Show notation|Lyrics only toggle (D-10)
-  const [displayMode, setDisplayMode] = useState<DisplayMode>('notation')
 
-  // A±  font size toggle (D-08/D-09) — lazy init reads localStorage to avoid flash
+  // A± font size toggle — lazy init reads localStorage to avoid flash
   const [lyricsSize, setLyricsSize] = useState<LyricsSize>(() => {
     try {
       const stored = localStorage.getItem('psalter-lyrics-size')
@@ -77,17 +74,14 @@ export function PsalmNotationPlayer({
     return 'base'
   })
 
-  // Persist Staff|Solfège preference to localStorage on change (D-09)
   useEffect(() => {
-    localStorage.setItem('psalter-score-mode', scoreMode)
-  }, [scoreMode])
+    localStorage.setItem('psalter-score-mode', viewMode)
+  }, [viewMode])
 
-  // Persist lyrics font size preference to localStorage on change (D-08)
   useEffect(() => {
     localStorage.setItem('psalter-lyrics-size', lyricsSize)
   }, [lyricsSize])
 
-  // Lyrics size class mapping (D-10)
   const lyricsSizeClass = { sm: 'text-sm', base: 'text-base', lg: 'text-lg' }[lyricsSize]
 
   // Fallback chain (D-13)
@@ -121,53 +115,41 @@ export function PsalmNotationPlayer({
   return (
     <div className="space-y-3">
 
-      {/* ── Controls ABOVE the score (D-12) ──────────────────────────────── */}
+      {/* ── Controls ABOVE the score ─────────────────────────────────────── */}
       <div className="flex flex-wrap gap-2 items-center">
 
-        {/* Staff | Solfège toggle (D-09) — only shown when abc is available */}
-        {!solfegeOnly && (
-          <div className="flex gap-1">
+        {/* Staff | Solfège | Lyrics — unified 3-button toggle */}
+        <div className="flex gap-1">
+          {!solfegeOnly && (
             <Button
-              variant={scoreMode === 'staff' ? 'default' : 'outline'}
+              variant={viewMode === 'staff' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setScoreMode('staff')}
-              aria-pressed={scoreMode === 'staff'}
+              onClick={() => setViewMode('staff')}
+              aria-pressed={viewMode === 'staff'}
             >
               Staff
             </Button>
-            <Button
-              variant={scoreMode === 'solfege' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setScoreMode('solfege')}
-              aria-pressed={scoreMode === 'solfege'}
-            >
-              Solfège
-            </Button>
-          </div>
-        )}
-
-        {/* Show notation | Lyrics only toggle (D-10) */}
-        <div className="flex gap-1">
+          )}
           <Button
-            variant={displayMode === 'notation' ? 'default' : 'outline'}
+            variant={viewMode === 'solfege' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setDisplayMode('notation')}
-            aria-pressed={displayMode === 'notation'}
+            onClick={() => setViewMode('solfege')}
+            aria-pressed={viewMode === 'solfege'}
           >
-            Show notation
+            Solfège
           </Button>
           <Button
-            variant={displayMode === 'lyrics-only' ? 'default' : 'outline'}
+            variant={viewMode === 'lyrics' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setDisplayMode('lyrics-only')}
-            aria-pressed={displayMode === 'lyrics-only'}
+            onClick={() => setViewMode('lyrics')}
+            aria-pressed={viewMode === 'lyrics'}
           >
-            Lyrics only
+            Lyrics
           </Button>
         </div>
 
-        {/* A− | A+ font size toggle — only visible in lyrics-only mode */}
-        {displayMode === 'lyrics-only' && (
+        {/* A− | A+ font size toggle — only visible in lyrics mode */}
+        {viewMode === 'lyrics' && (
           <div className="flex gap-1">
             <Button
               variant="outline"
@@ -191,8 +173,8 @@ export function PsalmNotationPlayer({
         )}
       </div>
 
-      {/* ── Lyrics only mode (D-10): all stanzas as scrollable text ──────── */}
-      {displayMode === 'lyrics-only' ? (
+      {/* ── Lyrics mode: all stanzas as scrollable text ───────────────────── */}
+      {viewMode === 'lyrics' ? (
         <div className="space-y-4 py-2">
           {stanzas.length === 0 ? (
             <p className="text-sm text-muted-foreground italic">No lyrics available.</p>
@@ -222,11 +204,11 @@ export function PsalmNotationPlayer({
                 className="object-contain rounded-md border border-border"
               />
             </div>
-          ) : scoreMode === 'staff' ? (
+          ) : viewMode === 'staff' ? (
             /* Staff mode: abcjs SVG with current stanza group lyrics */
             <AbcRenderer abc={abcForRender} title={tuneName} />
           ) : (
-            /* Solfège mode (D-09): R2 JPG — stanza nav hidden in this branch */
+            /* Solfège mode: R2 JPG — stanza nav hidden in this branch */
             hasSolfege ? (
               <div className="relative w-full max-w-2xl mx-auto aspect-[3/2]">
                 <Image
@@ -243,9 +225,8 @@ export function PsalmNotationPlayer({
             )
           )}
 
-          {/* ── Stanza group nav BELOW score (D-12) ─────────────────────── */}
-          {/* Hidden in solfège mode (D-09) and when only one group exists   */}
-          {!solfegeOnly && scoreMode === 'staff' && stanzaGroups.length > 1 && (
+          {/* ── Stanza group nav BELOW score — hidden in solfège mode and when only one group */}
+          {!solfegeOnly && viewMode === 'staff' && stanzaGroups.length > 1 && (
             <div className="space-y-2 mt-2">
               <p className="text-xs text-muted-foreground text-center">{counterLabel}</p>
               <div className="flex justify-between gap-2">
