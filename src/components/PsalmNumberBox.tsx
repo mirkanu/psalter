@@ -8,7 +8,7 @@ function renderSnippet(snippet: string, query: string) {
     <>
       {parts.map((part, i) =>
         part.toLowerCase() === query.toLowerCase()
-          ? <b key={i}>{part}</b>
+          ? <strong key={i}>{part}</strong>
           : <span key={i}>{part}</span>
       )}
     </>
