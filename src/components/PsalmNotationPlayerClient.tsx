@@ -12,6 +12,7 @@ const PsalmNotationPlayer = dynamic(
 interface PsalmNotationPlayerClientProps {
   abc: string | null
   lyrics: string
+  scoreJpgUrl: string | null
   solfegeJpgUrl: string | null
   tuneName: string
 }
