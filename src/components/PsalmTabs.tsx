@@ -386,10 +386,10 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId,
       }
     : primaryTune
 
-  const singPanel = (
-    <div className="space-y-4">
+  const makeSingPanel = (stickyScoreMode: boolean) => (
+    <div className={stickyScoreMode ? 'flex flex-col h-full' : 'space-y-4'}>
       {recommendedVersionSlug && (
-        <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 px-3 py-2.5 text-sm">
+        <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 px-3 py-2.5 text-sm flex-shrink-0">
           <Link
             href={`/psalms/${recommendedVersionSlug}`}
             className="font-semibold underline underline-offset-2 text-amber-900 dark:text-amber-200 hover:no-underline"
@@ -412,6 +412,7 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId,
           youtubeUrl={(activeTune as { youtubeUrl?: string | null })?.youtubeUrl ?? null}
           alternateTunes={alternateTunes}
           onChangeTune={setOverrideTune}
+          stickyScoreMode={stickyScoreMode}
         />
       ) : (
         <div className="space-y-4">
@@ -505,7 +506,7 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId,
           </div>
 
           <TabsContent value="sing" className="pb-4">
-            {singPanel}
+            {makeSingPanel(false)}
           </TabsContent>
           {sharedTabContents('pb-4')}
         </Tabs>
@@ -514,7 +515,7 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId,
       {/* ══ DESKTOP / LANDSCAPE LAYOUT (≥ md) ══════════════════════════════ */}
       <div className="hidden md:grid md:grid-cols-2 gap-8 sticky top-14 h-[calc(100vh-3.5rem)] overflow-hidden">
         {/* Left: Sing content — always visible */}
-        <div className="overflow-y-auto h-full pb-8">{singPanel}</div>
+        <div className="flex flex-col h-full overflow-hidden pb-8">{makeSingPanel(true)}</div>
 
         {/* Right: tabs (no Sing tab) */}
         <div className="overflow-y-auto h-full pb-8">

@@ -22,6 +22,7 @@ interface PsalmNotationPlayerClientProps {
   youtubeUrl: string | null
   alternateTunes: AlternateTune[]
   onChangeTune: (tune: AlternateTune) => void
+  stickyScoreMode?: boolean
 }
 
 /**
@@ -33,7 +34,7 @@ interface PsalmNotationPlayerClientProps {
 export function PsalmNotationPlayerClient(props: PsalmNotationPlayerClientProps) {
   return (
     <Suspense fallback={<Skeleton className="h-52 w-full rounded-md" />}>
-      <PsalmNotationPlayer {...props} />
+      <PsalmNotationPlayer {...props} stickyScoreMode={props.stickyScoreMode} />
     </Suspense>
   )
 }

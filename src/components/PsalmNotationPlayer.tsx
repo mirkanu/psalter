@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import AbcRenderer from '@/components/AbcRenderer'
 import type { AlternateTune } from '@/db/queries/tunes'
 import { ChangeTuneDialog } from '@/components/ChangeTuneDialog'
-import { Pencil, Play, Pause } from 'lucide-react'
+import { Pencil, Play, Pause, X } from 'lucide-react'
 import { toEmbedUrl } from '@/lib/youtube'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -50,6 +51,7 @@ interface PsalmNotationPlayerProps {
   youtubeUrl: string | null
   alternateTunes: AlternateTune[]
   onChangeTune: (tune: AlternateTune) => void
+  stickyScoreMode?: boolean
 }
 
 export function PsalmNotationPlayer({
@@ -64,6 +66,7 @@ export function PsalmNotationPlayer({
   youtubeUrl,
   alternateTunes,
   onChangeTune,
+  stickyScoreMode = false,
 }: PsalmNotationPlayerProps) {
   // Split lyrics into stanzas, then group by 4 (D-08)
   const stanzas = lyrics
@@ -76,6 +79,7 @@ export function PsalmNotationPlayer({
   const [groupIndex, setGroupIndex] = useState(0)
   const [changeTuneOpen, setChangeTuneOpen] = useState(false)
   const [isAudioPlaying, setIsAudioPlaying] = useState(false)
+  const [fullscreenSrc, setFullscreenSrc] = useState<string | null>(null)
   // Unified view mode: staff | solfege | lyrics
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     try {
@@ -111,12 +115,21 @@ export function PsalmNotationPlayer({
   const hasSoundCloud = !!soundcloudUrl && soundcloudUrl.startsWith('http')
   const hasYouTube = !!toEmbedUrl(youtubeUrl)
 
+  // Tune name — linked when tuneId is available
+  const tuneNameEl = tuneId ? (
+    <Link href={`/tunes/${tuneId}`} className="font-medium text-primary underline-offset-2 hover:underline">
+      {tuneName}
+    </Link>
+  ) : (
+    <span className="font-medium text-foreground">{tuneName}</span>
+  )
+
   if (!hasAbc && !hasScoreJpg && !hasSolfege && !hasSoundCloud && !hasYouTube) {
     return (
       <div className="space-y-3">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium text-foreground">
-            Tune: {tuneName}{tuneMeter ? ` (${tuneMeter})` : ''}
+          <span className="text-sm text-foreground">
+            Tune: {tuneNameEl}{tuneMeter ? ` (${tuneMeter})` : ''}
           </span>
           {alternateTunes.length > 0 && (
             <Button
@@ -164,13 +177,13 @@ export function PsalmNotationPlayer({
       ? buildAbcWithStanzas(abc!, currentGroup)
       : (abc ?? '')
 
-  return (
-    <div className="space-y-3">
-
+  // ── Score section content ────────────────────────────────────────────────
+  const scoreSection = (
+    <>
       {/* ── Tune header ──────────────────────────────────────────────────── */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-sm font-medium text-foreground">
-          Tune: {tuneName}{tuneMeter ? ` (${tuneMeter})` : ''}
+        <span className="text-sm text-foreground">
+          Tune: {tuneNameEl}{tuneMeter ? ` (${tuneMeter})` : ''}
         </span>
         {alternateTunes.length > 0 && (
           <Button
@@ -283,6 +296,78 @@ export function PsalmNotationPlayer({
         )}
       </div>
 
+      {/* ── Score area (only when not in lyrics-only mode) ──────────────── */}
+      {viewMode !== 'lyrics' && (
+        <>
+          {imageOnlyMode ? (
+            /* No ABC: show image for current mode */
+            <>
+              {viewMode === 'staff' && hasScoreJpg ? (
+                <div
+                  className="relative w-full max-w-2xl mx-auto aspect-[3/2] cursor-zoom-in"
+                  onClick={() => setFullscreenSrc(scoreJpgUrl!)}
+                  title="Click to view fullscreen"
+                >
+                  <Image
+                    src={scoreJpgUrl!}
+                    alt={`Score for ${tuneName}`}
+                    fill
+                    className="object-contain rounded-md border border-border"
+                  />
+                </div>
+              ) : viewMode === 'staff' ? (
+                <p className="text-sm text-muted-foreground italic">Staff score not yet available.</p>
+              ) : hasSolfege ? (
+                <div
+                  className="relative w-full max-w-2xl mx-auto aspect-[3/2] cursor-zoom-in"
+                  onClick={() => setFullscreenSrc(solfegeJpgUrl!)}
+                  title="Click to view fullscreen"
+                >
+                  <Image
+                    src={solfegeJpgUrl!}
+                    alt={`Solfège score for ${tuneName}`}
+                    fill
+                    className="object-contain rounded-md border border-border"
+                  />
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">Solfège score not yet available.</p>
+              )}
+            </>
+          ) : viewMode === 'staff' ? (
+            /* Staff mode: abcjs SVG with current stanza group lyrics */
+            <AbcRenderer abc={abcForRender} title={tuneName} />
+          ) : (
+            /* Solfège mode: R2 JPG */
+            <>
+              {hasSolfege ? (
+                <div
+                  className="relative w-full max-w-2xl mx-auto aspect-[3/2] cursor-zoom-in"
+                  onClick={() => setFullscreenSrc(solfegeJpgUrl!)}
+                  title="Click to view fullscreen"
+                >
+                  <Image
+                    src={solfegeJpgUrl!}
+                    alt={`Solfège score for ${tuneName}`}
+                    fill
+                    className="object-contain rounded-md border border-border"
+                  />
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">
+                  Solfège score not yet available.
+                </p>
+              )}
+            </>
+          )}
+        </>
+      )}
+    </>
+  )
+
+  // ── Lyrics section content ───────────────────────────────────────────────
+  const lyricsSection = (
+    <>
       {/* ── Lyrics mode: all stanzas as scrollable text ───────────────────── */}
       {viewMode === 'lyrics' ? (
         <div className="space-y-4 py-2">
@@ -297,112 +382,100 @@ export function PsalmNotationPlayer({
             </p>
           ))}
         </div>
+      ) : imageOnlyMode ? (
+        /* No ABC: full lyrics below image */
+        stanzas.length > 0 ? (
+          <div className="space-y-4 py-2 mt-4 border-t border-border">
+            {stanzas.map((stanza, i) => (
+              <p
+                key={i}
+                className={`text-foreground leading-relaxed whitespace-pre-line ${lyricsSizeClass}`}
+              >
+                {stanza}
+              </p>
+            ))}
+          </div>
+        ) : null
+      ) : viewMode === 'solfege' ? (
+        /* Solfège mode with ABC: full lyrics below */
+        stanzas.length > 0 ? (
+          <div className="space-y-4 py-2 mt-4 border-t border-border">
+            {stanzas.map((stanza, i) => (
+              <p
+                key={i}
+                className={`text-foreground leading-relaxed whitespace-pre-line ${lyricsSizeClass}`}
+              >
+                {stanza}
+              </p>
+            ))}
+          </div>
+        ) : null
       ) : (
-        <>
-          {/* ── Score area ──────────────────────────────────────────────── */}
-
-          {imageOnlyMode ? (
-            /* No ABC: show image for current mode + full lyrics below */
-            <>
-              {viewMode === 'staff' && hasScoreJpg ? (
-                <div className="relative w-full max-w-2xl mx-auto aspect-[3/2]">
-                  <Image
-                    src={scoreJpgUrl!}
-                    alt={`Score for ${tuneName}`}
-                    fill
-                    className="object-contain rounded-md border border-border"
-                  />
-                </div>
-              ) : viewMode === 'staff' ? (
-                <p className="text-sm text-muted-foreground italic">Staff score not yet available.</p>
-              ) : hasSolfege ? (
-                <div className="relative w-full max-w-2xl mx-auto aspect-[3/2]">
-                  <Image
-                    src={solfegeJpgUrl!}
-                    alt={`Solfège score for ${tuneName}`}
-                    fill
-                    className="object-contain rounded-md border border-border"
-                  />
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground italic">Solfège score not yet available.</p>
-              )}
-
-              {/* Full lyrics below the image */}
-              {stanzas.length > 0 && (
-                <div className="space-y-4 py-2 mt-4 border-t border-border">
-                  {stanzas.map((stanza, i) => (
-                    <p
-                      key={i}
-                      className={`text-foreground leading-relaxed whitespace-pre-line ${lyricsSizeClass}`}
-                    >
-                      {stanza}
-                    </p>
-                  ))}
-                </div>
-              )}
-            </>
-          ) : viewMode === 'staff' ? (
-            /* Staff mode: abcjs SVG with current stanza group lyrics */
-            <AbcRenderer abc={abcForRender} title={tuneName} />
-          ) : (
-            /* Solfège mode: R2 JPG + full lyrics below */
-            <>
-              {hasSolfege ? (
-                <div className="relative w-full max-w-2xl mx-auto aspect-[3/2]">
-                  <Image
-                    src={solfegeJpgUrl!}
-                    alt={`Solfège score for ${tuneName}`}
-                    fill
-                    className="object-contain rounded-md border border-border"
-                  />
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground italic">
-                  Solfège score not yet available.
-                </p>
-              )}
-              {stanzas.length > 0 && (
-                <div className="space-y-4 py-2 mt-4 border-t border-border">
-                  {stanzas.map((stanza, i) => (
-                    <p
-                      key={i}
-                      className={`text-foreground leading-relaxed whitespace-pre-line ${lyricsSizeClass}`}
-                    >
-                      {stanza}
-                    </p>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-
-          {/* ── Stanza group nav BELOW score — only when ABC is rendering */}
-          {!imageOnlyMode && viewMode === 'staff' && stanzaGroups.length > 1 && (
-            <div className="space-y-2 mt-2">
-              <div className="flex justify-between gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setGroupIndex((n) => Math.max(0, n - 1))}
-                  disabled={groupIndex === 0}
-                  aria-label="Previous stanza group"
-                >
-                  ← Prev
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setGroupIndex((n) => Math.min(stanzaGroups.length - 1, n + 1))}
-                  disabled={groupIndex === stanzaGroups.length - 1}
-                  aria-label="Next stanza group"
-                >
-                  Next →
-                </Button>
-              </div>
+        /* Staff mode with ABC: stanza group nav */
+        !imageOnlyMode && viewMode === 'staff' && stanzaGroups.length > 1 ? (
+          <div className="space-y-2 mt-2">
+            <div className="flex justify-between gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setGroupIndex((n) => Math.max(0, n - 1))}
+                disabled={groupIndex === 0}
+                aria-label="Previous stanza group"
+              >
+                ← Prev
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setGroupIndex((n) => Math.min(stanzaGroups.length - 1, n + 1))}
+                disabled={groupIndex === stanzaGroups.length - 1}
+                aria-label="Next stanza group"
+              >
+                Next →
+              </Button>
             </div>
-          )}
-        </>
+          </div>
+        ) : null
+      )}
+    </>
+  )
+
+  return (
+    <>
+      <div className={stickyScoreMode ? 'flex flex-col h-full' : 'space-y-3'}>
+        {/* ── Score section (non-scrolling in sticky mode) ── */}
+        <div className={stickyScoreMode ? 'flex-shrink-0 space-y-3' : 'space-y-3'}>
+          {scoreSection}
+        </div>
+
+        {/* ── Lyrics section (scrollable in sticky mode) ── */}
+        <div className={stickyScoreMode ? 'flex-1 overflow-y-auto py-2' : ''}>
+          {lyricsSection}
+        </div>
+      </div>
+
+      {/* ── Fullscreen image overlay ─────────────────────────────────────── */}
+      {fullscreenSrc && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setFullscreenSrc(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setFullscreenSrc(null)}
+            className="absolute top-4 right-4 p-2 rounded-full bg-background/80 border border-border hover:bg-muted"
+            aria-label="Close fullscreen"
+          >
+            <X className="size-5" />
+          </button>
+          <div onClick={(e) => e.stopPropagation()}>
+            <img
+              src={fullscreenSrc}
+              alt={`${tuneName} — fullscreen`}
+              className="max-w-full max-h-[85vh] object-contain rounded-md"
+            />
+          </div>
+        </div>
       )}
 
       <ChangeTuneDialog
@@ -413,6 +486,6 @@ export function PsalmNotationPlayer({
         meter={tuneMeter}
         onSelect={onChangeTune}
       />
-    </div>
+    </>
   )
 }
