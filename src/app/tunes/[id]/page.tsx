@@ -1,4 +1,3 @@
-import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { fetchTuneDetail, fetchTuneIds } from "@/db/queries/tunes"
@@ -6,7 +5,7 @@ import { fetchPsalmsByMeter } from "@/db/queries/psalms"
 import { Badge } from "@/components/ui/badge"
 import { AbcNotationSection } from "@/components/AbcNotationSection"
 import { TuneDetailClient } from "@/components/TuneDetailClient"
-import { Button } from "@/components/ui/button"
+import { PsalmsByTuneSection } from "@/components/PsalmsByTuneSection"
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -32,33 +31,35 @@ export default async function TunePage({ params }: PageProps) {
   const tune = await fetchTuneDetail(tuneId)
   if (!tune) notFound()
 
-  // Psalms using this tune (deduplicated)
-  const psalmsUsingTune = new Map<number, string>()
+  // Deduplicate psalms using this tune, collecting firstLine from any linked version
+  const psalmsMap = new Map<number, { bibleTitle: string | null; firstLine: string | null }>()
   for (const pvt of tune.psalmVersionTunes) {
     const p = pvt.psalmVersion?.psalm
-    if (p?.id != null) {
-      psalmsUsingTune.set(p.id, p.bibleTitle ?? `Psalm ${p.id}`)
+    if (p?.id != null && !psalmsMap.has(p.id)) {
+      psalmsMap.set(p.id, {
+        bibleTitle: p.bibleTitle ?? null,
+        firstLine: pvt.psalmVersion?.firstLine ?? null,
+      })
     }
   }
-  const psalmList = Array.from(psalmsUsingTune.entries()).sort(([a], [b]) => a - b)
+  const psalmList = Array.from(psalmsMap.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([id, data]) => ({ id, ...data }))
 
-  // Multi-page score images: primary + additional pages
+  // Multi-page score images
   const additionalUrls: string[] = Array.isArray(tune.additionalScoreUrls)
-    ? (tune.additionalScoreUrls as string[]).filter((u) => typeof u === 'string')
+    ? (tune.additionalScoreUrls as string[]).filter((u): u is string => typeof u === 'string')
     : []
-  const staffPages = tune.scoreJpgUrl
-    ? [tune.scoreJpgUrl, ...additionalUrls]
-    : additionalUrls
+  const staffPages = tune.scoreJpgUrl ? [tune.scoreJpgUrl, ...additionalUrls] : additionalUrls
   const solfegePages = tune.solfegeJpgUrl ? [tune.solfegeJpgUrl] : []
 
-  // Psalms with the same meter for "Select Psalm" dialog
+  // All psalms with the same meter (for "Select different Psalm" dialog)
   const psalmsForMeter = tune.meter ? await fetchPsalmsByMeter(tune.meter) : []
 
-  // Moods
   const moods = tune.tuneMoods.map((tm) => tm.mood.name).filter(Boolean) as string[]
-
   const hasAbc = !!(tune.abcNotation?.trim())
   const hasImages = staffPages.length > 0 || solfegePages.length > 0
+  const hasAudio = !!(tune.soundcloudUrl || tune.youtubeUrl)
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-8">
@@ -75,7 +76,7 @@ export default async function TunePage({ params }: PageProps) {
         )}
       </header>
 
-      {/* Metadata */}
+      {/* Metadata — only render non-empty fields */}
       {(moods.length > 0 || tune.numberIn1979RpPsalter || tune.numInPrcaPsalter || tune.precentingComment || (tune.hasFamousHymn && tune.famousHymn)) && (
         <section className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
           {moods.length > 0 && (
@@ -111,7 +112,7 @@ export default async function TunePage({ params }: PageProps) {
         </section>
       )}
 
-      {/* Score — ABC notation (with built-in staff renderer) */}
+      {/* Score — ABC notation */}
       {hasAbc && (
         <section>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
@@ -121,8 +122,8 @@ export default async function TunePage({ params }: PageProps) {
         </section>
       )}
 
-      {/* Score — image-based (staff + solfege tabs, multi-page, play button) */}
-      {!hasAbc && (hasImages || tune.soundcloudUrl || tune.youtubeUrl) && (
+      {/* Score — image-based with Staff/Solfège tabs, multi-page arrows, play button */}
+      {!hasAbc && (hasImages || hasAudio) && (
         <section>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
             Score
@@ -133,14 +134,12 @@ export default async function TunePage({ params }: PageProps) {
             solfegePages={solfegePages}
             soundcloudUrl={tune.soundcloudUrl}
             youtubeUrl={tune.youtubeUrl}
-            psalmsForMeter={psalmsForMeter}
-            meter={tune.meter}
           />
         </section>
       )}
 
-      {/* ABC tunes: play button + select psalm below the notation */}
-      {hasAbc && (tune.soundcloudUrl || tune.youtubeUrl) && (
+      {/* For ABC tunes that also have audio: show play button below notation */}
+      {hasAbc && hasAudio && (
         <section>
           <TuneDetailClient
             tuneName={tune.name ?? `Tune ${tune.id}`}
@@ -148,47 +147,18 @@ export default async function TunePage({ params }: PageProps) {
             solfegePages={solfegePages}
             soundcloudUrl={tune.soundcloudUrl}
             youtubeUrl={tune.youtubeUrl}
-            psalmsForMeter={psalmsForMeter}
-            meter={tune.meter}
           />
         </section>
       )}
 
-      {/* Psalms using this tune */}
+      {/* Psalms using this tune — card grid with first line + "Select different Psalm" */}
       {psalmList.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-            Psalms using this tune
-          </h2>
-          <ul className="flex flex-wrap gap-2">
-            {psalmList.map(([psalmId, title]) => (
-              <li key={psalmId}>
-                <Link
-                  href={`/psalms/${psalmId}`}
-                  className="inline-flex items-center px-3 py-1 rounded-md border border-border bg-card hover:border-primary hover:text-primary transition-colors text-sm"
-                >
-                  <span className="font-mono mr-2 text-muted-foreground">{psalmId}</span>
-                  {title}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/* "Select Psalm" for ABC-only tunes that have no audio player shown above */}
-      {hasAbc && !tune.soundcloudUrl && !tune.youtubeUrl && psalmsForMeter.length > 0 && (
-        <section>
-          <TuneDetailClient
-            tuneName={tune.name ?? `Tune ${tune.id}`}
-            staffPages={[]}
-            solfegePages={[]}
-            soundcloudUrl={null}
-            youtubeUrl={null}
-            psalmsForMeter={psalmsForMeter}
-            meter={tune.meter}
-          />
-        </section>
+        <PsalmsByTuneSection
+          psalms={psalmList}
+          psalmsForMeter={psalmsForMeter}
+          tuneId={tuneId}
+          meter={tune.meter}
+        />
       )}
     </div>
   )

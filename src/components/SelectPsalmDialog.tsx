@@ -14,35 +14,46 @@ interface PsalmOption {
 interface SelectPsalmDialogProps {
   open: boolean
   onClose: () => void
+  /** All psalms with matching meter */
   psalms: PsalmOption[]
   meter: string | null
+  /** Psalm IDs that already use this tune — hidden by default, shown when searching */
+  existingPsalmIds: Set<number>
+  /** Tune ID to pre-select when landing on the psalm page */
+  tuneId: number
 }
 
-export function SelectPsalmDialog({ open, onClose, psalms, meter }: SelectPsalmDialogProps) {
+export function SelectPsalmDialog({ open, onClose, psalms, meter, existingPsalmIds, tuneId }: SelectPsalmDialogProps) {
   const [query, setQuery] = useState('')
   const router = useRouter()
 
-  const filtered = query.trim()
-    ? psalms.filter((p) =>
-        String(p.id).includes(query) ||
-        (p.bibleTitle ?? '').toLowerCase().includes(query.toLowerCase())
+  const trimmed = query.trim()
+
+  // Without a search query, hide psalms that already use this tune.
+  // When searching, show all matches so the user can still navigate to them.
+  const pool = trimmed ? psalms : psalms.filter((p) => !existingPsalmIds.has(p.id))
+
+  const filtered = trimmed
+    ? pool.filter((p) =>
+        String(p.id).includes(trimmed) ||
+        (p.bibleTitle ?? '').toLowerCase().includes(trimmed.toLowerCase())
       )
-    : psalms
+    : pool
 
   function handleSelect(psalmId: number) {
     onClose()
     setQuery('')
-    router.push(`/psalms/${psalmId}`)
+    router.push(`/psalms/${psalmId}?tune=${tuneId}`)
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) { onClose(); setQuery('') } }}>
       <DialogContent className="max-w-lg max-h-[80vh] flex flex-col gap-4">
         <DialogHeader>
-          <DialogTitle>Select a Psalm</DialogTitle>
+          <DialogTitle>Select different Psalm</DialogTitle>
           {meter && (
             <p className="text-sm text-muted-foreground">
-              Showing psalms in <span className="font-medium">{meter}</span> meter
+              {meter} meter — psalms already using this tune are hidden (search to show all)
             </p>
           )}
         </DialogHeader>

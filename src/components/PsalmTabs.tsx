@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
@@ -331,8 +332,15 @@ const DESKTOP_TABS = MOBILE_TABS.filter((t) => t.value !== 'sing')
 
 export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId, recommendedVersionSlug }: PsalmTabsProps) {
   const mobileTabsRef = useRef<HTMLDivElement>(null)
-  const [overrideTune, setOverrideTune] = useState<AlternateTune | null>(null)
+  const searchParams = useSearchParams()
   const [noRecDialogOpen, setNoRecDialogOpen] = useState(false)
+
+  // Pre-select a tune when navigating from a tune page via ?tune={id}
+  const tuneParam = searchParams.get('tune')
+  const preselectedTune = tuneParam
+    ? alternateTunes.find((t) => String(t.id) === tuneParam) ?? null
+    : null
+  const [overrideTune, setOverrideTune] = useState<AlternateTune | null>(preselectedTune)
 
   useEffect(() => {
     if (mobileTabsRef.current) {
