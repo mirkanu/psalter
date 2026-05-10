@@ -12,6 +12,8 @@ interface TuneRow {
   name: string | null
   meter: string | null
   scoreJpgUrl: string | null
+  moods: string[]
+  recommendedPsalmIds: number[]
 }
 
 interface TuneGridProps {
@@ -24,29 +26,60 @@ export function TuneGrid({ tunes }: TuneGridProps) {
   const [selectedMeter, setSelectedMeter] = useState<string>(
     searchParams.get('meter') ?? 'all'
   )
+  const [selectedMood, setSelectedMood] = useState<string>(
+    searchParams.get('mood') ?? 'all'
+  )
 
   const meters = useMemo(() => {
     const unique = Array.from(new Set(tunes.map((t) => t.meter).filter((m): m is string => Boolean(m))))
     return unique.sort()
   }, [tunes])
 
+  const moods = useMemo(() => {
+    const unique = Array.from(new Set(tunes.flatMap((t) => t.moods))).filter(Boolean)
+    return unique.sort()
+  }, [tunes])
+
   const filteredTunes = useMemo(
-    () => tunes.filter((t) => selectedMeter === 'all' || t.meter === selectedMeter),
-    [tunes, selectedMeter]
+    () => tunes.filter((t) => {
+      const meterMatch = selectedMeter === 'all' || t.meter === selectedMeter
+      const moodMatch = selectedMood === 'all' || t.moods.includes(selectedMood)
+      return meterMatch && moodMatch
+    }),
+    [tunes, selectedMeter, selectedMood]
   )
 
-  function handleMeterChange(v: string) {
-    setSelectedMeter(v)
-    if (v === 'all') {
-      router.replace('/tunes', { scroll: false })
-    } else {
-      router.replace(`/tunes?meter=${encodeURIComponent(v)}`, { scroll: false })
-    }
+  function buildUrl(meter: string, mood: string) {
+    const params = new URLSearchParams()
+    if (meter !== 'all') params.set('meter', meter)
+    if (mood !== 'all') params.set('mood', mood)
+    const qs = params.toString()
+    return qs ? `/tunes?${qs}` : '/tunes'
   }
+
+  function handleMeterChange(v: string) {
+    const val = v ?? 'all'
+    setSelectedMeter(val)
+    router.replace(buildUrl(val, selectedMood), { scroll: false })
+  }
+
+  function handleMoodChange(v: string) {
+    const val = v ?? 'all'
+    setSelectedMood(val)
+    router.replace(buildUrl(selectedMeter, val), { scroll: false })
+  }
+
+  function handleClear() {
+    setSelectedMeter('all')
+    setSelectedMood('all')
+    router.replace('/tunes', { scroll: false })
+  }
+
+  const hasActiveFilter = selectedMeter !== 'all' || selectedMood !== 'all'
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex flex-wrap items-center gap-3 mb-6">
         <Select value={selectedMeter} onValueChange={(v) => handleMeterChange(v ?? 'all')}>
           <SelectTrigger className="w-48">
             <SelectValue placeholder="All Meters" />
@@ -58,32 +91,71 @@ export function TuneGrid({ tunes }: TuneGridProps) {
             ))}
           </SelectContent>
         </Select>
-        {selectedMeter !== 'all' && (
-          <Button variant="ghost" size="sm" onClick={() => handleMeterChange('all')} className="text-sm gap-1">
+        <Select value={selectedMood} onValueChange={(v) => handleMoodChange(v ?? 'all')}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="All Moods" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Moods</SelectItem>
+            {moods.map((mood) => (
+              <SelectItem key={mood} value={mood}>{mood}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {hasActiveFilter && (
+          <Button variant="ghost" size="sm" onClick={handleClear} className="text-sm gap-1">
             <X className="h-3 w-3" />
-            Clear
+            Clear Filters
           </Button>
         )}
       </div>
+
+      {filteredTunes.length === 0 && (
+        <div className="py-16 text-center space-y-2">
+          <p className="text-xl font-semibold">No tunes found</p>
+          <p className="text-muted-foreground text-sm">No tunes match the current filters. Try a different meter or mood.</p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {filteredTunes.map((tune) => (
-          <Link
-            key={tune.id}
-            href={`/tunes/${tune.id}`}
-            className="block bg-card border border-border rounded-lg p-4 hover:border-primary hover:shadow-sm transition-all duration-200 group active:scale-[0.98]"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <h2 className="text-base font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
-                {tune.name ?? `Tune ${tune.id}`}
-              </h2>
-              {tune.meter && (
-                <Badge variant="secondary" className="text-xs shrink-0">
-                  {tune.meter}
-                </Badge>
+        {filteredTunes.map((tune) => {
+          const psalmDisplay = tune.recommendedPsalmIds.length > 6
+            ? tune.recommendedPsalmIds.slice(0, 6).join(', ') + ` +${tune.recommendedPsalmIds.length - 6} more`
+            : tune.recommendedPsalmIds.join(', ')
+
+          return (
+            <Link
+              key={tune.id}
+              href={`/tunes/${tune.id}`}
+              className="block bg-card border border-border rounded-lg p-4 hover:border-primary hover:shadow-sm transition-all duration-200 group active:scale-[0.98]"
+            >
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <h2 className="text-base font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+                  {tune.name ?? `Tune ${tune.id}`}
+                </h2>
+                {tune.meter && (
+                  <Badge variant="secondary" className="text-sm shrink-0">
+                    {tune.meter}
+                  </Badge>
+                )}
+              </div>
+              {psalmDisplay && (
+                <p className="text-sm text-muted-foreground mb-1.5">
+                  <span className="font-medium">Psalms:</span> {psalmDisplay}
+                </p>
               )}
-            </div>
-          </Link>
-        ))}
+              {tune.moods.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {tune.moods.map((mood) => (
+                    <Badge key={mood} variant="outline" className="text-sm">
+                      {mood}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </Link>
+          )
+        })}
       </div>
     </div>
   )
