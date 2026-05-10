@@ -7,7 +7,6 @@ import { Sheet, SheetTrigger, SheetContent, SheetClose } from '@/components/ui/s
 const navLinks = [
   { href: "/psalms", label: "Psalms" },
   { href: "/tunes", label: "Tunes" },
-  { href: "/search", label: "Search" },
   { href: "/explore", label: "Explore" },
   { href: "/daily", label: "Daily Plan" },
 ]
