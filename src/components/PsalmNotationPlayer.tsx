@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button'
 import AbcRenderer from '@/components/AbcRenderer'
 import type { AlternateTune } from '@/db/queries/tunes'
 import { ChangeTuneDialog } from '@/components/ChangeTuneDialog'
-import { TuneAudioPlayer } from '@/components/TuneAudioPlayer'
+import { Pencil, Play, Pause } from 'lucide-react'
+import { toEmbedUrl } from '@/lib/youtube'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -74,6 +75,7 @@ export function PsalmNotationPlayer({
   // State
   const [groupIndex, setGroupIndex] = useState(0)
   const [changeTuneOpen, setChangeTuneOpen] = useState(false)
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false)
   // Unified view mode: staff | solfege | lyrics
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     try {
@@ -106,6 +108,8 @@ export function PsalmNotationPlayer({
   const hasAbc = abc !== null && abc.trim().length > 0
   const hasScoreJpg = scoreJpgUrl !== null && scoreJpgUrl.trim().length > 0
   const hasSolfege = solfegeJpgUrl !== null && solfegeJpgUrl.trim().length > 0
+  const hasSoundCloud = !!soundcloudUrl && soundcloudUrl.startsWith('http')
+  const hasYouTube = !!toEmbedUrl(youtubeUrl)
 
   if (!hasAbc && !hasScoreJpg && !hasSolfege) {
     return (
@@ -130,7 +134,7 @@ export function PsalmNotationPlayer({
     <div className="space-y-3">
 
       {/* ── Tune header ──────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap">
         <span className="text-sm font-medium text-foreground">
           Tune: {tuneName}{tuneMeter ? ` (${tuneMeter})` : ''}
         </span>
@@ -139,18 +143,53 @@ export function PsalmNotationPlayer({
             variant="outline"
             size="xs"
             onClick={() => setChangeTuneOpen(true)}
+            aria-label="Change tune"
           >
-            Change Tune
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        {(hasSoundCloud || hasYouTube) && (
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={() => setIsAudioPlaying((p) => !p)}
+            aria-label={isAudioPlaying ? 'Pause recording' : 'Play recording'}
+          >
+            {isAudioPlaying
+              ? <Pause className="h-3.5 w-3.5" />
+              : <Play className="h-3.5 w-3.5" />}
           </Button>
         )}
       </div>
 
-      {/* ── Recording play button ────────────────────────────────────────── */}
-      <TuneAudioPlayer
-        soundcloudUrl={soundcloudUrl}
-        youtubeUrl={youtubeUrl}
-        tuneName={tuneName}
-      />
+      {/* ── Embedded recording ──────────────────────────────────────────── */}
+      {isAudioPlaying && (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground italic">Note: lyrics may not match</p>
+          {hasSoundCloud ? (
+            <iframe
+              title={`SoundCloud: ${tuneName}`}
+              width="100%"
+              height="96"
+              allow="autoplay"
+              sandbox="allow-scripts allow-same-origin"
+              src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(soundcloudUrl!)}&auto_play=true&hide_related=true&show_comments=false&show_user=false&show_reposts=false`}
+              className="rounded-md border border-border"
+            />
+          ) : (
+            <div className="aspect-video w-full max-w-sm rounded-md overflow-hidden border border-border">
+              <iframe
+                src={`${toEmbedUrl(youtubeUrl)}?autoplay=1`}
+                title={`YouTube: ${tuneName}`}
+                className="w-full h-full"
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+                sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Controls ABOVE the score ─────────────────────────────────────── */}
       <div className="flex flex-wrap gap-2 items-center">

@@ -26,9 +26,12 @@ export function SiteHeader() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           <Link href="/" className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
-            <span className="font-semibold text-foreground text-base tracking-tight">
-              CPRC Psalter
-            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://assets.softr-files.com/applications/408bc320-dc3f-4d12-8434-de0ccf926f90/assets/71a94206-c1da-47f1-af98-00f758d2f3a6.png"
+              alt="CPRC Psalter"
+              className="h-7 w-auto"
+            />
             <span className="text-[10px] font-semibold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full border border-primary/20 leading-none tracking-wide">
               beta
             </span>

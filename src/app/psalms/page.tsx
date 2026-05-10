@@ -9,12 +9,41 @@ export const metadata: Metadata = {
   description: "Browse all 150 psalms of the Scottish Psalter.",
 }
 
+function extractSectionNum(pn: string | null): number | null {
+  if (!pn) return null
+  const m = pn.match(/\((\d+)\)$/)
+  return m ? parseInt(m[1], 10) : null
+}
+
+function deriveDisplayLabel(
+  psalmId: number,
+  psalterNumber: string | null,
+  isMultiVersion: boolean
+): string {
+  if (!isMultiVersion) return String(psalmId)
+
+  const pn = psalterNumber ?? ''
+
+  // Psalm 119 sections: "119:1-8 (1)" → "119:1-8"
+  const rangeMatch = pn.match(/(\d+:\d+-\d+)/)
+  if (rangeMatch) return rangeMatch[1]
+
+  // Other psalms: "6 (First Version, Recommended)" → "6a*"
+  const isFirst = pn.includes('First')
+  const isRecommended = pn.includes('Recommended')
+  const letter = isFirst ? 'a' : 'b'
+  const star = isRecommended ? '*' : ''
+  return `${psalmId}${letter}${star}`
+}
+
 export default async function PsalmsPage() {
   const rows = await db
     .select({
       id: psalms.id,
+      versionId: psalmVersions.id,
       firstLine: psalmVersions.firstLine,
       meter: psalmVersions.meter,
+      psalterNumber: psalmVersions.psalterNumber,
       kjvExcerpt: sql<string>`LEFT(${psalms.kjvText}, 120)`.as('kjv_excerpt'),
       recommendedTune: tunes.name,
     })
@@ -28,15 +57,31 @@ export default async function PsalmsPage() {
       )
     )
     .leftJoin(tunes, eq(tunes.id, psalmVersionTunes.tuneId))
-    .orderBy(asc(psalms.id))
+    .orderBy(asc(psalms.id), asc(psalmVersions.id))
 
-  // Deduplicate: keep only the FIRST version row per psalm
-  const seen = new Set<number>()
-  const uniqueRows = rows.filter((r) => {
-    if (seen.has(r.id)) return false
-    seen.add(r.id)
-    return true
+  // Count versions per psalm to identify multi-version psalms
+  const countById = new Map<number, number>()
+  for (const row of rows) {
+    countById.set(row.id, (countById.get(row.id) ?? 0) + 1)
+  }
+
+  // Sort: by psalm id, then by section number (for Psalm 119) or version id
+  const sorted = [...rows].sort((a, b) => {
+    if (a.id !== b.id) return a.id - b.id
+    const aNum = extractSectionNum(a.psalterNumber)
+    const bNum = extractSectionNum(b.psalterNumber)
+    if (aNum !== null && bNum !== null) return aNum - bNum
+    return (a.versionId ?? 0) - (b.versionId ?? 0)
   })
+
+  const listRows = sorted.map((row) => ({
+    id: row.id,
+    displayLabel: deriveDisplayLabel(row.id, row.psalterNumber, (countById.get(row.id) ?? 1) > 1),
+    firstLine: row.firstLine,
+    meter: row.meter,
+    kjvExcerpt: row.kjvExcerpt,
+    recommendedTune: row.recommendedTune,
+  }))
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
@@ -48,7 +93,7 @@ export default async function PsalmsPage() {
           Browse all 150 psalms of the Scottish Psalter.
         </p>
       </div>
-      <PsalmListingGrid psalms={uniqueRows} />
+      <PsalmListingGrid psalms={listRows} />
     </div>
   )
 }

@@ -18,6 +18,7 @@ function renderSnippet(snippet: string, query: string) {
 interface PsalmNumberBoxProps {
   psalm: {
     id: number
+    displayLabel: string
     firstLine: string | null
     meter: string | null
     recommendedTune?: string | null
@@ -51,15 +52,15 @@ export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, s
     <Link
       href={`/psalms/${psalm.id}`}
       className={baseClasses}
-      aria-label={`Psalm ${psalm.id}`}
+      aria-label={`Psalm ${psalm.displayLabel}`}
       aria-current={isHighlighted ? "true" : undefined}
       data-psalm-box
     >
       {hasContent ? (
         <>
           <div className="flex items-start justify-between w-full">
-            <span className="text-sm font-semibold font-mono tabular-nums text-foreground leading-none">
-              {psalm.id}
+            <span className="text-xs font-semibold font-mono tabular-nums text-foreground leading-none">
+              {psalm.displayLabel}
             </span>
             {showMeter && psalm.meter && (
               <span className="text-[10px] text-muted-foreground leading-none pt-0.5 pr-1 pl-1 shrink-0">
@@ -84,8 +85,8 @@ export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, s
         </>
       ) : (
         <>
-          <span className="text-sm font-semibold font-mono tabular-nums text-foreground leading-none">
-            {psalm.id}
+          <span className="text-xs font-semibold font-mono tabular-nums text-foreground leading-none">
+            {psalm.displayLabel}
           </span>
           {showMeter && psalm.meter && (
             <span className="absolute top-1 right-1.5 text-[10px] text-muted-foreground leading-none">
