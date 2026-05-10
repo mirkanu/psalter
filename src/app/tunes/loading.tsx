@@ -6,8 +6,9 @@ export default function TunesLoading() {
       <div className="mb-6 mt-4">
         <div className="h-9 w-24 bg-muted animate-pulse rounded mb-3" />
       </div>
-      {/* Filter row skeleton */}
-      <div className="flex gap-3 mb-6">
+      {/* Filter row skeleton — two Selects */}
+      <div className="flex flex-wrap gap-3 mb-6">
+        <Skeleton className="w-48 h-10" />
         <Skeleton className="w-48 h-10" />
       </div>
       {/* Tune card grid skeleton — 12 cards */}
