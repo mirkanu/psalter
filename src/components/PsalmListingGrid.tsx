@@ -11,6 +11,7 @@ import { PsalmNumberBox } from "./PsalmNumberBox"
 
 export interface PsalmRow {
   id: number
+  displayLabel: string
   firstLine: string | null
   meter: string | null
   kjvExcerpt: string | null
