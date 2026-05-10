@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import { Suspense } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
+import type { AlternateTune } from '@/db/queries/tunes'
 
 const PsalmNotationPlayer = dynamic(
   () => import('@/components/PsalmNotationPlayer').then((m) => m.PsalmNotationPlayer),
@@ -15,6 +16,10 @@ interface PsalmNotationPlayerClientProps {
   scoreJpgUrl: string | null
   solfegeJpgUrl: string | null
   tuneName: string
+  tuneMeter: string | null
+  tuneId: number | null
+  alternateTunes: AlternateTune[]
+  onChangeTune: (tune: AlternateTune) => void
 }
 
 /**
