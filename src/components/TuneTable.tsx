@@ -26,9 +26,9 @@ interface TuneTableProps {
   tunes: TuneRow[]
 }
 
-function exportCsv(tunes: TuneRow[]) {
+function exportCsv(allTunes: TuneRow[]) {
   const headers = ['Tune Name', 'Meter', 'Recommended Psalms', 'Psalm Count', 'Mood', '# 1979 RP Psalter', '# 1912 PRCA Psalter', 'Famous Hymn', 'In PRCA Psalter']
-  const rows = tunes.map((t) => [
+  const rows = allTunes.map((t) => [
     t.name ?? '',
     t.meter ?? '',
     t.recommendedPsalmIds.join(', '),
@@ -127,7 +127,7 @@ export function TuneTable({ tunes }: TuneTableProps) {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input
           ref={inputRef}
-          type="search"
+          type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Type here to search by tune name or Psalter number (RP or PRCA)"
@@ -165,31 +165,25 @@ export function TuneTable({ tunes }: TuneTableProps) {
             id="tunes-advanced-panel"
             className="mt-2 bg-muted rounded-lg px-4 py-3 flex flex-wrap gap-6 items-center"
           >
-            <div className="flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Meter</span>
-              <Select value={selectedMeter} onValueChange={(v) => setSelectedMeter(v ?? 'all')}>
-                <SelectTrigger className="w-44" aria-label="Filter by meter">
-                  <SelectValue placeholder="All Meters" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Meters</SelectItem>
-                  {meters.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={selectedMeter} onValueChange={(v) => setSelectedMeter(v ?? 'all')}>
+              <SelectTrigger className="w-44" aria-label="Filter by meter">
+                <SelectValue placeholder="All Meters" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Meters</SelectItem>
+                {meters.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+              </SelectContent>
+            </Select>
 
-            <div className="flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Mood</span>
-              <Select value={selectedMood} onValueChange={(v) => setSelectedMood(v ?? 'all')}>
-                <SelectTrigger className="w-44" aria-label="Filter by mood">
-                  <SelectValue placeholder="All Moods" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Moods</SelectItem>
-                  {moods.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={selectedMood} onValueChange={(v) => setSelectedMood(v ?? 'all')}>
+              <SelectTrigger className="w-44" aria-label="Filter by mood">
+                <SelectValue placeholder="All Moods" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Moods</SelectItem>
+                {moods.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+              </SelectContent>
+            </Select>
 
             <div className="flex items-center gap-2">
               <Checkbox
@@ -232,7 +226,7 @@ export function TuneTable({ tunes }: TuneTableProps) {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => exportCsv(filtered)}
+          onClick={() => exportCsv(tunes)}
           className="gap-1.5 text-sm"
         >
           <Download className="h-3.5 w-3.5" />
