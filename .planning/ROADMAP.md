@@ -207,11 +207,11 @@ Plans:
 
 Plans:
 **Wave 1** *(parallel)*
-- [ ] 04.8-01-PLAN.md — /explore: add "When you..." section (topicType='When you...'), exclude from Topics, fix h1 font-semibold
-- [ ] 04.8-02-PLAN.md — /tunes: mood filter (URL param), expanded tune cards (mood tags + recommended psalms), updated fetchAllTunes query
+- [x] 04.8-01-PLAN.md — /explore: add "When you..." section (topicType='When you...'), exclude from Topics, fix h1 font-semibold
+- [x] 04.8-02-PLAN.md — /tunes: mood filter (URL param), expanded tune cards (mood tags + recommended psalms), updated fetchAllTunes query
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 04.8-03-PLAN.md — Remove /search route, update SiteHeader nav, add /search→/psalms redirect, full Playwright UAT
+- [x] 04.8-03-PLAN.md — Remove /search route, update SiteHeader nav, add /search→/psalms redirect, full Playwright UAT
 
 Cross-cutting constraints:
 - All h1 headings must use font-semibold (not font-bold) — UI-SPEC typography rule
@@ -257,6 +257,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 →
 | 4.5. Psalm Detail Overhaul | 4/4 | Complete | 2026-05-09 |
 | 4.6. Psalm Detail UI Polish | 0/3 | Not started | - |
 | 4.7. Psalm Listing Overhaul | 3/3 | Complete | 2026-05-09 |
-| 4.8. Explore & Tunes Overhaul | 0/3 | Ready to execute | - |
+| 4.8. Explore & Tunes Overhaul | 3/3 | Complete | 2026-05-10 |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
