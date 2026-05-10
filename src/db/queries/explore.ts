@@ -1,7 +1,7 @@
 import { cache } from "react"
 import { db } from "@/db"
 import { sql } from "drizzle-orm" // drizzle-orm template tag — NEVER from "@/db"
-import { eq, asc, desc, count, isNotNull } from "drizzle-orm"
+import { eq, asc, desc, count, isNotNull, ne, and } from "drizzle-orm"
 import {
   topics,
   psalmTopics,
@@ -20,7 +20,17 @@ export const fetchTopicsWithCounts = cache(async function fetchTopicsWithCounts(
     .select({ id: topics.id, name: topics.name, count: count(psalmTopics.psalmId) })
     .from(topics)
     .leftJoin(psalmTopics, eq(psalmTopics.topicId, topics.id))
-    .where(isNotNull(topics.name))
+    .where(and(isNotNull(topics.name), ne(topics.topicType, 'When you...')))
+    .groupBy(topics.id, topics.name)
+    .orderBy(desc(count(psalmTopics.psalmId)))
+})
+
+export const fetchWhenYouTopics = cache(async function fetchWhenYouTopics() {
+  return db
+    .select({ id: topics.id, name: topics.name, count: count(psalmTopics.psalmId) })
+    .from(topics)
+    .leftJoin(psalmTopics, eq(psalmTopics.topicId, topics.id))
+    .where(eq(topics.topicType, 'When you...'))
     .groupBy(topics.id, topics.name)
     .orderBy(desc(count(psalmTopics.psalmId)))
 })
