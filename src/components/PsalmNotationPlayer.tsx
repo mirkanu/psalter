@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import AbcRenderer from '@/components/AbcRenderer'
+import type { AlternateTune } from '@/db/queries/tunes'
+import { ChangeTuneDialog } from '@/components/ChangeTuneDialog'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -40,6 +42,10 @@ interface PsalmNotationPlayerProps {
   scoreJpgUrl: string | null
   solfegeJpgUrl: string | null
   tuneName: string
+  tuneMeter: string | null
+  tuneId: number | null
+  alternateTunes: AlternateTune[]
+  onChangeTune: (tune: AlternateTune) => void
 }
 
 export function PsalmNotationPlayer({
@@ -48,6 +54,10 @@ export function PsalmNotationPlayer({
   scoreJpgUrl,
   solfegeJpgUrl,
   tuneName,
+  tuneMeter,
+  tuneId,
+  alternateTunes,
+  onChangeTune,
 }: PsalmNotationPlayerProps) {
   // Split lyrics into stanzas, then group by 4 (D-08)
   const stanzas = lyrics
@@ -58,6 +68,7 @@ export function PsalmNotationPlayer({
 
   // State
   const [groupIndex, setGroupIndex] = useState(0)
+  const [changeTuneOpen, setChangeTuneOpen] = useState(false)
   // Unified view mode: staff | solfege | lyrics
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     try {
@@ -112,6 +123,22 @@ export function PsalmNotationPlayer({
 
   return (
     <div className="space-y-3">
+
+      {/* ── Tune header ──────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="text-sm font-medium text-foreground">
+          Tune: {tuneName}{tuneMeter ? ` (${tuneMeter})` : ''}
+        </span>
+        {alternateTunes.length > 0 && (
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={() => setChangeTuneOpen(true)}
+          >
+            Change Tune
+          </Button>
+        )}
+      </div>
 
       {/* ── Controls ABOVE the score ─────────────────────────────────────── */}
       <div className="flex flex-wrap gap-2 items-center">
@@ -292,6 +319,15 @@ export function PsalmNotationPlayer({
           )}
         </>
       )}
+
+      <ChangeTuneDialog
+        open={changeTuneOpen}
+        onClose={() => setChangeTuneOpen(false)}
+        currentTuneId={tuneId}
+        tunes={alternateTunes}
+        meter={tuneMeter}
+        onSelect={onChangeTune}
+      />
     </div>
   )
 }
