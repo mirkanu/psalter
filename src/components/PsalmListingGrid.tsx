@@ -16,18 +16,14 @@ export interface PsalmRow {
   recommendedTune?: string | null
 }
 
-function exportCsv(psalms: (PsalmRow & { snippet?: string | null })[], opts: { showFirstLine: boolean; showMeter: boolean; showRecommendedTune: boolean }) {
-  const headers = ['Psalm #']
-  if (opts.showFirstLine) headers.push('First Line')
-  if (opts.showMeter) headers.push('Meter')
-  if (opts.showRecommendedTune) headers.push('Recommended Tune')
-  const rows = psalms.map((p) => {
-    const row = [String(p.id)]
-    if (opts.showFirstLine) row.push(p.firstLine ?? '')
-    if (opts.showMeter) row.push(p.meter ?? '')
-    if (opts.showRecommendedTune) row.push(p.recommendedTune ?? '')
-    return row
-  })
+function exportCsv(psalms: PsalmRow[]) {
+  const headers = ['Psalm #', 'First Line', 'Meter', 'Recommended Tune']
+  const rows = psalms.map((p) => [
+    String(p.id),
+    p.firstLine ?? '',
+    p.meter ?? '',
+    p.recommendedTune ?? '',
+  ])
   const csv = [headers, ...rows]
     .map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(','))
     .join('\n')
@@ -144,7 +140,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input
           ref={inputRef}
-          type="search"
+          type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -215,23 +211,26 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
                 Show recommended tune
               </label>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Meter:</span>
-              <Select
-                value={meterFilter}
-                onValueChange={(v) => setMeterFilter(v ?? 'all')}
-              >
-                <SelectTrigger className="w-40" aria-label="Filter by meter">
-                  <SelectValue placeholder="All meters" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All meters</SelectItem>
-                  {meters.map((m) => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select
+              value={meterFilter}
+              onValueChange={(v) => setMeterFilter(v ?? 'all')}
+            >
+              <SelectTrigger className="w-40" aria-label="Filter by meter">
+                <SelectValue placeholder="All Meters" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Meters</SelectItem>
+                {meters.map((m) => (
+                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {(meterFilter !== 'all') && (
+              <Button variant="ghost" size="sm" onClick={() => setMeterFilter('all')} className="text-sm gap-1 ml-auto">
+                <X className="h-3 w-3" />
+                Clear all
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -244,7 +243,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => exportCsv(filteredPsalms, { showFirstLine, showMeter, showRecommendedTune })}
+          onClick={() => exportCsv(psalms)}
           className="gap-1.5 text-sm"
         >
           <Download className="h-3.5 w-3.5" />
