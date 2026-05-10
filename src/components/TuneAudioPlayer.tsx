@@ -12,7 +12,7 @@ interface TuneAudioPlayerProps {
 export function TuneAudioPlayer({ soundcloudUrl, youtubeUrl, tuneName }: TuneAudioPlayerProps) {
   const [expanded, setExpanded] = useState(false)
 
-  const hasSc = !!soundcloudUrl
+  const hasSc = !!soundcloudUrl && soundcloudUrl.startsWith('http')
   const ytEmbedBase = toEmbedUrl(youtubeUrl)
   const hasYt = !!ytEmbedBase
 

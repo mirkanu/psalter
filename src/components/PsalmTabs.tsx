@@ -4,7 +4,6 @@ import { useRef, useEffect, useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { PsalmNotationPlayerClient } from '@/components/PsalmNotationPlayerClient'
-import { TuneAudioPlayer } from '@/components/TuneAudioPlayer'
 import type { PsalmDetail } from '@/db/queries/psalms'
 import type { AlternateTune } from '@/db/queries/tunes'
 
@@ -374,6 +373,8 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes }: PsalmTabsProps
           tuneName={activeTune.name}
           tuneMeter={activeTune.meter ?? primaryVersion?.meter ?? null}
           tuneId={activeTune.id}
+          soundcloudUrl={activeTune.soundcloudUrl ?? null}
+          youtubeUrl={(activeTune as { youtubeUrl?: string | null })?.youtubeUrl ?? null}
           alternateTunes={alternateTunes}
           onChangeTune={setOverrideTune}
         />
@@ -382,11 +383,6 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes }: PsalmTabsProps
           No notation available for this psalm.
         </p>
       )}
-      <TuneAudioPlayer
-        soundcloudUrl={activeTune?.soundcloudUrl ?? null}
-        youtubeUrl={(activeTune as { youtubeUrl?: string | null } | null)?.youtubeUrl ?? null}
-        tuneName={activeTune?.name ?? ''}
-      />
     </div>
   )
 
