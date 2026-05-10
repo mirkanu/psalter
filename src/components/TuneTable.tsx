@@ -1,10 +1,11 @@
 'use client'
 import { useMemo, useState, useRef, useEffect } from "react"
+import { useLocalStorage } from "@/hooks/useLocalStorage"
 import Link from "next/link"
 import { Search, X, ChevronDown, ChevronUp, Download, Music } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 
@@ -53,11 +54,11 @@ function exportCsv(allTunes: TuneRow[]) {
 
 export function TuneTable({ tunes }: TuneTableProps) {
   const [query, setQuery] = useState('')
-  const [advancedOpen, setAdvancedOpen] = useState(false)
-  const [selectedMeter, setSelectedMeter] = useState('all')
-  const [selectedMood, setSelectedMood] = useState('all')
-  const [onlyPrca, setOnlyPrca] = useState(false)
-  const [onlyFamous, setOnlyFamous] = useState(false)
+  const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', false)
+  const [selectedMeter, setSelectedMeter] = useLocalStorage('tunes.selectedMeter', 'all')
+  const [selectedMood, setSelectedMood] = useLocalStorage('tunes.selectedMood', 'all')
+  const [onlyPrca, setOnlyPrca] = useLocalStorage('tunes.onlyPrca', false)
+  const [onlyFamous, setOnlyFamous] = useLocalStorage('tunes.onlyFamous', false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { inputRef.current?.focus() }, [])
@@ -95,9 +96,9 @@ export function TuneTable({ tunes }: TuneTableProps) {
   }, [tunes, query, selectedMeter, selectedMood, onlyPrca, onlyFamous])
 
   const hasFilter = query || selectedMeter !== 'all' || selectedMood !== 'all' || onlyPrca || onlyFamous
+  const hasAdvancedFilter = selectedMeter !== 'all' || selectedMood !== 'all' || onlyPrca || onlyFamous
 
-  function clearAll() {
-    setQuery('')
+  function clearAdvanced() {
     setSelectedMeter('all')
     setSelectedMood('all')
     setOnlyPrca(false)
@@ -167,7 +168,9 @@ export function TuneTable({ tunes }: TuneTableProps) {
           >
             <Select value={selectedMeter} onValueChange={(v) => setSelectedMeter(v ?? 'all')}>
               <SelectTrigger className="w-44" aria-label="Filter by meter">
-                <SelectValue placeholder="All Meters" />
+                <span className="truncate">
+                  {selectedMeter === 'all' ? 'All Meters' : selectedMeter}
+                </span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Meters</SelectItem>
@@ -177,7 +180,9 @@ export function TuneTable({ tunes }: TuneTableProps) {
 
             <Select value={selectedMood} onValueChange={(v) => setSelectedMood(v ?? 'all')}>
               <SelectTrigger className="w-44" aria-label="Filter by mood">
-                <SelectValue placeholder="All Moods" />
+                <span className="truncate">
+                  {selectedMood === 'all' ? 'All Moods' : selectedMood}
+                </span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Moods</SelectItem>
@@ -207,8 +212,8 @@ export function TuneTable({ tunes }: TuneTableProps) {
               </label>
             </div>
 
-            {hasFilter && (
-              <Button variant="ghost" size="sm" onClick={clearAll} className="text-sm gap-1 ml-auto">
+            {hasAdvancedFilter && (
+              <Button variant="ghost" size="sm" onClick={clearAdvanced} className="text-sm gap-1 ml-auto">
                 <X className="h-3 w-3" />
                 Clear all
               </Button>
