@@ -54,7 +54,7 @@ export function SiteHeader() {
             >
               <Menu className="size-5" />
             </SheetTrigger>
-            <SheetContent side="right" className="w-64">
+            <SheetContent side="right" className="!w-56">
               <nav className="flex flex-col gap-1 pt-6" aria-label="Mobile primary">
                 {navLinks.map((link) => (
                   <SheetClose

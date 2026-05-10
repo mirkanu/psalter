@@ -1,12 +1,12 @@
 import Link from "next/link"
-import Image from "next/image"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { fetchTuneDetail, fetchTuneIds } from "@/db/queries/tunes"
-import { YouTubeEmbed } from "@/components/YouTubeEmbed"
+import { fetchPsalmsByMeter } from "@/db/queries/psalms"
 import { Badge } from "@/components/ui/badge"
 import { AbcNotationSection } from "@/components/AbcNotationSection"
-import { toEmbedUrl } from "@/lib/youtube"
+import { TuneDetailClient } from "@/components/TuneDetailClient"
+import { Button } from "@/components/ui/button"
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -32,21 +32,7 @@ export default async function TunePage({ params }: PageProps) {
   const tune = await fetchTuneDetail(tuneId)
   if (!tune) notFound()
 
-  const youtubeUrl = tune.youtubeUrl
-
-  function isSafeExternalUrl(url: string): boolean {
-    try {
-      const parsed = new URL(url)
-      return parsed.protocol === 'https:' || parsed.protocol === 'http:'
-    } catch {
-      return false
-    }
-  }
-
-  const isYouTube = youtubeUrl != null && toEmbedUrl(youtubeUrl) !== null
-  const isOtherMedia = youtubeUrl != null && !isYouTube && isSafeExternalUrl(youtubeUrl)
-
-  // Deduplicate psalm references (a tune can be linked from multiple versions of the same psalm)
+  // Psalms using this tune (deduplicated)
   const psalmsUsingTune = new Map<number, string>()
   for (const pvt of tune.psalmVersionTunes) {
     const p = pvt.psalmVersion?.psalm
@@ -56,97 +42,119 @@ export default async function TunePage({ params }: PageProps) {
   }
   const psalmList = Array.from(psalmsUsingTune.entries()).sort(([a], [b]) => a - b)
 
-  // TUNE-03 second part: render verses 2+ as numbered stanzas below the notation.
-  // Choose the first linked psalmVersion (by id) with non-empty lyrics — same source used by Plan 02 for verse 1 in the ABC w: field.
-  const sortedPvts = [...tune.psalmVersionTunes].sort(
-    (a, b) => (a.psalmVersion?.id ?? 0) - (b.psalmVersion?.id ?? 0)
-  )
-  const lyricsSource = sortedPvts.find((pvt) => pvt.psalmVersion?.lyrics)?.psalmVersion?.lyrics ?? null
-  const allStanzas = lyricsSource
-    ? lyricsSource.split('\n\n').map((s) => s.trim()).filter(Boolean)
+  // Multi-page score images: primary + additional pages
+  const additionalUrls: string[] = Array.isArray(tune.additionalScoreUrls)
+    ? (tune.additionalScoreUrls as string[]).filter((u) => typeof u === 'string')
     : []
-  // When ABC notation is present, verse 1 appears under the staff via w: fields → show verses 2+.
-  // When no ABC, verse 1 would be invisible if we skip it → show all stanzas.
-  const stanzasToShow = allStanzas
-    .slice(tune.abcNotation ? 1 : 0)
-    .map((s) => s.replace(/^\d+\s+/, '').trim())
+  const staffPages = tune.scoreJpgUrl
+    ? [tune.scoreJpgUrl, ...additionalUrls]
+    : additionalUrls
+  const solfegePages = tune.solfegeJpgUrl ? [tune.solfegeJpgUrl] : []
+
+  // Psalms with the same meter for "Select Psalm" dialog
+  const psalmsForMeter = tune.meter ? await fetchPsalmsByMeter(tune.meter) : []
+
+  // Moods
+  const moods = tune.tuneMoods.map((tm) => tm.mood.name).filter(Boolean) as string[]
+
+  const hasAbc = !!(tune.abcNotation?.trim())
+  const hasImages = staffPages.length > 0 || solfegePages.length > 0
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-8">
+
+      {/* Title + meter badge */}
       <header className="flex items-baseline gap-3 flex-wrap">
         <h1 className="text-2xl md:text-4xl font-bold text-foreground">
           {tune.name ?? `Tune ${tune.id}`}
         </h1>
-        {tune.meter && <Badge variant="secondary">{tune.meter}</Badge>}
+        {tune.meter && (
+          <Badge variant="secondary" className="text-base px-2.5 py-0.5">
+            {tune.meter}
+          </Badge>
+        )}
       </header>
 
-      <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-          Score
-        </h2>
-        {tune.abcNotation ? (
-          <AbcNotationSection abc={tune.abcNotation} title={tune.name ?? undefined} />
-        ) : tune.scoreJpgUrl ? (
-          <div className="relative w-full max-w-2xl mx-auto aspect-[3/2]">
-            <Image
-              src={tune.scoreJpgUrl}
-              alt={`Score for ${tune.name ?? `tune ${tune.id}`}`}
-              fill
-              className="object-contain rounded-md border border-border"
-            />
-          </div>
-        ) : (
-          <p className="text-muted-foreground italic">Score image not yet available.</p>
-        )}
-      </section>
-
-      {stanzasToShow.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-            Verses
-          </h2>
-          <ol
-            start={tune.abcNotation ? 2 : 1}
-            className="list-decimal list-outside pl-8 space-y-4 max-w-3xl mx-auto"
-          >
-            {stanzasToShow.map((stanza, idx) => (
-              <li key={idx + (tune.abcNotation ? 2 : 1)} className="text-foreground leading-relaxed">
-                {stanza.split('\n').map((line, lineIdx) => (
-                  <span key={lineIdx} className="block">
-                    {line}
-                  </span>
-                ))}
-              </li>
-            ))}
-          </ol>
+      {/* Metadata */}
+      {(moods.length > 0 || tune.numberIn1979RpPsalter || tune.numInPrcaPsalter || tune.precentingComment || (tune.hasFamousHymn && tune.famousHymn)) && (
+        <section className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+          {moods.length > 0 && (
+            <div className="flex gap-2">
+              <span className="text-muted-foreground w-36 shrink-0">Mood</span>
+              <span>{moods.join(', ')}</span>
+            </div>
+          )}
+          {tune.numberIn1979RpPsalter && (
+            <div className="flex gap-2">
+              <span className="text-muted-foreground w-36 shrink-0">RP Psalter (1979)</span>
+              <span>#{tune.numberIn1979RpPsalter}</span>
+            </div>
+          )}
+          {tune.numInPrcaPsalter && (
+            <div className="flex gap-2">
+              <span className="text-muted-foreground w-36 shrink-0">PR Psalter</span>
+              <span>#{tune.numInPrcaPsalter}</span>
+            </div>
+          )}
+          {tune.hasFamousHymn && tune.famousHymn && (
+            <div className="flex gap-2">
+              <span className="text-muted-foreground w-36 shrink-0">Famous hymn</span>
+              <span>{tune.famousHymn}</span>
+            </div>
+          )}
+          {tune.precentingComment && (
+            <div className="flex gap-2 sm:col-span-2">
+              <span className="text-muted-foreground w-36 shrink-0">Precenting notes</span>
+              <span className="text-foreground">{tune.precentingComment}</span>
+            </div>
+          )}
         </section>
       )}
 
-      {isYouTube && youtubeUrl && (
+      {/* Score — ABC notation (with built-in staff renderer) */}
+      {hasAbc && (
         <section>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-            Listen
+            Score
           </h2>
-          <YouTubeEmbed url={youtubeUrl} title={`Listen: ${tune.name ?? `tune ${tune.id}`}`} />
+          <AbcNotationSection abc={tune.abcNotation!} title={tune.name ?? undefined} />
         </section>
       )}
 
-      {isOtherMedia && youtubeUrl && (
+      {/* Score — image-based (staff + solfege tabs, multi-page, play button) */}
+      {!hasAbc && (hasImages || tune.soundcloudUrl || tune.youtubeUrl) && (
         <section>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-            External recording
+            Score
           </h2>
-          <a
-            href={youtubeUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary underline break-all"
-          >
-            {youtubeUrl}
-          </a>
+          <TuneDetailClient
+            tuneName={tune.name ?? `Tune ${tune.id}`}
+            staffPages={staffPages}
+            solfegePages={solfegePages}
+            soundcloudUrl={tune.soundcloudUrl}
+            youtubeUrl={tune.youtubeUrl}
+            psalmsForMeter={psalmsForMeter}
+            meter={tune.meter}
+          />
         </section>
       )}
 
+      {/* ABC tunes: play button + select psalm below the notation */}
+      {hasAbc && (tune.soundcloudUrl || tune.youtubeUrl) && (
+        <section>
+          <TuneDetailClient
+            tuneName={tune.name ?? `Tune ${tune.id}`}
+            staffPages={[]}
+            solfegePages={solfegePages}
+            soundcloudUrl={tune.soundcloudUrl}
+            youtubeUrl={tune.youtubeUrl}
+            psalmsForMeter={psalmsForMeter}
+            meter={tune.meter}
+          />
+        </section>
+      )}
+
+      {/* Psalms using this tune */}
       {psalmList.length > 0 && (
         <section>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
@@ -165,6 +173,21 @@ export default async function TunePage({ params }: PageProps) {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {/* "Select Psalm" for ABC-only tunes that have no audio player shown above */}
+      {hasAbc && !tune.soundcloudUrl && !tune.youtubeUrl && psalmsForMeter.length > 0 && (
+        <section>
+          <TuneDetailClient
+            tuneName={tune.name ?? `Tune ${tune.id}`}
+            staffPages={[]}
+            solfegePages={[]}
+            soundcloudUrl={null}
+            youtubeUrl={null}
+            psalmsForMeter={psalmsForMeter}
+            meter={tune.meter}
+          />
         </section>
       )}
     </div>
