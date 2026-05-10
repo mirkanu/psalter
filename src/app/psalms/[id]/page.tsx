@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { fetchPsalmDetail, fetchPsalmIds } from '@/db/queries/psalms'
+import { fetchTunesByMeter } from '@/db/queries/tunes'
 import { PsalmTabs } from '@/components/PsalmTabs'
 
 interface PageProps {
@@ -36,6 +37,12 @@ export default async function PsalmPage({ params }: PageProps) {
   // Derive primary tune and lyrics
   const allPvts = psalm.psalmVersions.flatMap((pv) => pv.psalmVersionTunes)
   const primaryTune = allPvts.find((pvt) => pvt.isPrimary)?.tune ?? allPvts[0]?.tune ?? null
+
+  // Fetch alternate tunes matching the primary meter
+  const primaryVersion = psalm.psalmVersions.slice().sort((a, b) => a.id - b.id)[0] ?? null
+  const primaryMeter = primaryVersion?.meter ?? primaryTune?.meter ?? null
+  const alternateTunes = primaryMeter ? await fetchTunesByMeter(primaryMeter) : []
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
       {/* Psalm header — number is main title, bibleTitle is subtitle */}
@@ -51,7 +58,7 @@ export default async function PsalmPage({ params }: PageProps) {
       </div>
 
       {/* Sing + Tabs: split on desktop/landscape, stacked on mobile */}
-      <PsalmTabs psalm={psalm} primaryTune={primaryTune} />
+      <PsalmTabs psalm={psalm} primaryTune={primaryTune} alternateTunes={alternateTunes} />
     </div>
   )
 }
