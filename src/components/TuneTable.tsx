@@ -21,14 +21,17 @@ export interface TuneRow {
   numInPrcaPsalter: number | null
   moods: string[]
   recommendedPsalmIds: number[]
+  soundcloudUrl: string | null
 }
 
 interface TuneTableProps {
   tunes: TuneRow[]
 }
 
+type SortBy = 'psalms' | 'name' | 'meter' | 'rp' | 'prca' | 'recording'
+
 function exportCsv(allTunes: TuneRow[]) {
-  const headers = ['Tune Name', 'Meter', 'Recommended Psalms', 'Psalm Count', 'Mood', '# 1979 RP Psalter', '# 1912 PRCA Psalter', 'Famous Hymn', 'In PRCA Psalter']
+  const headers = ['Tune Name', 'Meter', 'Recommended Psalms', 'Psalm Count', 'Mood', '# 1979 RP Psalter', '# 1912 PRCA Psalter', 'Famous Hymn', 'In PRCA Psalter', 'SoundCloud']
   const rows = allTunes.map((t) => [
     t.name ?? '',
     t.meter ?? '',
@@ -39,6 +42,7 @@ function exportCsv(allTunes: TuneRow[]) {
     t.numInPrcaPsalter != null ? String(t.numInPrcaPsalter) : '',
     t.famousHymn ?? '',
     t.inPrcaPsalter ? 'Yes' : 'No',
+    t.soundcloudUrl ?? '',
   ])
   const csv = [headers, ...rows]
     .map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(','))
@@ -59,6 +63,8 @@ export function TuneTable({ tunes }: TuneTableProps) {
   const [selectedMood, setSelectedMood] = useLocalStorage('tunes.selectedMood', 'all')
   const [onlyPrca, setOnlyPrca] = useLocalStorage('tunes.onlyPrca', false)
   const [onlyFamous, setOnlyFamous] = useLocalStorage('tunes.onlyFamous', false)
+  const [showRecording, setShowRecording] = useLocalStorage('tunes.showRecording', false)
+  const [sortBy, setSortBy] = useLocalStorage<SortBy>('tunes.sortBy', 'psalms')
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { inputRef.current?.focus() }, [])
@@ -76,7 +82,7 @@ export function TuneTable({ tunes }: TuneTableProps) {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     const isNum = /^\d+$/.test(q)
-    return tunes.filter((t) => {
+    const base = tunes.filter((t) => {
       if (selectedMeter !== 'all' && t.meter !== selectedMeter) return false
       if (selectedMood !== 'all' && !t.moods.includes(selectedMood)) return false
       if (onlyPrca && !t.inPrcaPsalter) return false
@@ -93,16 +99,41 @@ export function TuneTable({ tunes }: TuneTableProps) {
       return (t.name ?? '').toLowerCase().includes(q) ||
         (t.famousHymn ?? '').toLowerCase().includes(q)
     })
-  }, [tunes, query, selectedMeter, selectedMood, onlyPrca, onlyFamous])
+
+    return [...base].sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return (a.name ?? '').localeCompare(b.name ?? '')
+        case 'meter':
+          return (a.meter ?? '').localeCompare(b.meter ?? '')
+        case 'rp':
+          return (a.numberIn1979RpPsalter ?? 9999) - (b.numberIn1979RpPsalter ?? 9999)
+        case 'prca':
+          return (a.numInPrcaPsalter ?? 9999) - (b.numInPrcaPsalter ?? 9999)
+        case 'recording':
+          // tunes with recording first
+          if (!!a.soundcloudUrl === !!b.soundcloudUrl) return (a.name ?? '').localeCompare(b.name ?? '')
+          return a.soundcloudUrl ? -1 : 1
+        case 'psalms':
+        default:
+          return b.recommendedPsalmIds.length - a.recommendedPsalmIds.length || (a.name ?? '').localeCompare(b.name ?? '')
+      }
+    })
+  }, [tunes, query, selectedMeter, selectedMood, onlyPrca, onlyFamous, sortBy])
 
   const hasFilter = query || selectedMeter !== 'all' || selectedMood !== 'all' || onlyPrca || onlyFamous
   const hasAdvancedFilter = selectedMeter !== 'all' || selectedMood !== 'all' || onlyPrca || onlyFamous
+
+  useEffect(() => {
+    if (hasAdvancedFilter) setAdvancedOpen(true)
+  }, [hasAdvancedFilter]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function clearAdvanced() {
     setSelectedMeter('all')
     setSelectedMood('all')
     setOnlyPrca(false)
     setOnlyFamous(false)
+    setAdvancedOpen(false)
   }
 
   return (
@@ -212,6 +243,41 @@ export function TuneTable({ tunes }: TuneTableProps) {
               </label>
             </div>
 
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="show-recording"
+                checked={showRecording}
+                onCheckedChange={(v) => setShowRecording(!!v)}
+              />
+              <label htmlFor="show-recording" className="text-sm cursor-pointer">
+                Show Recording column
+              </label>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-muted-foreground whitespace-nowrap">Sort by:</label>
+              <Select value={sortBy} onValueChange={(v) => setSortBy((v as SortBy) ?? 'psalms')}>
+                <SelectTrigger className="w-48" aria-label="Sort by">
+                  <span className="truncate">
+                    {sortBy === 'psalms' ? 'Recommended Psalms' :
+                     sortBy === 'name' ? 'Tune Name' :
+                     sortBy === 'meter' ? 'Meter' :
+                     sortBy === 'rp' ? 'RP# (1979)' :
+                     sortBy === 'prca' ? 'PRCA#' :
+                     'Recording'}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="psalms">Recommended Psalms</SelectItem>
+                  <SelectItem value="name">Tune Name</SelectItem>
+                  <SelectItem value="meter">Meter</SelectItem>
+                  <SelectItem value="rp">RP# (1979)</SelectItem>
+                  <SelectItem value="prca">PRCA#</SelectItem>
+                  <SelectItem value="recording">Recording</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {hasAdvancedFilter && (
               <Button variant="ghost" size="sm" onClick={clearAdvanced} className="text-sm gap-1 ml-auto">
                 <X className="h-3 w-3" />
@@ -257,6 +323,9 @@ export function TuneTable({ tunes }: TuneTableProps) {
                 <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap"># 1979 RP</th>
                 <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap"># 1912 PRCA</th>
                 <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Famous Hymn</th>
+                {showRecording && (
+                  <th className="text-center px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Recording</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -304,6 +373,21 @@ export function TuneTable({ tunes }: TuneTableProps) {
                     <td className="px-3 py-2.5 text-muted-foreground text-xs">
                       {tune.famousHymn ?? '—'}
                     </td>
+                    {showRecording && (
+                      <td className="px-3 py-2.5 text-center">
+                        {tune.soundcloudUrl ? (
+                          <a
+                            href={tune.soundcloudUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Listen on SoundCloud"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Music className="h-4 w-4 text-primary mx-auto" />
+                          </a>
+                        ) : null}
+                      </td>
+                    )}
                   </tr>
                 )
               })}

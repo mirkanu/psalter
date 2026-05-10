@@ -133,11 +133,16 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
 
   const hasAdvancedFilter = showFirstLine || showMeter || showRecommendedTune || meterFilter !== 'all'
 
+  useEffect(() => {
+    if (hasAdvancedFilter) setAdvancedOpen(true)
+  }, [hasAdvancedFilter]) // eslint-disable-line react-hooks/exhaustive-deps
+
   function clearAdvanced() {
     setShowFirstLine(false)
     setShowMeter(false)
     setShowRecommendedTune(false)
     setMeterFilter('all')
+    setAdvancedOpen(false)
   }
 
   const hasExpanded = showFirstLine || showMeter || showRecommendedTune || (trimmedQuery.length > 0 && !isNumeric)
