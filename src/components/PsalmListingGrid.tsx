@@ -1,10 +1,11 @@
 'use client'
 import { useMemo, useState, useRef, useEffect } from "react"
+import { useLocalStorage } from "@/hooks/useLocalStorage"
 import { useRouter } from "next/navigation"
 import { Search, X, ChevronDown, ChevronUp, Download } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { PsalmNumberBox } from "./PsalmNumberBox"
 
@@ -56,11 +57,11 @@ function buildSnippet(text: string | null, query: string, maxLen = 80): string |
 
 export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
   const [query, setQuery] = useState('')
-  const [advancedOpen, setAdvancedOpen] = useState(false)
-  const [showFirstLine, setShowFirstLine] = useState(false)
-  const [showMeter, setShowMeter] = useState(false)
-  const [showRecommendedTune, setShowRecommendedTune] = useState(false)
-  const [meterFilter, setMeterFilter] = useState('all')
+  const [advancedOpen, setAdvancedOpen] = useLocalStorage('psalms.advancedOpen', false)
+  const [showFirstLine, setShowFirstLine] = useLocalStorage('psalms.showFirstLine', false)
+  const [showMeter, setShowMeter] = useLocalStorage('psalms.showMeter', false)
+  const [showRecommendedTune, setShowRecommendedTune] = useLocalStorage('psalms.showRecommendedTune', false)
+  const [meterFilter, setMeterFilter] = useLocalStorage('psalms.meterFilter', 'all')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
@@ -126,6 +127,15 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
       e.preventDefault()
       setSelectedIndex(i => Math.max(i - 1, 0))
     }
+  }
+
+  const hasAdvancedFilter = showFirstLine || showMeter || showRecommendedTune || meterFilter !== 'all'
+
+  function clearAdvanced() {
+    setShowFirstLine(false)
+    setShowMeter(false)
+    setShowRecommendedTune(false)
+    setMeterFilter('all')
   }
 
   const hasExpanded = showFirstLine || showMeter || showRecommendedTune || (trimmedQuery.length > 0 && !isNumeric)
@@ -216,7 +226,9 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
               onValueChange={(v) => setMeterFilter(v ?? 'all')}
             >
               <SelectTrigger className="w-40" aria-label="Filter by meter">
-                <SelectValue placeholder="All Meters" />
+                <span className="truncate">
+                  {meterFilter === 'all' ? 'All Meters' : meterFilter}
+                </span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Meters</SelectItem>
@@ -225,8 +237,8 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
                 ))}
               </SelectContent>
             </Select>
-            {(meterFilter !== 'all') && (
-              <Button variant="ghost" size="sm" onClick={() => setMeterFilter('all')} className="text-sm gap-1 ml-auto">
+            {hasAdvancedFilter && (
+              <Button variant="ghost" size="sm" onClick={clearAdvanced} className="text-sm gap-1 ml-auto">
                 <X className="h-3 w-3" />
                 Clear all
               </Button>
