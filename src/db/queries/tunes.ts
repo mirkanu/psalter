@@ -8,9 +8,16 @@ export async function fetchTuneIds(): Promise<number[]> {
   return rows.map((r) => r.id)
 }
 
+// Placeholder tune names used in Airtable for admin notes — exclude from public listing
+const PLACEHOLDER_PREFIXES = ['use ', 'do NOT ', 'do not ']
+
 export async function fetchAllTunes() {
   const rows = await db.query.tunes.findMany({
-    columns: { id: true, name: true, meter: true, scoreJpgUrl: true },
+    columns: {
+      id: true, name: true, meter: true, scoreJpgUrl: true,
+      inPrcaPsalter: true, hasFamousHymn: true, famousHymn: true,
+      numberIn1979RpPsalter: true, numInPrcaPsalter: true,
+    },
     with: {
       tuneMoods: {
         with: { mood: { columns: { name: true } } },
@@ -24,23 +31,30 @@ export async function fetchAllTunes() {
         },
       },
     },
-    orderBy: (t, { asc }) => [asc(t.name)],
   })
 
-  return rows.map((t) => ({
-    id: t.id,
-    name: t.name,
-    meter: t.meter,
-    scoreJpgUrl: t.scoreJpgUrl,
-    moods: t.tuneMoods.map((tm) => tm.mood.name).filter(Boolean) as string[],
-    recommendedPsalmIds: [
-      ...new Set(
-        t.psalmVersionTunes
-          .map((pvt) => pvt.psalmVersion?.psalm?.id)
-          .filter((id): id is number => id != null)
-      ),
-    ].sort((a, b) => a - b),
-  }))
+  return rows
+    .filter((t) => !PLACEHOLDER_PREFIXES.some((p) => t.name.toLowerCase().startsWith(p)))
+    .map((t) => ({
+      id: t.id,
+      name: t.name,
+      meter: t.meter,
+      scoreJpgUrl: t.scoreJpgUrl,
+      inPrcaPsalter: t.inPrcaPsalter ?? false,
+      hasFamousHymn: t.hasFamousHymn ?? false,
+      famousHymn: t.famousHymn,
+      numberIn1979RpPsalter: t.numberIn1979RpPsalter,
+      numInPrcaPsalter: t.numInPrcaPsalter,
+      moods: t.tuneMoods.map((tm) => tm.mood.name).filter(Boolean) as string[],
+      recommendedPsalmIds: [
+        ...new Set(
+          t.psalmVersionTunes
+            .map((pvt) => pvt.psalmVersion?.psalm?.id)
+            .filter((id): id is number => id != null)
+        ),
+      ].sort((a, b) => a - b),
+    }))
+    .sort((a, b) => b.recommendedPsalmIds.length - a.recommendedPsalmIds.length || a.name.localeCompare(b.name))
 }
 
 /**

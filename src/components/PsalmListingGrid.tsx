@@ -1,7 +1,7 @@
 'use client'
 import { useMemo, useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Search, X, ChevronDown, ChevronUp } from "lucide-react"
+import { Search, X, ChevronDown, ChevronUp, Download } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -13,6 +13,31 @@ export interface PsalmRow {
   firstLine: string | null
   meter: string | null
   kjvExcerpt: string | null
+  recommendedTune?: string | null
+}
+
+function exportCsv(psalms: (PsalmRow & { snippet?: string | null })[], opts: { showFirstLine: boolean; showMeter: boolean; showRecommendedTune: boolean }) {
+  const headers = ['Psalm #']
+  if (opts.showFirstLine) headers.push('First Line')
+  if (opts.showMeter) headers.push('Meter')
+  if (opts.showRecommendedTune) headers.push('Recommended Tune')
+  const rows = psalms.map((p) => {
+    const row = [String(p.id)]
+    if (opts.showFirstLine) row.push(p.firstLine ?? '')
+    if (opts.showMeter) row.push(p.meter ?? '')
+    if (opts.showRecommendedTune) row.push(p.recommendedTune ?? '')
+    return row
+  })
+  const csv = [headers, ...rows]
+    .map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(','))
+    .join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'cprc-psalms.csv'
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 interface PsalmListingGridProps {
@@ -38,6 +63,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [showFirstLine, setShowFirstLine] = useState(false)
   const [showMeter, setShowMeter] = useState(false)
+  const [showRecommendedTune, setShowRecommendedTune] = useState(false)
   const [meterFilter, setMeterFilter] = useState('all')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -106,7 +132,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
     }
   }
 
-  const hasExpanded = showFirstLine || showMeter || (trimmedQuery.length > 0 && !isNumeric)
+  const hasExpanded = showFirstLine || showMeter || showRecommendedTune || (trimmedQuery.length > 0 && !isNumeric)
   const gridCols = hasExpanded
     ? "grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10"
     : "grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-[repeat(15,minmax(0,1fr))]"
@@ -180,6 +206,16 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
               </label>
             </div>
             <div className="flex items-center gap-2">
+              <Checkbox
+                id="show-recommended-tune"
+                checked={showRecommendedTune}
+                onCheckedChange={(v) => setShowRecommendedTune(!!v)}
+              />
+              <label htmlFor="show-recommended-tune" className="text-sm cursor-pointer">
+                Show recommended tune
+              </label>
+            </div>
+            <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Meter:</span>
               <Select
                 value={meterFilter}
@@ -200,6 +236,22 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
         )}
       </div>
 
+      {/* Results bar with download */}
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground">
+          {filteredPsalms.length} {filteredPsalms.length === 1 ? 'psalm' : 'psalms'}
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => exportCsv(filteredPsalms, { showFirstLine, showMeter, showRecommendedTune })}
+          className="gap-1.5 text-sm"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Download CSV
+        </Button>
+      </div>
+
       {/* Psalm grid */}
       {filteredPsalms.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
@@ -215,6 +267,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
               isTopResult={trimmedQuery.length > 0 && idx === clampedIndex}
               showFirstLine={showFirstLine}
               showMeter={showMeter}
+              showRecommendedTune={showRecommendedTune}
               snippet={psalm.snippet ?? null}
               query={trimmedQuery}
             />

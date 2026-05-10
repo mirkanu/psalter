@@ -59,6 +59,11 @@ export const tunes = pgTable('tunes', {
   youtubeUrl: text('youtube_url'),
   soundcloudUrl: text('soundcloud_url'),
   precentingComment: text('precenting_comment'),
+  inPrcaPsalter: boolean('in_prca_psalter').default(false),
+  hasFamousHymn: boolean('has_famous_hymn').default(false),
+  famousHymn: text('famous_hymn'),
+  numberIn1979RpPsalter: integer('number_in_1979_rp_psalter'),
+  numInPrcaPsalter: integer('num_in_prca_psalter'),
 })
 
 /**
