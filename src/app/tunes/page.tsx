@@ -14,7 +14,7 @@ export default async function TunesPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
       <div className="mb-6 mt-4">
-        <h1 className="font-sans text-3xl md:text-4xl font-bold text-foreground mb-3">
+        <h1 className="font-sans text-3xl md:text-4xl font-semibold text-foreground mb-3">
           Tunes
         </h1>
         <p className="text-muted-foreground text-base">
