@@ -63,11 +63,38 @@ export function TuneTable({ tunes }: TuneTableProps) {
   const [selectedMood, setSelectedMood] = useLocalStorage('tunes.selectedMood', 'all')
   const [onlyPrca, setOnlyPrca] = useLocalStorage('tunes.onlyPrca', false)
   const [onlyFamous, setOnlyFamous] = useLocalStorage('tunes.onlyFamous', false)
-  const [showRecording, setShowRecording] = useLocalStorage('tunes.showRecording', false)
   const [sortBy, setSortBy] = useLocalStorage<SortBy>('tunes.sortBy', 'psalms')
+
+  // Column visibility — desktop defaults true for all
+  const [colMeter, setColMeter] = useLocalStorage('tunes.col.meter', true)
+  const [colPsalms, setColPsalms] = useLocalStorage('tunes.col.psalms', true)
+  const [colMood, setColMood] = useLocalStorage('tunes.col.mood', true)
+  const [colRp, setColRp] = useLocalStorage('tunes.col.rp', true)
+  const [colPrca, setColPrca] = useLocalStorage('tunes.col.prca', true)
+  const [colHymn, setColHymn] = useLocalStorage('tunes.col.hymn', true)
+  const [colInPrca, setColInPrca] = useLocalStorage('tunes.col.inPrca', true)
+  const [colRecording, setColRecording] = useLocalStorage('tunes.col.recording', true)
+  // Track whether mobile defaults have been applied
+  const [mobileInitDone, setMobileInitDone] = useLocalStorage('tunes.col.mobileInit', false)
+
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { inputRef.current?.focus() }, [])
+
+  // On first visit on mobile, hide non-default columns
+  useEffect(() => {
+    if (!mobileInitDone && window.innerWidth < 768) {
+      setColMood(false)
+      setColRp(false)
+      setColPrca(false)
+      setColHymn(false)
+      setColInPrca(false)
+      setColRecording(false)
+      setMobileInitDone(true)
+    } else if (!mobileInitDone) {
+      setMobileInitDone(true)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const meters = useMemo(() => {
     const s = new Set(tunes.map((t) => t.meter).filter((m): m is string => Boolean(m)))
@@ -134,6 +161,7 @@ export function TuneTable({ tunes }: TuneTableProps) {
     setOnlyPrca(false)
     setOnlyFamous(false)
     setAdvancedOpen(false)
+    // Column visibility is intentionally NOT reset here — it's a separate preference
   }
 
   return (
@@ -188,102 +216,165 @@ export function TuneTable({ tunes }: TuneTableProps) {
           aria-controls="tunes-advanced-panel"
           className="text-sm font-normal active:scale-[0.98] px-0 hover:bg-transparent"
         >
-          Advanced Filters
+          Advanced Filters &amp; Columns
           {advancedOpen ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />}
         </Button>
 
         {advancedOpen && (
           <div
             id="tunes-advanced-panel"
-            className="mt-2 bg-muted rounded-lg px-4 py-3 flex flex-wrap gap-6 items-center"
+            className="mt-2 bg-muted rounded-lg px-4 py-3 space-y-4"
           >
-            <Select value={selectedMeter} onValueChange={(v) => setSelectedMeter(v ?? 'all')}>
-              <SelectTrigger className="w-44" aria-label="Filter by meter">
-                <span className="truncate">
-                  {selectedMeter === 'all' ? 'All Meters' : selectedMeter}
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Meters</SelectItem>
-                {meters.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedMood} onValueChange={(v) => setSelectedMood(v ?? 'all')}>
-              <SelectTrigger className="w-44" aria-label="Filter by mood">
-                <span className="truncate">
-                  {selectedMood === 'all' ? 'All Moods' : selectedMood}
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Moods</SelectItem>
-                {moods.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-              </SelectContent>
-            </Select>
-
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="only-prca"
-                checked={onlyPrca}
-                onCheckedChange={(v) => setOnlyPrca(!!v)}
-              />
-              <label htmlFor="only-prca" className="text-sm cursor-pointer">
-                In 1912 PRCA Psalter
-              </label>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="only-famous"
-                checked={onlyFamous}
-                onCheckedChange={(v) => setOnlyFamous(!!v)}
-              />
-              <label htmlFor="only-famous" className="text-sm cursor-pointer">
-                Well-Known Hymn
-              </label>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="show-recording"
-                checked={showRecording}
-                onCheckedChange={(v) => setShowRecording(!!v)}
-              />
-              <label htmlFor="show-recording" className="text-sm cursor-pointer">
-                Show Recording column
-              </label>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-muted-foreground whitespace-nowrap">Sort by:</label>
-              <Select value={sortBy} onValueChange={(v) => setSortBy((v as SortBy) ?? 'psalms')}>
-                <SelectTrigger className="w-48" aria-label="Sort by">
+            {/* Filters row */}
+            <div className="flex flex-wrap gap-6 items-center">
+              <Select value={selectedMeter} onValueChange={(v) => setSelectedMeter(v ?? 'all')}>
+                <SelectTrigger className="w-44" aria-label="Filter by meter">
                   <span className="truncate">
-                    {sortBy === 'psalms' ? 'Recommended Psalms' :
-                     sortBy === 'name' ? 'Tune Name' :
-                     sortBy === 'meter' ? 'Meter' :
-                     sortBy === 'rp' ? 'RP# (1979)' :
-                     sortBy === 'prca' ? 'PRCA#' :
-                     'Recording'}
+                    {selectedMeter === 'all' ? 'All Meters' : selectedMeter}
                   </span>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="psalms">Recommended Psalms</SelectItem>
-                  <SelectItem value="name">Tune Name</SelectItem>
-                  <SelectItem value="meter">Meter</SelectItem>
-                  <SelectItem value="rp">RP# (1979)</SelectItem>
-                  <SelectItem value="prca">PRCA#</SelectItem>
-                  <SelectItem value="recording">Recording</SelectItem>
+                  <SelectItem value="all">All Meters</SelectItem>
+                  {meters.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                 </SelectContent>
               </Select>
+
+              <Select value={selectedMood} onValueChange={(v) => setSelectedMood(v ?? 'all')}>
+                <SelectTrigger className="w-44" aria-label="Filter by mood">
+                  <span className="truncate">
+                    {selectedMood === 'all' ? 'All Moods' : selectedMood}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Moods</SelectItem>
+                  {moods.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                </SelectContent>
+              </Select>
+
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="only-prca"
+                  checked={onlyPrca}
+                  onCheckedChange={(v) => setOnlyPrca(!!v)}
+                />
+                <label htmlFor="only-prca" className="text-sm cursor-pointer">
+                  In 1912 PRCA Psalter
+                </label>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="only-famous"
+                  checked={onlyFamous}
+                  onCheckedChange={(v) => setOnlyFamous(!!v)}
+                />
+                <label htmlFor="only-famous" className="text-sm cursor-pointer">
+                  Well-Known Hymn
+                </label>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-muted-foreground whitespace-nowrap">Sort by:</label>
+                <Select value={sortBy} onValueChange={(v) => setSortBy((v as SortBy) ?? 'psalms')}>
+                  <SelectTrigger className="w-48" aria-label="Sort by">
+                    <span className="truncate">
+                      {sortBy === 'psalms' ? 'Recommended Psalms' :
+                       sortBy === 'name' ? 'Tune Name' :
+                       sortBy === 'meter' ? 'Meter' :
+                       sortBy === 'rp' ? 'RP# (1979)' :
+                       sortBy === 'prca' ? 'PRCA#' :
+                       'Recording'}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="psalms">Recommended Psalms</SelectItem>
+                    <SelectItem value="name">Tune Name</SelectItem>
+                    <SelectItem value="meter">Meter</SelectItem>
+                    <SelectItem value="rp">RP# (1979)</SelectItem>
+                    <SelectItem value="prca">PRCA#</SelectItem>
+                    <SelectItem value="recording">Recording</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {hasAdvancedFilter && (
+                <Button variant="ghost" size="sm" onClick={clearAdvanced} className="text-sm gap-1 ml-auto">
+                  <X className="h-3 w-3" />
+                  Clear filters
+                </Button>
+              )}
             </div>
 
-            {hasAdvancedFilter && (
-              <Button variant="ghost" size="sm" onClick={clearAdvanced} className="text-sm gap-1 ml-auto">
-                <X className="h-3 w-3" />
-                Clear all
-              </Button>
-            )}
+            {/* Column visibility */}
+            <div className="border-t border-border/50 pt-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Columns</p>
+              <div className="flex flex-wrap gap-x-6 gap-y-2">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="col-meter"
+                    checked={colMeter}
+                    onCheckedChange={(v) => setColMeter(!!v)}
+                  />
+                  <label htmlFor="col-meter" className="text-sm cursor-pointer">Meter</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="col-psalms"
+                    checked={colPsalms}
+                    onCheckedChange={(v) => setColPsalms(!!v)}
+                  />
+                  <label htmlFor="col-psalms" className="text-sm cursor-pointer">Recommended Psalms</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="col-mood"
+                    checked={colMood}
+                    onCheckedChange={(v) => setColMood(!!v)}
+                  />
+                  <label htmlFor="col-mood" className="text-sm cursor-pointer">Mood</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="col-rp"
+                    checked={colRp}
+                    onCheckedChange={(v) => setColRp(!!v)}
+                  />
+                  <label htmlFor="col-rp" className="text-sm cursor-pointer">RP# (1979)</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="col-prca"
+                    checked={colPrca}
+                    onCheckedChange={(v) => setColPrca(!!v)}
+                  />
+                  <label htmlFor="col-prca" className="text-sm cursor-pointer">PRCA#</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="col-hymn"
+                    checked={colHymn}
+                    onCheckedChange={(v) => setColHymn(!!v)}
+                  />
+                  <label htmlFor="col-hymn" className="text-sm cursor-pointer">Famous Hymn</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="col-inPrca"
+                    checked={colInPrca}
+                    onCheckedChange={(v) => setColInPrca(!!v)}
+                  />
+                  <label htmlFor="col-inPrca" className="text-sm cursor-pointer">In PRCA</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="col-recording"
+                    checked={colRecording}
+                    onCheckedChange={(v) => setColRecording(!!v)}
+                  />
+                  <label htmlFor="col-recording" className="text-sm cursor-pointer">Recording</label>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -317,13 +408,28 @@ export function TuneTable({ tunes }: TuneTableProps) {
             <thead>
               <tr className="border-b border-border bg-muted/50">
                 <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Tune Name</th>
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Meter</th>
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Recommended Psalms</th>
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Mood</th>
-                <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap"># 1979 RP</th>
-                <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap"># 1912 PRCA</th>
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Famous Hymn</th>
-                {showRecording && (
+                {colMeter && (
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Meter</th>
+                )}
+                {colPsalms && (
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Recommended Psalms</th>
+                )}
+                {colMood && (
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Mood</th>
+                )}
+                {colRp && (
+                  <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap"># 1979 RP</th>
+                )}
+                {colPrca && (
+                  <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap"># 1912 PRCA</th>
+                )}
+                {colHymn && (
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Famous Hymn</th>
+                )}
+                {colInPrca && (
+                  <th className="text-center px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">In PRCA</th>
+                )}
+                {colRecording && (
                   <th className="text-center px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Recording</th>
                 )}
               </tr>
@@ -346,34 +452,51 @@ export function TuneTable({ tunes }: TuneTableProps) {
                         {tune.name ?? `Tune ${tune.id}`}
                       </Link>
                     </td>
-                    <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap">
-                      {tune.meter ? (
-                        <Badge variant="secondary" className="text-xs font-normal">{tune.meter}</Badge>
-                      ) : '—'}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      {tune.recommendedPsalmIds.length > 0 ? (
-                        <span className="text-muted-foreground font-mono text-xs">
-                          <span className="text-foreground font-semibold mr-1.5">{tune.recommendedPsalmIds.length}</span>
-                          {psalmDisplay}
-                        </span>
-                      ) : <span className="text-muted-foreground">—</span>}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      {tune.moods.length > 0 ? (
-                        <span className="text-muted-foreground text-xs">{tune.moods.join(', ')}</span>
-                      ) : <span className="text-muted-foreground">—</span>}
-                    </td>
-                    <td className="px-3 py-2.5 text-right font-mono text-xs text-muted-foreground">
-                      {tune.numberIn1979RpPsalter ?? '—'}
-                    </td>
-                    <td className="px-3 py-2.5 text-right font-mono text-xs text-muted-foreground">
-                      {tune.numInPrcaPsalter ?? '—'}
-                    </td>
-                    <td className="px-3 py-2.5 text-muted-foreground text-xs">
-                      {tune.famousHymn ?? '—'}
-                    </td>
-                    {showRecording && (
+                    {colMeter && (
+                      <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap">
+                        {tune.meter ? (
+                          <Badge variant="secondary" className="text-xs font-normal">{tune.meter}</Badge>
+                        ) : '—'}
+                      </td>
+                    )}
+                    {colPsalms && (
+                      <td className="px-3 py-2.5">
+                        {tune.recommendedPsalmIds.length > 0 ? (
+                          <span className="text-muted-foreground font-mono text-xs">
+                            <span className="text-foreground font-semibold mr-1.5">{tune.recommendedPsalmIds.length}</span>
+                            {psalmDisplay}
+                          </span>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                    )}
+                    {colMood && (
+                      <td className="px-3 py-2.5">
+                        {tune.moods.length > 0 ? (
+                          <span className="text-muted-foreground text-xs">{tune.moods.join(', ')}</span>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                    )}
+                    {colRp && (
+                      <td className="px-3 py-2.5 text-right font-mono text-xs text-muted-foreground">
+                        {tune.numberIn1979RpPsalter ?? '—'}
+                      </td>
+                    )}
+                    {colPrca && (
+                      <td className="px-3 py-2.5 text-right font-mono text-xs text-muted-foreground">
+                        {tune.numInPrcaPsalter ?? '—'}
+                      </td>
+                    )}
+                    {colHymn && (
+                      <td className="px-3 py-2.5 text-muted-foreground text-xs">
+                        {tune.famousHymn ?? '—'}
+                      </td>
+                    )}
+                    {colInPrca && (
+                      <td className="px-3 py-2.5 text-center text-xs text-muted-foreground">
+                        {tune.inPrcaPsalter ? 'Yes' : '—'}
+                      </td>
+                    )}
+                    {colRecording && (
                       <td className="px-3 py-2.5 text-center">
                         {tune.soundcloudUrl ? (
                           <a
