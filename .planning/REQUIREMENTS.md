@@ -1,7 +1,7 @@
 # CPRC Psalter — v1 Requirements
 
 Generated: 2026-05-07
-Updated: 2026-05-08 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions for Phase 4.5)
+Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions for Phase 4.5; added PLR-01–03 for Phase 4.7 Psalm Listing Overhaul)
 
 ## v1 Requirements
 
@@ -37,12 +37,25 @@ Updated: 2026-05-08 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 - [ ] **TUNE-06**: The below-tabs notation player renders up to 4 stanzas as w: lyric lines per abcjs render; Prev/Next buttons page through stanza groups; a counter shows the current group range (e.g. "Stanzas 1–4 / 6")
 - [ ] **TUNE-07**: Staff/Solfège toggle in the below-tabs notation player — Staff mode renders the live abcjs SVG; Solfège mode shows the R2 solfège JPG (solfegeJpgUrl from the tunes table); a second toggle (Show notation/Lyrics only) hides the score and shows all stanzas as plain scrollable text
 
+### Psalm Listing
+
+- [ ] **PLR-01**: The psalm list page shows all 150 psalms by default as a dense grid of numbered boxes (large, prominent psalm number); no filters are applied at load; enough psalms are visible on screen at once that a user can scan and select without scrolling
+- [ ] **PLR-02**: A free-type search bar above the list instantly filters on every keystroke: typing a number highlights/sorts psalm matches by number proximity (psalm 2 appears first when typing "2"); typing non-numeric text searches metrical lyrics and KJV text, inserts the full matching line (with the search term in bold) into each matching psalm box, and sorts results by relevance; the top result receives a distinct highlight; pressing Enter immediately navigates to the top result's psalm detail page
+- [ ] **PLR-03**: An "Advanced" toggle/collapsible sits between the search bar and the psalm grid (collapsed by default); expanding it reveals: (1) checkbox "Show first line" — instantly resizes all boxes to include the psalm's first metrical line; (2) checkbox "Show meter" — shows the meter label (CM, LM, SM, etc.) in the top-right of each box or to the right of the psalm number when first line is hidden; (3) a meter filter dropdown — hides all psalms whose tunes do not match the selected meter; existing static filter controls are removed
+
 ### Search
 
 - [x] **SRCH-01**: User can find a psalm by number (instant lookup)
 - [x] **SRCH-02**: User can search psalms by keyword across metrical lyrics and KJV text (PostgreSQL full-text)
 - [x] **SRCH-03**: User can browse psalms by Nave's topic / thematic tag
 - [x] **SRCH-04**: User can filter tunes by meter (CM, LM, SM, etc.)
+- [ ] **SRCH-05**: The /search route is removed from the site; any nav links pointing to /search are updated or removed; a 301 redirect from /search → /psalms is added; the inline search on /psalms covers the use case
+
+### Explore
+
+- [ ] **EXP-01**: Playwright crawl of psalter.cprc.co.uk/explore and /tunes documents all sections, links, data, and layout; a written audit report is produced before any code changes (fulfilled by Phase 4.8 UI-SPEC reference site audit)
+- [ ] **EXP-02**: /explore page replicates the reference site structure: "When you..." section (topics where topicType='When you...'), Topics, Nave's Topics, Messianic Psalms, Authors — with Separator dividers between each section
+- [ ] **TUNE-08**: /tunes page expands tune cards with mood tags and recommended psalm numbers; adds a Mood filter (Select, URL param) alongside the existing Meter filter; expanded TuneGrid reads moods from tuneMoods join and psalm IDs from psalmVersionTunes join
 
 ### Daily Reading Plan
 
@@ -111,6 +124,9 @@ Updated: 2026-05-08 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 | TUNE-02 | Phase 4: Notation | Pending |
 | TUNE-03 | Phase 4: Notation | Pending |
 | TUNE-04 | Phase 4: Notation | Pending |
+| PLR-01 | Phase 4.7: Psalm Listing Overhaul | Pending |
+| PLR-02 | Phase 4.7: Psalm Listing Overhaul | Pending |
+| PLR-03 | Phase 4.7: Psalm Listing Overhaul | Pending |
 | PSLT-01 | Phase 4.5: Psalm Detail Overhaul | Pending |
 | PSLT-02 | Phase 4.5: Psalm Detail Overhaul | Pending |
 | PSLT-03 | Phase 4.5: Psalm Detail Overhaul | Pending |

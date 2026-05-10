@@ -19,6 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4.5 (INSERTED): Psalm Detail Overhaul** - 7-tab psalm page matching psalter.cprc.co.uk; lyrics + score + audio in Overview; abcjs stanza navigation; Staff/Solfège toggle; loading skeletons on psalm and tune routes (completed 2026-05-09)
 - [ ] **Phase 4.6 (INSERTED): Psalm Detail UI Polish** - UI review and fix pass on the single psalm view; address layout clutter, spacing, hierarchy, and visual polish surfaced by GSD UI review
 - [x] **Phase 4.7 (INSERTED): Psalm Listing Overhaul** - Redesign /psalms page: dense numbered-box grid, instant free-type search (number lookup + lyric/KJV text search with bold match + relevance sort + Enter to open), collapsible Advanced panel (first-line toggle, meter toggle, meter filter), remove existing filter controls
+- [ ] **Phase 4.8 (INSERTED): Explore & Tunes Overhaul** - Playwright audit of psalter.cprc.co.uk/explore and /tunes; replicate both pages at psalter.gsdlabs.dev/explore and /tunes to match the reference site; remove /search route (superseded by inline search on /psalms)
 - [ ] **Phase 5: Precentor Portal** - Better Auth login, service event CRUD, psalm+tune set list builder, live service view with pre-loaded notation
 - [ ] **Phase 6: Polish** - OG images, Lighthouse 90+, bundle analysis, click feedback, loading skeletons on remaining routes
 
@@ -192,6 +193,31 @@ Plans:
 - [x] 04.7-03-PLAN.md — loading.tsx dense skeleton update + delete PsalmGrid/PsalmCard + Playwright UAT (human checkpoint)
 **UI hint**: yes
 
+### Phase 4.8 (INSERTED): Explore & Tunes Overhaul
+**Goal**: The /explore and /tunes pages match the reference site (psalter.cprc.co.uk) in structure and content; the redundant /search route is removed
+**Depends on**: Phase 4.7
+**Requirements**: EXP-01, EXP-02, TUNE-08, SRCH-05
+**Success Criteria** (what must be TRUE):
+  1. Playwright crawl of psalter.cprc.co.uk/explore and /tunes documents all sections, links, data, and layout; a written audit report is produced before any code changes
+  2. psalter.gsdlabs.dev/explore replicates the reference /explore page: same taxonomy sections (topics, doctrines, messianic, authors, etc.), same navigation structure, content matches the live database
+  3. psalter.gsdlabs.dev/tunes replicates the reference /tunes page: same filtering, display, and tune card structure as the reference site
+  4. The /search route is removed from psalter.gsdlabs.dev; any nav links pointing to /search are updated or removed; the /psalms page inline search covers the use case
+  5. Playwright UAT confirms all four success criteria against the live gsdlabs.dev deployment
+**Plans**: 3 plans
+
+Plans:
+**Wave 1** *(parallel)*
+- [ ] 04.8-01-PLAN.md — /explore: add "When you..." section (topicType='When you...'), exclude from Topics, fix h1 font-semibold
+- [ ] 04.8-02-PLAN.md — /tunes: mood filter (URL param), expanded tune cards (mood tags + recommended psalms), updated fetchAllTunes query
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 04.8-03-PLAN.md — Remove /search route, update SiteHeader nav, add /search→/psalms redirect, full Playwright UAT
+
+Cross-cutting constraints:
+- All h1 headings must use font-semibold (not font-bold) — UI-SPEC typography rule
+- All new DB queries use Drizzle relational API (with:) not raw SQL — existing pattern
+- topicType='When you...' is the exact DB string (confirmed in DB)
+
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
 **Depends on**: Phase 4.5
@@ -220,7 +246,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 5 → 6
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -231,5 +257,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 →
 | 4.5. Psalm Detail Overhaul | 4/4 | Complete | 2026-05-09 |
 | 4.6. Psalm Detail UI Polish | 0/3 | Not started | - |
 | 4.7. Psalm Listing Overhaul | 3/3 | Complete | 2026-05-09 |
+| 4.8. Explore & Tunes Overhaul | 0/3 | Ready to execute | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
