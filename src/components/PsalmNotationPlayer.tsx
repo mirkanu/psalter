@@ -104,13 +104,6 @@ export function PsalmNotationPlayer({
 
   // Current stanza group
   const currentGroup = stanzaGroups[groupIndex] ?? []
-  const firstStanzaNum = groupIndex * 4 + 1
-  const lastStanzaNum = groupIndex * 4 + currentGroup.length
-  const counterLabel =
-    stanzas.length <= 1
-      ? `Stanza ${stanzas.length} / ${stanzas.length}`
-      : `Stanzas ${firstStanzaNum}–${lastStanzaNum} / ${stanzas.length}`
-
   // Build ABC string with current stanza group lyrics (D-08)
   const abcForRender =
     hasAbc && currentGroup.length > 0
@@ -188,9 +181,6 @@ export function PsalmNotationPlayer({
               key={i}
               className={`text-foreground leading-relaxed whitespace-pre-line ${lyricsSizeClass}`}
             >
-              <span className="text-xs text-muted-foreground font-mono mr-2">
-                {i + 1}.
-              </span>
               {stanza}
             </p>
           ))}
@@ -234,7 +224,6 @@ export function PsalmNotationPlayer({
                       key={i}
                       className={`text-foreground leading-relaxed whitespace-pre-line ${lyricsSizeClass}`}
                     >
-                      <span className="text-xs text-muted-foreground font-mono mr-2">{i + 1}.</span>
                       {stanza}
                     </p>
                   ))}
@@ -268,7 +257,6 @@ export function PsalmNotationPlayer({
                       key={i}
                       className={`text-foreground leading-relaxed whitespace-pre-line ${lyricsSizeClass}`}
                     >
-                      <span className="text-xs text-muted-foreground font-mono mr-2">{i + 1}.</span>
                       {stanza}
                     </p>
                   ))}
@@ -280,7 +268,6 @@ export function PsalmNotationPlayer({
           {/* ── Stanza group nav BELOW score — only when ABC is rendering */}
           {!imageOnlyMode && viewMode === 'staff' && stanzaGroups.length > 1 && (
             <div className="space-y-2 mt-2">
-              <p className="text-xs text-muted-foreground text-center">{counterLabel}</p>
               <div className="flex justify-between gap-2">
                 <Button
                   variant="outline"
