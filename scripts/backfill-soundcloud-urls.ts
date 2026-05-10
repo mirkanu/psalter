@@ -70,16 +70,6 @@ async function main() {
   }
 
   console.log(`\nDone. ${updated} tunes updated with SC URLs, ${skipped} left without.`)
-
-  // Show final counts
-  const counts = await db.execute(sql`
-    SELECT
-      COUNT(*) as total,
-      COUNT(soundcloud_url) FILTER (WHERE soundcloud_url LIKE 'http%') as has_sc,
-      COUNT(youtube_url) FILTER (WHERE youtube_url IS NOT NULL AND youtube_url != '') as has_yt
-    FROM tunes
-  `)
-  console.log('Final DB counts:', counts.rows[0])
 }
 
 main().catch(console.error).finally(() => process.exit())
