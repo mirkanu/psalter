@@ -305,7 +305,9 @@ function BackupTunesContent({ backupTunes }: { backupTunes: TuneRow[] }) {
           key={tune.id}
           className="flex items-center justify-between border-b border-border pb-2"
         >
-          <span className="font-medium text-foreground">{tune.name}</span>
+          <Link href={`/tunes/${tune.id}`} className="font-medium text-foreground hover:underline underline-offset-2">
+              {tune.name}
+            </Link>
           {tune.meter && <Badge variant="outline">{tune.meter}</Badge>}
         </li>
       ))}
@@ -484,7 +486,7 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId,
           {/* Top scrollable tab list — horizontal scroll only */}
           <div
             ref={mobileTabsRef}
-            className="overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden mb-4"
+            className="overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden mb-4 sticky top-14 z-10 bg-background"
             style={{
               maskImage: 'linear-gradient(to right, black calc(100% - 2.5rem), transparent)',
             }}
@@ -510,12 +512,12 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId,
       </div>
 
       {/* ══ DESKTOP / LANDSCAPE LAYOUT (≥ md) ══════════════════════════════ */}
-      <div className="hidden md:grid md:grid-cols-2 gap-8 items-start">
+      <div className="hidden md:grid md:grid-cols-2 gap-8 sticky top-14 h-[calc(100vh-3.5rem)] overflow-hidden">
         {/* Left: Sing content — always visible */}
-        <div>{singPanel}</div>
+        <div className="overflow-y-auto h-full pb-8">{singPanel}</div>
 
         {/* Right: tabs (no Sing tab) */}
-        <div>
+        <div className="overflow-y-auto h-full pb-8">
           <Tabs defaultValue="overview">
             <TabsList className="flex flex-wrap h-auto gap-0 mb-6 bg-transparent p-0 border-b border-border">
               {DESKTOP_TABS.map(({ value, label }) => (
