@@ -77,16 +77,35 @@ export function TuneScoreGallery({ pages, alt }: TuneScoreGalleryProps) {
           >
             <X className="size-5" />
           </button>
-          <div
-            className="relative w-full max-w-5xl max-h-[90vh] aspect-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Image
+
+          {isMulti && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setIndex((i) => Math.max(0, i - 1)) }}
+                disabled={index === 0}
+                aria-label="Previous page"
+                className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-background/80 border border-border shadow hover:bg-muted disabled:opacity-30 transition-opacity"
+              >
+                <ChevronLeft className="size-6" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setIndex((i) => Math.min(pages.length - 1, i + 1)) }}
+                disabled={index === pages.length - 1}
+                aria-label="Next page"
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-background/80 border border-border shadow hover:bg-muted disabled:opacity-30 transition-opacity"
+              >
+                <ChevronRight className="size-6" />
+              </button>
+            </>
+          )}
+
+          <div onClick={(e) => e.stopPropagation()}>
+            <img
               src={current}
-              alt={`${alt} — page ${index + 1} of ${pages.length} (fullscreen)`}
-              fill
-              className="object-contain"
-              sizes="100vw"
+              alt={`${alt} — fullscreen`}
+              className="max-w-full max-h-[85vh] object-contain rounded-md"
             />
           </div>
         </div>
