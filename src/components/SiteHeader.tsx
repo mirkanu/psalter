@@ -1,8 +1,10 @@
 'use client'
+import { useState } from 'react'
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu } from 'lucide-react'
+import { Menu, Search } from 'lucide-react'
 import { Sheet, SheetTrigger, SheetContent, SheetClose } from '@/components/ui/sheet'
+import { GlobalSearch } from '@/components/GlobalSearch'
 
 const navLinks = [
   { href: "/psalms", label: "Psalms" },
@@ -13,6 +15,8 @@ const navLinks = [
 
 export function SiteHeader() {
   const pathname = usePathname()
+  const [searchOpen, setSearchOpen] = useState(false)
+
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
 
@@ -44,31 +48,51 @@ export function SiteHeader() {
                 {link.label}
               </Link>
             ))}
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              aria-label="Search"
+              className="p-2 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+            >
+              <Search className="size-4" />
+            </button>
           </nav>
 
-          {/* Mobile hamburger — hidden on desktop */}
-          <Sheet>
-            <SheetTrigger
-              aria-label="Open navigation menu"
-              className="md:hidden p-2 rounded-md hover:bg-muted transition-colors"
+          {/* Mobile: search icon + hamburger */}
+          <div className="flex items-center gap-1 md:hidden">
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              aria-label="Search"
+              className="p-2 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
             >
-              <Menu className="size-5" />
-            </SheetTrigger>
-            <SheetContent side="right" className="w-64">
-              <nav className="flex flex-col gap-1 pt-6" aria-label="Mobile primary">
-                {navLinks.map((link) => (
-                  <SheetClose
-                    key={link.href}
-                    render={<Link href={link.href} className={linkClass(link.href)} />}
-                  >
-                    {link.label}
-                  </SheetClose>
-                ))}
-              </nav>
-            </SheetContent>
-          </Sheet>
+              <Search className="size-4" />
+            </button>
+            <Sheet>
+              <SheetTrigger
+                aria-label="Open navigation menu"
+                className="p-2 rounded-md hover:bg-muted transition-colors"
+              >
+                <Menu className="size-5" />
+              </SheetTrigger>
+              <SheetContent side="right" className="w-64">
+                <nav className="flex flex-col gap-1 pt-6" aria-label="Mobile primary">
+                  {navLinks.map((link) => (
+                    <SheetClose
+                      key={link.href}
+                      render={<Link href={link.href} className={linkClass(link.href)} />}
+                    >
+                      {link.label}
+                    </SheetClose>
+                  ))}
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </div>
+
+      <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
     </header>
   )
 }
