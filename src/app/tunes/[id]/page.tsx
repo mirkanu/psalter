@@ -86,15 +86,18 @@ export default async function TunePage({ params }: PageProps) {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-8">
 
       {/* Title + meter badge */}
-      <header className="flex items-baseline gap-3 flex-wrap">
-        <h1 className="text-2xl md:text-4xl font-bold text-foreground">
-          {tune.name ?? `Tune ${tune.id}`}
-        </h1>
-        {tune.meter && (
-          <Badge variant="secondary" className="text-base px-2.5 py-0.5">
-            {tune.meter}
-          </Badge>
-        )}
+      <header>
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Tune</p>
+        <div className="flex items-baseline gap-3 flex-wrap">
+          <h1 className="text-2xl md:text-4xl font-bold text-foreground">
+            {tune.name ?? `Tune ${tune.id}`}
+          </h1>
+          {tune.meter && (
+            <Badge variant="secondary" className="text-base px-2.5 py-0.5">
+              {tune.meter}
+            </Badge>
+          )}
+        </div>
       </header>
 
       {/* Metadata — only render non-empty fields */}
@@ -173,15 +176,13 @@ export default async function TunePage({ params }: PageProps) {
       )}
 
       {/* Sing this tune — recommended + other psalms */}
-      {(recommendedPsalms.length > 0 || otherPsalms.length > 0) && (
-        <PsalmsByTuneSection
-          recommendedPsalms={recommendedPsalms}
-          otherPsalms={otherPsalms}
-          psalmsForMeter={psalmsForMeter}
-          tuneId={tuneId}
-          meter={tune.meter}
-        />
-      )}
+      <PsalmsByTuneSection
+        recommendedPsalms={recommendedPsalms}
+        otherPsalms={otherPsalms}
+        psalmsForMeter={psalmsForMeter}
+        tuneId={tuneId}
+        meter={tune.meter}
+      />
     </div>
   )
 }

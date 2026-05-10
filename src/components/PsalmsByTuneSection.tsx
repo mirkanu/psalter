@@ -86,7 +86,7 @@ export function PsalmsByTuneSection({
         </>
       ) : (
         <>
-          {otherPsalms.length > 0 && (
+          {otherPsalms.length > 0 ? (
             <>
               <div className="flex items-center justify-between gap-3 mb-3">
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -98,14 +98,16 @@ export function PsalmsByTuneSection({
                   </Button>
                 )}
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-4">
                 {otherPsalms.map((psalm) => (
                   <PsalmCard key={psalm.id} psalm={psalm} />
                 ))}
               </div>
+              <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
+                Select a Psalm
+              </Button>
             </>
-          )}
-          {otherPsalms.length === 0 && (
+          ) : (
             <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
               Select Psalm
             </Button>
