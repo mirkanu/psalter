@@ -4,24 +4,16 @@ import { useState } from 'react'
 import { Play, Pause } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TuneScoreGallery } from '@/components/TuneScoreGallery'
-import { SelectPsalmDialog } from '@/components/SelectPsalmDialog'
 import { toEmbedUrl } from '@/lib/youtube'
 
 type ViewMode = 'staff' | 'solfege'
 
-interface PsalmOption {
-  id: number
-  bibleTitle: string | null
-}
-
 interface TuneDetailClientProps {
   tuneName: string
-  staffPages: string[]        // scoreJpgUrl + additionalScoreUrls
-  solfegePages: string[]      // solfegeJpgUrl + additional solfege pages (if any)
+  staffPages: string[]
+  solfegePages: string[]
   soundcloudUrl: string | null
   youtubeUrl: string | null
-  psalmsForMeter: PsalmOption[]
-  meter: string | null
 }
 
 export function TuneDetailClient({
@@ -30,29 +22,23 @@ export function TuneDetailClient({
   solfegePages,
   soundcloudUrl,
   youtubeUrl,
-  psalmsForMeter,
-  meter,
 }: TuneDetailClientProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('staff')
   const [isPlaying, setIsPlaying] = useState(false)
-  const [selectPsalmOpen, setSelectPsalmOpen] = useState(false)
 
   const hasStaff = staffPages.length > 0
   const hasSolfege = solfegePages.length > 0
   const hasSoundCloud = !!soundcloudUrl && soundcloudUrl.startsWith('http')
   const ytEmbedBase = toEmbedUrl(youtubeUrl)
   const hasYouTube = !!ytEmbedBase
-
   const canPlay = hasSoundCloud || hasYouTube
 
-  // If viewing solfege but none available, fall back to staff
   const effectiveMode = viewMode === 'solfege' && !hasSolfege ? 'staff' : viewMode
 
   return (
     <div className="space-y-3">
-      {/* Controls row */}
+      {/* Controls row: Staff/Solfège tabs + play */}
       <div className="flex flex-wrap gap-2 items-center">
-        {/* Staff / Solfège tab buttons */}
         <div className="flex gap-1">
           {hasStaff && (
             <Button
@@ -75,8 +61,6 @@ export function TuneDetailClient({
             </Button>
           )}
         </div>
-
-        {/* Play / Pause button */}
         {canPlay && (
           <Button
             variant="outline"
@@ -118,7 +102,7 @@ export function TuneDetailClient({
         </div>
       )}
 
-      {/* Score display */}
+      {/* Score images */}
       {effectiveMode === 'staff' && hasStaff && (
         <TuneScoreGallery pages={staffPages} alt={`Score for ${tuneName}`} />
       )}
@@ -128,26 +112,6 @@ export function TuneDetailClient({
       {!hasStaff && !hasSolfege && (
         <p className="text-sm text-muted-foreground italic">Score image not yet available.</p>
       )}
-
-      {/* Select Psalm button */}
-      {psalmsForMeter.length > 0 && (
-        <div className="pt-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSelectPsalmOpen(true)}
-          >
-            Select Psalm
-          </Button>
-        </div>
-      )}
-
-      <SelectPsalmDialog
-        open={selectPsalmOpen}
-        onClose={() => setSelectPsalmOpen(false)}
-        psalms={psalmsForMeter}
-        meter={meter}
-      />
     </div>
   )
 }
