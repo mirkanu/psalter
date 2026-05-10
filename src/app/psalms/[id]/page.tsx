@@ -85,13 +85,29 @@ export default async function PsalmPage({ params }: PageProps) {
   }
 
   // Derive primary tune from the active version
-  const primaryTune =
+  const rawTune =
     activeVersion?.psalmVersionTunes.find((pvt) => pvt.isPrimary)?.tune ??
     activeVersion?.psalmVersionTunes[0]?.tune ??
     null
 
+  // Detect placeholder tunes ("use aots..." / "do NOT use aots...")
+  const isPlaceholderTune = !!rawTune?.name?.toLowerCase().includes('aots')
+  const primaryTune = isPlaceholderTune ? null : rawTune
+
+  // If placeholder, find the recommended version and compute its slug
+  let recommendedVersionSlug: string | null = null
+  if (isPlaceholderTune && psalm.psalmVersions.length > 1) {
+    const recVersion = psalm.psalmVersions.find(
+      (v) => v.psalterNumber?.includes('Recommended') && v.id !== activeVersion?.id
+    )
+    if (recVersion) {
+      const rawLabel = deriveVersionSlug(psalmId, recVersion.psalterNumber, true)
+      recommendedVersionSlug = stripStar(rawLabel)
+    }
+  }
+
   // Fetch alternate tunes matching the active version's meter
-  const primaryMeter = activeVersion?.meter ?? primaryTune?.meter ?? null
+  const primaryMeter = activeVersion?.meter ?? rawTune?.meter ?? null
   const alternateTunes = primaryMeter ? await fetchTunesByMeter(primaryMeter) : []
 
   const displayTitle = slugToDisplayTitle(slug)
@@ -114,6 +130,7 @@ export default async function PsalmPage({ params }: PageProps) {
         primaryTune={primaryTune}
         alternateTunes={alternateTunes}
         activeVersionId={activeVersion?.id}
+        recommendedVersionSlug={recommendedVersionSlug}
       />
     </div>
   )

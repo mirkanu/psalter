@@ -1,9 +1,13 @@
 'use client'
 
 import { useRef, useEffect, useState } from 'react'
+import Link from 'next/link'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Pencil } from 'lucide-react'
 import { PsalmNotationPlayerClient } from '@/components/PsalmNotationPlayerClient'
+import { ChangeTuneDialog } from '@/components/ChangeTuneDialog'
 import type { PsalmDetail } from '@/db/queries/psalms'
 import type { AlternateTune } from '@/db/queries/tunes'
 
@@ -16,6 +20,7 @@ interface PsalmTabsProps {
   primaryTune: TuneRow | null
   alternateTunes: AlternateTune[]
   activeVersionId?: number
+  recommendedVersionSlug?: string | null
 }
 
 // ── Content section components (shared between mobile/desktop) ───────────────
@@ -324,9 +329,10 @@ const DESKTOP_TABS = MOBILE_TABS.filter((t) => t.value !== 'sing')
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId }: PsalmTabsProps) {
+export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId, recommendedVersionSlug }: PsalmTabsProps) {
   const mobileTabsRef = useRef<HTMLDivElement>(null)
   const [overrideTune, setOverrideTune] = useState<AlternateTune | null>(null)
+  const [noRecDialogOpen, setNoRecDialogOpen] = useState(false)
 
   useEffect(() => {
     if (mobileTabsRef.current) {
@@ -350,6 +356,10 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId 
     .slice()
     .sort((a, b) => (a.verseNumber ?? 0) - (b.verseNumber ?? 0))
   const lyrics = primaryVersion?.lyrics ?? null
+  const stanzas = (lyrics ?? '')
+    .split('\n\n')
+    .map((s) => s.trim().replace(/^(\d+)([A-Za-z])/, '$1 $2'))
+    .filter(Boolean)
 
   // Derive active tune — override wins when set
   const activeTune = overrideTune
@@ -383,9 +393,51 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId 
           onChangeTune={setOverrideTune}
         />
       ) : (
-        <p className="text-sm text-muted-foreground italic">
-          No notation available for this psalm.
-        </p>
+        <div className="space-y-4">
+          {recommendedVersionSlug && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 px-3 py-2.5 text-sm">
+              <Link
+                href={`/psalms/${recommendedVersionSlug}`}
+                className="font-semibold underline underline-offset-2 text-amber-900 dark:text-amber-200 hover:no-underline"
+              >
+                Psalm {recommendedVersionSlug}
+              </Link>
+              <span className="text-amber-800 dark:text-amber-300"> is recommended instead</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground">Tune: no recommendation</span>
+            {alternateTunes.length > 0 && (
+              <Button
+                variant="default"
+                size="xs"
+                onClick={() => setNoRecDialogOpen(true)}
+                aria-label="Select tune"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+          {stanzas.length > 0 ? (
+            <div className="space-y-4 py-2">
+              {stanzas.map((stanza, i) => (
+                <p key={i} className="text-foreground leading-relaxed whitespace-pre-line text-base">
+                  {stanza}
+                </p>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground italic">No lyrics available.</p>
+          )}
+          <ChangeTuneDialog
+            open={noRecDialogOpen}
+            onClose={() => setNoRecDialogOpen(false)}
+            currentTuneId={null}
+            tunes={alternateTunes}
+            meter={primaryVersion?.meter ?? null}
+            onSelect={(tune) => { setOverrideTune(tune); setNoRecDialogOpen(false) }}
+          />
+        </div>
       )}
     </div>
   )

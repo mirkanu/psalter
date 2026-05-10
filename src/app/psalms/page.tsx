@@ -16,6 +16,14 @@ function extractSectionNum(pn: string | null): number | null {
   return m ? parseInt(m[1], 10) : null
 }
 
+// "First Version" → 0, "Second Version" → 1, anything else → 0
+function versionOrder(pn: string | null): number {
+  if (!pn) return 0
+  if (pn.includes('First')) return 0
+  if (pn.includes('Second')) return 1
+  return 0
+}
+
 export default async function PsalmsPage() {
   const rows = await db
     .select({
@@ -51,7 +59,7 @@ export default async function PsalmsPage() {
     const aNum = extractSectionNum(a.psalterNumber)
     const bNum = extractSectionNum(b.psalterNumber)
     if (aNum !== null && bNum !== null) return aNum - bNum
-    return (a.versionId ?? 0) - (b.versionId ?? 0)
+    return versionOrder(a.psalterNumber) - versionOrder(b.psalterNumber)
   })
 
   const listRows = sorted.map((row) => {

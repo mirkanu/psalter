@@ -94,7 +94,7 @@ export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, s
         </>
       ) : (
         <>
-          <span className={`${sizeClass} font-semibold font-mono tabular-nums text-foreground leading-none`}>
+          <span className={`${sizeClass} font-semibold font-mono tabular-nums text-foreground text-center leading-tight`}>
             {psalm.displayLabel}
           </span>
           {showMeter && psalm.meter && (
