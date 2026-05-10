@@ -5,6 +5,7 @@ import {
   fetchNavesTopicsWithCounts,
   fetchMessianicPsalms,
   fetchDistinctAuthors,
+  fetchWhenYouTopics,
 } from "@/db/queries/explore"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -42,15 +43,20 @@ function buildDisambiguatedSlugMap(
 }
 
 export default async function ExplorePage() {
-  const [topics, navesTopics, messianicPsalms, authors] = await Promise.all([
+  const [topics, navesTopics, messianicPsalms, authors, whenYouTopics] = await Promise.all([
     fetchTopicsWithCounts(),
     fetchNavesTopicsWithCounts(),
     fetchMessianicPsalms(),
     fetchDistinctAuthors(),
+    fetchWhenYouTopics(),
   ])
 
   const topicsSlugMap = buildDisambiguatedSlugMap(
     topics.filter((t): t is typeof t & { name: string } => t.name !== null)
+  )
+
+  const whenYouSlugMap = buildDisambiguatedSlugMap(
+    whenYouTopics.filter((t): t is typeof t & { name: string } => t.name !== null)
   )
 
   const navesSlugMap = buildDisambiguatedSlugMap(navesTopics)
@@ -65,13 +71,36 @@ export default async function ExplorePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
       <div className="mb-8">
-        <h1 className="font-sans text-3xl md:text-4xl font-bold text-foreground mb-2">
+        <h1 className="font-sans text-3xl md:text-4xl font-semibold text-foreground mb-2">
           Explore
         </h1>
         <p className="text-muted-foreground text-base">
           Browse psalms by topic, theme, and category
         </p>
       </div>
+
+      {/* When you... */}
+      {whenYouTopics.length > 0 && (
+        <section>
+          <h2 className="text-xl font-semibold mb-4">When you...</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+            {whenYouTopics.map((topic) => (
+              <Link
+                key={topic.id}
+                href={`/explore/topics/${whenYouSlugMap.get(topic.id) ?? slugify(topic.name ?? '')}`}
+                className="inline-flex items-center justify-between px-3 py-2 rounded-md border border-border text-sm hover:bg-muted hover:border-primary/30 transition-colors min-h-[44px]"
+              >
+                <span className="truncate">{topic.name}</span>
+                <Badge variant="secondary" className="ml-2 text-xs shrink-0">
+                  {topic.count} psalms
+                </Badge>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {whenYouTopics.length > 0 && <Separator className="my-8" />}
 
       {/* Topics */}
       <section>
