@@ -1,6 +1,6 @@
 import { db } from "@/db"
-import { psalms, psalmVersions } from "@/db/schema"
-import { eq, asc, sql } from "drizzle-orm"
+import { psalms, psalmVersions, psalmVersionTunes, tunes } from "@/db/schema"
+import { eq, asc, sql, and } from "drizzle-orm"
 import { PsalmListingGrid } from "@/components/PsalmListingGrid"
 import type { Metadata } from "next"
 
@@ -16,9 +16,18 @@ export default async function PsalmsPage() {
       firstLine: psalmVersions.firstLine,
       meter: psalmVersions.meter,
       kjvExcerpt: sql<string>`LEFT(${psalms.kjvText}, 120)`.as('kjv_excerpt'),
+      recommendedTune: tunes.name,
     })
     .from(psalms)
     .leftJoin(psalmVersions, eq(psalmVersions.psalmId, psalms.id))
+    .leftJoin(
+      psalmVersionTunes,
+      and(
+        eq(psalmVersionTunes.psalmVersionId, psalmVersions.id),
+        eq(psalmVersionTunes.isPrimary, true)
+      )
+    )
+    .leftJoin(tunes, eq(tunes.id, psalmVersionTunes.tuneId))
     .orderBy(asc(psalms.id))
 
   // Deduplicate: keep only the FIRST version row per psalm

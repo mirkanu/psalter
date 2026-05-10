@@ -20,17 +20,19 @@ interface PsalmNumberBoxProps {
     id: number
     firstLine: string | null
     meter: string | null
+    recommendedTune?: string | null
     snippet?: string | null
   }
   isTopResult: boolean
   showFirstLine: boolean
   showMeter: boolean
+  showRecommendedTune?: boolean
   snippet: string | null
   query: string
 }
 
-export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, snippet, query }: PsalmNumberBoxProps) {
-  const hasContent = showFirstLine || !!snippet
+export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, showRecommendedTune, snippet, query }: PsalmNumberBoxProps) {
+  const hasContent = showFirstLine || showRecommendedTune || !!snippet
   const isHighlighted = isTopResult && query.length > 0
 
   const baseClasses = [
@@ -74,6 +76,11 @@ export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, s
               {psalm.firstLine}
             </span>
           ) : null}
+          {showRecommendedTune && psalm.recommendedTune && (
+            <span className="text-[10px] text-primary/80 mt-1 leading-none self-start line-clamp-1">
+              {psalm.recommendedTune}
+            </span>
+          )}
         </>
       ) : (
         <>

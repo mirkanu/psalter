@@ -1,7 +1,7 @@
 import { Suspense } from "react"
 import type { Metadata } from "next"
 import { fetchAllTunes } from "@/db/queries/tunes"
-import { TuneGrid } from "@/components/TuneGrid"
+import { TuneTable } from "@/components/TuneTable"
 
 export const metadata: Metadata = {
   title: "Tunes | CPRC Psalter",
@@ -18,11 +18,11 @@ export default async function TunesPage() {
           Tunes
         </h1>
         <p className="text-muted-foreground text-base">
-          {allTunes.length} tunes in the CPRC tune index, sorted alphabetically.
+          {allTunes.length} tunes in the CPRC tune index, sorted by number of recommended psalms.
         </p>
       </div>
       <Suspense fallback={<div className="h-64 bg-muted animate-pulse rounded" />}>
-        <TuneGrid tunes={allTunes} />
+        <TuneTable tunes={allTunes} />
       </Suspense>
     </div>
   )
