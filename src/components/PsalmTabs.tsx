@@ -1,10 +1,12 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { PsalmNotationPlayerClient } from '@/components/PsalmNotationPlayerClient'
+import { TuneAudioPlayer } from '@/components/TuneAudioPlayer'
 import type { PsalmDetail } from '@/db/queries/psalms'
+import type { AlternateTune } from '@/db/queries/tunes'
 
 type TuneRow = NonNullable<
   PsalmDetail['psalmVersions'][number]['psalmVersionTunes'][number]['tune']
@@ -13,6 +15,7 @@ type TuneRow = NonNullable<
 interface PsalmTabsProps {
   psalm: PsalmDetail
   primaryTune: TuneRow | null
+  alternateTunes: AlternateTune[]
 }
 
 // ── Content section components (shared between mobile/desktop) ───────────────
@@ -321,8 +324,9 @@ const DESKTOP_TABS = MOBILE_TABS.filter((t) => t.value !== 'sing')
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
+export function PsalmTabs({ psalm, primaryTune, alternateTunes }: PsalmTabsProps) {
   const mobileTabsRef = useRef<HTMLDivElement>(null)
+  const [overrideTune, setOverrideTune] = useState<AlternateTune | null>(null)
 
   useEffect(() => {
     if (mobileTabsRef.current) {
@@ -344,32 +348,45 @@ export function PsalmTabs({ psalm, primaryTune }: PsalmTabsProps) {
     .sort((a, b) => (a.verseNumber ?? 0) - (b.verseNumber ?? 0))
   const lyrics = primaryVersion?.lyrics ?? null
 
+  // Derive active tune — override wins when set
+  const activeTune = overrideTune
+    ? {
+        id: overrideTune.id,
+        name: overrideTune.name,
+        meter: overrideTune.meter,
+        abcNotation: overrideTune.abcNotation,
+        scoreJpgUrl: overrideTune.scoreJpgUrl,
+        solfegeJpgUrl: overrideTune.solfegeJpgUrl,
+        soundcloudUrl: overrideTune.soundcloudUrl,
+        youtubeUrl: overrideTune.youtubeUrl,
+        precentingComment: null,
+      }
+    : primaryTune
+
   const singPanel = (
     <div className="space-y-4">
-      {primaryTune ? (
+      {activeTune ? (
         <PsalmNotationPlayerClient
-          abc={primaryTune.abcNotation ?? null}
+          abc={activeTune.abcNotation ?? null}
           lyrics={lyrics ?? ''}
-          scoreJpgUrl={primaryTune.scoreJpgUrl ?? null}
-          solfegeJpgUrl={primaryTune.solfegeJpgUrl ?? null}
-          tuneName={primaryTune.name}
+          scoreJpgUrl={activeTune.scoreJpgUrl ?? null}
+          solfegeJpgUrl={activeTune.solfegeJpgUrl ?? null}
+          tuneName={activeTune.name}
+          tuneMeter={activeTune.meter ?? primaryVersion?.meter ?? null}
+          tuneId={activeTune.id}
+          alternateTunes={alternateTunes}
+          onChangeTune={setOverrideTune}
         />
       ) : (
         <p className="text-sm text-muted-foreground italic">
           No notation available for this psalm.
         </p>
       )}
-      {primaryTune?.soundcloudUrl && (
-        <iframe
-          title={`SoundCloud: ${primaryTune.name}`}
-          width="100%"
-          height="96"
-          allow="autoplay"
-          sandbox="allow-scripts allow-same-origin"
-          src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(primaryTune.soundcloudUrl)}&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false`}
-          className="rounded-md border border-border"
-        />
-      )}
+      <TuneAudioPlayer
+        soundcloudUrl={activeTune?.soundcloudUrl ?? null}
+        youtubeUrl={(activeTune as { youtubeUrl?: string | null } | null)?.youtubeUrl ?? null}
+        tuneName={activeTune?.name ?? ''}
+      />
     </div>
   )
 
