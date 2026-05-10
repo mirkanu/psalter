@@ -16,7 +16,7 @@ export async function fetchAllTunes() {
     columns: {
       id: true, name: true, meter: true, scoreJpgUrl: true,
       inPrcaPsalter: true, hasFamousHymn: true, famousHymn: true,
-      numberIn1979RpPsalter: true, numInPrcaPsalter: true,
+      numberIn1979RpPsalter: true, numInPrcaPsalter: true, soundcloudUrl: true,
     },
     with: {
       tuneMoods: {
@@ -45,6 +45,7 @@ export async function fetchAllTunes() {
       famousHymn: t.famousHymn,
       numberIn1979RpPsalter: t.numberIn1979RpPsalter,
       numInPrcaPsalter: t.numInPrcaPsalter,
+      soundcloudUrl: t.soundcloudUrl ?? null,
       moods: t.tuneMoods.map((tm) => tm.mood.name).filter(Boolean) as string[],
       recommendedPsalmIds: [
         ...new Set(
@@ -66,6 +67,7 @@ export const fetchTuneDetail = cache(async function fetchTuneDetail(id: number) 
     where: eq(tunes.id, id),
     with: {
       psalmVersionTunes: {
+        columns: { isPrimary: true },
         with: {
           psalmVersion: {
             columns: { id: true, lyrics: true, firstLine: true },
