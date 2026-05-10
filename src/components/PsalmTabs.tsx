@@ -378,6 +378,17 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId,
 
   const singPanel = (
     <div className="space-y-4">
+      {recommendedVersionSlug && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 px-3 py-2.5 text-sm">
+          <Link
+            href={`/psalms/${recommendedVersionSlug}`}
+            className="font-semibold underline underline-offset-2 text-amber-900 dark:text-amber-200 hover:no-underline"
+          >
+            Psalm {recommendedVersionSlug}
+          </Link>
+          <span className="text-amber-800 dark:text-amber-300"> is recommended instead</span>
+        </div>
+      )}
       {activeTune ? (
         <PsalmNotationPlayerClient
           abc={activeTune.abcNotation ?? null}
@@ -394,17 +405,6 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId,
         />
       ) : (
         <div className="space-y-4">
-          {recommendedVersionSlug && (
-            <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 px-3 py-2.5 text-sm">
-              <Link
-                href={`/psalms/${recommendedVersionSlug}`}
-                className="font-semibold underline underline-offset-2 text-amber-900 dark:text-amber-200 hover:no-underline"
-              >
-                Psalm {recommendedVersionSlug}
-              </Link>
-              <span className="text-amber-800 dark:text-amber-300"> is recommended instead</span>
-            </div>
-          )}
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-foreground">Tune: no recommendation</span>
             {alternateTunes.length > 0 && (
