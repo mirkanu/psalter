@@ -46,7 +46,7 @@ export function TuneAudioPlayer({ soundcloudUrl, youtubeUrl, tuneName }: TuneAud
     )
   }
 
-  const ytSrc = `${ytEmbedBase}?autoplay=1`
+  const ytSrc = `${ytEmbedBase}?autoplay=1&mute=1`
   return (
     <div className="aspect-video w-full max-w-sm rounded-md overflow-hidden border border-border">
       <iframe

@@ -111,9 +111,43 @@ export function PsalmNotationPlayer({
   const hasSoundCloud = !!soundcloudUrl && soundcloudUrl.startsWith('http')
   const hasYouTube = !!toEmbedUrl(youtubeUrl)
 
-  if (!hasAbc && !hasScoreJpg && !hasSolfege) {
+  if (!hasAbc && !hasScoreJpg && !hasSolfege && !hasSoundCloud && !hasYouTube) {
     return (
-      <p className="text-sm text-muted-foreground italic">Score not yet available.</p>
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-medium text-foreground">
+            Tune: {tuneName}{tuneMeter ? ` (${tuneMeter})` : ''}
+          </span>
+          {alternateTunes.length > 0 && (
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={() => setChangeTuneOpen(true)}
+              aria-label="Change tune"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground italic">Score not yet available.</p>
+        {stanzas.length > 0 && (
+          <div className="space-y-4 py-2">
+            {stanzas.map((stanza, i) => (
+              <p key={i} className={`text-foreground leading-relaxed whitespace-pre-line ${lyricsSizeClass}`}>
+                {stanza}
+              </p>
+            ))}
+          </div>
+        )}
+        <ChangeTuneDialog
+          open={changeTuneOpen}
+          onClose={() => setChangeTuneOpen(false)}
+          currentTuneId={tuneId}
+          tunes={alternateTunes}
+          meter={tuneMeter}
+          onSelect={onChangeTune}
+        />
+      </div>
     )
   }
 
@@ -179,7 +213,7 @@ export function PsalmNotationPlayer({
           ) : (
             <div className="aspect-video w-full max-w-sm rounded-md overflow-hidden border border-border">
               <iframe
-                src={`${toEmbedUrl(youtubeUrl)}?autoplay=1`}
+                src={`${toEmbedUrl(youtubeUrl)}?autoplay=1&mute=1`}
                 title={`YouTube: ${tuneName}`}
                 className="w-full h-full"
                 allow="autoplay; encrypted-media"
