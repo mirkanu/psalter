@@ -18,6 +18,8 @@ interface PsalmNotationPlayerClientProps {
   tuneName: string
   tuneMeter: string | null
   tuneId: number | null
+  soundcloudUrl: string | null
+  youtubeUrl: string | null
   alternateTunes: AlternateTune[]
   onChangeTune: (tune: AlternateTune) => void
 }

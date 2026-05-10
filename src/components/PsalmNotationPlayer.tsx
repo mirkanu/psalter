@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import AbcRenderer from '@/components/AbcRenderer'
 import type { AlternateTune } from '@/db/queries/tunes'
 import { ChangeTuneDialog } from '@/components/ChangeTuneDialog'
+import { TuneAudioPlayer } from '@/components/TuneAudioPlayer'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -44,6 +45,8 @@ interface PsalmNotationPlayerProps {
   tuneName: string
   tuneMeter: string | null
   tuneId: number | null
+  soundcloudUrl: string | null
+  youtubeUrl: string | null
   alternateTunes: AlternateTune[]
   onChangeTune: (tune: AlternateTune) => void
 }
@@ -56,6 +59,8 @@ export function PsalmNotationPlayer({
   tuneName,
   tuneMeter,
   tuneId,
+  soundcloudUrl,
+  youtubeUrl,
   alternateTunes,
   onChangeTune,
 }: PsalmNotationPlayerProps) {
@@ -139,6 +144,13 @@ export function PsalmNotationPlayer({
           </Button>
         )}
       </div>
+
+      {/* ── Recording play button ────────────────────────────────────────── */}
+      <TuneAudioPlayer
+        soundcloudUrl={soundcloudUrl}
+        youtubeUrl={youtubeUrl}
+        tuneName={tuneName}
+      />
 
       {/* ── Controls ABOVE the score ─────────────────────────────────────── */}
       <div className="flex flex-wrap gap-2 items-center">
