@@ -1,3 +1,5 @@
+import { existsSync } from "fs"
+import { join } from "path"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { fetchTuneDetail, fetchTuneIds } from "@/db/queries/tunes"
@@ -51,7 +53,16 @@ export default async function TunePage({ params }: PageProps) {
     ? (tune.additionalScoreUrls as string[]).filter((u): u is string => typeof u === 'string')
     : []
   const staffPages = tune.scoreJpgUrl ? [tune.scoreJpgUrl, ...additionalUrls] : additionalUrls
-  const solfegePages = tune.solfegeJpgUrl ? [tune.solfegeJpgUrl] : []
+
+  // Derive solfege additional pages from staff pattern (e.g. -staff-1.jpg → -solfege-1.jpg)
+  // check filesystem at build time to confirm the file exists before including
+  const solfegeAdditional = additionalUrls
+    .map((u) => u.replace('-staff-', '-solfege-'))
+    .filter((u) => existsSync(join(process.cwd(), 'public', u)))
+  const solfegePages = [
+    ...(tune.solfegeJpgUrl ? [tune.solfegeJpgUrl] : []),
+    ...solfegeAdditional,
+  ]
 
   // All psalms with the same meter (for "Select different Psalm" dialog)
   const psalmsForMeter = tune.meter ? await fetchPsalmsByMeter(tune.meter) : []
