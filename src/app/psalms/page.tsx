@@ -2,6 +2,7 @@ import { db } from "@/db"
 import { psalms, psalmVersions, psalmVersionTunes, tunes } from "@/db/schema"
 import { eq, asc, sql, and } from "drizzle-orm"
 import { PsalmListingGrid } from "@/components/PsalmListingGrid"
+import { deriveVersionSlug, stripStar } from "@/lib/psalm-slugs"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -13,27 +14,6 @@ function extractSectionNum(pn: string | null): number | null {
   if (!pn) return null
   const m = pn.match(/\((\d+)\)$/)
   return m ? parseInt(m[1], 10) : null
-}
-
-function deriveDisplayLabel(
-  psalmId: number,
-  psalterNumber: string | null,
-  isMultiVersion: boolean
-): string {
-  if (!isMultiVersion) return String(psalmId)
-
-  const pn = psalterNumber ?? ''
-
-  // Psalm 119 sections: "119:1-8 (1)" → "119:1-8"
-  const rangeMatch = pn.match(/(\d+:\d+-\d+)/)
-  if (rangeMatch) return rangeMatch[1]
-
-  // Other psalms: "6 (First Version, Recommended)" → "6a*"
-  const isFirst = pn.includes('First')
-  const isRecommended = pn.includes('Recommended')
-  const letter = isFirst ? 'a' : 'b'
-  const star = isRecommended ? '*' : ''
-  return `${psalmId}${letter}${star}`
 }
 
 export default async function PsalmsPage() {
@@ -59,13 +39,13 @@ export default async function PsalmsPage() {
     .leftJoin(tunes, eq(tunes.id, psalmVersionTunes.tuneId))
     .orderBy(asc(psalms.id), asc(psalmVersions.id))
 
-  // Count versions per psalm to identify multi-version psalms
+  // Count versions per psalm
   const countById = new Map<number, number>()
   for (const row of rows) {
     countById.set(row.id, (countById.get(row.id) ?? 0) + 1)
   }
 
-  // Sort: by psalm id, then by section number (for Psalm 119) or version id
+  // Sort: by psalm id, then by section number (psalm 119) or version id
   const sorted = [...rows].sort((a, b) => {
     if (a.id !== b.id) return a.id - b.id
     const aNum = extractSectionNum(a.psalterNumber)
@@ -74,14 +54,21 @@ export default async function PsalmsPage() {
     return (a.versionId ?? 0) - (b.versionId ?? 0)
   })
 
-  const listRows = sorted.map((row) => ({
-    id: row.id,
-    displayLabel: deriveDisplayLabel(row.id, row.psalterNumber, (countById.get(row.id) ?? 1) > 1),
-    firstLine: row.firstLine,
-    meter: row.meter,
-    kjvExcerpt: row.kjvExcerpt,
-    recommendedTune: row.recommendedTune,
-  }))
+  const listRows = sorted.map((row) => {
+    const isMulti = (countById.get(row.id) ?? 1) > 1
+    const rawLabel = deriveVersionSlug(row.id, row.psalterNumber, isMulti)
+    const displayLabel = rawLabel  // e.g. "6a*", "119-1-8" → display as-is but replace - with : for 119
+    const slug = stripStar(rawLabel)
+    return {
+      id: row.id,
+      displayLabel: rawLabel.replace(/^(\d+)-(\d+-\d+)$/, '$1:$2'), // "119-1-8" → "119:1-8"
+      slug,
+      firstLine: row.firstLine,
+      meter: row.meter,
+      kjvExcerpt: row.kjvExcerpt,
+      recommendedTune: row.recommendedTune,
+    }
+  })
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">

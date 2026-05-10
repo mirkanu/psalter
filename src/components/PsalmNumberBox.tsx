@@ -19,6 +19,7 @@ interface PsalmNumberBoxProps {
   psalm: {
     id: number
     displayLabel: string
+    slug: string
     firstLine: string | null
     meter: string | null
     recommendedTune?: string | null
@@ -32,9 +33,17 @@ interface PsalmNumberBoxProps {
   query: string
 }
 
+// Long labels (like "119:105-112") need a smaller font to fit on mobile
+function labelSizeClass(label: string): string {
+  if (label.length > 8) return 'text-[9px]'
+  if (label.length > 5) return 'text-[10px]'
+  return 'text-xs'
+}
+
 export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, showRecommendedTune, snippet, query }: PsalmNumberBoxProps) {
   const hasContent = showFirstLine || showRecommendedTune || !!snippet
   const isHighlighted = isTopResult && query.length > 0
+  const sizeClass = labelSizeClass(psalm.displayLabel)
 
   const baseClasses = [
     "block rounded-lg",
@@ -50,7 +59,7 @@ export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, s
 
   return (
     <Link
-      href={`/psalms/${psalm.id}`}
+      href={`/psalms/${psalm.slug}`}
       className={baseClasses}
       aria-label={`Psalm ${psalm.displayLabel}`}
       aria-current={isHighlighted ? "true" : undefined}
@@ -59,7 +68,7 @@ export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, s
       {hasContent ? (
         <>
           <div className="flex items-start justify-between w-full">
-            <span className="text-xs font-semibold font-mono tabular-nums text-foreground leading-none">
+            <span className={`${sizeClass} font-semibold font-mono tabular-nums text-foreground leading-none`}>
               {psalm.displayLabel}
             </span>
             {showMeter && psalm.meter && (
@@ -85,7 +94,7 @@ export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, s
         </>
       ) : (
         <>
-          <span className="text-xs font-semibold font-mono tabular-nums text-foreground leading-none">
+          <span className={`${sizeClass} font-semibold font-mono tabular-nums text-foreground leading-none`}>
             {psalm.displayLabel}
           </span>
           {showMeter && psalm.meter && (

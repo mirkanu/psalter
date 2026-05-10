@@ -15,6 +15,7 @@ interface PsalmTabsProps {
   psalm: PsalmDetail
   primaryTune: TuneRow | null
   alternateTunes: AlternateTune[]
+  activeVersionId?: number
 }
 
 // ── Content section components (shared between mobile/desktop) ───────────────
@@ -323,7 +324,7 @@ const DESKTOP_TABS = MOBILE_TABS.filter((t) => t.value !== 'sing')
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export function PsalmTabs({ psalm, primaryTune, alternateTunes }: PsalmTabsProps) {
+export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId }: PsalmTabsProps) {
   const mobileTabsRef = useRef<HTMLDivElement>(null)
   const [overrideTune, setOverrideTune] = useState<AlternateTune | null>(null)
 
@@ -333,7 +334,10 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes }: PsalmTabsProps
     }
   }, [])
 
-  const primaryVersion = psalm.psalmVersions.slice().sort((a, b) => a.id - b.id)[0] ?? null
+  const sortedVersions = psalm.psalmVersions.slice().sort((a, b) => a.id - b.id)
+  const primaryVersion = activeVersionId
+    ? (psalm.psalmVersions.find((v) => v.id === activeVersionId) ?? sortedVersions[0] ?? null)
+    : (sortedVersions[0] ?? null)
   const dailyEntry = psalm.dailyReadings?.[0] ?? null
   const primaryTuneId = primaryTune?.id ?? null
   const allPvts = psalm.psalmVersions.flatMap((pv) => pv.psalmVersionTunes)
