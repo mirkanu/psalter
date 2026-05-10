@@ -79,3 +79,33 @@ export const fetchTuneDetail = cache(async function fetchTuneDetail(id: number) 
 })
 
 export type TuneDetail = NonNullable<Awaited<ReturnType<typeof fetchTuneDetail>>>
+
+export interface AlternateTune {
+  id: number
+  name: string
+  meter: string | null
+  abcNotation: string | null
+  scoreJpgUrl: string | null
+  solfegeJpgUrl: string | null
+  soundcloudUrl: string | null
+  youtubeUrl: string | null
+}
+
+export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]> {
+  const rows = await db.query.tunes.findMany({
+    where: eq(tunes.meter, meter),
+    columns: {
+      id: true,
+      name: true,
+      meter: true,
+      abcNotation: true,
+      scoreJpgUrl: true,
+      solfegeJpgUrl: true,
+      soundcloudUrl: true,
+      youtubeUrl: true,
+    },
+    orderBy: (t, { asc }) => [asc(t.name)],
+  })
+  const PLACEHOLDER_PREFIXES = ['use ', 'do not ', 'do NOT ']
+  return rows.filter((t) => !PLACEHOLDER_PREFIXES.some((p) => t.name.toLowerCase().startsWith(p)))
+}
