@@ -44,7 +44,17 @@ export default async function TunePage({ params }: PageProps) {
       })
     }
   }
-  const psalmList = Array.from(psalmsMap.entries())
+  const recommendedPsalms = Array.from(psalmsMap.entries())
+    .filter(([id]) =>
+      tune.psalmVersionTunes.some(
+        (pvt) => pvt.psalmVersion?.psalm?.id === id && pvt.isPrimary
+      )
+    )
+    .sort(([a], [b]) => a - b)
+    .map(([id, data]) => ({ id, ...data }))
+
+  const otherPsalms = Array.from(psalmsMap.entries())
+    .filter(([id]) => !recommendedPsalms.some((p) => p.id === id))
     .sort(([a], [b]) => a - b)
     .map(([id, data]) => ({ id, ...data }))
 
@@ -162,10 +172,11 @@ export default async function TunePage({ params }: PageProps) {
         </section>
       )}
 
-      {/* Psalms using this tune — card grid with first line + "Select different Psalm" */}
-      {psalmList.length > 0 && (
+      {/* Sing this tune — recommended + other psalms */}
+      {(recommendedPsalms.length > 0 || otherPsalms.length > 0) && (
         <PsalmsByTuneSection
-          psalms={psalmList}
+          recommendedPsalms={recommendedPsalms}
+          otherPsalms={otherPsalms}
           psalmsForMeter={psalmsForMeter}
           tuneId={tuneId}
           meter={tune.meter}
