@@ -9,12 +9,38 @@ export async function fetchTuneIds(): Promise<number[]> {
 }
 
 export async function fetchAllTunes() {
-  return db.select({
-    id: tunes.id,
-    name: tunes.name,
-    meter: tunes.meter,
-    scoreJpgUrl: tunes.scoreJpgUrl,
-  }).from(tunes).orderBy(asc(tunes.name))
+  const rows = await db.query.tunes.findMany({
+    columns: { id: true, name: true, meter: true, scoreJpgUrl: true },
+    with: {
+      tuneMoods: {
+        with: { mood: { columns: { name: true } } },
+      },
+      psalmVersionTunes: {
+        with: {
+          psalmVersion: {
+            columns: {},
+            with: { psalm: { columns: { id: true } } },
+          },
+        },
+      },
+    },
+    orderBy: (t, { asc }) => [asc(t.name)],
+  })
+
+  return rows.map((t) => ({
+    id: t.id,
+    name: t.name,
+    meter: t.meter,
+    scoreJpgUrl: t.scoreJpgUrl,
+    moods: t.tuneMoods.map((tm) => tm.mood.name).filter(Boolean) as string[],
+    recommendedPsalmIds: [
+      ...new Set(
+        t.psalmVersionTunes
+          .map((pvt) => pvt.psalmVersion?.psalm?.id)
+          .filter((id): id is number => id != null)
+      ),
+    ].sort((a, b) => a - b),
+  }))
 }
 
 /**
