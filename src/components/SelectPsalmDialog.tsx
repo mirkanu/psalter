@@ -10,6 +10,7 @@ interface PsalmOption {
   id: number
   bibleTitle: string | null
   firstLine: string | null
+  lyrics: string | null
 }
 
 interface SelectPsalmDialogProps {
@@ -38,7 +39,8 @@ export function SelectPsalmDialog({ open, onClose, psalms, meter, existingPsalmI
     ? pool.filter((p) =>
         String(p.id).includes(trimmed) ||
         (p.bibleTitle ?? '').toLowerCase().includes(trimmed.toLowerCase()) ||
-        (p.firstLine ?? '').toLowerCase().includes(trimmed.toLowerCase())
+        (p.firstLine ?? '').toLowerCase().includes(trimmed.toLowerCase()) ||
+        (p.lyrics ?? '').toLowerCase().includes(trimmed.toLowerCase())
       )
     : pool
 
