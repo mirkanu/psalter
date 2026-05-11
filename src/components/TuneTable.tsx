@@ -191,6 +191,8 @@ const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', fa
         </div>
       </div>
 
+      {/* Search + filters — sticky below nav */}
+      <div className="sticky top-14 z-20 bg-background py-2 -mx-4 px-4 space-y-2">
       {/* Search bar */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -387,6 +389,7 @@ const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', fa
             </div>
           </div>
         )}
+      </div>
       </div>
 
       {/* Results bar */}

@@ -112,13 +112,15 @@ export function PsalmNotationPlayer({
   }, [lyricsSize])
 
   useEffect(() => {
-    if (!mobileStickyScore || !tuneHeaderRef.current) return
-    const observer = new IntersectionObserver(
-      ([entry]) => setImgSticky(!entry.isIntersecting && entry.boundingClientRect.top < 0),
-      { threshold: 0 }
-    )
-    observer.observe(tuneHeaderRef.current)
-    return () => observer.disconnect()
+    if (!mobileStickyScore) return
+    const check = () => {
+      if (!tuneHeaderRef.current) return
+      const { bottom } = tuneHeaderRef.current.getBoundingClientRect()
+      setImgSticky(bottom < 80)
+    }
+    window.addEventListener('scroll', check, { passive: true })
+    check()
+    return () => window.removeEventListener('scroll', check)
   }, [mobileStickyScore])
 
   const lyricsSizeClass = { sm: 'text-sm', base: 'text-base', lg: 'text-lg' }[lyricsSize]
