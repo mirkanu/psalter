@@ -14,7 +14,7 @@ interface PsalmEntry {
 interface PsalmsByTuneSectionProps {
   recommendedPsalms: PsalmEntry[]
   otherPsalms: PsalmEntry[]
-  psalmsForMeter: { id: number; bibleTitle: string | null }[]
+  psalmsForMeter: { id: number; bibleTitle: string | null; firstLine: string | null }[]
   tuneId: number
   meter: string | null
 }
