@@ -37,7 +37,6 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
       setQuery('')
       setResults([])
       setSelectedIdx(0)
-      setTimeout(() => inputRef.current?.focus(), 50)
     }
   }, [open])
 
@@ -51,9 +50,13 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
       setLoading(true)
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(query.trim())}`)
+        if (!res.ok) throw new Error(`Search API error: ${res.status}`)
         const data = await res.json()
         setResults(data.results ?? [])
         setSelectedIdx(0)
+      } catch (err) {
+        console.error('Search error:', err)
+        setResults([])
       } finally {
         setLoading(false)
       }
@@ -93,7 +96,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
       onClick={onClose}
     >
       <div
-        className="bg-background rounded-xl border border-border shadow-2xl w-full max-w-xl overflow-hidden"
+        className="bg-background rounded-xl border border-border shadow-2xl w-full max-w-xl flex flex-col max-h-[80vh] overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Search input */}
@@ -101,6 +104,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
           <Search className="h-4 w-4 text-muted-foreground shrink-0" />
           <input
             ref={inputRef}
+            autoFocus
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
@@ -120,7 +124,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
 
         {/* Results */}
         {query.trim() && (
-          <div className="max-h-[60vh] overflow-y-auto">
+          <div className="flex-1 overflow-y-auto">
             {loading && (
               <p className="text-sm text-muted-foreground px-4 py-3">Searching…</p>
             )}
