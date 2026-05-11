@@ -126,6 +126,7 @@ None yet.
 |---|-------------|------|--------|-----------|
 | q01 | Psalm detail layout: split desktop, reversed header, Sing tab on mobile | 2026-05-09 | eebcbbb | [260509-q01-psalm-detail-layout-overhaul](./quick/260509-q01-psalm-detail-layout-overhaul/) |
 | q02 | UI fixes batch 3: tune format, mobile sticky score, meter tooltip, search overlay, lyrics search, search bugs (T2,T4-T8) | 2026-05-11 | 133507a | [20260511-ui-fixes-batch3](./quick/20260511-ui-fixes-batch3/) |
+| q03 | UI fixes batch 4: T4 gap+progressive sticky, T5 Popover meter, T6 GlobalSearch→Dialog, T7 lyrics snippet, sticky list headers | 2026-05-11 | cb9b448 | [20260511-ui-fixes-batch4](./quick/20260511-ui-fixes-batch4/) |
 
 ### Blockers/Concerns
 
