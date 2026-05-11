@@ -52,6 +52,7 @@ interface PsalmNotationPlayerProps {
   alternateTunes: AlternateTune[]
   onChangeTune: (tune: AlternateTune) => void
   stickyScoreMode?: boolean
+  mobileStickyScore?: boolean
 }
 
 export function PsalmNotationPlayer({
@@ -67,6 +68,7 @@ export function PsalmNotationPlayer({
   alternateTunes,
   onChangeTune,
   stickyScoreMode = false,
+  mobileStickyScore = false,
 }: PsalmNotationPlayerProps) {
   // Split lyrics into stanzas, then group by 4 (D-08)
   const stanzas = lyrics
@@ -183,7 +185,7 @@ export function PsalmNotationPlayer({
       {/* ── Tune header ──────────────────────────────────────────────────── */}
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-sm text-foreground">
-          Tune: {tuneNameEl}{tuneMeter ? ` (${tuneMeter})` : ''}
+          Tune{tuneMeter ? ` (${tuneMeter})` : ''}: {tuneNameEl}
         </span>
         {alternateTunes.length > 0 && (
           <Button
@@ -443,12 +445,18 @@ export function PsalmNotationPlayer({
   return (
     <>
       <div className={stickyScoreMode ? 'flex flex-col h-full' : 'space-y-3'}>
-        {/* ── Score section (non-scrolling in sticky mode) ── */}
-        <div className={stickyScoreMode ? 'flex-shrink-0 space-y-3' : 'space-y-3'}>
+        {/* ── Score section (non-scrolling in sticky mode; sticky via page in mobileStickyScore mode) ── */}
+        <div className={
+          stickyScoreMode
+            ? 'flex-shrink-0 space-y-3'
+            : mobileStickyScore
+              ? 'sticky top-[6.5rem] z-10 bg-background pb-2 space-y-3'
+              : 'space-y-3'
+        }>
           {scoreSection}
         </div>
 
-        {/* ── Lyrics section (scrollable in sticky mode) ── */}
+        {/* ── Lyrics section (scrollable in sticky mode; normal page flow in mobileStickyScore mode) ── */}
         <div className={stickyScoreMode ? 'flex-1 overflow-y-auto py-2' : ''}>
           {lyricsSection}
         </div>
