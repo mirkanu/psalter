@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { X, BookOpen, Music, Search } from 'lucide-react'
 import { renderSnippet } from '@/lib/search-utils'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 
 interface SearchResult {
   type: 'psalm' | 'tune'
@@ -87,19 +88,11 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
     }
   }
 
-  if (!open) return null
-
   const hasResults = results.length > 0
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-background rounded-xl border border-border shadow-2xl w-full max-w-xl flex flex-col max-h-[80vh] overflow-hidden"
-        onClick={e => e.stopPropagation()}
-      >
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
+      <DialogContent showCloseButton={false} className="max-w-xl p-0 gap-0 flex flex-col max-h-[80vh] overflow-hidden">
         {/* Search input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
           <Search className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -182,7 +175,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
             Type a psalm number, keyword, or tune name
           </div>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

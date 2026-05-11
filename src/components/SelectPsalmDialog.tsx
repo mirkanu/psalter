@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Search } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { buildSnippet, renderSnippet } from '@/lib/search-utils'
 
 interface PsalmOption {
   id: number
@@ -91,7 +92,24 @@ export function SelectPsalmDialog({ open, onClose, psalms, meter, existingPsalmI
                   className="w-full text-left px-3 py-2.5 rounded-md text-sm hover:bg-muted transition-colors flex items-center gap-3"
                 >
                   <span className="font-mono text-muted-foreground w-8 shrink-0">{psalm.id}</span>
-                  <span className="font-medium truncate">{psalm.firstLine ?? psalm.bibleTitle ?? `Psalm ${psalm.id}`}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium block truncate text-sm">
+                      {psalm.bibleTitle ?? `Psalm ${psalm.id}`}
+                    </span>
+                    {trimmed ? (() => {
+                      const lyricsSnippet = buildSnippet(psalm.lyrics ?? null, trimmed)
+                      const preview = lyricsSnippet ?? psalm.firstLine ?? ''
+                      return preview ? (
+                        <span className="text-xs text-muted-foreground block truncate">
+                          {renderSnippet(preview, trimmed)}
+                        </span>
+                      ) : null
+                    })() : (
+                      psalm.firstLine && (
+                        <span className="text-xs text-muted-foreground block truncate">{psalm.firstLine}</span>
+                      )
+                    )}
+                  </div>
                 </button>
               ))}
             </div>
