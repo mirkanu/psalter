@@ -129,7 +129,7 @@ export function PsalmNotationPlayer({
       <div className="space-y-3">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm text-foreground">
-            Tune: {tuneNameEl}{tuneMeter ? ` (${tuneMeter})` : ''}
+            Tune{tuneMeter ? ` (${tuneMeter})` : ''}: {tuneNameEl}
           </span>
           {alternateTunes.length > 0 && (
             <Button
