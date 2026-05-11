@@ -1,5 +1,6 @@
 'use client'
 import { useMemo, useState, useRef, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { useLocalStorage } from "@/hooks/useLocalStorage"
 import Link from "next/link"
 import { Search, X, ChevronDown, ChevronUp, Download, Music } from "lucide-react"
@@ -57,6 +58,7 @@ function exportCsv(allTunes: TuneRow[]) {
 }
 
 export function TuneTable({ tunes }: TuneTableProps) {
+  const router = useRouter()
   const [query, setQuery] = useState('')
   const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', false)
   const [selectedMeter, setSelectedMeter] = useLocalStorage('tunes.selectedMeter', 'all')
@@ -80,6 +82,12 @@ export function TuneTable({ tunes }: TuneTableProps) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { inputRef.current?.focus() }, [])
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter' && filtered.length > 0) {
+      router.push(`/tunes/${filtered[0].id}`)
+    }
+  }
 
   // On first visit on mobile, hide non-default columns
   useEffect(() => {
@@ -190,6 +198,7 @@ export function TuneTable({ tunes }: TuneTableProps) {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder="Type here to search by tune name or Psalter number (RP or PRCA)"
           aria-label="Search tunes"
           className="pl-9 pr-9 w-full"
@@ -409,7 +418,7 @@ export function TuneTable({ tunes }: TuneTableProps) {
               <tr className="border-b border-border bg-muted/50">
                 <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Tune Name</th>
                 {colMeter && (
-                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Meter</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap w-12 max-w-[3rem]">Meter</th>
                 )}
                 {colPsalms && (
                   <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Recommended Psalms</th>
@@ -453,9 +462,9 @@ export function TuneTable({ tunes }: TuneTableProps) {
                       </Link>
                     </td>
                     {colMeter && (
-                      <td className="px-3 py-2.5 text-muted-foreground whitespace-nowrap">
+                      <td className="px-3 py-2.5 text-muted-foreground w-12 max-w-[3rem] truncate overflow-hidden" title={tune.meter ?? ''}>
                         {tune.meter ? (
-                          <Badge variant="secondary" className="text-xs font-normal">{tune.meter}</Badge>
+                          <Badge variant="secondary" className="text-xs font-normal truncate max-w-full">{tune.meter}</Badge>
                         ) : '—'}
                       </td>
                     )}

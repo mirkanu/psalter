@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 interface PsalmOption {
   id: number
   bibleTitle: string | null
+  firstLine: string | null
 }
 
 interface SelectPsalmDialogProps {
@@ -36,7 +37,8 @@ export function SelectPsalmDialog({ open, onClose, psalms, meter, existingPsalmI
   const filtered = trimmed
     ? pool.filter((p) =>
         String(p.id).includes(trimmed) ||
-        (p.bibleTitle ?? '').toLowerCase().includes(trimmed.toLowerCase())
+        (p.bibleTitle ?? '').toLowerCase().includes(trimmed.toLowerCase()) ||
+        (p.firstLine ?? '').toLowerCase().includes(trimmed.toLowerCase())
       )
     : pool
 
@@ -44,6 +46,12 @@ export function SelectPsalmDialog({ open, onClose, psalms, meter, existingPsalmI
     onClose()
     setQuery('')
     router.push(`/psalms/${psalmId}?tune=${tuneId}`)
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter' && filtered.length > 0) {
+      handleSelect(filtered[0].id)
+    }
   }
 
   return (
@@ -62,6 +70,7 @@ export function SelectPsalmDialog({ open, onClose, psalms, meter, existingPsalmI
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Search psalms…"
             className="pl-9"
             autoFocus
@@ -80,7 +89,7 @@ export function SelectPsalmDialog({ open, onClose, psalms, meter, existingPsalmI
                   className="w-full text-left px-3 py-2.5 rounded-md text-sm hover:bg-muted transition-colors flex items-center gap-3"
                 >
                   <span className="font-mono text-muted-foreground w-8 shrink-0">{psalm.id}</span>
-                  <span className="font-medium truncate">{psalm.bibleTitle ?? `Psalm ${psalm.id}`}</span>
+                  <span className="font-medium truncate">{psalm.firstLine ?? psalm.bibleTitle ?? `Psalm ${psalm.id}`}</span>
                 </button>
               ))}
             </div>
