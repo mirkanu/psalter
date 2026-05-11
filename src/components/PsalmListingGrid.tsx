@@ -198,7 +198,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
         )
       } else {
         const isExpanded = !!expandedIds[id]
-        const toggle = () => setExpandedIds({ ...expandedIds, [id]: !isExpanded })
+        const toggle = () => setExpandedIds(isExpanded ? { [id]: false } : { [id]: true })
         items.push(
           <button
             key={`toggle-${id}`}
