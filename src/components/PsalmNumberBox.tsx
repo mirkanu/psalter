@@ -1,19 +1,5 @@
 import Link from "next/link"
-
-function renderSnippet(snippet: string, query: string) {
-  if (!query) return <span>{snippet}</span>
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const parts = snippet.split(new RegExp(`(${escaped})`, 'gi')).filter(Boolean)
-  return (
-    <>
-      {parts.map((part, i) =>
-        part.toLowerCase() === query.toLowerCase()
-          ? <strong key={i}>{part}</strong>
-          : <span key={i}>{part}</span>
-      )}
-    </>
-  )
-}
+import { renderSnippet } from "@/lib/search-utils"
 
 interface PsalmNumberBoxProps {
   psalm: {

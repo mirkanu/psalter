@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { PsalmNumberBox } from "./PsalmNumberBox"
+import { buildSnippet } from "@/lib/search-utils"
 
 export interface PsalmRow {
   id: number
@@ -43,19 +44,6 @@ interface PsalmListingGridProps {
   psalms: PsalmRow[]
 }
 
-function buildSnippet(text: string | null, query: string, maxLen = 80): string | null {
-  if (!text || !query) return null
-  const lower = text.toLowerCase()
-  const lowerQuery = query.toLowerCase()
-  const idx = lower.indexOf(lowerQuery)
-  if (idx === -1) return null
-  const start = Math.max(0, idx - 20)
-  const end = Math.min(text.length, start + maxLen)
-  let excerpt = text.slice(start, end)
-  if (start > 0) excerpt = '…' + excerpt
-  if (end < text.length) excerpt = excerpt + '…'
-  return excerpt
-}
 
 export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
   const [query, setQuery] = useState('')
