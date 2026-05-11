@@ -140,106 +140,108 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
 
   return (
     <div className="space-y-4">
-      {/* Search bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-        <Input
-          ref={inputRef}
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Search by psalm number or keyword…"
-          aria-label="Search psalms"
-          className="pl-9 pr-9 w-full"
-        />
-        {query && (
-          <button
-            type="button"
-            onClick={() => setQuery('')}
-            aria-label="Clear search"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </div>
-
-      {/* Advanced Filters toggle */}
-      <div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setAdvancedOpen(!advancedOpen)}
-          aria-expanded={advancedOpen}
-          aria-controls="advanced-panel"
-          className="text-sm font-normal active:scale-[0.98] px-0 hover:bg-transparent"
-        >
-          Advanced Filters
-          {advancedOpen
-            ? <ChevronUp className="h-4 w-4 ml-1" />
-            : <ChevronDown className="h-4 w-4 ml-1" />}
-        </Button>
-
-        {advancedOpen && (
-          <div
-            id="advanced-panel"
-            className="mt-2 bg-muted rounded-lg px-4 py-3 flex flex-wrap gap-6 items-center"
-          >
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="show-first-line"
-                checked={showFirstLine}
-                onCheckedChange={(v) => setShowFirstLine(!!v)}
-              />
-              <label htmlFor="show-first-line" className="text-sm cursor-pointer">
-                Show first line
-              </label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="show-meter"
-                checked={showMeter}
-                onCheckedChange={(v) => setShowMeter(!!v)}
-              />
-              <label htmlFor="show-meter" className="text-sm cursor-pointer">
-                Show meter
-              </label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="show-recommended-tune"
-                checked={showRecommendedTune}
-                onCheckedChange={(v) => setShowRecommendedTune(!!v)}
-              />
-              <label htmlFor="show-recommended-tune" className="text-sm cursor-pointer">
-                Show recommended tune
-              </label>
-            </div>
-            <Select
-              value={meterFilter}
-              onValueChange={(v) => setMeterFilter(v ?? 'all')}
+      <div className="sticky top-14 z-20 bg-background py-2 -mx-4 px-4 space-y-2">
+        {/* Search bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Search by psalm number or keyword…"
+            aria-label="Search psalms"
+            className="pl-9 pr-9 w-full"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              aria-label="Clear search"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
-              <SelectTrigger className="w-40" aria-label="Filter by meter">
-                <span className="truncate">
-                  {meterFilter === 'all' ? 'All Meters' : meterFilter}
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Meters</SelectItem>
-                {meters.map((m) => (
-                  <SelectItem key={m} value={m}>{m}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {hasAdvancedFilter && (
-              <Button variant="ghost" size="sm" onClick={clearAdvanced} className="text-sm gap-1 ml-auto">
-                <X className="h-3 w-3" />
-                Clear all
-              </Button>
-            )}
-          </div>
-        )}
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Advanced Filters toggle */}
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setAdvancedOpen(!advancedOpen)}
+            aria-expanded={advancedOpen}
+            aria-controls="advanced-panel"
+            className="text-sm font-normal active:scale-[0.98] px-0 hover:bg-transparent"
+          >
+            Advanced Filters
+            {advancedOpen
+              ? <ChevronUp className="h-4 w-4 ml-1" />
+              : <ChevronDown className="h-4 w-4 ml-1" />}
+          </Button>
+
+          {advancedOpen && (
+            <div
+              id="advanced-panel"
+              className="mt-2 bg-muted rounded-lg px-4 py-3 flex flex-wrap gap-6 items-center"
+            >
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="show-first-line"
+                  checked={showFirstLine}
+                  onCheckedChange={(v) => setShowFirstLine(!!v)}
+                />
+                <label htmlFor="show-first-line" className="text-sm cursor-pointer">
+                  Show first line
+                </label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="show-meter"
+                  checked={showMeter}
+                  onCheckedChange={(v) => setShowMeter(!!v)}
+                />
+                <label htmlFor="show-meter" className="text-sm cursor-pointer">
+                  Show meter
+                </label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="show-recommended-tune"
+                  checked={showRecommendedTune}
+                  onCheckedChange={(v) => setShowRecommendedTune(!!v)}
+                />
+                <label htmlFor="show-recommended-tune" className="text-sm cursor-pointer">
+                  Show recommended tune
+                </label>
+              </div>
+              <Select
+                value={meterFilter}
+                onValueChange={(v) => setMeterFilter(v ?? 'all')}
+              >
+                <SelectTrigger className="w-40" aria-label="Filter by meter">
+                  <span className="truncate">
+                    {meterFilter === 'all' ? 'All Meters' : meterFilter}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Meters</SelectItem>
+                  {meters.map((m) => (
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {hasAdvancedFilter && (
+                <Button variant="ghost" size="sm" onClick={clearAdvanced} className="text-sm gap-1 ml-auto">
+                  <X className="h-3 w-3" />
+                  Clear all
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Results bar with download */}
