@@ -31,7 +31,7 @@ const BOOKS = [
 function exportCsv(psalms: PsalmRow[]) {
   const headers = ['Psalm #', 'First Line', 'Meter', 'Recommended Tune']
   const rows = psalms.map((p) => [
-    String(p.id),
+    p.displayLabel,
     p.firstLine ?? '',
     p.meter ?? '',
     p.recommendedTune ?? '',
