@@ -14,8 +14,10 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.95.2",
     "@aws-sdk/client-s3": "3.1044.0",
     "@base-ui/react": "^1.4.1",
+    "@radix-ui/react-popover": "^1.1.15",
     "abcjs": "6.6.3",
     "airtable": "0.12.2",
     "class-variance-authority": "^0.7.1",

@@ -32,3 +32,6 @@ Thumbs.db
 
 # Claude local settings
 .claude/settings.local.json
+
+# Script output (runtime-generated, can be large)
+scripts/output/*.json
