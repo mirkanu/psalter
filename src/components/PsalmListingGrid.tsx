@@ -174,7 +174,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
 
   return (
     <div className="space-y-4">
-      <div className="sticky top-14 z-20 bg-background py-2 -mx-4 px-4 space-y-2">
+      <div id="psalms-sticky-header" className="sticky top-14 z-20 bg-background py-2 -mx-4 px-4 space-y-2">
         {/* Search bar */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -279,7 +279,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
       </div>
 
       {/* Results bar with download */}
-      <div className="flex items-center justify-between gap-2">
+      <div className={`flex items-center justify-between gap-2 ${isGrouped ? 'pr-10 md:pr-0' : ''}`}>
         <p className="text-sm text-muted-foreground">
           {filteredPsalms.length} {filteredPsalms.length === 1 ? 'versification' : 'versifications'}
         </p>
@@ -301,7 +301,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
           <p className="text-sm mt-1">Try a different keyword or clear the search.</p>
         </div>
       ) : isGrouped ? (
-        <div className="relative pr-8 md:pr-0">
+        <div className="relative pr-10 md:pr-0">
           {/* Vertical book tabs — mobile only, fixed right side */}
           <div className="fixed right-0 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-px md:hidden">
             {BOOKS.map((book) => (
@@ -309,11 +309,15 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
                 key={book.sectionId}
                 onClick={() => {
                   const el = document.getElementById(book.sectionId)
-                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  if (!el) return
+                  const header = document.getElementById('psalms-sticky-header')
+                  const headerH = header ? header.offsetHeight : 80
+                  const top = window.scrollY + el.getBoundingClientRect().top - 56 - headerH - 8
+                  window.scrollTo({ top, behavior: 'smooth' })
                 }}
-                className="text-[10px] font-mono bg-background/95 border border-r-0 border-border rounded-l-md px-1.5 py-1.5 text-muted-foreground hover:text-foreground hover:bg-muted leading-tight min-w-[2.5rem] text-center"
+                className="text-[10px] font-mono bg-background/95 border border-r-0 border-border rounded-l-md px-1.5 py-2 text-muted-foreground hover:text-foreground hover:bg-muted"
               >
-                {book.range}
+                <span className="[writing-mode:vertical-rl]">{book.range}</span>
               </button>
             ))}
           </div>
@@ -344,15 +348,30 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
                   <>
                     {pre119.length > 0 && renderGrid(pre119)}
 
-                    {/* Psalm 119 sub-section */}
+                    {/* Psalm 119 sub-section — vertical left bar with label */}
                     {ps119.length > 0 && (
-                      <>
-                        <div className="flex items-center gap-3 mb-2 mt-4">
-                          <span className="text-xs font-medium text-muted-foreground pl-1 whitespace-nowrap">Psalm 119</span>
-                          <div className="flex-1 border-t border-dashed border-border" />
+                      <div className="flex gap-2 mt-4">
+                        <div className="flex flex-col items-center shrink-0 pt-0.5">
+                          <span className="text-[9px] font-medium text-muted-foreground [writing-mode:vertical-rl] rotate-180 leading-none mb-1">
+                            Psalm 119
+                          </span>
+                          <div className="flex-1 border-l border-dashed border-border" />
                         </div>
-                        {renderGrid(ps119, true)}
-                      </>
+                        <div className={`flex-1 grid ${gridCols} gap-2`}>
+                          {ps119.map((psalm) => (
+                            <PsalmNumberBox
+                              key={psalm.slug}
+                              psalm={{ ...psalm, displayLabel: psalm.displayLabel.replace(/^119:/, '') }}
+                              isTopResult={false}
+                              showFirstLine={showFirstLine}
+                              showMeter={showMeter}
+                              showRecommendedTune={showRecommendedTune}
+                              snippet={psalm.snippet ?? null}
+                              query={trimmedQuery}
+                            />
+                          ))}
+                        </div>
+                      </div>
                     )}
 
                     {post119.length > 0 && (
