@@ -1,5 +1,6 @@
 'use client'
 import { useMemo, useState, useRef, useEffect } from "react"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useRouter } from "next/navigation"
 import { useLocalStorage } from "@/hooks/useLocalStorage"
 import Link from "next/link"
@@ -60,6 +61,7 @@ function exportCsv(allTunes: TuneRow[]) {
 export function TuneTable({ tunes }: TuneTableProps) {
   const router = useRouter()
   const [query, setQuery] = useState('')
+  const [openMeterRow, setOpenMeterRow] = useState<number | null>(null)
   const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', false)
   const [selectedMeter, setSelectedMeter] = useLocalStorage('tunes.selectedMeter', 'all')
   const [selectedMood, setSelectedMood] = useLocalStorage('tunes.selectedMood', 'all')
@@ -462,9 +464,19 @@ export function TuneTable({ tunes }: TuneTableProps) {
                       </Link>
                     </td>
                     {colMeter && (
-                      <td className="px-3 py-2.5 text-muted-foreground w-12 max-w-[3rem] truncate overflow-hidden" title={tune.meter ?? ''}>
+                      <td className="px-3 py-2.5 text-muted-foreground w-12 max-w-[3rem] truncate overflow-hidden">
                         {tune.meter ? (
-                          <Badge variant="secondary" className="text-xs font-normal truncate max-w-full">{tune.meter}</Badge>
+                          <Tooltip open={openMeterRow === tune.id} onOpenChange={(o: boolean) => setOpenMeterRow(o ? tune.id : null)}>
+                            <TooltipTrigger
+                              render={<span className="cursor-help" />}
+                              onClick={() => setOpenMeterRow(openMeterRow === tune.id ? null : tune.id)}
+                            >
+                              <Badge variant="secondary" className="text-xs font-normal truncate max-w-full underline decoration-dotted">{tune.meter}</Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{tune.meter}</p>
+                            </TooltipContent>
+                          </Tooltip>
                         ) : '—'}
                       </td>
                     )}
