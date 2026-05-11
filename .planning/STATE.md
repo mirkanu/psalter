@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Phase 4.8 complete — all 3 plans done, verification passed (7/7)
-last_updated: "2026-05-10T12:00:00.000Z"
-last_activity: 2026-05-10
+stopped_at: Phase 4.9 Plan 03 Task 1 complete — Playwright UAT at checkpoint:human-verify
+last_updated: "2026-05-11T21:15:00.000Z"
+last_activity: 2026-05-11
 progress:
   total_phases: 7
   completed_phases: 6
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 
 ## Current Position
 
-Phase: 4.8
-Plan: 03 complete
-Status: Phase 4.8 complete — all 3 plans done; verification passed 7/7; /search removed, /explore + /tunes overhauled
-Last activity: 2026-05-10
+Phase: 4.9
+Plan: 03 (at checkpoint — awaiting human visual verify)
+Status: Phase 4.9 Plan 03 Task 1 complete — Playwright UAT passes 12/12; checkpoint:human-verify required
+Last activity: 2026-05-11
 
-Progress: [█████████████████░░░] 83% (Phase 01+02+03+04+04.5 complete; Phase 4.6 next)
+Progress: [█████████████████░░░] 83% (Phase 01+02+03+04+04.5+04.6+04.7+04.8 complete; Phase 4.9 in progress)
 
 ## Performance Metrics
 
@@ -127,6 +127,8 @@ None yet.
 | q01 | Psalm detail layout: split desktop, reversed header, Sing tab on mobile | 2026-05-09 | eebcbbb | [260509-q01-psalm-detail-layout-overhaul](./quick/260509-q01-psalm-detail-layout-overhaul/) |
 | q02 | UI fixes batch 3: tune format, mobile sticky score, meter tooltip, search overlay, lyrics search, search bugs (T2,T4-T8) | 2026-05-11 | 133507a | [20260511-ui-fixes-batch3](./quick/20260511-ui-fixes-batch3/) |
 | q03 | UI fixes batch 4: T4 gap+progressive sticky, T5 Popover meter, T6 GlobalSearch→Dialog, T7 lyrics snippet, sticky list headers | 2026-05-11 | cb9b448 | [20260511-ui-fixes-batch4](./quick/20260511-ui-fixes-batch4/) |
+| q04 | UI fixes batch 5: T4 sticky score fix (scroll listener), tunes sticky search bar, psalm 5-book sections, Ps 119 sub-section, mobile vertical book tabs, "versifications" text | 2026-05-11 | 75acead | [20260511-ui-fixes-batch5](./quick/20260511-ui-fixes-batch5/) |
+| q05 | UI fixes batch 6: T4 fixed-position score (IntersectionObserver+rootMargin+ResizeObserver spacer), Ps119 vertical left bar, book tabs vertical text, scroll offset fix, pr-10 for tab overlap | 2026-05-11 | 3eed8f5 | [20260511-ui-fixes-batch6](./quick/20260511-ui-fixes-batch6/) |
 
 ### Blockers/Concerns
 
