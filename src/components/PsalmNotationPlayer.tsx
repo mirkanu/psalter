@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -91,6 +91,9 @@ export function PsalmNotationPlayer({
     return 'staff'
   })
 
+  const tuneHeaderRef = useRef<HTMLDivElement>(null)
+  const [imgSticky, setImgSticky] = useState(false)
+
   // A± font size toggle — lazy init reads localStorage to avoid flash
   const [lyricsSize, setLyricsSize] = useState<LyricsSize>(() => {
     try {
@@ -107,6 +110,16 @@ export function PsalmNotationPlayer({
   useEffect(() => {
     localStorage.setItem('psalter-lyrics-size', lyricsSize)
   }, [lyricsSize])
+
+  useEffect(() => {
+    if (!mobileStickyScore || !tuneHeaderRef.current) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setImgSticky(!entry.isIntersecting && entry.boundingClientRect.top < 0),
+      { threshold: 0 }
+    )
+    observer.observe(tuneHeaderRef.current)
+    return () => observer.disconnect()
+  }, [mobileStickyScore])
 
   const lyricsSizeClass = { sm: 'text-sm', base: 'text-base', lg: 'text-lg' }[lyricsSize]
 
@@ -183,7 +196,7 @@ export function PsalmNotationPlayer({
   const scoreSection = (
     <>
       {/* ── Tune header ──────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div ref={tuneHeaderRef} className="flex items-center gap-2 flex-wrap">
         <span className="text-sm text-foreground">
           Tune{tuneMeter ? ` (${tuneMeter})` : ''}: {tuneNameEl}
         </span>
@@ -299,6 +312,7 @@ export function PsalmNotationPlayer({
       </div>
 
       {/* ── Score area (only when not in lyrics-only mode) ──────────────── */}
+      <div className={mobileStickyScore && imgSticky ? 'sticky top-[6rem] z-10 bg-background pb-2' : ''}>
       {viewMode !== 'lyrics' && (
         <>
           {imageOnlyMode ? (
@@ -364,6 +378,7 @@ export function PsalmNotationPlayer({
           )}
         </>
       )}
+      </div>
     </>
   )
 
@@ -446,13 +461,7 @@ export function PsalmNotationPlayer({
     <>
       <div className={stickyScoreMode ? 'flex flex-col h-full' : 'space-y-3'}>
         {/* ── Score section (non-scrolling in sticky mode; sticky via page in mobileStickyScore mode) ── */}
-        <div className={
-          stickyScoreMode
-            ? 'flex-shrink-0 space-y-3'
-            : mobileStickyScore
-              ? 'sticky top-[6.5rem] z-10 bg-background pb-2 space-y-3'
-              : 'space-y-3'
-        }>
+        <div className={stickyScoreMode ? 'flex-shrink-0 space-y-3' : 'space-y-3'}>
           {scoreSection}
         </div>
 
