@@ -17,6 +17,7 @@ interface PsalmNumberBoxProps {
   showRecommendedTune?: boolean
   snippet: string | null
   query: string
+  className?: string
 }
 
 // Long labels (like "119:105-112") need a smaller font to fit on mobile
@@ -26,7 +27,7 @@ function labelSizeClass(label: string): string {
   return 'text-xs'
 }
 
-export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, showRecommendedTune, snippet, query }: PsalmNumberBoxProps) {
+export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, showRecommendedTune, snippet, query, className }: PsalmNumberBoxProps) {
   const hasContent = showFirstLine || showRecommendedTune || !!snippet
   const isHighlighted = isTopResult && query.length > 0
   const sizeClass = labelSizeClass(psalm.displayLabel)
@@ -37,7 +38,7 @@ export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, s
     "active:scale-[0.97]",
     hasContent
       ? "flex flex-col py-2 px-2 min-h-[44px] min-w-[44px]"
-      : "flex items-center justify-center relative min-w-[44px] h-12 md:h-14",
+      : `flex items-center justify-center relative min-w-[44px] h-12 md:h-14${className ? ` ${className}` : ''}`,
     isHighlighted
       ? "bg-primary/5 border-primary border-2"
       : "bg-card border border-border",
