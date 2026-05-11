@@ -488,7 +488,7 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId,
           {/* Top scrollable tab list — horizontal scroll only */}
           <div
             ref={mobileTabsRef}
-            className="overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden mb-4 sticky top-14 z-10 bg-background"
+            className="overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden sticky top-14 z-10 bg-background"
             style={{
               maskImage: 'linear-gradient(to right, black calc(100% - 2.5rem), transparent)',
             }}
@@ -505,6 +505,7 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId,
               ))}
             </TabsList>
           </div>
+          <div className="h-4 bg-background" />
 
           <TabsContent value="sing" className="pb-4">
             {makeSingPanel(false, true)}
