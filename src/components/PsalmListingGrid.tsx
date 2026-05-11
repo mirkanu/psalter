@@ -315,9 +315,9 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
                   const top = window.scrollY + el.getBoundingClientRect().top - 56 - headerH - 8
                   window.scrollTo({ top, behavior: 'smooth' })
                 }}
-                className="text-[10px] font-mono bg-background/95 border border-r-0 border-border rounded-l-md px-1.5 py-2 text-muted-foreground hover:text-foreground hover:bg-muted"
+                className="bg-background/95 border border-r-0 border-border rounded-l-md text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center overflow-hidden w-6 h-14"
               >
-                <span className="[writing-mode:vertical-rl]">{book.range}</span>
+                <span className="text-[9px] font-mono whitespace-nowrap rotate-90 block">{book.range}</span>
               </button>
             ))}
           </div>
@@ -352,7 +352,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
                     {ps119.length > 0 && (
                       <div className="flex gap-2 mt-4">
                         <div className="flex flex-col items-center shrink-0 pt-0.5">
-                          <span className="text-[9px] font-medium text-muted-foreground [writing-mode:vertical-rl] rotate-180 leading-none mb-1">
+                          <span className="text-xs font-medium text-muted-foreground [writing-mode:vertical-rl] rotate-180 leading-none mb-1">
                             Psalm 119
                           </span>
                           <div className="flex-1 border-l border-dashed border-border" />
