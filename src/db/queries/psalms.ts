@@ -51,19 +51,19 @@ export type PsalmTuneLink = NonNullable<
 >
 
 /** Returns unique psalms that have at least one version with the given meter. */
-export async function fetchPsalmsByMeter(meter: string): Promise<{ id: number; bibleTitle: string | null }[]> {
+export async function fetchPsalmsByMeter(meter: string): Promise<{ id: number; bibleTitle: string | null; firstLine: string | null }[]> {
   const rows = await db.query.psalmVersions.findMany({
     where: eq(psalmVersions.meter, meter),
-    columns: { psalmId: true },
+    columns: { psalmId: true, firstLine: true },
     with: { psalm: { columns: { id: true, bibleTitle: true } } },
   })
-  const seen = new Set<number>()
-  const result: { id: number; bibleTitle: string | null }[] = []
+  const seen = new Map<number, string | null>()
+  const result: { id: number; bibleTitle: string | null; firstLine: string | null }[] = []
   for (const row of rows) {
     const psalm = row.psalm
     if (psalm?.id != null && !seen.has(psalm.id)) {
-      seen.add(psalm.id)
-      result.push({ id: psalm.id, bibleTitle: psalm.bibleTitle })
+      seen.set(psalm.id, row.firstLine ?? null)
+      result.push({ id: psalm.id, bibleTitle: psalm.bibleTitle, firstLine: row.firstLine ?? null })
     }
   }
   return result.sort((a, b) => a.id - b.id)
