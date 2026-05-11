@@ -352,7 +352,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
                     {ps119.length > 0 && (
                       <div className="flex gap-2 mt-4">
                         <div className="flex flex-col items-center shrink-0 pt-0.5">
-                          <span className="text-xs font-medium text-muted-foreground [writing-mode:vertical-rl] rotate-180 leading-none mb-1">
+                          <span className="text-sm font-semibold text-muted-foreground [writing-mode:vertical-rl] rotate-180 leading-none mb-1">
                             Psalm 119
                           </span>
                           <div className="flex-1 border-l border-dashed border-border" />
@@ -368,6 +368,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
                               showRecommendedTune={showRecommendedTune}
                               snippet={psalm.snippet ?? null}
                               query={trimmedQuery}
+                              className="px-2 md:px-0"
                             />
                           ))}
                         </div>
