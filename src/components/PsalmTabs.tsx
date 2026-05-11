@@ -506,7 +506,9 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId,
           </div>
 
           <TabsContent value="sing" className="pb-4">
-            {makeSingPanel(false)}
+            <div className="h-[calc(100vh-6.5rem)] flex flex-col overflow-hidden">
+              {makeSingPanel(true)}
+            </div>
           </TabsContent>
           {sharedTabContents('pb-4')}
         </Tabs>
