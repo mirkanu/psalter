@@ -1,5 +1,5 @@
 'use client'
-import { useMemo, useState, useRef, useEffect } from "react"
+import React, { useMemo, useState, useRef, useEffect } from "react"
 import { useLocalStorage } from "@/hooks/useLocalStorage"
 import { useRouter } from "next/navigation"
 import { Search, X, ChevronDown, ChevronUp, Download } from "lucide-react"
@@ -59,7 +59,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
   const [showMeter, setShowMeter] = useLocalStorage('psalms.showMeter', false)
   const [showRecommendedTune, setShowRecommendedTune] = useLocalStorage('psalms.showRecommendedTune', false)
   const [meterFilter, setMeterFilter] = useLocalStorage('psalms.meterFilter', 'all')
-  const [ps119Expanded, setPs119Expanded] = useLocalStorage('psalms.ps119Expanded', false)
+  const [expandedIds, setExpandedIds] = useLocalStorage<Record<number, boolean>>('psalms.expandedIds', {})
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
@@ -149,28 +149,104 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
   // Show book sections only when there's no active search or filter
   const isGrouped = !trimmedQuery && meterFilter === 'all'
 
-  function renderGrid(rows: typeof filteredPsalms, shorten119 = false) {
+  function renderGrid(rows: typeof filteredPsalms) {
     return (
       <div className={`grid ${gridCols} gap-2`}>
-        {rows.map((psalm, idx) => {
-          const label = shorten119 && psalm.id === 119
-            ? psalm.displayLabel.replace(/^119:/, '')
-            : psalm.displayLabel
-          return (
-            <PsalmNumberBox
-              key={psalm.slug}
-              psalm={{ ...psalm, displayLabel: label }}
-              isTopResult={trimmedQuery.length > 0 && idx === clampedIndex}
-              showFirstLine={showFirstLine}
-              showMeter={showMeter}
-              showRecommendedTune={showRecommendedTune}
-              snippet={psalm.snippet ?? null}
-              query={trimmedQuery}
-            />
-          )
-        })}
+        {rows.map((psalm, idx) => (
+          <PsalmNumberBox
+            key={psalm.slug}
+            psalm={psalm}
+            isTopResult={trimmedQuery.length > 0 && idx === clampedIndex}
+            showFirstLine={showFirstLine}
+            showMeter={showMeter}
+            showRecommendedTune={showRecommendedTune}
+            snippet={psalm.snippet ?? null}
+            query={trimmedQuery}
+          />
+        ))}
       </div>
     )
+  }
+
+  // Grouped book view: collapses multi-variant psalms (119 stanzas, 50a/50b, etc.)
+  // into a single toggle box; expanded panel uses col-span-full to stay in-grid flow.
+  function renderBookGrid(bookPsalms: typeof filteredPsalms) {
+    const groups: { id: number; entries: typeof filteredPsalms }[] = []
+    for (const psalm of bookPsalms) {
+      const last = groups[groups.length - 1]
+      if (last && last.id === psalm.id) {
+        last.entries.push(psalm)
+      } else {
+        groups.push({ id: psalm.id, entries: [psalm] })
+      }
+    }
+
+    const items: React.ReactNode[] = []
+    for (const { id, entries } of groups) {
+      if (entries.length === 1) {
+        items.push(
+          <PsalmNumberBox
+            key={entries[0].slug}
+            psalm={entries[0]}
+            isTopResult={false}
+            showFirstLine={showFirstLine}
+            showMeter={showMeter}
+            showRecommendedTune={showRecommendedTune}
+            snippet={entries[0].snippet ?? null}
+            query={trimmedQuery}
+          />
+        )
+      } else {
+        const isExpanded = !!expandedIds[id]
+        const toggle = () => setExpandedIds({ ...expandedIds, [id]: !isExpanded })
+        items.push(
+          <button
+            key={`toggle-${id}`}
+            onClick={toggle}
+            className={[
+              "rounded-lg hover:border-primary transition-colors duration-200 active:scale-[0.97]",
+              "flex items-center justify-center relative min-w-[44px] h-12 md:h-14",
+              isExpanded ? "bg-primary/5 border-primary border-2" : "bg-card border border-border",
+            ].join(' ')}
+            aria-expanded={isExpanded}
+            title={`Psalm ${id} – tap to expand`}
+          >
+            <span className="text-xs font-semibold font-mono tabular-nums text-foreground leading-tight text-center">
+              {id}
+            </span>
+            {isExpanded
+              ? <ChevronUp className="absolute bottom-1 right-1 h-2.5 w-2.5 text-muted-foreground" />
+              : <ChevronDown className="absolute bottom-1 right-1 h-2.5 w-2.5 text-muted-foreground" />}
+          </button>
+        )
+        if (isExpanded) {
+          const is119 = id === 119
+          items.push(
+            <div key={`panel-${id}`} className="col-span-full mt-1 mb-1 rounded-xl border border-border bg-muted/40 px-3 pt-2.5 pb-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
+                Psalm {id}
+              </p>
+              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                {entries.map((psalm) => (
+                  <PsalmNumberBox
+                    key={psalm.slug}
+                    psalm={{ ...psalm, displayLabel: is119 ? psalm.displayLabel.replace(/^119:/, '') : psalm.displayLabel }}
+                    isTopResult={false}
+                    showFirstLine={showFirstLine}
+                    showMeter={showMeter}
+                    showRecommendedTune={showRecommendedTune}
+                    snippet={psalm.snippet ?? null}
+                    query={trimmedQuery}
+                  />
+                ))}
+              </div>
+            </div>
+          )
+        }
+      }
+    }
+
+    return <div className={`grid ${gridCols} gap-2`}>{items}</div>
   }
 
   return (
@@ -327,14 +403,8 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
           {BOOKS.map((book) => {
             const bookPsalms = filteredPsalms.filter((p) => p.id >= book.start && p.id <= book.end)
             if (bookPsalms.length === 0) return null
-            const has119 = book.start <= 119 && 119 <= book.end
-            const ps119 = has119 ? bookPsalms.filter((p) => p.id === 119) : []
-            const pre119 = has119 ? bookPsalms.filter((p) => p.id < 119) : bookPsalms
-            const post119 = has119 ? bookPsalms.filter((p) => p.id > 119) : []
-
             return (
               <div key={book.sectionId} id={book.sectionId} className="mb-2 scroll-mt-28">
-                {/* Book header */}
                 <div className="flex items-center gap-3 mb-3 mt-6 first:mt-0">
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
                     Book {book.num}
@@ -342,72 +412,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
                   <div className="flex-1 border-t border-border" />
                   <span className="text-xs text-muted-foreground font-mono whitespace-nowrap">{book.range}</span>
                 </div>
-
-                {!has119 && renderGrid(bookPsalms)}
-
-                {has119 && (
-                  <>
-                    {/* Pre-119 psalms + 119 toggle in one continuous grid */}
-                    <div className={`grid ${gridCols} gap-2`}>
-                      {pre119.map((psalm) => (
-                        <PsalmNumberBox
-                          key={psalm.slug}
-                          psalm={psalm}
-                          isTopResult={false}
-                          showFirstLine={showFirstLine}
-                          showMeter={showMeter}
-                          showRecommendedTune={showRecommendedTune}
-                          snippet={psalm.snippet ?? null}
-                          query={trimmedQuery}
-                        />
-                      ))}
-                      {ps119.length > 0 && (
-                        <button
-                          onClick={() => setPs119Expanded(!ps119Expanded)}
-                          className={[
-                            "rounded-lg hover:border-primary transition-colors duration-200 active:scale-[0.97]",
-                            "flex items-center justify-center relative min-w-[44px] h-12 md:h-14",
-                            ps119Expanded ? "bg-primary/5 border-primary border-2" : "bg-card border border-border",
-                          ].join(' ')}
-                          aria-expanded={ps119Expanded}
-                          title="Psalm 119 – tap to expand sections"
-                        >
-                          <span className="text-xs font-semibold font-mono tabular-nums text-foreground leading-tight text-center">
-                            119
-                          </span>
-                          {ps119Expanded
-                            ? <ChevronUp className="absolute bottom-1 right-1 h-2.5 w-2.5 text-muted-foreground" />
-                            : <ChevronDown className="absolute bottom-1 right-1 h-2.5 w-2.5 text-muted-foreground" />}
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Expanded Psalm 119 stanza panel */}
-                    {ps119Expanded && ps119.length > 0 && (
-                      <div className="mt-2 mb-1 rounded-xl border border-border bg-muted/40 px-3 pt-2.5 pb-3">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
-                          Psalm 119
-                        </p>
-                        <div className={`grid ${gridCols} gap-2`}>
-                          {ps119.map((psalm) => (
-                            <PsalmNumberBox
-                              key={psalm.slug}
-                              psalm={{ ...psalm, displayLabel: psalm.displayLabel.replace(/^119:/, '') }}
-                              isTopResult={false}
-                              showFirstLine={showFirstLine}
-                              showMeter={showMeter}
-                              showRecommendedTune={showRecommendedTune}
-                              snippet={psalm.snippet ?? null}
-                              query={trimmedQuery}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {post119.length > 0 && renderGrid(post119)}
-                  </>
-                )}
+                {renderBookGrid(bookPsalms)}
               </div>
             )
           })}
