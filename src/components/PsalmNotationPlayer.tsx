@@ -92,7 +92,9 @@ export function PsalmNotationPlayer({
   })
 
   const tuneHeaderRef = useRef<HTMLDivElement>(null)
+  const scoreFixedRef = useRef<HTMLDivElement>(null)
   const [imgSticky, setImgSticky] = useState(false)
+  const [scoreFixedHeight, setScoreFixedHeight] = useState(0)
 
   // A± font size toggle — lazy init reads localStorage to avoid flash
   const [lyricsSize, setLyricsSize] = useState<LyricsSize>(() => {
@@ -111,16 +113,26 @@ export function PsalmNotationPlayer({
     localStorage.setItem('psalter-lyrics-size', lyricsSize)
   }, [lyricsSize])
 
+  // Track score height for fixed-position spacer
   useEffect(() => {
-    if (!mobileStickyScore) return
-    const check = () => {
-      if (!tuneHeaderRef.current) return
-      const { bottom } = tuneHeaderRef.current.getBoundingClientRect()
-      setImgSticky(bottom < 80)
-    }
-    window.addEventListener('scroll', check, { passive: true })
-    check()
-    return () => window.removeEventListener('scroll', check)
+    if (!mobileStickyScore || !scoreFixedRef.current) return
+    const ro = new ResizeObserver(() => {
+      if (scoreFixedRef.current) setScoreFixedHeight(scoreFixedRef.current.offsetHeight)
+    })
+    ro.observe(scoreFixedRef.current)
+    return () => ro.disconnect()
+  }, [mobileStickyScore])
+
+  // IntersectionObserver with rootMargin accounts for nav+tabbar height (112px)
+  // Fires when tuneHeader scrolls above the fixed score threshold
+  useEffect(() => {
+    if (!mobileStickyScore || !tuneHeaderRef.current) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setImgSticky(!entry.isIntersecting && entry.boundingClientRect.top < 200),
+      { threshold: 0, rootMargin: '-112px 0px 0px 0px' }
+    )
+    observer.observe(tuneHeaderRef.current)
+    return () => observer.disconnect()
   }, [mobileStickyScore])
 
   const lyricsSizeClass = { sm: 'text-sm', base: 'text-base', lg: 'text-lg' }[lyricsSize]
@@ -314,7 +326,14 @@ export function PsalmNotationPlayer({
       </div>
 
       {/* ── Score area (only when not in lyrics-only mode) ──────────────── */}
-      <div className={mobileStickyScore && imgSticky ? 'sticky top-[6rem] z-10 bg-background pb-2' : ''}>
+      {/* Spacer holds layout space when score is fixed-position */}
+      {mobileStickyScore && imgSticky && scoreFixedHeight > 0 && (
+        <div style={{ height: scoreFixedHeight }} aria-hidden />
+      )}
+      <div
+        ref={scoreFixedRef}
+        className={mobileStickyScore && imgSticky ? 'fixed top-28 left-4 right-4 z-20 bg-background pb-2' : ''}
+      >
       {viewMode !== 'lyrics' && (
         <>
           {imageOnlyMode ? (
