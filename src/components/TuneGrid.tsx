@@ -79,7 +79,7 @@ export function TuneGrid({ tunes }: TuneGridProps) {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-3 mb-6">
+      <div className="flex flex-wrap items-center gap-3 sticky top-14 z-20 bg-background py-3 -mx-4 px-4 mb-0">
         <Select value={selectedMeter} onValueChange={(v) => handleMeterChange(v ?? 'all')}>
           <SelectTrigger className="w-48">
             <SelectValue placeholder="All Meters" />

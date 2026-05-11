@@ -1,6 +1,6 @@
 'use client'
 import { useMemo, useState, useRef, useEffect } from "react"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useRouter } from "next/navigation"
 import { useLocalStorage } from "@/hooks/useLocalStorage"
 import Link from "next/link"
@@ -61,8 +61,7 @@ function exportCsv(allTunes: TuneRow[]) {
 export function TuneTable({ tunes }: TuneTableProps) {
   const router = useRouter()
   const [query, setQuery] = useState('')
-  const [openMeterRow, setOpenMeterRow] = useState<number | null>(null)
-  const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', false)
+const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', false)
   const [selectedMeter, setSelectedMeter] = useLocalStorage('tunes.selectedMeter', 'all')
   const [selectedMood, setSelectedMood] = useLocalStorage('tunes.selectedMood', 'all')
   const [onlyPrca, setOnlyPrca] = useLocalStorage('tunes.onlyPrca', false)
@@ -464,19 +463,18 @@ export function TuneTable({ tunes }: TuneTableProps) {
                       </Link>
                     </td>
                     {colMeter && (
-                      <td className="px-3 py-2.5 text-muted-foreground w-12 max-w-[3rem] truncate overflow-hidden">
+                      <td className="px-3 py-2.5 text-muted-foreground w-12 max-w-[3rem] overflow-hidden">
                         {tune.meter ? (
-                          <Tooltip open={openMeterRow === tune.id} onOpenChange={(o: boolean) => setOpenMeterRow(o ? tune.id : null)}>
-                            <TooltipTrigger
-                              render={<span className="cursor-help" />}
-                              onClick={() => setOpenMeterRow(openMeterRow === tune.id ? null : tune.id)}
-                            >
-                              <Badge variant="secondary" className="text-xs font-normal truncate max-w-full underline decoration-dotted">{tune.meter}</Badge>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{tune.meter}</p>
-                            </TooltipContent>
-                          </Tooltip>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <span className="cursor-pointer text-xs underline decoration-dotted whitespace-nowrap">
+                                {tune.meter.split(' ')[0]}
+                              </span>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-2 text-xs" side="top">
+                              {tune.meter}
+                            </PopoverContent>
+                          </Popover>
                         ) : '—'}
                       </td>
                     )}
