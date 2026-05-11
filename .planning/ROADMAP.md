@@ -20,6 +20,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 4.6 (INSERTED): Psalm Detail UI Polish** - UI review and fix pass on the single psalm view; address layout clutter, spacing, hierarchy, and visual polish surfaced by GSD UI review
 - [x] **Phase 4.7 (INSERTED): Psalm Listing Overhaul** - Redesign /psalms page: dense numbered-box grid, instant free-type search (number lookup + lyric/KJV text search with bold match + relevance sort + Enter to open), collapsible Advanced panel (first-line toggle, meter toggle, meter filter), remove existing filter controls
 - [ ] **Phase 4.8 (INSERTED): Explore & Tunes Overhaul** - Playwright audit of psalter.cprc.co.uk/explore and /tunes; replicate both pages at psalter.gsdlabs.dev/explore and /tunes to match the reference site; remove /search route (superseded by inline search on /psalms)
+- [ ] **Phase 4.9 (INSERTED): Tune Notation Conversion** - OCR all solfège JPEGs via vision LLM, parse tonic sol-fa → ABC, store ABC strings in DB; all tunes render live in abcjs
 - [ ] **Phase 5: Precentor Portal** - Better Auth login, service event CRUD, psalm+tune set list builder, live service view with pre-loaded notation
 - [ ] **Phase 6: Polish** - OG images, Lighthouse 90+, bundle analysis, click feedback, loading skeletons on remaining routes
 
@@ -218,6 +219,26 @@ Cross-cutting constraints:
 - All new DB queries use Drizzle relational API (with:) not raw SQL — existing pattern
 - topicType='When you...' is the exact DB string (confirmed in DB)
 
+### Phase 4.9 (INSERTED): Tune Notation Conversion
+**Goal**: All tunes have an ABC string in the database so every tune page renders live abcjs notation; Staff/Solfège toggle works for all tunes without fallback to JPG-only
+**Depends on**: Phase 4.8
+**Requirements**: TUNE-09
+**Success Criteria** (what must be TRUE):
+  1. A migration script OCRs every solfège JPEG using a vision LLM and extracts the tonic sol-fa text
+  2. A parser converts tonic sol-fa (with DOH/LAH key header, `:` beat divisions, `|` barlines) to valid ABC notation strings
+  3. All ABC strings are stored in the `tunes.abc_notation` column in the DB
+  4. Spot-check of 10+ tunes confirms correct note sequences and key signatures in the abcjs SVG render
+  5. The migration script is retained in `scripts/` (not deleted) for future re-use
+**Plans**: 3 plans
+
+Plans:
+**Wave 1** *(parallel)*
+- [ ] 04.9-01-PLAN.md — ocr-solfege.ts: iterate all DB tunes, find solfège JPEGs by slug, call Claude haiku vision (escalate to sonnet on parseOnly fail), write solfege-ocr.json per-tune
+- [ ] 04.9-02-PLAN.md — apply-abc-notation.ts: read solfege-ocr.json, re-validate with parseOnly(), bulk-update tunes.abc_notation; --dry-run and --overwrite flags
+
+**Wave 2** *(depends on Wave 1)*
+- [ ] 04.9-03-PLAN.md — Playwright UAT: spot-check 10+ tunes at /tunes/[id]; confirm abcjs renders correctly; update progress table
+
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
 **Depends on**: Phase 4.5
@@ -246,7 +267,7 @@ Cross-cutting constraints:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 5 → 6
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -258,5 +279,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 →
 | 4.6. Psalm Detail UI Polish | 0/3 | Not started | - |
 | 4.7. Psalm Listing Overhaul | 3/3 | Complete | 2026-05-09 |
 | 4.8. Explore & Tunes Overhaul | 3/3 | Complete | 2026-05-10 |
+| 4.9. Tune Notation Conversion | 0/3 | Not started | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
