@@ -224,7 +224,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
           items.push(
             <div key={`panel-${id}`} className="col-span-full mt-1 mb-1 rounded-xl border border-border bg-muted/40 px-3 pt-2.5 pb-3">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
-                Psalm {id}
+                {is119 ? 'Psalm 119, verses:' : `Psalm ${id}`}
               </p>
               <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
                 {entries.map((psalm) => (
@@ -240,6 +240,9 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
                   />
                 ))}
               </div>
+              {!is119 && entries.some(p => p.displayLabel.endsWith('*')) && (
+                <p className="text-[10px] text-muted-foreground mt-2">* recommended</p>
+              )}
             </div>
           )
         }
