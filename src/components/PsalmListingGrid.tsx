@@ -20,6 +20,14 @@ export interface PsalmRow {
   recommendedTune?: string | null
 }
 
+const BOOKS = [
+  { num: 'I',   range: '1–41',   start: 1,   end: 41,  sectionId: 'book-1' },
+  { num: 'II',  range: '42–72',  start: 42,  end: 72,  sectionId: 'book-2' },
+  { num: 'III', range: '73–89',  start: 73,  end: 89,  sectionId: 'book-3' },
+  { num: 'IV',  range: '90–106', start: 90,  end: 106, sectionId: 'book-4' },
+  { num: 'V',   range: '107–150',start: 107, end: 150, sectionId: 'book-5' },
+] as const
+
 function exportCsv(psalms: PsalmRow[]) {
   const headers = ['Psalm #', 'First Line', 'Meter', 'Recommended Tune']
   const rows = psalms.map((p) => [
@@ -43,7 +51,6 @@ function exportCsv(psalms: PsalmRow[]) {
 interface PsalmListingGridProps {
   psalms: PsalmRow[]
 }
-
 
 export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
   const [query, setQuery] = useState('')
@@ -109,7 +116,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter' && selectedPsalm) {
-      router.push(`/psalms/${selectedPsalm.id}`)
+      router.push(`/psalms/${selectedPsalm.slug}`)
     } else if (e.key === 'ArrowDown') {
       e.preventDefault()
       setSelectedIndex(i => Math.min(i + 1, filteredPsalms.length - 1))
@@ -137,6 +144,33 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
   const gridCols = hasExpanded
     ? "grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10"
     : "grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-[repeat(15,minmax(0,1fr))]"
+
+  // Show book sections only when there's no active search or filter
+  const isGrouped = !trimmedQuery && meterFilter === 'all'
+
+  function renderGrid(rows: typeof filteredPsalms, shorten119 = false) {
+    return (
+      <div className={`grid ${gridCols} gap-2`}>
+        {rows.map((psalm, idx) => {
+          const label = shorten119 && psalm.id === 119
+            ? psalm.displayLabel.replace(/^119:/, '')
+            : psalm.displayLabel
+          return (
+            <PsalmNumberBox
+              key={psalm.slug}
+              psalm={{ ...psalm, displayLabel: label }}
+              isTopResult={trimmedQuery.length > 0 && idx === clampedIndex}
+              showFirstLine={showFirstLine}
+              showMeter={showMeter}
+              showRecommendedTune={showRecommendedTune}
+              snippet={psalm.snippet ?? null}
+              query={trimmedQuery}
+            />
+          )
+        })}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -247,7 +281,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
       {/* Results bar with download */}
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
-          {filteredPsalms.length} {filteredPsalms.length === 1 ? 'psalm' : 'psalms'}
+          {filteredPsalms.length} {filteredPsalms.length === 1 ? 'versification' : 'versifications'}
         </p>
         <Button
           variant="outline"
@@ -260,27 +294,80 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
         </Button>
       </div>
 
-      {/* Psalm grid */}
+      {/* Psalm grid / grouped sections */}
       {filteredPsalms.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <p className="text-lg font-medium">No psalms found</p>
           <p className="text-sm mt-1">Try a different keyword or clear the search.</p>
         </div>
-      ) : (
-        <div className={`grid ${gridCols} gap-2`}>
-          {filteredPsalms.map((psalm, idx) => (
-            <PsalmNumberBox
-              key={psalm.id}
-              psalm={psalm}
-              isTopResult={trimmedQuery.length > 0 && idx === clampedIndex}
-              showFirstLine={showFirstLine}
-              showMeter={showMeter}
-              showRecommendedTune={showRecommendedTune}
-              snippet={psalm.snippet ?? null}
-              query={trimmedQuery}
-            />
-          ))}
+      ) : isGrouped ? (
+        <div className="relative pr-8 md:pr-0">
+          {/* Vertical book tabs — mobile only, fixed right side */}
+          <div className="fixed right-0 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-px md:hidden">
+            {BOOKS.map((book) => (
+              <button
+                key={book.sectionId}
+                onClick={() => {
+                  const el = document.getElementById(book.sectionId)
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }}
+                className="text-[10px] font-mono bg-background/95 border border-r-0 border-border rounded-l-md px-1.5 py-1.5 text-muted-foreground hover:text-foreground hover:bg-muted leading-tight min-w-[2.5rem] text-center"
+              >
+                {book.range}
+              </button>
+            ))}
+          </div>
+
+          {/* Book sections */}
+          {BOOKS.map((book) => {
+            const bookPsalms = filteredPsalms.filter((p) => p.id >= book.start && p.id <= book.end)
+            if (bookPsalms.length === 0) return null
+            const has119 = book.start <= 119 && 119 <= book.end
+            const ps119 = has119 ? bookPsalms.filter((p) => p.id === 119) : []
+            const pre119 = has119 ? bookPsalms.filter((p) => p.id < 119) : bookPsalms
+            const post119 = has119 ? bookPsalms.filter((p) => p.id > 119) : []
+
+            return (
+              <div key={book.sectionId} id={book.sectionId} className="mb-2 scroll-mt-28">
+                {/* Book header */}
+                <div className="flex items-center gap-3 mb-3 mt-6 first:mt-0">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
+                    Book {book.num}
+                  </span>
+                  <div className="flex-1 border-t border-border" />
+                  <span className="text-xs text-muted-foreground font-mono whitespace-nowrap">{book.range}</span>
+                </div>
+
+                {!has119 && renderGrid(bookPsalms)}
+
+                {has119 && (
+                  <>
+                    {pre119.length > 0 && renderGrid(pre119)}
+
+                    {/* Psalm 119 sub-section */}
+                    {ps119.length > 0 && (
+                      <>
+                        <div className="flex items-center gap-3 mb-2 mt-4">
+                          <span className="text-xs font-medium text-muted-foreground pl-1 whitespace-nowrap">Psalm 119</span>
+                          <div className="flex-1 border-t border-dashed border-border" />
+                        </div>
+                        {renderGrid(ps119, true)}
+                      </>
+                    )}
+
+                    {post119.length > 0 && (
+                      <div className="mt-2">
+                        {renderGrid(post119)}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )
+          })}
         </div>
+      ) : (
+        renderGrid(filteredPsalms)
       )}
     </div>
   )
