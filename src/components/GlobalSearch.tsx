@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { X, BookOpen, Music, Search } from 'lucide-react'
+import { renderSnippet } from '@/lib/search-utils'
 
 interface SearchResult {
   type: 'psalm' | 'tune'
@@ -92,7 +93,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] bg-black/70 px-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
       onClick={onClose}
     >
       <div
@@ -147,10 +148,10 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                         Psalm {(result.slug ?? '').replace(/([0-9]+)([ab])/, '$1 ($2)')}
                       </span>
                       {result.firstLine && (
-                        <span className="text-sm text-muted-foreground ml-2">{result.firstLine}</span>
+                        <span className="text-sm text-muted-foreground ml-2">{renderSnippet(result.firstLine, query)}</span>
                       )}
                       {result.snippet && (
-                        <p className="text-xs text-muted-foreground mt-0.5 italic line-clamp-1">{result.snippet}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 italic line-clamp-1">{renderSnippet(result.snippet, query)}</p>
                       )}
                     </div>
                   </button>

@@ -2,22 +2,9 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { psalmVersions, tunes } from '@/db/schema'
 import { ilike, or, eq, asc } from 'drizzle-orm'
+import { buildSnippet } from '@/lib/search-utils'
 
 export const runtime = 'nodejs'
-
-function buildSnippet(text: string | null, query: string, maxLen = 100): string | null {
-  if (!text || !query) return null
-  const lower = text.toLowerCase()
-  const lowerQuery = query.toLowerCase()
-  const idx = lower.indexOf(lowerQuery)
-  if (idx === -1) return null
-  const start = Math.max(0, idx - 30)
-  const end = Math.min(text.length, start + maxLen)
-  let excerpt = text.slice(start, end)
-  if (start > 0) excerpt = '…' + excerpt
-  if (end < text.length) excerpt = excerpt + '…'
-  return excerpt
-}
 
 export interface SearchResult {
   type: 'psalm' | 'tune'
@@ -80,27 +67,31 @@ export async function GET(request: Request) {
         limit: 20,
       })
 
-      // Group by psalmId, pick first version per psalm
-      const seen = new Map<number, boolean>()
+      // Group by psalmId to detect multi-version psalms
+      const byPsalm = new Map<number, typeof rows>()
       rows.forEach((v) => {
-        const psalmId = v.psalmId
-        if (!psalmId) return
-        const snippet = buildSnippet(v.lyrics, q) ?? buildSnippet(v.firstLine, q)
-        const isFirst = !seen.has(psalmId)
-        seen.set(psalmId, true)
+        const pid = v.psalmId
+        if (!pid) return
+        if (!byPsalm.has(pid)) byPsalm.set(pid, [])
+        byPsalm.get(pid)!.push(v)
+      })
 
-        // Determine relevance
-        const firstLineLower = (v.firstLine ?? '').toLowerCase()
-        const relevance = firstLineLower.includes(qLower) ? 2 : 3
-
-        psalmMatches.push({
-          type: 'psalm',
-          relevance,
-          id: psalmId,
-          slug: String(psalmId),
-          firstLine: v.firstLine ?? null,
-          snippet,
-          isRecommended: isFirst,
+      byPsalm.forEach((versions, psalmId) => {
+        const multiVersion = versions.length > 1
+        versions.forEach((v, i) => {
+          const suffix = multiVersion ? (i === 0 ? 'a' : 'b') : ''
+          const snippet = buildSnippet(v.lyrics, q) ?? buildSnippet(v.firstLine, q)
+          const firstLineLower = (v.firstLine ?? '').toLowerCase()
+          const relevance = firstLineLower.includes(qLower) ? 2 : 3
+          psalmMatches.push({
+            type: 'psalm',
+            relevance,
+            id: psalmId,
+            slug: `${psalmId}${suffix}`,
+            firstLine: v.firstLine ?? null,
+            snippet,
+            isRecommended: i === 0,
+          })
         })
       })
     }
