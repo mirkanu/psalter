@@ -125,6 +125,7 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | q01 | Psalm detail layout: split desktop, reversed header, Sing tab on mobile | 2026-05-09 | eebcbbb | [260509-q01-psalm-detail-layout-overhaul](./quick/260509-q01-psalm-detail-layout-overhaul/) |
+| q02 | UI fixes batch 3: tune format, mobile sticky score, meter tooltip, search overlay, lyrics search, search bugs (T2,T4-T8) | 2026-05-11 | 133507a | [20260511-ui-fixes-batch3](./quick/20260511-ui-fixes-batch3/) |
 
 ### Blockers/Concerns
 
@@ -143,6 +144,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-09T17:00:00.000Z
-Stopped at: Phase 4.7 Plan 03 complete — all tasks done, Playwright smoke tests green, human verification passed
+Last session: 2026-05-11T00:00:00.000Z
+Stopped at: Quick task q02 complete — UI fixes batch 3 (T2,T4-T8): tune format, mobile sticky score, meter tooltip, search overlay centering, lyrics search, search bug fixes
 Resume file: None
