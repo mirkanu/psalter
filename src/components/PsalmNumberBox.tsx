@@ -21,12 +21,11 @@ interface PsalmNumberBoxProps {
 }
 
 function formatLabel(label: string): string {
-  return label.replace(/\*$/, ' (preferred)')
+  return label
 }
 
 // Long labels need a smaller font to fit on mobile
 function labelSizeClass(label: string): string {
-  if (label.length > 12) return 'text-[8px]'
   if (label.length > 8) return 'text-[9px]'
   if (label.length > 5) return 'text-[10px]'
   return 'text-xs'
