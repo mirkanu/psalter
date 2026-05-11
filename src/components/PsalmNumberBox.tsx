@@ -20,8 +20,13 @@ interface PsalmNumberBoxProps {
   className?: string
 }
 
-// Long labels (like "119:105-112") need a smaller font to fit on mobile
+function formatLabel(label: string): string {
+  return label.replace(/\*$/, ' (preferred)')
+}
+
+// Long labels need a smaller font to fit on mobile
 function labelSizeClass(label: string): string {
+  if (label.length > 12) return 'text-[8px]'
   if (label.length > 8) return 'text-[9px]'
   if (label.length > 5) return 'text-[10px]'
   return 'text-xs'
@@ -30,7 +35,8 @@ function labelSizeClass(label: string): string {
 export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, showRecommendedTune, snippet, query, className }: PsalmNumberBoxProps) {
   const hasContent = showFirstLine || showRecommendedTune || !!snippet
   const isHighlighted = isTopResult && query.length > 0
-  const sizeClass = labelSizeClass(psalm.displayLabel)
+  const label = formatLabel(psalm.displayLabel)
+  const sizeClass = labelSizeClass(label)
 
   const baseClasses = [
     "block rounded-lg",
@@ -48,7 +54,7 @@ export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, s
     <Link
       href={`/psalms/${psalm.slug}`}
       className={baseClasses}
-      aria-label={`Psalm ${psalm.displayLabel}`}
+      aria-label={`Psalm ${label}`}
       aria-current={isHighlighted ? "true" : undefined}
       data-psalm-box
     >
@@ -56,7 +62,7 @@ export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, s
         <>
           <div className="flex items-start justify-between w-full">
             <span className={`${sizeClass} font-semibold font-mono tabular-nums text-foreground leading-none`}>
-              {psalm.displayLabel}
+              {label}
             </span>
             {showMeter && psalm.meter && (
               <span className="text-[10px] text-muted-foreground leading-none pt-0.5 pr-1 pl-1 shrink-0">
@@ -82,7 +88,7 @@ export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, s
       ) : (
         <>
           <span className={`${sizeClass} font-semibold font-mono tabular-nums text-foreground text-center leading-tight`}>
-            {psalm.displayLabel}
+            {label}
           </span>
           {showMeter && psalm.meter && (
             <span className="absolute top-1 right-1.5 text-[10px] text-muted-foreground leading-none">
