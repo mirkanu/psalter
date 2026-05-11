@@ -23,6 +23,7 @@ interface PsalmNotationPlayerClientProps {
   alternateTunes: AlternateTune[]
   onChangeTune: (tune: AlternateTune) => void
   stickyScoreMode?: boolean
+  mobileStickyScore?: boolean
 }
 
 /**
@@ -34,7 +35,7 @@ interface PsalmNotationPlayerClientProps {
 export function PsalmNotationPlayerClient(props: PsalmNotationPlayerClientProps) {
   return (
     <Suspense fallback={<Skeleton className="h-52 w-full rounded-md" />}>
-      <PsalmNotationPlayer {...props} stickyScoreMode={props.stickyScoreMode} />
+      <PsalmNotationPlayer {...props} stickyScoreMode={props.stickyScoreMode} mobileStickyScore={props.mobileStickyScore} />
     </Suspense>
   )
 }

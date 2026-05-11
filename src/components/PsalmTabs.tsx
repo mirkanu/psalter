@@ -386,7 +386,7 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId,
       }
     : primaryTune
 
-  const makeSingPanel = (stickyScoreMode: boolean) => (
+  const makeSingPanel = (stickyScoreMode: boolean, mobileStickyScore: boolean = false) => (
     <div className={stickyScoreMode ? 'flex flex-col h-full' : 'space-y-4'}>
       {recommendedVersionSlug && (
         <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 px-3 py-2.5 text-sm flex-shrink-0">
@@ -413,6 +413,7 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId,
           alternateTunes={alternateTunes}
           onChangeTune={setOverrideTune}
           stickyScoreMode={stickyScoreMode}
+          mobileStickyScore={mobileStickyScore}
         />
       ) : (
         <div className="space-y-4">
@@ -506,9 +507,7 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId,
           </div>
 
           <TabsContent value="sing" className="pb-4">
-            <div className="h-[calc(100vh-6.5rem)] flex flex-col overflow-hidden">
-              {makeSingPanel(true)}
-            </div>
+            {makeSingPanel(false, true)}
           </TabsContent>
           {sharedTabContents('pb-4')}
         </Tabs>
