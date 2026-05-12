@@ -79,6 +79,24 @@ function clearCache(tuneId: number, mode: OcrMode) {
   try { localStorage.removeItem(cacheKey(tuneId, mode)) } catch { /* ignore */ }
 }
 
+async function saveToDb(tuneId: number, mode: OcrMode, result: OcrResult) {
+  try {
+    await fetch('/api/dev/tune-ocr-result', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tuneId, mode, result }),
+    })
+  } catch { /* best-effort, don't block UI */ }
+}
+
+async function loadFromDb(tuneId: number, mode: OcrMode): Promise<OcrResult | null> {
+  try {
+    const res = await fetch(`/api/dev/tune-ocr-result?tuneId=${tuneId}&mode=${mode}`)
+    if (!res.ok) return null
+    return await res.json()
+  } catch { return null }
+}
+
 function scanCachedResults(): Map<number, Set<OcrMode>> {
   const map = new Map<number, Set<OcrMode>>()
   try {
@@ -199,10 +217,22 @@ function OcrPanel({
       setFromDb(true)
       setError('')
     } else {
-      setState('idle')
-      setResult(null)
-      setFromCache(false)
-      setFromDb(false)
+      // Try DB as fallback
+      setState('loading')
+      loadFromDb(tuneId, mode).then(dbResult => {
+        if (dbResult) {
+          saveCache(tuneId, mode, dbResult)  // warm the localStorage cache
+          setResult(dbResult)
+          setState('done')
+          setFromCache(false)
+          setFromDb(true)
+        } else {
+          setState('idle')
+          setResult(null)
+          setFromCache(false)
+          setFromDb(false)
+        }
+      })
       setError('')
     }
   }, [tuneId, mode, preloadAbc])
@@ -217,6 +247,7 @@ function OcrPanel({
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Request failed')
       saveCache(tuneId, mode, data)
+      saveToDb(tuneId, mode, data)  // fire and forget
       setResult(data)
       setState('done')
       setFromCache(false)
@@ -361,9 +392,23 @@ function OcrTextPanel({
       setState('done')
       setFromCache(true)
     } else {
-      setState('idle')
-      resetState()
-      setFromCache(false)
+      loadFromDb(tuneId, mode).then(dbResult => {
+        if (dbResult) {
+          const r = dbResult as unknown as OcrTextResult & { savedAt?: number }
+          saveCache(tuneId, mode, dbResult)
+          setDoh(r.doh ?? 'C')
+          setTime(r.time ?? 'C')
+          setLah(r.lah ?? '')
+          setKeyMode(r.mode ?? '')
+          setVoices({ soprano: r.soprano ?? '', alto: r.alto ?? '', tenor: r.tenor ?? '', bass: r.bass ?? '' })
+          setState('done')
+          setFromCache(false)
+        } else {
+          setState('idle')
+          resetState()
+        }
+        setFromCache(false)
+      })
     }
     setConvertedAbc(null)
     setWarnings([])
@@ -391,6 +436,7 @@ function OcrTextPanel({
         bass:    data.bass    ?? '',
       })
       saveCache(tuneId, mode, data as unknown as OcrResult)
+      saveToDb(tuneId, mode, data as unknown as OcrResult)  // fire and forget
       setState('done')
       setFromCache(false)
       onResultSaved?.(tuneId, mode)
@@ -515,6 +561,99 @@ function OcrTextPanel({
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+// ── Tune feedback panel ───────────────────────────────────────────────────────
+
+function TuneFeedbackPanel({ tuneId }: { tuneId: number }) {
+  const [selectedVersion, setSelectedVersion] = useState<string>('none')
+  const [comment, setComment] = useState('')
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [savedAt, setSavedAt] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch(`/api/dev/tune-feedback?tuneId=${tuneId}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data) {
+          setSelectedVersion(data.selectedVersion ?? 'none')
+          setComment(data.comment ?? '')
+          setSavedAt(data.updatedAt ? new Date(data.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : null)
+        } else {
+          setSelectedVersion('none')
+          setComment('')
+          setSavedAt(null)
+        }
+        setSaveState('idle')
+      })
+      .catch(() => {})
+  }, [tuneId])
+
+  const save = async () => {
+    setSaveState('saving')
+    try {
+      const res = await fetch('/api/dev/tune-feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tuneId, selectedVersion, comment }),
+      })
+      if (!res.ok) throw new Error('Failed')
+      setSaveState('saved')
+      setSavedAt(new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))
+      setTimeout(() => setSaveState('idle'), 2000)
+    } catch {
+      setSaveState('error')
+      setTimeout(() => setSaveState('idle'), 3000)
+    }
+  }
+
+  const VERSION_OPTIONS = [
+    { value: 'none', label: 'None (no good version yet)' },
+    { value: 'hymnary', label: 'Hymnary MusicXML' },
+    { value: 'staff', label: 'Staff OCR (Claude Vision)' },
+    { value: 'solfege', label: 'Sol-fa OCR (Claude Vision)' },
+    { value: 'ocr-text', label: 'OCR Text (Claude Vision)' },
+    { value: 'audiveris', label: 'Audiveris OMR' },
+  ]
+
+  return (
+    <div className="mt-4 border-t pt-4">
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Feedback</span>
+        {savedAt && (
+          <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">saved {savedAt}</span>
+        )}
+      </div>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <label className="text-xs text-muted-foreground shrink-0">Best ABC version:</label>
+          <select
+            value={selectedVersion}
+            onChange={e => setSelectedVersion(e.target.value)}
+            className="border rounded px-2 py-1 text-sm bg-background"
+          >
+            {VERSION_OPTIONS.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+        <textarea
+          value={comment}
+          onChange={e => setComment(e.target.value)}
+          rows={2}
+          placeholder="Notes on quality, issues, or what to fix..."
+          className="w-full border rounded px-2 py-1.5 text-sm bg-background resize-y"
+        />
+        <button
+          onClick={save}
+          disabled={saveState === 'saving'}
+          className="self-start px-3 py-1 rounded border text-sm hover:bg-muted disabled:opacity-50"
+        >
+          {saveState === 'saving' ? 'Saving…' : saveState === 'saved' ? 'Saved ✓' : saveState === 'error' ? 'Error — retry' : 'Save feedback'}
+        </button>
+      </div>
     </div>
   )
 }
@@ -771,6 +910,9 @@ export function NotationCompareClient({ tunes }: { tunes: TuneRow[] }) {
                 mode="audiveris" label="Audiveris OMR → ABC" timeWarning="60–90s"
                 onResultSaved={handleResultSaved} />
             )}
+
+            {/* Feedback */}
+            <TuneFeedbackPanel key={`${tune.id}-feedback`} tuneId={tune.id} />
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
