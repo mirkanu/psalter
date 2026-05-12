@@ -337,11 +337,12 @@ function OcrTextPanel({
   const [voices, setVoices] = useState<Record<VoiceName, string>>({ soprano: '', alto: '', tenor: '', bass: '' })
   const [convertedAbc, setConvertedAbc] = useState<string | null>(null)
   const [warnings, setWarnings] = useState<string[]>([])
+  const [voiceView, setVoiceView] = useState<'satb' | 'soprano'>('satb')
 
   const resetState = () => {
     setDoh('C'); setTime('C'); setLah(''); setKeyMode('')
     setVoices({ soprano: '', alto: '', tenor: '', bass: '' })
-    setConvertedAbc(null); setWarnings([]); setError('')
+    setConvertedAbc(null); setWarnings([]); setError(''); setVoiceView('satb')
   }
 
   useEffect(() => {
@@ -410,7 +411,16 @@ function OcrTextPanel({
     const { abc, warnings: w } = solFaToAbcMultiVoice(voices, doh, time, tuneName, lah || undefined, keyMode || undefined)
     setConvertedAbc(abc)
     setWarnings(w)
+    setVoiceView('satb')
   }
+
+  const displayAbc = (() => {
+    if (!convertedAbc) return null
+    if (voiceView === 'soprano') {
+      return solFaToAbc(voices.soprano, doh, time, tuneName, lah || undefined, keyMode || undefined).abc
+    }
+    return convertedAbc
+  })()
 
   const savedAt = (() => {
     try {
@@ -472,20 +482,34 @@ function OcrTextPanel({
               />
             </div>
           ))}
-          <button onClick={convert} className="self-start px-3 py-1 rounded border text-sm hover:bg-muted">
-            Convert SATB → ABC →
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={convert} className="self-start px-3 py-1 rounded border text-sm hover:bg-muted">
+              Convert SATB → ABC →
+            </button>
+            {convertedAbc && (
+              <div className="flex rounded border overflow-hidden text-sm">
+                <button
+                  onClick={() => setVoiceView('satb')}
+                  className={`px-2.5 py-1 ${voiceView === 'satb' ? 'bg-foreground text-background' : 'hover:bg-muted'}`}
+                >Full SATB</button>
+                <button
+                  onClick={() => setVoiceView('soprano')}
+                  className={`px-2.5 py-1 border-l ${voiceView === 'soprano' ? 'bg-foreground text-background' : 'hover:bg-muted'}`}
+                >Soprano only</button>
+              </div>
+            )}
+          </div>
           {warnings.length > 0 && (
             <div className="text-xs text-amber-600 bg-amber-50 rounded p-2">
               {warnings.map((w, i) => <div key={i}>{w}</div>)}
             </div>
           )}
-          {convertedAbc && (
+          {displayAbc && (
             <div>
-              <AbcPlayerPanel abc={convertedAbc} title={tuneName} />
+              <AbcPlayerPanel abc={displayAbc} title={tuneName} />
               <details className="mt-1">
                 <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">ABC output</summary>
-                <pre className="mt-1 text-xs bg-muted rounded p-2 overflow-x-auto whitespace-pre-wrap max-h-48">{convertedAbc}</pre>
+                <pre className="mt-1 text-xs bg-muted rounded p-2 overflow-x-auto whitespace-pre-wrap max-h-48">{displayAbc}</pre>
               </details>
             </div>
           )}
