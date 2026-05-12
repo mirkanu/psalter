@@ -142,11 +142,11 @@ function parseVoiceLine(
     events.push({ note, duration: dur })
   }
 
-  // Strip final barlines and trim
-  const cleaned = raw
-    .replace(/\|\|.*$/, '') // drop everything from final || onward (Amen etc.)
-    .replace(/\|$/, '')
-    .trim()
+  // Strip Amen (anything after the last ||), then treat remaining || as single bars
+  let cleaned = raw.trim()
+  const lastDbl = cleaned.lastIndexOf('||')
+  if (lastDbl >= 0) cleaned = cleaned.slice(0, lastDbl)
+  cleaned = cleaned.replace(/\|\|/g, '|').replace(/\|$/, '').trim()
 
   // Split on | to get cells
   const cells = cleaned.split(/\|+/).map(c => c.trim()).filter(Boolean)
