@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import type { TuneRow } from './page'
 import { solFaToAbc } from '@/lib/solfege-parser'
+import { HYMNARY_FETCH_IDS } from '@/lib/hymnary-lookup'
 
 const AbcPlayerPanel = dynamic(() => import('./AbcPlayerPanel'), { ssr: false })
 
@@ -484,6 +485,7 @@ const MODE_FILTER_OPTIONS: { mode: OcrMode; label: string }[] = [
 export function NotationCompareClient({ tunes }: { tunes: TuneRow[] }) {
   const [idx, setIdx] = useState(0)
   const [filter, setFilter] = useState('')
+  const [hymnaryOnly, setHymnaryOnly] = useState(false)
   const [modeFilter, setModeFilter] = useState<Set<OcrMode>>(new Set())
   const [cachedByMode, setCachedByMode] = useState<Map<number, Set<OcrMode>>>(new Map())
   const [visible, setVisible] = useState<VisiblePanels>({ ...DEFAULT_PANELS })
@@ -525,6 +527,9 @@ export function NotationCompareClient({ tunes }: { tunes: TuneRow[] }) {
         (t.meter ?? '').toLowerCase().includes(filter.toLowerCase())
       )
     }
+    if (hymnaryOnly) {
+      result = result.filter(t => t.name in HYMNARY_FETCH_IDS)
+    }
     if (modeFilter.size > 0) {
       result = result.filter(t => {
         const cached = cachedByMode.get(t.id)
@@ -533,7 +538,7 @@ export function NotationCompareClient({ tunes }: { tunes: TuneRow[] }) {
       })
     }
     return result
-  }, [tunes, filter, modeFilter, cachedByMode])
+  }, [tunes, filter, hymnaryOnly, modeFilter, cachedByMode])
 
   const tune = filtered[idx] ?? null
 
@@ -551,6 +556,12 @@ export function NotationCompareClient({ tunes }: { tunes: TuneRow[] }) {
           onChange={e => { setFilter(e.target.value); setIdx(0) }}
           className="border rounded px-2 py-1 text-sm bg-background w-48"
         />
+        <button
+          onClick={() => { setHymnaryOnly(o => !o); setIdx(0) }}
+          className={`px-2 py-0.5 rounded text-xs border transition-colors ${hymnaryOnly ? 'bg-foreground text-background border-foreground' : 'hover:bg-muted'}`}>
+          Hymnary only ({Object.keys(HYMNARY_FETCH_IDS).length})
+        </button>
+
         {/* Mode filter chips */}
         <div className="flex gap-1 flex-wrap">
           {MODE_FILTER_OPTIONS.map(({ mode, label }) => {
