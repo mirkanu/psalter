@@ -166,8 +166,22 @@ export async function GET(request: NextRequest) {
   const mode = request.nextUrl.searchParams.get('mode') ?? 'solfege'
   const slug = slugify(tune.name)
   const dir = path.join(process.cwd(), 'public/tunes')
-  const staffImg = path.join(dir, `${slug}-staff-0.jpg`)
-  const solfegeImg = path.join(dir, `${slug}-solfege-0.jpg`)
+
+  function collectPages(type: 'solfege' | 'staff'): string[] {
+    const pages: string[] = []
+    for (let i = 0; ; i++) {
+      const p = path.join(dir, `${slug}-${type}-${i}.jpg`)
+      if (fs.existsSync(p)) pages.push(p)
+      else break
+    }
+    return pages
+  }
+
+  const solfegePages = collectPages('solfege')
+  const staffPages = collectPages('staff')
+  // Legacy single-path aliases kept for audiveris (needs one image)
+  const staffImg = staffPages[0] ?? path.join(dir, `${slug}-staff-0.jpg`)
+  const solfegeImg = solfegePages[0] ?? path.join(dir, `${slug}-solfege-0.jpg`)
 
   if (mode === 'audiveris') {
     // Prefer staff image (has actual music staff lines Audiveris can parse)
@@ -229,38 +243,33 @@ export async function GET(request: NextRequest) {
   }
 
   if (mode === 'ocr-text') {
-    const imagePath = fs.existsSync(solfegeImg) ? solfegeImg
-      : fs.existsSync(staffImg) ? staffImg
-      : null
-    if (!imagePath) return NextResponse.json({ error: `No image for "${tune.name}" (slug: ${slug})` }, { status: 404 })
+    const pages = solfegePages.length > 0 ? solfegePages : staffPages
+    if (pages.length === 0) return NextResponse.json({ error: `No image for "${tune.name}" (slug: ${slug})` }, { status: 404 })
     try {
-      const result = await transcribeOnly(tune.name, imagePath)
-      return NextResponse.json({ tuneName: tune.name, ...result })
+      const result = await transcribeOnly(tune.name, pages)
+      return NextResponse.json({ tuneName: tune.name, pageCount: pages.length, ...result })
     } catch (err) {
       return NextResponse.json({ error: String(err) }, { status: 500 })
     }
   }
 
   if (mode === 'staff') {
-    const imagePath = fs.existsSync(staffImg) ? staffImg
-      : fs.existsSync(solfegeImg) ? solfegeImg
-      : null
-    if (!imagePath) return NextResponse.json({ error: `No image for "${tune.name}" (slug: ${slug})` }, { status: 404 })
+    const pages = staffPages.length > 0 ? staffPages : solfegePages
+    if (pages.length === 0) return NextResponse.json({ error: `No image for "${tune.name}" (slug: ${slug})` }, { status: 404 })
     try {
-      const result = await extractStaffToAbc(tune.name, imagePath)
-      return NextResponse.json({ tuneName: tune.name, ...result })
+      const result = await extractStaffToAbc(tune.name, pages[0])
+      return NextResponse.json({ tuneName: tune.name, pageCount: pages.length, ...result })
     } catch (err) {
       return NextResponse.json({ error: String(err) }, { status: 500 })
     }
   }
 
-  const imagePath = fs.existsSync(solfegeImg) ? solfegeImg
-    : fs.existsSync(staffImg) ? staffImg
-    : null
-  if (!imagePath) return NextResponse.json({ error: `No image for "${tune.name}" (slug: ${slug})` }, { status: 404 })
+  // default: solfege (V3 parser)
+  const pages = solfegePages.length > 0 ? solfegePages : staffPages
+  if (pages.length === 0) return NextResponse.json({ error: `No image for "${tune.name}" (slug: ${slug})` }, { status: 404 })
   try {
-    const result = await extractTuneV2(tune.name, imagePath)
-    return NextResponse.json({ tuneName: tune.name, ...result })
+    const result = await extractTuneV2(tune.name, pages)
+    return NextResponse.json({ tuneName: tune.name, pageCount: pages.length, ...result })
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }
