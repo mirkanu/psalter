@@ -186,16 +186,49 @@ function eventsToAbcStr(events: NoteEvent[], barUnits?: number): string {
   if (!barUnits) {
     return events.map(e => e.duration === 1 ? e.note : `${e.note}${e.duration}`).join('')
   }
+
+  // Track which pitch strings have an active accidental within the current bar.
+  // Key: pitch string (e.g. 'G', 'g', "g'") — octave-specific, matches ABC carry-over scope.
+  // Value: last accidental seen for that pitch ('^', '_', '=', or '' for diatonic).
+  const barAcc = new Map<string, string>()
+
   let result = ''
   let accumulated = 0
+
   for (const e of events) {
-    result += e.duration === 1 ? e.note : `${e.note}${e.duration}`
+    let note = e.note
+
+    // Parse optional accidental prefix off the note string.
+    let acc = ''
+    let pitch = note
+    if (note[0] === '^' || note[0] === '_' || note[0] === '=') {
+      acc = note[0]
+      pitch = note.slice(1)
+    }
+
+    if (pitch && pitch !== 'z') {
+      const prevAcc = barAcc.get(pitch)
+      if (acc) {
+        // Explicit accidental — record it and output as-is.
+        barAcc.set(pitch, acc)
+      } else if (prevAcc === '^' || prevAcc === '_') {
+        // No explicit accidental but the pitch was chromatically altered earlier in this bar.
+        // Add a natural sign so the audio player cancels the carry-over.
+        note = '=' + pitch
+        barAcc.set(pitch, '=')
+      }
+      // Otherwise: no prior accidental in this bar — output as-is.
+    }
+
+    result += note + (e.duration === 1 ? '' : `${e.duration}`)
     accumulated += e.duration
     if (accumulated >= barUnits) {
       result += ' | '
       accumulated = 0
+      barAcc.clear()
     }
   }
+
   return result.replace(/\s*\|\s*$/, '').trim()
 }
 
@@ -277,7 +310,7 @@ export function solFaToAbc(
   const meter = time === '4/4' ? 'C' : time === 'C' ? 'C' : time
 
   const events = parseVoiceLine(raw, tonic, warnings)
-  const musicStr = eventsToAbcStr(events)
+  const musicStr = eventsToAbcStr(events, meterToBarUnits(meter))
 
   // bars: group events into cells of 4 units (1 beat = 2 units → 2 beats per cell)
   // This is a rough grouping for display only
