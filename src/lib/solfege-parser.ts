@@ -45,6 +45,32 @@ export const DEGREE: Record<string, number> = {
   me: 3,
 }
 
+// ── Key signature tables ──────────────────────────────────────────────────────
+// Which note LETTERS (uppercase) are modified by the key signature.
+// Used to avoid double-sharps/double-flats in the generated ABC.
+
+// Sharped letters per major key (order of sharps: F C G D A E B)
+const KEY_SHARPS: Record<string, Set<string>> = {
+  C:  new Set(),
+  G:  new Set(['F']),
+  D:  new Set(['F','C']),
+  A:  new Set(['F','C','G']),
+  E:  new Set(['F','C','G','D']),
+  B:  new Set(['F','C','G','D','A']),
+  'F#': new Set(['F','C','G','D','A','E']),
+  'C#': new Set(['F','C','G','D','A','E','B']),
+}
+
+// Flatted letters per major key (order of flats: B E A D G C F)
+const KEY_FLATS: Record<string, Set<string>> = {
+  F:  new Set(['B']),
+  Bb: new Set(['B','E']),
+  Eb: new Set(['B','E','A']),
+  Ab: new Set(['B','E','A','D']),
+  Db: new Set(['B','E','A','D','G']),
+  Gb: new Set(['B','E','A','D','G','C']),
+}
+
 // ── Key helpers ───────────────────────────────────────────────────────────────
 
 export function dohToAbcKey(doh: string, lah?: string, mode?: string): string {
@@ -57,24 +83,96 @@ export function dohToAbcKey(doh: string, lah?: string, mode?: string): string {
   return map[doh] ?? 'C'
 }
 
+/** Return the set of sharped and flatted letters for a given doh (always major lookup). */
+function keyAccidentalsForDoh(doh: string): { sharps: Set<string>; flats: Set<string> } {
+  return {
+    sharps: KEY_SHARPS[doh] ?? new Set(),
+    flats:  KEY_FLATS[doh]  ?? new Set(),
+  }
+}
+
 // ── Note conversion ───────────────────────────────────────────────────────────
 
-export function semitoneToAbcNote(semitone: number): string {
-  const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+// Chromatic positions 0–11: sharp and flat representations.
+// 'sharpLetter' is always the sharp (or natural) spelling.
+// 'flatLetter' is set for enharmonic positions with a flat spelling.
+const SEMITONE_REPR = [
+  { sharpLetter: 'C', flatLetter: null  },  // 0
+  { sharpLetter: 'C', flatLetter: 'D'   },  // 1  C#/Db
+  { sharpLetter: 'D', flatLetter: null  },  // 2
+  { sharpLetter: 'D', flatLetter: 'E'   },  // 3  D#/Eb
+  { sharpLetter: 'E', flatLetter: null  },  // 4
+  { sharpLetter: 'F', flatLetter: null  },  // 5
+  { sharpLetter: 'F', flatLetter: 'G'   },  // 6  F#/Gb
+  { sharpLetter: 'G', flatLetter: null  },  // 7
+  { sharpLetter: 'G', flatLetter: 'A'   },  // 8  G#/Ab
+  { sharpLetter: 'A', flatLetter: null  },  // 9
+  { sharpLetter: 'A', flatLetter: 'B'   },  // 10 A#/Bb
+  { sharpLetter: 'B', flatLetter: null  },  // 11
+] as const
+
+/**
+ * Convert an absolute semitone to an ABC note string, respecting the key signature.
+ *
+ * The key signature (sharps/flats) determines which letter+accidental combo
+ * produces the right pitch without needing an explicit modifier:
+ *   • K:G has F#  → 'f' in ABC = F#, so te (F#) → 'f' (not '^f', which would be F##)
+ *   • K:Ab has Ab → 'a' in ABC = Ab, so doh (Ab) → 'A' (not '^G', enharmonic but confusing)
+ *   • K:F has Bb  → 'b' in ABC = Bb, so ray (Bb) → 'b' (not '^a')
+ *
+ * Natural signs ('=') are emitted when the key signature would otherwise alter a note
+ * that should be natural (e.g. ta = F-natural in K:G → '=f').
+ */
+export function semitoneToAbcNote(
+  semitone: number,
+  sharps: Set<string> = new Set(),
+  flats:  Set<string> = new Set(),
+): string {
   let oct = 4
   let s = semitone
   while (s < 0)   { s += 12; oct-- }
   while (s >= 12) { s -= 12; oct++ }
-  const name = NOTE_NAMES[s]
-  const letter = name[0]
-  const acc = name.length > 1 ? '^' : ''
 
-  if (oct >= 6)  return `${acc}${letter.toLowerCase()}''`
-  if (oct === 5) return `${acc}${letter.toLowerCase()}'`
-  if (oct === 4) return `${acc}${letter.toLowerCase()}`
-  if (oct === 3) return `${acc}${letter}`
-  if (oct === 2) return `${acc}${letter},`
-  return `${acc}${letter},,`
+  const { sharpLetter, flatLetter } = SEMITONE_REPR[s]
+  let letter: string
+  let accPrefix: string
+
+  const isChromatic = sharpLetter !== SEMITONE_REPR[s].sharpLetter || flatLetter !== null
+
+  if (flatLetter === null) {
+    // Natural semitone (C D E F G A B)
+    letter = sharpLetter
+    if (sharps.has(letter)) {
+      accPrefix = '='  // key sharps this note; need natural to cancel
+    } else if (flats.has(letter)) {
+      accPrefix = '='  // key flats this note; need natural to cancel
+    } else {
+      accPrefix = ''
+    }
+  } else {
+    // Chromatic semitone — find the representation that fits the key
+    if (sharps.has(sharpLetter)) {
+      // Key already sharps this letter → omit explicit accidental
+      letter = sharpLetter; accPrefix = ''
+    } else if (flats.has(flatLetter)) {
+      // Key already flats the flat-letter → use flat spelling without explicit accidental
+      letter = flatLetter; accPrefix = ''
+    } else if (flats.size > 0) {
+      // Flat-key context but neither letter is in key → prefer flat spelling
+      letter = flatLetter; accPrefix = '_'
+    } else {
+      // Sharp-key or no-key context → prefer sharp spelling
+      letter = sharpLetter; accPrefix = '^'
+    }
+  }
+
+  const lower = letter.toLowerCase()
+  if (oct >= 6)  return `${accPrefix}${lower}''`
+  if (oct === 5) return `${accPrefix}${lower}'`
+  if (oct === 4) return `${accPrefix}${lower}`
+  if (oct === 3) return `${accPrefix}${letter}`
+  if (oct === 2) return `${accPrefix}${letter},`
+  return `${accPrefix}${letter},,`
 }
 
 // ── Syllable parser ───────────────────────────────────────────────────────────
@@ -125,14 +223,14 @@ function parseVoiceLine(
   raw: string,
   tonic: number,
   warnings: string[],
+  sharps: Set<string>,
+  flats:  Set<string>,
 ): NoteEvent[] {
   const events: NoteEvent[] = []
 
-  const lastEventIdx = (): number => events.length - 1
-
   function extendLast(dur: number) {
     if (events.length > 0) {
-      events[lastEventIdx()].duration += dur
+      events[events.length - 1].duration += dur
     } else {
       events.push({ note: 'z', duration: dur })
     }
@@ -168,12 +266,11 @@ function parseVoiceLine(
           const parsed = parseSyllable(token)
           if (!parsed) {
             warnings.push(`Unrecognised token: "${token}" in "${raw.slice(0, 60)}"`)
-            // Emit a rest so bar lengths stay correct
             addNote('z', unitDur)
             continue
           }
           const semitone = tonic + (DEGREE[parsed.syllable] ?? 0) + parsed.octaveShift * 12
-          addNote(semitoneToAbcNote(semitone), unitDur)
+          addNote(semitoneToAbcNote(semitone, sharps, flats), unitDur)
         }
       }
     }
@@ -182,15 +279,31 @@ function parseVoiceLine(
   return events
 }
 
-function eventsToAbcStr(events: NoteEvent[], barUnits?: number): string {
-  if (!barUnits) {
-    return events.map(e => e.duration === 1 ? e.note : `${e.note}${e.duration}`).join('')
-  }
-
-  // Track which pitch strings have an active accidental within the current bar.
-  // Key: pitch string (e.g. 'G', 'g', "g'") — octave-specific, matches ABC carry-over scope.
-  // Value: last accidental seen for that pitch ('^', '_', '=', or '' for diatonic).
+/**
+ * Render NoteEvent[] to an ABC note string with bar lines.
+ *
+ * Tracks within-bar accidentals so that:
+ *   1. After ^X or _X, a plain X gets '=' to cancel the carry-over.
+ *   2. After =X (natural override), the next X that should be key-sharp/flat
+ *      gets an explicit ^ or _ to restore the key convention (required because
+ *      ABC's carry-over keeps '=' active until the bar ends).
+ */
+function eventsToAbcStr(
+  events: NoteEvent[],
+  barUnits: number,
+  sharps: Set<string>,
+  flats:  Set<string>,
+): string {
+  // Map pitch string → active accidental in current bar ('^', '_', '=', or absent)
   const barAcc = new Map<string, string>()
+
+  // Uppercase the pitch letter for key-table lookup (pitch may be 'g', "g'", 'G,', etc.)
+  function keyModFor(pitch: string): string {
+    const upper = pitch[0].toUpperCase()
+    if (sharps.has(upper)) return '^'
+    if (flats.has(upper))  return '_'
+    return ''
+  }
 
   let result = ''
   let accumulated = 0
@@ -198,26 +311,34 @@ function eventsToAbcStr(events: NoteEvent[], barUnits?: number): string {
   for (const e of events) {
     let note = e.note
 
-    // Parse optional accidental prefix off the note string.
+    // Parse optional accidental prefix
     let acc = ''
     let pitch = note
     if (note[0] === '^' || note[0] === '_' || note[0] === '=') {
-      acc = note[0]
-      pitch = note.slice(1)
+      acc = note[0]; pitch = note.slice(1)
     }
 
     if (pitch && pitch !== 'z') {
       const prevAcc = barAcc.get(pitch)
+      const keyMod  = keyModFor(pitch)
+
       if (acc) {
-        // Explicit accidental — record it and output as-is.
         barAcc.set(pitch, acc)
+        // output as-is
       } else if (prevAcc === '^' || prevAcc === '_') {
-        // No explicit accidental but the pitch was chromatically altered earlier in this bar.
-        // Add a natural sign so the audio player cancels the carry-over.
+        // Chromatically altered earlier → add natural sign to cancel carry-over
         note = '=' + pitch
         barAcc.set(pitch, '=')
+      } else if (prevAcc === '=' && keyMod === '^') {
+        // Natural was explicit; now this note should be key-sharp again → restore it
+        note = '^' + pitch
+        barAcc.set(pitch, '^')
+      } else if (prevAcc === '=' && keyMod === '_') {
+        // Natural was explicit; now this note should be key-flat again → restore it
+        note = '_' + pitch
+        barAcc.set(pitch, '_')
       }
-      // Otherwise: no prior accidental in this bar — output as-is.
+      // else: no prior accidental in this bar — output as-is
     }
 
     result += note + (e.duration === 1 ? '' : `${e.duration}`)
@@ -266,15 +387,16 @@ export function solFaToAbcMultiVoice(
 ): MultiVoiceResult {
   const warnings: string[] = []
   const tonic = DOH_SEMITONES[doh] ?? (warnings.push(`Unknown DOH: "${doh}" — defaulting to C`), 0)
-  const key = dohToAbcKey(doh, lah, mode)
+  const key   = dohToAbcKey(doh, lah, mode)
   const meter = time === '4/4' ? 'C' : time === 'C' ? 'C' : time
-
-  const sopranoEvents = parseVoiceLine(voices.soprano, tonic, warnings)
-  const altoEvents    = parseVoiceLine(voices.alto,    tonic, warnings)
-  const tenorEvents   = parseVoiceLine(voices.tenor,   tonic, warnings)
-  const bassEvents    = parseVoiceLine(voices.bass,    tonic, warnings)
+  const { sharps, flats } = keyAccidentalsForDoh(doh)
 
   const barUnits = meterToBarUnits(meter)
+  const sopranoEvents = parseVoiceLine(voices.soprano, tonic, warnings, sharps, flats)
+  const altoEvents    = parseVoiceLine(voices.alto,    tonic, warnings, sharps, flats)
+  const tenorEvents   = parseVoiceLine(voices.tenor,   tonic, warnings, sharps, flats)
+  const bassEvents    = parseVoiceLine(voices.bass,    tonic, warnings, sharps, flats)
+
   const abc = [
     `X:1`,
     `T:${tuneName}`,
@@ -286,10 +408,10 @@ export function solFaToAbcMultiVoice(
     `V:3 clef=treble name="Tenor"`,
     `V:4 clef=bass name="Bass"`,
     `K:${key}`,
-    `[V:1] ${eventsToAbcStr(sopranoEvents, barUnits)}`,
-    `[V:2] ${eventsToAbcStr(altoEvents, barUnits)}`,
-    `[V:3] ${eventsToAbcStr(tenorEvents, barUnits)}`,
-    `[V:4] ${eventsToAbcStr(bassEvents, barUnits)}`,
+    `[V:1] ${eventsToAbcStr(sopranoEvents, barUnits, sharps, flats)}`,
+    `[V:2] ${eventsToAbcStr(altoEvents,    barUnits, sharps, flats)}`,
+    `[V:3] ${eventsToAbcStr(tenorEvents,   barUnits, sharps, flats)}`,
+    `[V:4] ${eventsToAbcStr(bassEvents,    barUnits, sharps, flats)}`,
   ].join('\n')
 
   return { abc, warnings }
@@ -306,18 +428,19 @@ export function solFaToAbc(
 ): { abc: string; bars: string[][]; warnings: string[] } {
   const warnings: string[] = []
   const tonic = DOH_SEMITONES[doh] ?? (warnings.push(`Unknown DOH: "${doh}" — defaulting to C`), 0)
-  const key = dohToAbcKey(doh, lah, mode)
+  const key   = dohToAbcKey(doh, lah, mode)
   const meter = time === '4/4' ? 'C' : time === 'C' ? 'C' : time
+  const { sharps, flats } = keyAccidentalsForDoh(doh)
+  const barUnits = meterToBarUnits(meter)
 
-  const events = parseVoiceLine(raw, tonic, warnings)
-  const musicStr = eventsToAbcStr(events, meterToBarUnits(meter))
+  const events = parseVoiceLine(raw, tonic, warnings, sharps, flats)
+  const musicStr = eventsToAbcStr(events, barUnits, sharps, flats)
 
-  // bars: group events into cells of 4 units (1 beat = 2 units → 2 beats per cell)
-  // This is a rough grouping for display only
+  // bars: group events into cells for display only
   const bars: string[][] = []
   let current: string[] = []
   let cellDur = 0
-  const cellSize = meter === 'C' ? 4 : 6 // 2 beats in C time, 3 beats in 3/4
+  const cellSize = meter === 'C' ? 4 : 6
 
   for (const e of events) {
     current.push(`${e.note}${e.duration === 1 ? '' : e.duration}`)
