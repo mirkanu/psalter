@@ -2,6 +2,7 @@ import { db } from "@/db"
 import { tunes } from "@/db/schema"
 import { isNotNull, asc } from "drizzle-orm"
 import { NotationCompareClient } from "./NotationCompareClient"
+import { HYMNARY_FETCH_IDS } from "@/lib/hymnary-lookup"
 
 export const dynamic = "force-dynamic"
 
@@ -21,7 +22,13 @@ export default async function NotationComparePage() {
     .where(isNotNull(tunes.abcNotation))
     .orderBy(asc(tunes.name))
 
-  return <NotationCompareClient tunes={rows as TuneRow[]} />
+  const tuneRows: TuneRow[] = rows.map(r => ({
+    ...r,
+    abcNotation: r.abcNotation!,
+    hymnaryAbc: r.name in HYMNARY_FETCH_IDS ? r.abcNotation! : null,
+  }))
+
+  return <NotationCompareClient tunes={tuneRows} />
 }
 
 export interface TuneRow {
@@ -29,6 +36,7 @@ export interface TuneRow {
   name: string
   meter: string | null
   abcNotation: string
+  hymnaryAbc: string | null
   solfegeJpgUrl: string | null
   scoreJpgUrl: string | null
   youtubeUrl: string | null

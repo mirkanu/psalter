@@ -168,18 +168,20 @@ function AbcSection({ label, abc, tuneName, extras }: {
 }
 
 function OcrPanel({
-  tuneId, tuneName, mode, label, timeWarning, onResultSaved,
+  tuneId, tuneName, mode, label, timeWarning, preloadAbc, onResultSaved,
 }: {
   tuneId: number
   tuneName: string
   mode: OcrMode
   label: string
   timeWarning?: string
+  preloadAbc?: string | null
   onResultSaved?: (tuneId: number, mode: OcrMode) => void
 }) {
   const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
   const [result, setResult] = useState<OcrResult | null>(null)
   const [fromCache, setFromCache] = useState(false)
+  const [fromDb, setFromDb] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -188,14 +190,22 @@ function OcrPanel({
       setResult(cached)
       setState('done')
       setFromCache(true)
+      setFromDb(false)
+      setError('')
+    } else if (preloadAbc) {
+      setResult({ abc: preloadAbc })
+      setState('done')
+      setFromCache(false)
+      setFromDb(true)
       setError('')
     } else {
       setState('idle')
       setResult(null)
       setFromCache(false)
+      setFromDb(false)
       setError('')
     }
-  }, [tuneId, mode])
+  }, [tuneId, mode, preloadAbc])
 
   const run = async () => {
     setState('loading')
@@ -236,9 +246,12 @@ function OcrPanel({
         {fromCache && savedAt && (
           <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">cached {savedAt}</span>
         )}
+        {fromDb && (
+          <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">from DB import</span>
+        )}
         <button onClick={run} disabled={state === 'loading'}
           className="px-3 py-1 rounded border text-sm hover:bg-muted disabled:opacity-50">
-          {state === 'loading' ? `Running… (${timeWarning ?? '…'})` : fromCache ? 'Re-run' : `Run ${label}`}
+          {state === 'loading' ? `Running… (${timeWarning ?? '…'})` : (fromCache || fromDb) ? 'Re-fetch' : `Run ${label}`}
         </button>
         {fromCache && (
           <button onClick={handleClear} className="text-xs text-muted-foreground hover:text-foreground underline">clear</button>
@@ -671,6 +684,7 @@ export function NotationCompareClient({ tunes }: { tunes: TuneRow[] }) {
             {visible.hymnary && (
               <OcrPanel key={`${tune.id}-hymnary`} tuneId={tune.id} tuneName={tune.name}
                 mode="hymnary" label="Hymnary MusicXML → ABC" timeWarning="~5s"
+                preloadAbc={tune.hymnaryAbc}
                 onResultSaved={handleResultSaved} />
             )}
 
