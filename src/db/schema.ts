@@ -232,6 +232,29 @@ export const verseDoctrines = pgTable('verse_doctrines', {
   doctrineId: integer('doctrine_id').notNull().references(() => doctrines.id),
 }, (t) => [primaryKey({ columns: [t.verseId, t.doctrineId] })])
 
+/**
+ * tune_ocr_results — persisted OCR/vision results per tune+mode
+ * Composite PK: (tune_id, mode) — upsert on re-run
+ */
+export const tuneOcrResults = pgTable('tune_ocr_results', {
+  tuneId: integer('tune_id').notNull().references(() => tunes.id, { onDelete: 'cascade' }),
+  mode: text('mode').notNull(),
+  result: jsonb('result').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (t) => [primaryKey({ columns: [t.tuneId, t.mode] })])
+
+/**
+ * tune_notation_feedback — precentor feedback: which ABC version is best + comment
+ * PK: tune_id — one feedback record per tune, upserted on save
+ */
+export const tuneNotationFeedback = pgTable('tune_notation_feedback', {
+  tuneId: integer('tune_id').primaryKey().references(() => tunes.id, { onDelete: 'cascade' }),
+  selectedVersion: text('selected_version').notNull().default('none'),
+  comment: text('comment').notNull().default(''),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
 // ─── Relations (Drizzle Relational API) ──────────────────────────────────────
 
 export const psalmsRelations = relations(psalms, ({ many }) => ({
