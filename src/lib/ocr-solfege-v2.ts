@@ -227,6 +227,38 @@ export async function extractTuneV3(tuneName: string, imagePath: string): Promis
 export const extractTuneV2 = extractTuneV3
 export type ExtractedTune = TranscriptionResult
 
+// Stage 1 only — returns raw OCR text without ABC conversion
+export async function transcribeOnly(tuneName: string, imagePath: string): Promise<{
+  doh: string
+  time: string
+  soprano: string
+  rawResponse: string
+}> {
+  const rawFile = fs.readFileSync(imagePath)
+  const imageBuffer: Buffer = rawFile.length > 4 * 1024 * 1024
+    ? await sharp(rawFile).resize({ width: 2000, withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer() as Buffer
+    : Buffer.from(rawFile)
+
+  const response = await client.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 2048,
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageBuffer.toString('base64') } },
+        { type: 'text', text: TRANSCRIPTION_PROMPT },
+      ],
+    }],
+  })
+
+  const rawResponse = response.content[0].type === 'text' ? response.content[0].text : ''
+  const jsonMatch = rawResponse.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) throw new Error(`No JSON in Claude response:\n${rawResponse.slice(0, 500)}`)
+
+  const parsed = JSON.parse(jsonMatch[0]) as TranscriptionResult
+  return { doh: parsed.doh, time: parsed.time, soprano: parsed.soprano, rawResponse }
+}
+
 // ─── Staff notation → ABC (direct) ───────────────────────────────────────────
 
 const STAFF_PROMPT = `This is a page of printed psalm/hymn tune in standard Western staff notation.

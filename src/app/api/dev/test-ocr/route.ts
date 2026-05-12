@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm'
 import { tunes } from '@/db/schema'
 import * as path from 'node:path'
 import * as fs from 'node:fs'
-import { extractTuneV2, extractStaffToAbc } from '@/lib/ocr-solfege-v2'
+import { extractTuneV2, extractStaffToAbc, transcribeOnly } from '@/lib/ocr-solfege-v2'
 
 function slugify(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -178,6 +178,19 @@ export async function GET(request: NextRequest) {
     }
     try {
       const result = await runAudiveris(tune, imagePath)
+      return NextResponse.json({ tuneName: tune.name, ...result })
+    } catch (err) {
+      return NextResponse.json({ error: String(err) }, { status: 500 })
+    }
+  }
+
+  if (mode === 'ocr-text') {
+    const imagePath = fs.existsSync(solfegeImg) ? solfegeImg
+      : fs.existsSync(staffImg) ? staffImg
+      : null
+    if (!imagePath) return NextResponse.json({ error: `No image for "${tune.name}" (slug: ${slug})` }, { status: 404 })
+    try {
+      const result = await transcribeOnly(tune.name, imagePath)
       return NextResponse.json({ tuneName: tune.name, ...result })
     } catch (err) {
       return NextResponse.json({ error: String(err) }, { status: 500 })
