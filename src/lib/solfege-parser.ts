@@ -182,11 +182,30 @@ function parseVoiceLine(
   return events
 }
 
-function eventsToAbcStr(events: NoteEvent[]): string {
-  return events.map(e => {
-    // L:1/8 → no suffix = 1 eighth. For n > 1, suffix is n.
-    return e.duration === 1 ? e.note : `${e.note}${e.duration}`
-  }).join('')
+function eventsToAbcStr(events: NoteEvent[], barUnits?: number): string {
+  if (!barUnits) {
+    return events.map(e => e.duration === 1 ? e.note : `${e.note}${e.duration}`).join('')
+  }
+  let result = ''
+  let accumulated = 0
+  for (const e of events) {
+    result += e.duration === 1 ? e.note : `${e.note}${e.duration}`
+    accumulated += e.duration
+    if (accumulated >= barUnits) {
+      result += ' | '
+      accumulated = 0
+    }
+  }
+  return result.replace(/\s*\|\s*$/, '').trim()
+}
+
+function meterToBarUnits(time: string): number {
+  if (time === 'C' || time === '4/4') return 8  // 4 beats × 2 units/beat
+  if (time === '3/4') return 6                   // 3 beats × 2 units/beat
+  if (time === '6/8') return 6                   // 6 eighth notes
+  if (time === '2/4') return 4                   // 2 beats × 2 units/beat
+  if (time === '3/2') return 12                  // 3 half-notes × 4 units/half
+  return 8
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -222,21 +241,22 @@ export function solFaToAbcMultiVoice(
   const tenorEvents   = parseVoiceLine(voices.tenor,   tonic, warnings)
   const bassEvents    = parseVoiceLine(voices.bass,    tonic, warnings)
 
+  const barUnits = meterToBarUnits(meter)
   const abc = [
     `X:1`,
     `T:${tuneName}`,
     `M:${meter}`,
     `L:1/8`,
     `Q:1/4=76`,
-    `K:${key}`,
     `V:1 clef=treble name="Soprano"`,
-    eventsToAbcStr(sopranoEvents),
     `V:2 clef=treble name="Alto"`,
-    eventsToAbcStr(altoEvents),
     `V:3 clef=treble name="Tenor"`,
-    eventsToAbcStr(tenorEvents),
     `V:4 clef=bass name="Bass"`,
-    eventsToAbcStr(bassEvents),
+    `K:${key}`,
+    `[V:1] ${eventsToAbcStr(sopranoEvents, barUnits)}`,
+    `[V:2] ${eventsToAbcStr(altoEvents, barUnits)}`,
+    `[V:3] ${eventsToAbcStr(tenorEvents, barUnits)}`,
+    `[V:4] ${eventsToAbcStr(bassEvents, barUnits)}`,
   ].join('\n')
 
   return { abc, warnings }
