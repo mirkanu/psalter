@@ -21,6 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4.7 (INSERTED): Psalm Listing Overhaul** - Redesign /psalms page: dense numbered-box grid, instant free-type search (number lookup + lyric/KJV text search with bold match + relevance sort + Enter to open), collapsible Advanced panel (first-line toggle, meter toggle, meter filter), remove existing filter controls
 - [ ] **Phase 4.8 (INSERTED): Explore & Tunes Overhaul** - Playwright audit of psalter.cprc.co.uk/explore and /tunes; replicate both pages at psalter.gsdlabs.dev/explore and /tunes to match the reference site; remove /search route (superseded by inline search on /psalms)
 - [ ] **Phase 4.9 (INSERTED): Tune Notation Conversion** - OCR all solfège JPEGs via vision LLM, parse tonic sol-fa → ABC, store ABC strings in DB; all tunes render live in abcjs
+- [ ] **Phase 4.9.1 (INSERTED): Interactive abcjs Player** - Replace static AbcRenderer with interactive player: play/pause + note highlighting, transpose dropdown, BPM controls, show-original JPEG toggle; applied to /tunes/[id] and /psalms/[id]
 - [ ] **Phase 5: Precentor Portal** - Better Auth login, service event CRUD, psalm+tune set list builder, live service view with pre-loaded notation
 - [ ] **Phase 6: Polish** - OG images, Lighthouse 90+, bundle analysis, click feedback, loading skeletons on remaining routes
 
@@ -239,6 +240,24 @@ Plans:
 **Wave 2** *(depends on Wave 1)*
 - [ ] 04.9-03-PLAN.md — Playwright UAT: spot-check 10+ tunes at /tunes/[id]; confirm abcjs renders correctly; update progress table
 
+### Phase 4.9.1 (INSERTED): Interactive abcjs Player
+**Goal**: Replace the static AbcRenderer with a fully interactive music player that displays the soprano melody, supports playback with current-note highlighting (abcjs WebAudio synth), key transposition (±6 semitones), tempo (BPM) controls, and a "show original score" toggle that swaps the live SVG for the JPEG scan
+**Depends on**: Phase 4.9
+**Requirements**: PLAYER-01, PLAYER-02, PLAYER-03, PLAYER-04, PLAYER-05
+**Success Criteria** (what must be TRUE):
+  1. On /tunes/[id] for a tune with ABC, pressing Play produces audible sound and the note being played is visually highlighted in the SVG
+  2. Changing the Transpose dropdown re-renders the SVG with a new key signature (visualTranspose option)
+  3. BPM +/- buttons change the displayed BPM and the audible playback rate
+  4. "Show original score" toggle swaps the abcjs SVG for the original JPEG (staff or solfège, whichever is the active scan); toggle again to swap back
+  5. The same interactive player appears on /psalms/[id] (replacing AbcRenderer inside PsalmNotationPlayer's staff view) without breaking stanza Prev/Next or the existing Staff/Solfège/Lyrics view toggle
+  6. All controls remain reachable and tappable at 375 px viewport width with no horizontal overflow
+**Plans**: 1 plan
+
+Plans:
+**Wave 1**
+- [ ] 04.9.1-01-PLAN.md — Build AbcPlayer + AbcPlayerSection components; wire into /tunes/[id] and PsalmNotationPlayer; Playwright UAT (5 tests) + human visual verify checkpoint
+**UI hint**: yes
+
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
 **Depends on**: Phase 4.5
@@ -267,7 +286,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 5 → 6
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -280,5 +299,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 →
 | 4.7. Psalm Listing Overhaul | 3/3 | Complete | 2026-05-09 |
 | 4.8. Explore & Tunes Overhaul | 3/3 | Complete | 2026-05-10 |
 | 4.9. Tune Notation Conversion | 0/3 | Not started | - |
+| 4.9.1. Interactive abcjs Player | 0/1 | Not started | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
