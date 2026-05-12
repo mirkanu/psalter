@@ -1,0 +1,33 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-05-12T19:28:02.891Z",
+  "phase": "04.9",
+  "phase_name": "tune-notation-conversion",
+  "phase_dir": ".planning/phases/04.9-tune-notation-conversion",
+  "plan": 3,
+  "task": 2,
+  "total_tasks": 2,
+  "status": "paused",
+  "completed_tasks": [
+    {"id": 1, "name": "Playwright UAT — 12/12 tune notation tests", "status": "done", "commit": "f35fb32"}
+  ],
+  "remaining_tasks": [
+    {"id": 2, "name": "Human visual verify — 5 tune pages at psalter.gsdlabs.dev", "status": "checkpoint_human_verify"}
+  ],
+  "blockers": [],
+  "human_actions_pending": [
+    {
+      "action": "Visually verify notation renders correctly on tunes 138 (Dundee), 49 (French), 29 (Old 100th), 1 (Lancaster), 65 (Trentham)",
+      "context": "Phase 4.9 Plan 03 Task 2 is a human checkpoint — automated Playwright passed, visual check required",
+      "blocking": true
+    }
+  ],
+  "decisions": [
+    {"decision": "Old 124th solfège files swapped (0↔1) so page order is correct for OCR", "rationale": "solfege-0 was continuation page, solfege-1 was first page — reversed caused Claude to skip content", "phase": "04.9"},
+    {"decision": "parseVoiceLine strips leading comma from i>0 dot-split tokens", "rationale": "m.,r splits to ['m',',r']; leading comma caused octaveShift=-1 (A3/E4 instead of A4/E5)", "phase": "04.9"},
+    {"decision": "TRANSCRIPTION_PROMPT multi-page instruction strengthened", "rationale": "Explicit: complete Image 1 top-to-bottom before Image 2", "phase": "04.9"}
+  ],
+  "uncommitted_files": [],
+  "next_action": "User confirms visual verify of 5 tune pages, then mark Plan 03 complete. Re-run OCR TEXT on Old 124th and Glasgow to verify fixes end-to-end.",
+  "context_notes": "OCR pipeline (pipeline 1) performing well. Session fixed two targeted bugs: page order (file rename) and dotted-comma octave (parser). Both committed and pushed. Quick task q06."
+}
