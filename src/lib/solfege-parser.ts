@@ -255,7 +255,15 @@ function parseVoiceLine(
 
     for (const slot of slots) {
       // Check for dot subdivision: "d.r" or "—.m" → split into half-beat tokens
-      const subTokens = slot.split('.').map(s => s.trim()).filter(Boolean)
+      const rawSubs = slot.split('.')
+      const subTokens = rawSubs.map((s, i) => {
+        let tok = s.trim()
+        // Strip comma that's a rhythmic separator artifact (e.g. "m.,r" → ["m", ",r"])
+        // The printer formats dotted subdivisions as "m.,r"; after split('.'), the second
+        // token gets a spurious leading comma. Only strip for i > 0 (never the first token).
+        if (i > 0 && tok.startsWith(',')) tok = tok.slice(1).trim()
+        return tok
+      }).filter(Boolean)
       const halfBeat = subTokens.length > 1
       const unitDur = halfBeat ? 1 : 2 // L:1/8: full beat=2, half beat=1
 

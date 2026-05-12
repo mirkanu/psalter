@@ -23,16 +23,15 @@ describe('solfege-parser dotted-comma octave fix', () => {
     expect(notes).toContain('a')
   })
 
-  it('parseSyllable on ",r" after stripping returns octaveShift 0 — fix is in parseVoiceLine subToken stripping', () => {
-    // After the fix, parseVoiceLine strips the leading comma from i>0 subTokens
-    // so parseSyllable never receives ",r". This test verifies the end-to-end
-    // octave is correct for a dotted-rhythm token pair.
+  it('dotted-comma pair m.,r in key C produces lowercase notes (octave 4), not uppercase (octave 3)', () => {
+    // In key C: m = E4 → 'e', r = D4 → 'd'
+    // Before fix: ",r" → octaveShift=-1 → D3 → 'D' (uppercase)
+    // After fix: "r" → octaveShift=0 → D4 → 'd' (lowercase)
     const line = '|m.,r||'
-    const { abc } = solFaToAbc(line, 'G', 'C', 'Test')
-    // In key G, m = E4 (lowercase 'e'), r = D4 (lowercase 'd')
-    // Before fix: ",r" → octaveShift=-1 → D3 uppercase 'D'
-    // After fix: "r" → octaveShift=0 → D4 lowercase 'd'
-    expect(abc).toMatch(/\bd\b|\bd[^']/)  // 'd' appears (D4), not 'D' (D3)
-    expect(abc).not.toMatch(/\bD\b/)       // no uppercase D (D3)
+    const { abc } = solFaToAbc(line, 'C', 'C', 'Test')
+    expect(abc).toContain('e')  // m in C = E4 (lowercase)
+    expect(abc).toContain('d')  // r in C = D4 (lowercase)
+    expect(abc).not.toMatch(/\bD\b/)  // no uppercase D (D3)
+    expect(abc).not.toMatch(/\bE\b/)  // no uppercase E (E3)
   })
 })
