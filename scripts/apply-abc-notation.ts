@@ -1,6 +1,8 @@
 #!/usr/bin/env npx tsx
 /**
- * Apply validated ABC notation strings from solfege-ocr.json to tunes.abc_notation in DB.
+ * Apply validated ABC notation strings from solfege-ocr.json to tunes in DB.
+ *
+ * Writes: abc_notation (soprano), solfege_ocr_text (raw transcription JSON), abc_satb (4-voice)
  *
  * Usage:
  *   npx tsx scripts/apply-abc-notation.ts           # Apply all passing entries
@@ -11,6 +13,7 @@
  *
  * Protection: By default, tunes where abcNotation IS NOT NULL are skipped (protecting
  * the 5 hand-crafted ABCs seeded in Phase 4). Use --overwrite to replace them.
+ * solfege_ocr_text and abc_satb are always safe to overwrite — no hand-crafted values.
  */
 
 import 'dotenv/config'
@@ -18,7 +21,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
-import { eq, isNotNull } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import * as schema from '../src/db/schema'
 import * as abcjsModule from 'abcjs'
 
@@ -46,8 +49,10 @@ interface OutputEntry {
   id: number
   name: string
   slug: string
-  status: 'success' | 'no_image' | 'validation_failure'
+  status: 'success' | 'no_image' | 'validation_failure' | 'transcription_failure'
   abc: string | null
+  solfegeText: string | null
+  abcSatb: string | null
   model: string | null
   warningCount?: number
   pageCount?: number
@@ -82,49 +87,69 @@ async function main() {
 
   // 2. Process each entry
   for (const entry of entries) {
-    // Only process successful OCR entries with non-null ABC
-    if (entry.status !== 'success' || !entry.abc) {
+    // Skip entries with nothing useful to write
+    const hasSopranoAbc = entry.status === 'success' && !!entry.abc
+    const hasSolfegeText = !!entry.solfegeText
+    const hasAbcSatb = !!entry.abcSatb
+
+    if (!hasSopranoAbc && !hasSolfegeText && !hasAbcSatb) {
       skipped++
       continue
     }
 
-    // Re-validate ABC string (defensive — JSON may be from a prior run with different prompt)
-    const validation = validateAbc(entry.abc)
-    if (!validation.valid) {
-      console.warn(`  SKIP (re-validation failed, ${validation.warningCount} warnings): "${entry.name}"`)
-      failed++
-      continue
+    const setObj: Partial<typeof schema.tunes.$inferInsert> = {}
+
+    // soprano abc_notation — re-validate before writing; respect protection unless --overwrite
+    if (hasSopranoAbc) {
+      const validation = validateAbc(entry.abc!)
+      if (!validation.valid) {
+        console.warn(`  SKIP abc_notation (re-validation failed, ${validation.warningCount} warnings): "${entry.name}"`)
+      } else {
+        // Check if tune already has abc_notation in DB (protect hand-crafted values)
+        if (!OVERWRITE) {
+          const [existing] = await db
+            .select({ abcNotation: schema.tunes.abcNotation })
+            .from(schema.tunes)
+            .where(eq(schema.tunes.id, entry.id))
+          if (existing?.abcNotation) {
+            console.log(`  PROTECTED abc_notation (use --overwrite to replace): "${entry.name}"`)
+            protected_++
+          } else {
+            setObj.abcNotation = entry.abc!
+          }
+        } else {
+          setObj.abcNotation = entry.abc!
+        }
+      }
     }
 
-    // Check if tune already has abc_notation in DB (protect hand-crafted values)
-    if (!OVERWRITE) {
-      const [existing] = await db
-        .select({ abcNotation: schema.tunes.abcNotation })
-        .from(schema.tunes)
-        .where(eq(schema.tunes.id, entry.id))
-      if (existing?.abcNotation) {
-        console.log(`  PROTECTED (use --overwrite to replace): "${entry.name}"`)
-        protected_++
-        continue
-      }
+    // solfege_ocr_text and abc_satb — always safe to write (new fields, no hand-crafted values)
+    if (hasSolfegeText) setObj.solfegeOcrText = entry.solfegeText!
+    if (hasAbcSatb) setObj.abcSatb = entry.abcSatb!
+
+    if (Object.keys(setObj).length === 0) {
+      skipped++
+      continue
     }
 
     // Write to DB
     if (!DRY_RUN) {
       const result = await db
         .update(schema.tunes)
-        .set({ abcNotation: entry.abc })
+        .set(setObj)
         .where(eq(schema.tunes.id, entry.id))
         .returning({ id: schema.tunes.id })
       if (result.length > 0) {
-        console.log(`  + Updated: "${entry.name}" (model: ${entry.model})`)
+        const fields = Object.keys(setObj).join(', ')
+        console.log(`  + Updated: "${entry.name}" [${fields}]`)
         updated++
       } else {
         console.warn(`  ! No row updated for "${entry.name}" — id ${entry.id} not found in DB`)
         failed++
       }
     } else {
-      console.log(`  [DRY] Would update: "${entry.name}"`)
+      const fields = Object.keys(setObj).join(', ')
+      console.log(`  [DRY] Would update: "${entry.name}" [${fields}]`)
       updated++
     }
   }
@@ -132,7 +157,7 @@ async function main() {
   // 3. Summary
   console.log('\n── Summary ──────────────────────────────────────────────────────')
   console.log(`Updated:   ${updated}${DRY_RUN ? ' (dry run — no DB writes)' : ''}`)
-  console.log(`Skipped:   ${skipped}  (no_image or validation_failure status)`)
+  console.log(`Skipped:   ${skipped}  (no_image, transcription_failure, or nothing to write)`)
   console.log(`Protected: ${protected_}  (already had abc_notation; use --overwrite to replace)`)
   console.log(`Failed:    ${failed}  (re-validation failure or DB mismatch)`)
   console.log('────────────────────────────────────────────────────────────────')
@@ -145,12 +170,20 @@ async function main() {
   }
   console.log('PASS')
 
-  // 5. DB count check
+  // 5. DB count check for all three fields
   if (!DRY_RUN) {
     try {
-      const countResult = await pgClient`SELECT COUNT(*) as count FROM tunes WHERE abc_notation IS NOT NULL`
-      const count = countResult[0]?.count ?? '?'
-      console.log(`\nDB: tunes with abc_notation IS NOT NULL: ${count}`)
+      const countResult = await pgClient`
+        SELECT
+          COUNT(*) FILTER (WHERE abc_notation IS NOT NULL)        AS with_abc,
+          COUNT(*) FILTER (WHERE solfege_ocr_text IS NOT NULL)    AS with_ocr_text,
+          COUNT(*) FILTER (WHERE abc_satb IS NOT NULL)            AS with_satb
+        FROM tunes`
+      const row = countResult[0]
+      console.log(`\nDB tunes counts:`)
+      console.log(`  with abc_notation:    ${row?.with_abc ?? '?'}`)
+      console.log(`  with solfege_ocr_text: ${row?.with_ocr_text ?? '?'}`)
+      console.log(`  with abc_satb:         ${row?.with_satb ?? '?'}`)
     } catch (e) {
       console.warn('Could not query DB count:', e)
     }
