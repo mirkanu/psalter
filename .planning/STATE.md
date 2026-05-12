@@ -130,6 +130,7 @@ None yet.
 | q04 | UI fixes batch 5: T4 sticky score fix (scroll listener), tunes sticky search bar, psalm 5-book sections, Ps 119 sub-section, mobile vertical book tabs, "versifications" text | 2026-05-11 | 75acead | [20260511-ui-fixes-batch5](./quick/20260511-ui-fixes-batch5/) |
 | q05 | UI fixes batch 6: T4 fixed-position score (IntersectionObserver+rootMargin+ResizeObserver spacer), Ps119 vertical left bar, book tabs vertical text, scroll offset fix, pr-10 for tab overlap | 2026-05-11 | 3eed8f5 | [20260511-ui-fixes-batch6](./quick/20260511-ui-fixes-batch6/) |
 | q06 | Fix OCR pipeline bugs: Old 124th page order swap + Glasgow dotted-comma octave parser fix | 2026-05-12 | 7c03c35 | [260512-qmy-fix-ocr-pipeline-bugs-old-124th-page-order-swap-plus-glasgow](./quick/260512-qmy-fix-ocr-pipeline-bugs-old-124th-page-order-swap-plus-glasgow/) |
+| 260512-ssp | Phase 4.9 OCR pipeline completion — add solfege_ocr_text + abc_satb columns; 75/144 tunes populated (partial — PSALTER_ANTHROPIC_API_KEY exhausted) | 2026-05-12 | 661b65b | [260512-ssp-phase-4-9-ocr-pipeline-completion](./quick/260512-ssp-phase-4-9-ocr-pipeline-completion/) |
 
 ### Blockers/Concerns
 
