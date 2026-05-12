@@ -137,18 +137,26 @@ function toSoundCloudEmbed(url: string | null): string | null {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function TuneImage({ name, type }: { name: string; type: 'staff' | 'solfege' }) {
+function TuneImages({ name, type }: { name: string; type: 'staff' | 'solfege' }) {
   const slug = slugify(name)
-  const src = `/tunes/${slug}-${type}-0.jpg`
-  const [failed, setFailed] = useState(false)
-  if (failed) {
+  const [failedPages, setFailedPages] = useState<Set<number>>(new Set())
+  const markFailed = (page: number) => setFailedPages(prev => { const n = new Set(prev); n.add(page); return n })
+  if (failedPages.has(0)) {
     return (
       <div className="border rounded p-6 text-center text-muted-foreground text-sm">
         No {type} image<br /><span className="text-xs opacity-50">{slug}</span>
       </div>
     )
   }
-  return <img key={src} src={src} alt={name} onError={() => setFailed(true)} className="w-full border rounded bg-white" />
+  return (
+    <div className="flex flex-col gap-2">
+      {[0, 1, 2].map(page => {
+        if (page > 0 && failedPages.has(page - 1)) return null
+        if (failedPages.has(page)) return null
+        return <img key={page} src={`/tunes/${slug}-${type}-${page}.jpg`} alt={`${name} p${page}`} onError={() => markFailed(page)} className="w-full border rounded bg-white" />
+      })}
+    </div>
+  )
 }
 
 function MediaPanel({ tune }: { tune: TuneRow }) {
@@ -567,7 +575,7 @@ function OcrTextPanel({
 
 // ── Tune feedback panel ───────────────────────────────────────────────────────
 
-function TuneFeedbackPanel({ tuneId }: { tuneId: number }) {
+function TuneFeedbackPanel({ tuneId, onSaved }: { tuneId: number; onSaved?: (selectedVersion: string) => void }) {
   const [selectedVersion, setSelectedVersion] = useState<string>('none')
   const [comment, setComment] = useState('')
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
@@ -602,6 +610,7 @@ function TuneFeedbackPanel({ tuneId }: { tuneId: number }) {
       if (!res.ok) throw new Error('Failed')
       setSaveState('saved')
       setSavedAt(new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))
+      onSaved?.(selectedVersion)
       setTimeout(() => setSaveState('idle'), 2000)
     } catch {
       setSaveState('error')
@@ -697,17 +706,28 @@ const MODE_FILTER_OPTIONS: { mode: OcrMode; label: string }[] = [
   { mode: 'audiveris', label: 'Audiveris' },
 ]
 
+type FeedbackFilter = 'no-feedback' | 'orange' | 'green'
+
 export function NotationCompareClient({ tunes }: { tunes: TuneRow[] }) {
   const [idx, setIdx] = useState(0)
   const [filter, setFilter] = useState('')
   const [hymnaryOnly, setHymnaryOnly] = useState(false)
   const [modeFilter, setModeFilter] = useState<Set<OcrMode>>(new Set())
+  const [feedbackFilter, setFeedbackFilter] = useState<Set<FeedbackFilter>>(new Set())
+  const [feedbackFilterOpen, setFeedbackFilterOpen] = useState(false)
   const [cachedByMode, setCachedByMode] = useState<Map<number, Set<OcrMode>>>(new Map())
+  const [feedbackByTune, setFeedbackByTune] = useState<Map<number, string>>(new Map())
   const [visible, setVisible] = useState<VisiblePanels>({ ...DEFAULT_PANELS })
 
   useEffect(() => {
     setCachedByMode(scanCachedResults())
     setVisible(loadVisibility())
+    fetch('/api/dev/tune-feedback/all')
+      .then(r => r.json())
+      .then((rows: { tuneId: number; selectedVersion: string }[]) => {
+        setFeedbackByTune(new Map(rows.map(r => [r.tuneId, r.selectedVersion])))
+      })
+      .catch(() => {})
   }, [])
 
   const handleVisibilityChange = useCallback((v: VisiblePanels) => {
@@ -723,6 +743,15 @@ export function NotationCompareClient({ tunes }: { tunes: TuneRow[] }) {
       return next
     })
   }, [])
+
+  const handleFeedbackSaved = useCallback((tuneId: number, selectedVersion: string) => {
+    setFeedbackByTune(prev => new Map(prev).set(tuneId, selectedVersion))
+  }, [])
+
+  const toggleFeedbackFilter = (f: FeedbackFilter) => {
+    setFeedbackFilter(prev => { const n = new Set(prev); n.has(f) ? n.delete(f) : n.add(f); return n })
+    setIdx(0)
+  }
 
   const toggleModeFilter = (mode: OcrMode) => {
     setModeFilter(prev => {
@@ -752,8 +781,17 @@ export function NotationCompareClient({ tunes }: { tunes: TuneRow[] }) {
         return [...modeFilter].some(m => cached.has(m))
       })
     }
+    if (feedbackFilter.size > 0) {
+      result = result.filter(t => {
+        const v = feedbackByTune.get(t.id)
+        if (feedbackFilter.has('no-feedback') && v === undefined) return true
+        if (feedbackFilter.has('orange') && v === 'none') return true
+        if (feedbackFilter.has('green') && v !== undefined && v !== 'none') return true
+        return false
+      })
+    }
     return result
-  }, [tunes, filter, hymnaryOnly, modeFilter, cachedByMode])
+  }, [tunes, filter, hymnaryOnly, modeFilter, cachedByMode, feedbackFilter, feedbackByTune])
 
   const tune = filtered[idx] ?? null
 
@@ -797,6 +835,33 @@ export function NotationCompareClient({ tunes }: { tunes: TuneRow[] }) {
             </button>
           )}
         </div>
+
+        {/* Feedback filter */}
+        <div className="relative">
+          <button onClick={() => setFeedbackFilterOpen(o => !o)}
+            className={`px-2 py-0.5 rounded text-xs border transition-colors ${feedbackFilter.size > 0 ? 'bg-foreground text-background border-foreground' : 'hover:bg-muted'}`}>
+            Feedback ▾
+          </button>
+          {feedbackFilterOpen && (
+            <div className="absolute left-0 top-full mt-1 z-50 bg-background border rounded shadow-lg p-3 flex flex-col gap-1.5 min-w-44">
+              {([
+                { key: 'no-feedback', label: 'No feedback yet', dot: null },
+                { key: 'orange', label: 'None — no good version', dot: 'bg-orange-500' },
+                { key: 'green', label: 'Version selected', dot: 'bg-green-500' },
+              ] as { key: FeedbackFilter; label: string; dot: string | null }[]).map(({ key, label, dot }) => (
+                <label key={key} className="flex items-center gap-2 text-sm cursor-pointer hover:text-foreground">
+                  <input type="checkbox" checked={feedbackFilter.has(key)} onChange={() => toggleFeedbackFilter(key)} />
+                  {dot && <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />}
+                  {label}
+                </label>
+              ))}
+              {feedbackFilter.size > 0 && (
+                <button onClick={() => { setFeedbackFilter(new Set()); setIdx(0) }}
+                  className="text-xs text-muted-foreground hover:text-foreground underline text-left mt-1">clear</button>
+              )}
+            </div>
+          )}
+        </div>
         {totalCached > 0 && modeFilter.size === 0 && (
           <span className="text-xs text-muted-foreground">{totalCached} tune{totalCached !== 1 ? 's' : ''} with results</span>
         )}
@@ -809,14 +874,17 @@ export function NotationCompareClient({ tunes }: { tunes: TuneRow[] }) {
         {/* Tune list */}
         <div className="w-52 shrink-0 border rounded overflow-y-auto max-h-[80vh] text-sm">
           {filtered.map((t, i) => {
-            const modes = cachedByMode.get(t.id)
+            const fbVersion = feedbackByTune.get(t.id)
+            const dotColor = fbVersion === undefined ? null : fbVersion === 'none' ? 'bg-orange-500' : 'bg-green-500'
+            const dotTitle = fbVersion === undefined ? '' : fbVersion === 'none' ? 'No good version yet' : `Best: ${fbVersion}`
             return (
               <button key={t.id} onClick={() => setIdx(i)}
                 className={`w-full text-left px-2 py-1 border-b last:border-0 hover:bg-muted transition-colors ${i === idx ? 'bg-muted font-medium' : ''}`}>
                 <div className="flex items-center gap-1 min-w-0">
-                  {modes && modes.size > 0 && (
-                    <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-green-500" title={[...modes].join(', ')} />
-                  )}
+                  {dotColor
+                    ? <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${dotColor}`} title={dotTitle} />
+                    : <span className="shrink-0 w-1.5 h-1.5" />
+                  }
                   <span className="text-muted-foreground text-xs shrink-0">{t.meter ?? '—'}</span>
                   <span className="truncate">{t.name}</span>
                 </div>
@@ -839,19 +907,23 @@ export function NotationCompareClient({ tunes }: { tunes: TuneRow[] }) {
               </div>
             </div>
 
+            {/* Feedback — top */}
+            <TuneFeedbackPanel key={`${tune.id}-feedback`} tuneId={tune.id}
+              onSaved={v => handleFeedbackSaved(tune.id, v)} />
+
             {/* Source images */}
             {(visible.staffImage || visible.solfegeImage) && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 mt-4">
                 {visible.staffImage && (
                   <div>
                     <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">Staff score</div>
-                    <TuneImage key={`${tune.id}-staff`} name={tune.name} type="staff" />
+                    <TuneImages key={`${tune.id}-staff`} name={tune.name} type="staff" />
                   </div>
                 )}
                 {visible.solfegeImage && (
                   <div>
                     <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">Solfège</div>
-                    <TuneImage key={`${tune.id}-solfege`} name={tune.name} type="solfege" />
+                    <TuneImages key={`${tune.id}-solfege`} name={tune.name} type="solfege" />
                   </div>
                 )}
               </div>
@@ -911,8 +983,6 @@ export function NotationCompareClient({ tunes }: { tunes: TuneRow[] }) {
                 onResultSaved={handleResultSaved} />
             )}
 
-            {/* Feedback */}
-            <TuneFeedbackPanel key={`${tune.id}-feedback`} tuneId={tune.id} />
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
