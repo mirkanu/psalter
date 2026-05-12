@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in-progress
-stopped_at: Phase 4.9 Plan 03 Task 1 complete — Playwright UAT at checkpoint:human-verify
-last_updated: "2026-05-11T21:15:00.000Z"
+status: verifying
+stopped_at: context exhaustion at 92% (2026-05-12)
+last_updated: "2026-05-12T18:12:32.115Z"
 last_activity: 2026-05-11
 progress:
-  total_phases: 7
-  completed_phases: 6
-  total_plans: 26
-  completed_plans: 25
-  percent: 91
+  total_phases: 6
+  completed_phases: 4
+  total_plans: 20
+  completed_plans: 20
+  percent: 100
 ---
 
 # Project State
@@ -129,6 +129,7 @@ None yet.
 | q03 | UI fixes batch 4: T4 gap+progressive sticky, T5 Popover meter, T6 GlobalSearch→Dialog, T7 lyrics snippet, sticky list headers | 2026-05-11 | cb9b448 | [20260511-ui-fixes-batch4](./quick/20260511-ui-fixes-batch4/) |
 | q04 | UI fixes batch 5: T4 sticky score fix (scroll listener), tunes sticky search bar, psalm 5-book sections, Ps 119 sub-section, mobile vertical book tabs, "versifications" text | 2026-05-11 | 75acead | [20260511-ui-fixes-batch5](./quick/20260511-ui-fixes-batch5/) |
 | q05 | UI fixes batch 6: T4 fixed-position score (IntersectionObserver+rootMargin+ResizeObserver spacer), Ps119 vertical left bar, book tabs vertical text, scroll offset fix, pr-10 for tab overlap | 2026-05-11 | 3eed8f5 | [20260511-ui-fixes-batch6](./quick/20260511-ui-fixes-batch6/) |
+| q06 | Fix OCR pipeline bugs: Old 124th page order swap + Glasgow dotted-comma octave parser fix | 2026-05-12 | 7c03c35 | [260512-qmy-fix-ocr-pipeline-bugs-old-124th-page-order-swap-plus-glasgow](./quick/260512-qmy-fix-ocr-pipeline-bugs-old-124th-page-order-swap-plus-glasgow/) |
 
 ### Blockers/Concerns
 
@@ -147,6 +148,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-11T00:00:00.000Z
-Stopped at: Quick task q02 complete — UI fixes batch 3 (T2,T4-T8): tune format, mobile sticky score, meter tooltip, search overlay centering, lyrics search, search bug fixes
+Last session: 2026-05-12T18:12:32.102Z
+Stopped at: context exhaustion at 92% (2026-05-12)
 Resume file: None
