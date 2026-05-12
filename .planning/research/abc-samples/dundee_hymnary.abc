@@ -1,0 +1,4 @@
+  File "/tmp/xml2abc.py", line 1
+    <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+    ^
+SyntaxError: invalid syntax
