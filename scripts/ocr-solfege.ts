@@ -6,7 +6,7 @@
  *   npx tsx scripts/ocr-solfege.ts             # Process all tunes
  *   npx tsx scripts/ocr-solfege.ts --limit=5   # Process first 5 (testing)
  *
- * Resume: Re-run after interruption — already-processed tunes (status=success) are skipped.
+ * Resume: Re-run after interruption — tunes with status=success AND solfegeText AND abcSatb are skipped.
  *
  * Acceptance bar (D-09): 95% of tunes WITH solfège images on disk (≥137 of 144).
  * 28 tunes have no solfège images — logged as status=no_image, not counted in failure rate.
@@ -16,20 +16,18 @@
 import 'dotenv/config'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import Anthropic from '@anthropic-ai/sdk'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import * as schema from '../src/db/schema'
 import * as abcjsModule from 'abcjs'
-import sharp from 'sharp'
+import { transcribeOnly, type TranscriptionResult } from '../src/lib/ocr-solfege-v2'
+import { solFaToAbc, solFaToAbcMultiVoice } from '../src/lib/solfege-parser'
 import { slugifyTuneName } from './download-tunes'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const TUNES_DIR = path.join(process.cwd(), 'public/tunes')
 const OUTPUT_PATH = path.join(process.cwd(), 'scripts/output/solfege-ocr.json')
-const HAIKU = 'claude-haiku-4-5'
-const SONNET = 'claude-sonnet-4-6'
 const DELAY_MS = 1200 // ~50 RPM Tier 1 safe
 
 // ─── Environment guards ───────────────────────────────────────────────────────
@@ -39,7 +37,6 @@ if (!process.env.PSALTER_ANTHROPIC_API_KEY) throw new Error('PSALTER_ANTHROPIC_A
 
 // ─── Client init ──────────────────────────────────────────────────────────────
 
-const client = new Anthropic({ apiKey: process.env.PSALTER_ANTHROPIC_API_KEY })
 const pgClient = postgres(process.env.DATABASE_URL!)
 const db = drizzle({ client: pgClient, schema })
 const abcjs = (abcjsModule as any).default ?? abcjsModule
@@ -50,46 +47,16 @@ interface OutputEntry {
   id: number
   name: string
   slug: string
-  status: 'success' | 'no_image' | 'validation_failure'
-  abc: string | null
-  model: typeof HAIKU | typeof SONNET | null
+  status: 'success' | 'no_image' | 'validation_failure' | 'transcription_failure'
+  // legacy field (kept for compat with apply-abc-notation.ts existing reads):
+  abc: string | null              // soprano-only ABC (from solFaToAbc)
+  // new fields:
+  solfegeText: string | null      // JSON.stringify(TranscriptionResult) — raw transcribed voices
+  abcSatb: string | null          // 4-voice ABC from solFaToAbcMultiVoice
+  model: 'claude-sonnet-4-6' | null
   warningCount?: number
   pageCount?: number
 }
-
-// ─── Production prompt ────────────────────────────────────────────────────────
-
-const PROMPT = `This image shows a page from a Scottish Psalter with tonic sol-fa (Curwen notation) arranged for SATB (4-part harmony). If multiple pages are provided, identify the first page from the page number visible on each image or musical continuity, then read pages in order.
-
-Extract ONLY the soprano (top) voice line and convert it to ABC notation.
-
-Tonic sol-fa conventions:
-- d=doh, r=ray, m=me, f=fah, s=soh, l=lah, t=te
-- Apostrophe after note = upper octave (d' = high doh); subscript comma = lower octave (,l = low lah)
-- Colons separate beats: "d :m :s :d'" = 4 crotchets in C time
-- Dash (-) after a beat = hold for that beat: "d :- :m :-" = d for 2 beats, m for 2 beats
-- Long dash (—) = hold entire beat group; "d :—" in a half-bar = 2-beat hold
-- In C time (M:C), a full bar has 4 beats. "d :—" in a 2-beat group = hold 2 beats = d2 in ABC (with L:1/4)
-- Chromatics: se = sharpened soh; fe = sharpened fah; te = flattened te; de = sharpened doh; etc.
-- | = barline; :|| or |: = repeat bar; double bar = end of section
-
-ABC notation rules:
-- Use ^ for sharps (^F not F#, ^C not C#, ^G not G#). NEVER use #.
-- Use _ for flats (_B not Bb, _E not Eb). NEVER use b suffix.
-- Note lengths with L:1/4: crotchet = 1, minim = 2, semibreve = 4, quaver = /2
-- In C time (M:C), each bar MUST total exactly 4 quarter-note beats
-- Write repeats as |: music :| using ABC repeat syntax
-
-Output a complete ABC string with these headers exactly:
-X:1
-T:[tune name from header]
-M:[meter: C for common time, 3/4 for triple, 6/8 for compound, etc.]
-L:1/4
-Q:1/4=76
-K:[key from DOH: DOH=C → K:C, DOH=G → K:G, DOH=F → K:F, DOH=D → K:D, DOH=B♭ → K:Bb, DOH=E♭ → K:Eb, etc.]
-[note sequence with barlines]
-
-Respond with ONLY the ABC string, no other text, no explanation, no markdown code fences.`
 
 // ─── Helper functions ─────────────────────────────────────────────────────────
 
@@ -107,13 +74,6 @@ function findSolfegePages(slug: string): string[] {
 
 /**
  * Post-process LLM ABC output to fix common errors before validation.
- *
- * Fixes applied (in order):
- * 1. Extract first X:1 block only — LLM sometimes outputs multiple X:1 attempts
- * 2. Strip markdown code fences if present
- * 3. Fix # → ^ sharp notation (RESEARCH.md Pitfall 1)
- * 4. Remove `:- :-` tonic sol-fa beat-hold remnants from ABC music lines
- *    (these appear as ":-" or ": -" in music lines, not in header lines)
  */
 function postProcessAbc(abcStr: string): string {
   let s = abcStr.trim()
@@ -128,30 +88,19 @@ function postProcessAbc(abcStr: string): string {
   }
 
   // 3. Fix # → ^ sharp notation in music lines (not in header lines like K:F#)
-  // Match note letter (possibly with octave marks) followed by #
   s = s.replace(/([A-Ga-g])([',]*)#(\d*)/g, (_m, note, octave, duration) => {
     return `^${note}${octave}${duration}`
   })
 
   // 4. Remove tonic sol-fa beat markers (:-) that leaked into ABC music lines
-  // These appear as ":-" patterns. In valid ABC, ":-" is not valid syntax.
-  // Replace " :-" with nothing in music content (lines not starting with a header letter)
   const lines = s.split('\n')
   const fixed = lines.map(line => {
-    // Header lines (single letter + colon at start) are left unchanged
     if (/^[A-Za-z]:/.test(line)) return line
-    // In music lines: remove ":- " and " :-" beat-hold separators
     return line.replace(/ ?:- ?/g, ' ').replace(/ ?: ?/g, ' ').trim()
   })
   s = fixed.join('\n')
 
   // 5. Remove isolated solfège note letters that leaked into ABC music lines.
-  //    Valid ABC note letters are only a-g (A-G). The letters h-z (except z=rest)
-  //    and letters r, l, s, m, t are tonic sol-fa note names invalid in ABC.
-  //    We target these specific solfège letters when they appear as standalone tokens
-  //    (surrounded by spaces/barlines/start/end): r, l, s, m, t (and their ' octave variants)
-  //    Note: 'l' matches lowercase L (solfège "lah"), not a valid ABC note.
-  //    We do NOT remove 'f' since that is a valid ABC note (F in middle octave).
   const solfegePattern = /(?<![A-Ga-gz^_])([rlsmt][',]?\d*)(?=[^A-Ga-z']|\s|$|\|)/g
   s = s.split('\n').map(line => {
     if (/^[A-Za-z]:/.test(line)) return line
@@ -160,9 +109,6 @@ function postProcessAbc(abcStr: string): string {
 
   return s.trim()
 }
-
-// Keep fixSharpNotation as alias for backward compat (used in tryGetAbc)
-const fixSharpNotation = postProcessAbc
 
 function validateAbc(abcStr: string): { valid: boolean; warningCount: number } {
   const result = abcjs.parseOnly(abcStr)
@@ -174,69 +120,66 @@ function validateAbc(abcStr: string): { valid: boolean; warningCount: number } {
   return { valid: hasNotes && warnings.length === 0, warningCount: warnings.length }
 }
 
-// Anthropic max: 5MB base64 = ~3.75MB raw. Resize+compress images that exceed this.
-const MAX_RAW_BYTES = 3_750_000
-
-async function prepareImageBase64(filePath: string): Promise<string> {
-  const rawBytes = fs.statSync(filePath).size
-  if (rawBytes <= MAX_RAW_BYTES) {
-    return fs.readFileSync(filePath).toString('base64')
-  }
-  // Scale down: target 90% of limit to leave headroom, JPEG quality 85
-  const scaleFactor = Math.sqrt(MAX_RAW_BYTES * 0.9 / rawBytes)
-  const metadata = await sharp(filePath).metadata()
-  const targetWidth = Math.floor((metadata.width ?? 1200) * scaleFactor)
-  const resized = await sharp(filePath)
-    .resize(targetWidth)
-    .jpeg({ quality: 85 })
-    .toBuffer()
-  console.log(`  resized ${path.basename(filePath)}: ${(rawBytes / 1024 / 1024).toFixed(1)}MB → ${(resized.length / 1024 / 1024).toFixed(1)}MB`)
-  return resized.toString('base64')
-}
-
-async function callVision(imagePaths: string[], model: string): Promise<string> {
-  const imageBlocks = await Promise.all(imagePaths.map(async p => ({
-    type: 'image' as const,
-    source: {
-      type: 'base64' as const,
-      media_type: 'image/jpeg' as const,
-      data: await prepareImageBase64(p),
-    },
-  })))
-  const response = await client.messages.create({
-    model,
-    max_tokens: 2000,
-    messages: [{ role: 'user', content: [...imageBlocks, { type: 'text', text: PROMPT }] }],
-  })
-  return (response.content[0] as { type: 'text'; text: string }).text.trim()
-}
-
-async function tryGetAbc(
+async function tryProcessTune(
   pages: string[],
   tuneName: string,
-): Promise<Pick<OutputEntry, 'status' | 'abc' | 'model' | 'warningCount' | 'pageCount'>> {
+): Promise<Pick<OutputEntry, 'status' | 'abc' | 'solfegeText' | 'abcSatb' | 'model' | 'warningCount' | 'pageCount'>> {
   const pageCount = pages.length
 
-  // Try haiku first
-  let abcStr = await callVision(pages, HAIKU)
-  // Apply post-processing: fix # → ^ sharp notation (common LLM error)
-  abcStr = fixSharpNotation(abcStr)
-  let validation = validateAbc(abcStr)
-  if (validation.valid) {
-    return { status: 'success', abc: abcStr, model: HAIKU, warningCount: 0, pageCount }
+  // Stage 1: transcribe via Claude vision
+  let transcription: TranscriptionResult & { rawResponse: string }
+  try {
+    transcription = await transcribeOnly(tuneName, pages)
+  } catch (err) {
+    console.warn(`  transcription failed for "${tuneName}": ${err instanceof Error ? err.message : String(err)}`)
+    return { status: 'transcription_failure', abc: null, solfegeText: null, abcSatb: null, model: 'claude-sonnet-4-6', pageCount }
   }
 
-  console.log(`  haiku failed (${validation.warningCount} warnings) — escalating to sonnet for "${tuneName}"`)
-  // Escalate to sonnet
-  abcStr = await callVision(pages, SONNET)
-  abcStr = fixSharpNotation(abcStr)
-  validation = validateAbc(abcStr)
-  if (validation.valid) {
-    return { status: 'success', abc: abcStr, model: SONNET, warningCount: 0, pageCount }
+  const { doh, time, soprano, alto, tenor, bass, lah, mode } = transcription
+  const solfegeText = JSON.stringify({ doh, time, soprano, alto, tenor, bass, lah, mode })
+
+  // Stage 2a: soprano-only ABC
+  let sopranoAbc: string | null = null
+  let sopranoStatus: 'success' | 'validation_failure' = 'success'
+  let warningCount = 0
+  try {
+    const { abc: rawSoprano } = solFaToAbc(soprano, doh, time, tuneName, lah, mode)
+    const processed = postProcessAbc(rawSoprano)
+    const validation = validateAbc(processed)
+    warningCount = validation.warningCount
+    if (validation.valid) {
+      sopranoAbc = processed
+    } else {
+      sopranoStatus = 'validation_failure'
+      sopranoAbc = processed // keep it anyway — callers can decide
+      console.warn(`  soprano ABC validation failed (${validation.warningCount} warnings): "${tuneName}"`)
+    }
+  } catch (err) {
+    sopranoStatus = 'validation_failure'
+    console.warn(`  soprano ABC parse error for "${tuneName}": ${err instanceof Error ? err.message : String(err)}`)
   }
 
-  console.warn(`  sonnet also failed (${validation.warningCount} warnings) — tune will remain NULL`)
-  return { status: 'validation_failure', abc: abcStr, model: SONNET, warningCount: validation.warningCount, pageCount }
+  // Stage 2b: 4-voice SATB ABC (best-effort — never blocks success)
+  let abcSatb: string | null = null
+  try {
+    const multiResult = solFaToAbcMultiVoice({ soprano, alto, tenor, bass }, doh, time, tuneName, lah, mode)
+    abcSatb = multiResult.abc
+    if (multiResult.warnings.length > 0) {
+      console.log(`  SATB warnings for "${tuneName}": ${multiResult.warnings.slice(0, 2).join('; ')}`)
+    }
+  } catch (err) {
+    console.warn(`  SATB ABC parse error for "${tuneName}": ${err instanceof Error ? err.message : String(err)}`)
+  }
+
+  return {
+    status: sopranoStatus,
+    abc: sopranoAbc,
+    solfegeText,
+    abcSatb,
+    model: 'claude-sonnet-4-6',
+    warningCount,
+    pageCount,
+  }
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -266,9 +209,10 @@ async function main() {
   for (const tune of allTunes) {
     if (processed >= LIMIT) break
 
-    // Resume: skip already-successful entries
-    if (existing[tune.id]?.status === 'success') {
-      results.push(existing[tune.id])
+    // Resume: a tune is done only when it has all three new artefacts
+    const ex = existing[tune.id]
+    if (ex?.status === 'success' && ex.solfegeText && ex.abcSatb) {
+      results.push(ex)
       continue
     }
 
@@ -277,10 +221,10 @@ async function main() {
 
     if (pages.length === 0) {
       console.log(`  MISSING: "${tune.name}" (slug: ${slug}) — no solfège file found`)
-      results.push({ id: tune.id, name: tune.name, slug, status: 'no_image', abc: null, model: null })
+      results.push({ id: tune.id, name: tune.name, slug, status: 'no_image', abc: null, solfegeText: null, abcSatb: null, model: null })
     } else {
       console.log(`  [${tune.id}] "${tune.name}" — ${pages.length} page(s)`)
-      const result = await tryGetAbc(pages, tune.name)
+      const result = await tryProcessTune(pages, tune.name)
       results.push({ id: tune.id, name: tune.name, slug, ...result })
       processed++
 
@@ -296,17 +240,18 @@ async function main() {
   // Summary table
   const successes = results.filter(r => r.status === 'success')
   const noImage = results.filter(r => r.status === 'no_image')
-  const failures = results.filter(r => r.status === 'validation_failure')
-  const haikuCount = successes.filter(r => r.model === HAIKU).length
-  const sonnetCount = successes.filter(r => r.model === SONNET).length
+  const failures = results.filter(r => r.status === 'validation_failure' || r.status === 'transcription_failure')
+  const withSolfegeText = results.filter(r => r.solfegeText !== null)
+  const withAbcSatb = results.filter(r => r.abcSatb !== null)
 
   console.log('\n── Summary ──────────────────────────────────────────────────────')
   console.log(`Total tunes in DB:      ${allTunes.length}`)
   console.log(`With solfège images:    ${successes.length + failures.length}`)
-  console.log(`Successful (haiku):     ${haikuCount}`)
-  console.log(`Successful (sonnet):    ${sonnetCount}`)
+  console.log(`Successful soprano ABC: ${successes.length}`)
+  console.log(`With solfege OCR text:  ${withSolfegeText.length}`)
+  console.log(`With SATB ABC:          ${withAbcSatb.length}`)
   console.log(`No solfège image:       ${noImage.length}`)
-  console.log(`Validation failures:    ${failures.length}`)
+  console.log(`Failures:               ${failures.length}`)
   console.log('────────────────────────────────────────────────────────────────')
   const withImages = successes.length + failures.length
   const successRate = withImages > 0 ? ((successes.length / withImages) * 100).toFixed(1) : '0'
