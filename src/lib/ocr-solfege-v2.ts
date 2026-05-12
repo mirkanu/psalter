@@ -102,15 +102,33 @@ async function callClaude(imageBuffers: Buffer | Buffer[], prompt: string, maxTo
     type: 'image' as const,
     source: { type: 'base64' as const, media_type: 'image/jpeg' as const, data: buf.toString('base64') },
   }))
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: maxTokens,
-    messages: [{
-      role: 'user',
-      content: [...imageContent, { type: 'text' as const, text: prompt }],
-    }],
-  })
-  return response.content[0].type === 'text' ? response.content[0].text : ''
+
+  const MAX_RETRIES = 4
+  let lastError: unknown
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const response = await client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: maxTokens,
+        messages: [{
+          role: 'user',
+          content: [...imageContent, { type: 'text' as const, text: prompt }],
+        }],
+      })
+      return response.content[0].type === 'text' ? response.content[0].text : ''
+    } catch (err) {
+      lastError = err
+      const isOverloaded = err instanceof Error && (
+        err.message.includes('overloaded_error') ||
+        err.message.includes('529') ||
+        (err as { status?: number }).status === 529
+      )
+      if (!isOverloaded || attempt === MAX_RETRIES) throw err
+      // Exponential backoff: 5s, 10s, 20s, 40s
+      await new Promise(r => setTimeout(r, 5000 * 2 ** attempt))
+    }
+  }
+  throw lastError
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
