@@ -69,7 +69,7 @@ Pickup: ":s" before the first | = one pickup beat (not a full bar).
 ━━━ OTHER ━━━
 Underlined notes: passing notes — transcribe the letters, ignore the underline.
 Amen: a 2-chord section after the final ||. Include it verbatim.
-Multi-page tunes: read all pages in order, left to right.
+Multi-page tunes: images are provided in page order (Image 1 first, Image 2 second). Transcribe Image 1 completely — every line from top to bottom — before moving to Image 2. Never interleave or skip lines.
 
 ━━━ OUTPUT ━━━
 Return ONLY this JSON object (no markdown, no explanation):
