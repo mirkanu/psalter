@@ -5,7 +5,7 @@ import type { Metadata } from "next"
 import { fetchTuneDetail, fetchTuneIds } from "@/db/queries/tunes"
 import { fetchPsalmsByMeter } from "@/db/queries/psalms"
 import { Badge } from "@/components/ui/badge"
-import { AbcNotationSection } from "@/components/AbcNotationSection"
+import { AbcPlayerSection } from "@/components/AbcPlayerSection"
 import { TuneDetailClient } from "@/components/TuneDetailClient"
 import { PsalmsByTuneSection } from "@/components/PsalmsByTuneSection"
 
@@ -136,13 +136,20 @@ export default async function TunePage({ params }: PageProps) {
         </section>
       )}
 
-      {/* Score — ABC notation */}
+      {/* Score — ABC notation with interactive player */}
       {hasAbc && (
         <section>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
             Score
           </h2>
-          <AbcNotationSection abc={tune.abcNotation!} title={tune.name ?? undefined} />
+          <AbcPlayerSection
+            abc={tune.abcNotation!}
+            title={tune.name ?? undefined}
+            tuneName={tune.name ?? `Tune ${tune.id}`}
+            staffJpgUrl={tune.scoreJpgUrl ?? null}
+            solfegeJpgUrl={tune.solfegeJpgUrl ?? null}
+            initialMode="staff"
+          />
         </section>
       )}
 
