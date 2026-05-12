@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic'
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import type { TuneRow } from './page'
-import { solFaToAbc } from '@/lib/solfege-parser'
+import { solFaToAbc, solFaToAbcMultiVoice } from '@/lib/solfege-parser'
 import { HYMNARY_FETCH_IDS } from '@/lib/hymnary-lookup'
 
 const AbcPlayerPanel = dynamic(() => import('./AbcPlayerPanel'), { ssr: false })
@@ -307,9 +307,17 @@ interface OcrTextResult {
   doh: string
   time: string
   soprano: string
+  alto: string
+  tenor: string
+  bass: string
+  lah?: string
+  mode?: string
   rawResponse?: string
   savedAt?: number
 }
+
+const VOICE_LABELS = ['Soprano', 'Alto', 'Tenor', 'Bass'] as const
+type VoiceName = 'soprano' | 'alto' | 'tenor' | 'bass'
 
 function OcrTextPanel({
   tuneId, tuneName, onResultSaved,
@@ -324,21 +332,36 @@ function OcrTextPanel({
   const [error, setError] = useState('')
   const [doh, setDoh] = useState('C')
   const [time, setTime] = useState('C')
-  const [soprano, setSoprano] = useState('')
+  const [lah, setLah] = useState('')
+  const [keyMode, setKeyMode] = useState('')
+  const [voices, setVoices] = useState<Record<VoiceName, string>>({ soprano: '', alto: '', tenor: '', bass: '' })
   const [convertedAbc, setConvertedAbc] = useState<string | null>(null)
   const [warnings, setWarnings] = useState<string[]>([])
+
+  const resetState = () => {
+    setDoh('C'); setTime('C'); setLah(''); setKeyMode('')
+    setVoices({ soprano: '', alto: '', tenor: '', bass: '' })
+    setConvertedAbc(null); setWarnings([]); setError('')
+  }
 
   useEffect(() => {
     const cached = loadCache(tuneId, mode) as (OcrTextResult & { savedAt?: number }) | null
     if (cached) {
       setDoh(cached.doh ?? 'C')
       setTime(cached.time ?? 'C')
-      setSoprano(cached.soprano ?? '')
+      setLah(cached.lah ?? '')
+      setKeyMode(cached.mode ?? '')
+      setVoices({
+        soprano: cached.soprano ?? '',
+        alto:    cached.alto    ?? '',
+        tenor:   cached.tenor   ?? '',
+        bass:    cached.bass    ?? '',
+      })
       setState('done')
       setFromCache(true)
     } else {
       setState('idle')
-      setDoh('C'); setTime('C'); setSoprano('')
+      resetState()
       setFromCache(false)
     }
     setConvertedAbc(null)
@@ -358,7 +381,14 @@ function OcrTextPanel({
       if (!res.ok) throw new Error((data as unknown as { error: string }).error ?? 'Request failed')
       setDoh(data.doh ?? 'C')
       setTime(data.time ?? 'C')
-      setSoprano(data.soprano ?? '')
+      setLah(data.lah ?? '')
+      setKeyMode(data.mode ?? '')
+      setVoices({
+        soprano: data.soprano ?? '',
+        alto:    data.alto    ?? '',
+        tenor:   data.tenor   ?? '',
+        bass:    data.bass    ?? '',
+      })
       saveCache(tuneId, mode, data as unknown as OcrResult)
       setState('done')
       setFromCache(false)
@@ -372,15 +402,12 @@ function OcrTextPanel({
   const handleClear = () => {
     clearCache(tuneId, mode)
     setState('idle')
-    setDoh('C'); setTime('C'); setSoprano('')
+    resetState()
     setFromCache(false)
-    setConvertedAbc(null)
-    setWarnings([])
-    setError('')
   }
 
   const convert = () => {
-    const { abc, warnings: w } = solFaToAbc(soprano, doh, time, tuneName)
+    const { abc, warnings: w } = solFaToAbcMultiVoice(voices, doh, time, tuneName, lah || undefined, keyMode || undefined)
     setConvertedAbc(abc)
     setWarnings(w)
   }
@@ -395,6 +422,8 @@ function OcrTextPanel({
     } catch { return null }
   })()
 
+  const hasAnyVoice = Object.values(voices).some(v => v.length > 0)
+
   return (
     <div className="mt-4 border-t pt-4">
       <div className="flex items-center gap-2 mb-3 flex-wrap">
@@ -404,7 +433,7 @@ function OcrTextPanel({
         )}
         <button onClick={run} disabled={state === 'loading'}
           className="px-3 py-1 rounded border text-sm hover:bg-muted disabled:opacity-50">
-          {state === 'loading' ? 'Running… (~15s)' : fromCache ? 'Re-run OCR' : 'Run OCR text'}
+          {state === 'loading' ? 'Running… (~20s)' : fromCache ? 'Re-run OCR' : 'Run OCR text'}
         </button>
         {fromCache && (
           <button onClick={handleClear} className="text-xs text-muted-foreground hover:text-foreground underline">clear</button>
@@ -415,7 +444,7 @@ function OcrTextPanel({
         <div className="text-sm text-red-600 bg-red-50 rounded p-2 whitespace-pre-wrap">{error}</div>
       )}
 
-      {(state === 'done' || soprano) && (
+      {(state === 'done' || hasAnyVoice) && (
         <div className="flex flex-col gap-2">
           <div className="flex gap-2 items-center flex-wrap">
             <label className="text-xs text-muted-foreground">DOH =</label>
@@ -424,17 +453,27 @@ function OcrTextPanel({
             <label className="text-xs text-muted-foreground">TIME =</label>
             <input value={time} onChange={e => { setTime(e.target.value); setConvertedAbc(null) }}
               className="border rounded px-2 py-0.5 text-sm w-16 bg-background" />
+            {lah && <>
+              <label className="text-xs text-muted-foreground">LAH =</label>
+              <input value={lah} onChange={e => { setLah(e.target.value); setConvertedAbc(null) }}
+                className="border rounded px-2 py-0.5 text-sm w-16 bg-background" />
+            </>}
           </div>
-          <textarea
-            value={soprano}
-            onChange={e => { setSoprano(e.target.value); setConvertedAbc(null) }}
-            rows={4}
-            spellCheck={false}
-            placeholder=":d | d :r | m :f | s :— | — ||"
-            className="w-full border rounded px-2 py-1.5 text-sm font-mono bg-background resize-y"
-          />
+          {(['soprano', 'alto', 'tenor', 'bass'] as VoiceName[]).map((v, i) => (
+            <div key={v}>
+              <div className="text-xs text-muted-foreground mb-0.5">{VOICE_LABELS[i]}</div>
+              <textarea
+                value={voices[v]}
+                onChange={e => { setVoices(prev => ({ ...prev, [v]: e.target.value })); setConvertedAbc(null) }}
+                rows={2}
+                spellCheck={false}
+                placeholder={`:d | d :r | m :— | — ||`}
+                className="w-full border rounded px-2 py-1.5 text-sm font-mono bg-background resize-y"
+              />
+            </div>
+          ))}
           <button onClick={convert} className="self-start px-3 py-1 rounded border text-sm hover:bg-muted">
-            Convert to ABC →
+            Convert SATB → ABC →
           </button>
           {warnings.length > 0 && (
             <div className="text-xs text-amber-600 bg-amber-50 rounded p-2">
