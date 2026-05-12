@@ -258,9 +258,11 @@ function parseVoiceLine(
       const rawSubs = slot.split('.')
       const subTokens = rawSubs.map((s, i) => {
         let tok = s.trim()
-        // Strip comma that's a rhythmic separator artifact (e.g. "m.,r" → ["m", ",r"])
-        // The printer formats dotted subdivisions as "m.,r"; after split('.'), the second
-        // token gets a spurious leading comma. Only strip for i > 0 (never the first token).
+        // "m.,r".split('.') → ["m,", "r"]: trailing comma on first token is a rhythmic
+        // separator artifact, not an octave-down marker. Strip it only when there are
+        // multiple subtokens (i.e. we're in a dotted subdivision).
+        if (i === 0 && rawSubs.length > 1 && tok.endsWith(',')) tok = tok.slice(0, -1).trim()
+        // Some printings put the separator before the second token: ",r" → strip leading comma.
         if (i > 0 && tok.startsWith(',')) tok = tok.slice(1).trim()
         return tok
       }).filter(Boolean)
