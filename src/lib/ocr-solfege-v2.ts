@@ -90,7 +90,8 @@ Remember: subscript ₁ in print → _1 in your output. This is critical for bas
 
 async function prepareImageBuffer(imagePath: string): Promise<Buffer> {
   const rawFile = fs.readFileSync(imagePath)
-  return rawFile.length > 4 * 1024 * 1024
+  // Base64 inflates by ~4/3, so raw threshold = 5MB API limit × 3/4 = 3.75MB → use 3.5MB to be safe
+  return rawFile.length > 3.5 * 1024 * 1024
     ? await sharp(rawFile).resize({ width: 2000, withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer() as Buffer
     : Buffer.from(rawFile)
 }
