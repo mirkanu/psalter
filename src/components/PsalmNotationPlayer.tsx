@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import AbcRenderer from '@/components/AbcRenderer'
+import AbcPlayer from '@/components/AbcPlayer'
 import type { AlternateTune } from '@/db/queries/tunes'
 import { ChangeTuneDialog } from '@/components/ChangeTuneDialog'
 import { Pencil, Play, Pause, X } from 'lucide-react'
@@ -372,8 +372,15 @@ export function PsalmNotationPlayer({
               )}
             </>
           ) : viewMode === 'staff' ? (
-            /* Staff mode: abcjs SVG with current stanza group lyrics */
-            <AbcRenderer abc={abcForRender} title={tuneName} />
+            /* Staff mode: abcjs SVG with interactive player */
+            <AbcPlayer
+              abc={abcForRender}
+              title={tuneName}
+              tuneName={tuneName}
+              staffJpgUrl={scoreJpgUrl}
+              solfegeJpgUrl={solfegeJpgUrl}
+              initialMode="staff"
+            />
           ) : (
             /* Solfège mode: R2 JPG */
             <>
