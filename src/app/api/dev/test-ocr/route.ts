@@ -6,6 +6,7 @@ import { tunes } from '@/db/schema'
 import * as path from 'node:path'
 import * as fs from 'node:fs'
 import { extractTuneV2, extractStaffToAbc, transcribeOnly } from '@/lib/ocr-solfege-v2'
+import { HYMNARY_FETCH_IDS } from '@/lib/hymnary-lookup'
 
 function slugify(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -181,6 +182,49 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ tuneName: tune.name, ...result })
     } catch (err) {
       return NextResponse.json({ error: String(err) }, { status: 500 })
+    }
+  }
+
+  if (mode === 'hymnary') {
+    const fetchId = HYMNARY_FETCH_IDS[tune.name]
+    if (!fetchId) {
+      return NextResponse.json({ error: `No Hymnary entry for "${tune.name}"` }, { status: 404 })
+    }
+    const tmpDir = fs.mkdtempSync('/tmp/hymnary-')
+    try {
+      const xmlPath = path.join(tmpDir, 'score.xml')
+      const abcPath = path.join(tmpDir, 'score.abc')
+      const res = await fetch(`https://hymnary.org/media/fetch/${fetchId}`)
+      if (!res.ok) throw new Error(`Hymnary returned ${res.status} for fetch/${fetchId}`)
+      const buf = Buffer.from(await res.arrayBuffer())
+      // MXL (zip) or plain XML — detect by magic bytes
+      const isMxl = buf[0] === 0x50 && buf[1] === 0x4b
+      let xmlContent: string
+      if (isMxl) {
+        const extractScript = path.join(tmpDir, 'extract.py')
+        fs.writeFileSync(extractScript, [
+          'import zipfile, sys',
+          'with zipfile.ZipFile(sys.argv[1]) as z:',
+          '    xml_files = [n for n in z.namelist() if n.endswith(".xml") and "META" not in n]',
+          '    sys.stdout.buffer.write(z.read(xml_files[0]))',
+        ].join('\n'))
+        const mxlPath = path.join(tmpDir, 'score.mxl')
+        fs.writeFileSync(mxlPath, buf)
+        xmlContent = execSync(`python3 "${extractScript}" "${mxlPath}"`, { stdio: 'pipe', timeout: 10_000 }).toString('utf-8')
+      } else {
+        xmlContent = buf.toString('utf-8')
+      }
+      fs.writeFileSync(xmlPath, xmlContent)
+      const xml2abcScript = path.join(process.cwd(), 'scripts/xml2abc.py')
+      // xml2abc writes to stdout when no -o flag is given
+      const rawAbc = execSync(`python3 "${xml2abcScript}" "${xmlPath}"`, { stdio: 'pipe', timeout: 15_000 }).toString('utf-8')
+      if (!rawAbc.includes('X:')) throw new Error('xml2abc did not produce ABC output')
+      const abc = extractMelodyVoice(rawAbc)
+      return NextResponse.json({ tuneName: tune.name, abc, rawAbc, hymnaryUrl: `https://hymnary.org/media/fetch/${fetchId}` })
+    } catch (err) {
+      return NextResponse.json({ error: String(err) }, { status: 500 })
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true })
     }
   }
 

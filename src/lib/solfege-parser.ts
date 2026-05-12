@@ -84,10 +84,15 @@ export function solFaToAbc(
         if (!parsed) { warnings.push(`Unrecognised token: ${token}`); continue }
 
         if (parsed.hold) {
-          barNotes.push(lastNote.replace(/[\d/]+$/, '') + '2')
-          if (barNotes.length >= 2) {
-            const prev = barNotes[barNotes.length - 2]
-            barNotes[barNotes.length - 2] = prev.endsWith('2') ? prev.slice(0, -1) : prev
+          if (barNotes.length > 0) {
+            // Extend the previous note's duration (quarter → half → whole)
+            const prev = barNotes[barNotes.length - 1]
+            const base = prev.replace(/\d+$/, '')
+            const dur = parseInt(prev.match(/\d+$/)?.[0] ?? '1')
+            barNotes[barNotes.length - 1] = base + String(dur * 2)
+          } else {
+            // Hold carries from previous bar — emit as tied note
+            barNotes.push(lastNote + '2')
           }
         } else {
           const semitone = tonic + (DEGREE[parsed.syllable] ?? 0) + (parsed.octaveShift * 12)

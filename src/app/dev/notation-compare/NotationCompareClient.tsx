@@ -7,17 +7,57 @@ import { solFaToAbc } from '@/lib/solfege-parser'
 
 const AbcPlayerPanel = dynamic(() => import('./AbcPlayerPanel'), { ssr: false })
 
-// ── Cache helpers ─────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-type OcrMode = 'staff' | 'solfege' | 'audiveris' | 'ocr-text'
+type OcrMode = 'staff' | 'solfege' | 'audiveris' | 'ocr-text' | 'hymnary'
 
 interface OcrResult {
   abc: string
   rawAbc?: string
   rawMxml?: string
   rawResponse?: string
+  hymnaryUrl?: string
+  doh?: string
+  time?: string
+  soprano?: string
   savedAt?: number
 }
+
+type PanelKey = 'staffImage' | 'solfegeImage' | 'recording' | 'currentDb' | 'ocrText' | 'staffOcr' | 'solfegeOcr' | 'audiveris' | 'hymnary'
+
+type VisiblePanels = Record<PanelKey, boolean>
+
+const PANEL_LABELS: Record<PanelKey, string> = {
+  staffImage:  'Staff image',
+  solfegeImage: 'Solfège image',
+  recording:   'Recording',
+  currentDb:   'V1 current DB',
+  ocrText:     'OCR text (editable)',
+  staffOcr:    'Staff → ABC',
+  solfegeOcr:  'Sol-fa → ABC (V3)',
+  audiveris:   'Audiveris OMR',
+  hymnary:     'Hymnary MusicXML',
+}
+
+const DEFAULT_PANELS: VisiblePanels = {
+  staffImage: true, solfegeImage: true, recording: true, currentDb: true,
+  ocrText: true, staffOcr: true, solfegeOcr: true, audiveris: true, hymnary: true,
+}
+
+const VISIBILITY_KEY = 'nc:visibility'
+
+function loadVisibility(): VisiblePanels {
+  try {
+    const raw = localStorage.getItem(VISIBILITY_KEY)
+    return raw ? { ...DEFAULT_PANELS, ...JSON.parse(raw) } : { ...DEFAULT_PANELS }
+  } catch { return { ...DEFAULT_PANELS } }
+}
+
+function saveVisibility(v: VisiblePanels) {
+  try { localStorage.setItem(VISIBILITY_KEY, JSON.stringify(v)) } catch { /* ignore */ }
+}
+
+// ── Cache helpers ─────────────────────────────────────────────────────────────
 
 const cacheKey = (tuneId: number, mode: OcrMode) => `nc:${tuneId}:${mode}`
 
@@ -38,18 +78,25 @@ function clearCache(tuneId: number, mode: OcrMode) {
   try { localStorage.removeItem(cacheKey(tuneId, mode)) } catch { /* ignore */ }
 }
 
-function scanCachedTuneIds(): Set<number> {
-  const ids = new Set<number>()
+function scanCachedResults(): Map<number, Set<OcrMode>> {
+  const map = new Map<number, Set<OcrMode>>()
   try {
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i)
-      if (k?.startsWith('nc:')) {
-        const id = parseInt(k.split(':')[1])
-        if (!isNaN(id)) ids.add(id)
+      if (k?.startsWith('nc:') && k !== VISIBILITY_KEY) {
+        const parts = k.split(':')
+        if (parts.length === 3) {
+          const id = parseInt(parts[1])
+          const mode = parts[2] as OcrMode
+          if (!isNaN(id)) {
+            if (!map.has(id)) map.set(id, new Set())
+            map.get(id)!.add(mode)
+          }
+        }
       }
     }
   } catch { /* SSR */ }
-  return ids
+  return map
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -127,14 +174,13 @@ function OcrPanel({
   mode: OcrMode
   label: string
   timeWarning?: string
-  onResultSaved?: (tuneId: number) => void
+  onResultSaved?: (tuneId: number, mode: OcrMode) => void
 }) {
   const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
   const [result, setResult] = useState<OcrResult | null>(null)
   const [fromCache, setFromCache] = useState(false)
   const [error, setError] = useState('')
 
-  // Load from cache whenever tune or mode changes
   useEffect(() => {
     const cached = loadCache(tuneId, mode)
     if (cached) {
@@ -163,7 +209,7 @@ function OcrPanel({
       setResult(data)
       setState('done')
       setFromCache(false)
-      onResultSaved?.(tuneId)
+      onResultSaved?.(tuneId, mode)
     } catch (e) {
       setError(String(e))
       setState('error')
@@ -186,29 +232,16 @@ function OcrPanel({
     <div className="mt-4 border-t pt-4">
       <div className="flex items-center gap-2 mb-3 flex-wrap">
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
-
         {fromCache && savedAt && (
-          <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-            cached {savedAt}
-          </span>
+          <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">cached {savedAt}</span>
         )}
-
-        <button
-          onClick={run}
-          disabled={state === 'loading'}
-          className="px-3 py-1 rounded border text-sm hover:bg-muted disabled:opacity-50"
-        >
-          {state === 'loading'
-            ? `Running… (${timeWarning ?? '…'})`
-            : fromCache ? 'Re-run' : `Run ${label}`}
+        <button onClick={run} disabled={state === 'loading'}
+          className="px-3 py-1 rounded border text-sm hover:bg-muted disabled:opacity-50">
+          {state === 'loading' ? `Running… (${timeWarning ?? '…'})` : fromCache ? 'Re-run' : `Run ${label}`}
         </button>
-
         {fromCache && (
-          <button onClick={handleClear} className="text-xs text-muted-foreground hover:text-foreground underline">
-            clear
-          </button>
+          <button onClick={handleClear} className="text-xs text-muted-foreground hover:text-foreground underline">clear</button>
         )}
-
         {state === 'loading' && (
           <span className="text-xs text-muted-foreground animate-pulse">{timeWarning ?? 'processing…'}</span>
         )}
@@ -222,6 +255,11 @@ function OcrPanel({
         <div>
           <AbcPlayerPanel abc={result.abc} title={tuneName} />
           <div className="mt-2 flex flex-col gap-1">
+            {result.hymnaryUrl && (
+              <div className="text-xs text-muted-foreground">
+                Source: <a href={result.hymnaryUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">{result.hymnaryUrl}</a>
+              </div>
+            )}
             <details>
               <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">ABC (melody)</summary>
               <pre className="mt-1 text-xs bg-muted rounded p-2 overflow-x-auto whitespace-pre-wrap max-h-48">{result.abc}</pre>
@@ -264,7 +302,7 @@ function OcrTextPanel({
 }: {
   tuneId: number
   tuneName: string
-  onResultSaved?: (tuneId: number) => void
+  onResultSaved?: (tuneId: number, mode: OcrMode) => void
 }) {
   const mode: OcrMode = 'ocr-text'
   const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
@@ -310,7 +348,7 @@ function OcrTextPanel({
       saveCache(tuneId, mode, data as unknown as OcrResult)
       setState('done')
       setFromCache(false)
-      onResultSaved?.(tuneId)
+      onResultSaved?.(tuneId, mode)
     } catch (e) {
       setError(String(e))
       setState('error')
@@ -381,8 +419,7 @@ function OcrTextPanel({
             placeholder=":d | d :r | m :f | s :— | — ||"
             className="w-full border rounded px-2 py-1.5 text-sm font-mono bg-background resize-y"
           />
-          <button onClick={convert}
-            className="self-start px-3 py-1 rounded border text-sm hover:bg-muted">
+          <button onClick={convert} className="self-start px-3 py-1 rounded border text-sm hover:bg-muted">
             Convert to ABC →
           </button>
           {warnings.length > 0 && (
@@ -405,32 +442,102 @@ function OcrTextPanel({
   )
 }
 
+// ── Visibility settings dropdown ──────────────────────────────────────────────
+
+function VisibilityMenu({ visible, onChange }: {
+  visible: VisiblePanels
+  onChange: (v: VisiblePanels) => void
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="relative">
+      <button onClick={() => setOpen(o => !o)}
+        className="px-3 py-1 rounded border text-sm hover:bg-muted">
+        Panels ▾
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 z-50 bg-background border rounded shadow-lg p-3 min-w-48 flex flex-col gap-1.5">
+          {(Object.keys(PANEL_LABELS) as PanelKey[]).map(key => (
+            <label key={key} className="flex items-center gap-2 text-sm cursor-pointer hover:text-foreground">
+              <input type="checkbox" checked={visible[key]}
+                onChange={e => onChange({ ...visible, [key]: e.target.checked })}
+                className="rounded" />
+              {PANEL_LABELS[key]}
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
+
+const MODE_FILTER_OPTIONS: { mode: OcrMode; label: string }[] = [
+  { mode: 'hymnary',   label: 'Hymnary' },
+  { mode: 'ocr-text',  label: 'OCR text' },
+  { mode: 'staff',     label: 'Staff OCR' },
+  { mode: 'solfege',   label: 'Sol-fa OCR' },
+  { mode: 'audiveris', label: 'Audiveris' },
+]
 
 export function NotationCompareClient({ tunes }: { tunes: TuneRow[] }) {
   const [idx, setIdx] = useState(0)
   const [filter, setFilter] = useState('')
-  const [cachedIds, setCachedIds] = useState<Set<number>>(new Set())
+  const [modeFilter, setModeFilter] = useState<Set<OcrMode>>(new Set())
+  const [cachedByMode, setCachedByMode] = useState<Map<number, Set<OcrMode>>>(new Map())
+  const [visible, setVisible] = useState<VisiblePanels>({ ...DEFAULT_PANELS })
 
   useEffect(() => {
-    setCachedIds(scanCachedTuneIds())
+    setCachedByMode(scanCachedResults())
+    setVisible(loadVisibility())
   }, [])
 
-  const handleResultSaved = useCallback((tuneId: number) => {
-    setCachedIds(prev => new Set([...prev, tuneId]))
+  const handleVisibilityChange = useCallback((v: VisiblePanels) => {
+    setVisible(v)
+    saveVisibility(v)
   }, [])
 
-  const filtered = useMemo(() =>
-    filter
-      ? tunes.filter(t =>
-          t.name.toLowerCase().includes(filter.toLowerCase()) ||
-          (t.meter ?? '').toLowerCase().includes(filter.toLowerCase())
-        )
-      : tunes,
-    [tunes, filter]
-  )
+  const handleResultSaved = useCallback((tuneId: number, mode: OcrMode) => {
+    setCachedByMode(prev => {
+      const next = new Map(prev)
+      if (!next.has(tuneId)) next.set(tuneId, new Set())
+      next.get(tuneId)!.add(mode)
+      return next
+    })
+  }, [])
+
+  const toggleModeFilter = (mode: OcrMode) => {
+    setModeFilter(prev => {
+      const next = new Set(prev)
+      if (next.has(mode)) next.delete(mode)
+      else next.add(mode)
+      return next
+    })
+    setIdx(0)
+  }
+
+  const filtered = useMemo(() => {
+    let result = tunes
+    if (filter) {
+      result = result.filter(t =>
+        t.name.toLowerCase().includes(filter.toLowerCase()) ||
+        (t.meter ?? '').toLowerCase().includes(filter.toLowerCase())
+      )
+    }
+    if (modeFilter.size > 0) {
+      result = result.filter(t => {
+        const cached = cachedByMode.get(t.id)
+        if (!cached) return false
+        return [...modeFilter].some(m => cached.has(m))
+      })
+    }
+    return result
+  }, [tunes, filter, modeFilter, cachedByMode])
 
   const tune = filtered[idx] ?? null
+
+  const totalCached = cachedByMode.size
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 max-w-7xl mx-auto">
@@ -444,33 +551,52 @@ export function NotationCompareClient({ tunes }: { tunes: TuneRow[] }) {
           onChange={e => { setFilter(e.target.value); setIdx(0) }}
           className="border rounded px-2 py-1 text-sm bg-background w-48"
         />
-        {cachedIds.size > 0 && (
-          <span className="text-xs text-muted-foreground">
-            {cachedIds.size} tune{cachedIds.size !== 1 ? 's' : ''} with cached results
-          </span>
+        {/* Mode filter chips */}
+        <div className="flex gap-1 flex-wrap">
+          {MODE_FILTER_OPTIONS.map(({ mode, label }) => {
+            const count = [...cachedByMode.values()].filter(s => s.has(mode)).length
+            if (count === 0) return null
+            const active = modeFilter.has(mode)
+            return (
+              <button key={mode} onClick={() => toggleModeFilter(mode)}
+                className={`px-2 py-0.5 rounded text-xs border transition-colors ${active ? 'bg-foreground text-background border-foreground' : 'hover:bg-muted'}`}>
+                {label} ({count})
+              </button>
+            )
+          })}
+          {modeFilter.size > 0 && (
+            <button onClick={() => { setModeFilter(new Set()); setIdx(0) }}
+              className="px-2 py-0.5 rounded text-xs text-muted-foreground hover:text-foreground underline">
+              clear filter
+            </button>
+          )}
+        </div>
+        {totalCached > 0 && modeFilter.size === 0 && (
+          <span className="text-xs text-muted-foreground">{totalCached} tune{totalCached !== 1 ? 's' : ''} with results</span>
         )}
+        <div className="ml-auto">
+          <VisibilityMenu visible={visible} onChange={handleVisibilityChange} />
+        </div>
       </div>
 
       <div className="flex gap-4">
         {/* Tune list */}
         <div className="w-52 shrink-0 border rounded overflow-y-auto max-h-[80vh] text-sm">
-          {filtered.map((t, i) => (
-            <button
-              key={t.id}
-              onClick={() => setIdx(i)}
-              className={`w-full text-left px-2 py-1 border-b last:border-0 hover:bg-muted transition-colors ${
-                i === idx ? 'bg-muted font-medium' : ''
-              }`}
-            >
-              <div className="flex items-center gap-1 min-w-0">
-                {cachedIds.has(t.id) && (
-                  <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-green-500" title="Has cached results" />
-                )}
-                <span className="text-muted-foreground text-xs shrink-0">{t.meter ?? '—'}</span>
-                <span className="truncate">{t.name}</span>
-              </div>
-            </button>
-          ))}
+          {filtered.map((t, i) => {
+            const modes = cachedByMode.get(t.id)
+            return (
+              <button key={t.id} onClick={() => setIdx(i)}
+                className={`w-full text-left px-2 py-1 border-b last:border-0 hover:bg-muted transition-colors ${i === idx ? 'bg-muted font-medium' : ''}`}>
+                <div className="flex items-center gap-1 min-w-0">
+                  {modes && modes.size > 0 && (
+                    <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-green-500" title={[...modes].join(', ')} />
+                  )}
+                  <span className="text-muted-foreground text-xs shrink-0">{t.meter ?? '—'}</span>
+                  <span className="truncate">{t.name}</span>
+                </div>
+              </button>
+            )
+          })}
         </div>
 
         {/* Comparison panel */}
@@ -488,49 +614,75 @@ export function NotationCompareClient({ tunes }: { tunes: TuneRow[] }) {
             </div>
 
             {/* Source images */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">Staff score</div>
-                <TuneImage key={`${tune.id}-staff`} name={tune.name} type="staff" />
+            {(visible.staffImage || visible.solfegeImage) && (
+              <div className="grid grid-cols-2 gap-4">
+                {visible.staffImage && (
+                  <div>
+                    <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">Staff score</div>
+                    <TuneImage key={`${tune.id}-staff`} name={tune.name} type="staff" />
+                  </div>
+                )}
+                {visible.solfegeImage && (
+                  <div>
+                    <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">Solfège</div>
+                    <TuneImage key={`${tune.id}-solfege`} name={tune.name} type="solfege" />
+                  </div>
+                )}
               </div>
-              <div>
-                <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">Solfège</div>
-                <TuneImage key={`${tune.id}-solfege`} name={tune.name} type="solfege" />
-              </div>
-            </div>
+            )}
 
             {/* Recording */}
-            <MediaPanel key={tune.id} tune={tune} />
+            {visible.recording && <MediaPanel key={tune.id} tune={tune} />}
 
             {/* Current DB */}
-            <AbcSection
-              key={`${tune.id}-db`}
-              label="V1 — current DB"
-              abc={tune.abcNotation}
-              tuneName={tune.name}
-              extras={
-                <details className="mt-1">
-                  <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">Raw ABC</summary>
-                  <pre className="mt-1 text-xs bg-muted rounded p-2 overflow-x-auto whitespace-pre-wrap">{tune.abcNotation}</pre>
-                </details>
-              }
-            />
+            {visible.currentDb && (
+              <AbcSection
+                key={`${tune.id}-db`}
+                label="V1 — current DB"
+                abc={tune.abcNotation}
+                tuneName={tune.name}
+                extras={
+                  <details className="mt-1">
+                    <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">Raw ABC</summary>
+                    <pre className="mt-1 text-xs bg-muted rounded p-2 overflow-x-auto whitespace-pre-wrap">{tune.abcNotation}</pre>
+                  </details>
+                }
+              />
+            )}
 
-            {/* OCR panels */}
-            <OcrTextPanel key={`${tune.id}-ocr-text`} tuneId={tune.id} tuneName={tune.name}
-              onResultSaved={handleResultSaved} />
+            {/* OCR text */}
+            {visible.ocrText && (
+              <OcrTextPanel key={`${tune.id}-ocr-text`} tuneId={tune.id} tuneName={tune.name}
+                onResultSaved={handleResultSaved} />
+            )}
 
-            <OcrPanel key={`${tune.id}-staff`} tuneId={tune.id} tuneName={tune.name}
-              mode="staff" label="Staff → ABC (Claude vision)" timeWarning="~15s"
-              onResultSaved={handleResultSaved} />
+            {/* Hymnary MusicXML */}
+            {visible.hymnary && (
+              <OcrPanel key={`${tune.id}-hymnary`} tuneId={tune.id} tuneName={tune.name}
+                mode="hymnary" label="Hymnary MusicXML → ABC" timeWarning="~5s"
+                onResultSaved={handleResultSaved} />
+            )}
 
-            <OcrPanel key={`${tune.id}-solfege`} tuneId={tune.id} tuneName={tune.name}
-              mode="solfege" label="Sol-fa → ABC (V3 parser)" timeWarning="~15s"
-              onResultSaved={handleResultSaved} />
+            {/* Staff OCR */}
+            {visible.staffOcr && (
+              <OcrPanel key={`${tune.id}-staff`} tuneId={tune.id} tuneName={tune.name}
+                mode="staff" label="Staff → ABC (Claude vision)" timeWarning="~15s"
+                onResultSaved={handleResultSaved} />
+            )}
 
-            <OcrPanel key={`${tune.id}-audiveris`} tuneId={tune.id} tuneName={tune.name}
-              mode="audiveris" label="Audiveris OMR → ABC" timeWarning="60–90s"
-              onResultSaved={handleResultSaved} />
+            {/* Sol-fa OCR */}
+            {visible.solfegeOcr && (
+              <OcrPanel key={`${tune.id}-solfege`} tuneId={tune.id} tuneName={tune.name}
+                mode="solfege" label="Sol-fa → ABC (V3 parser)" timeWarning="~15s"
+                onResultSaved={handleResultSaved} />
+            )}
+
+            {/* Audiveris */}
+            {visible.audiveris && (
+              <OcrPanel key={`${tune.id}-audiveris`} tuneId={tune.id} tuneName={tune.name}
+                mode="audiveris" label="Audiveris OMR → ABC" timeWarning="60–90s"
+                onResultSaved={handleResultSaved} />
+            )}
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
