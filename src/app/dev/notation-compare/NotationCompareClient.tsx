@@ -3,12 +3,13 @@
 import dynamic from 'next/dynamic'
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import type { TuneRow } from './page'
+import { solFaToAbc } from '@/lib/solfege-parser'
 
 const AbcPlayerPanel = dynamic(() => import('./AbcPlayerPanel'), { ssr: false })
 
 // ── Cache helpers ─────────────────────────────────────────────────────────────
 
-type OcrMode = 'staff' | 'solfege' | 'audiveris'
+type OcrMode = 'staff' | 'solfege' | 'audiveris' | 'ocr-text'
 
 interface OcrResult {
   abc: string
@@ -250,6 +251,160 @@ function OcrPanel({
   )
 }
 
+interface OcrTextResult {
+  doh: string
+  time: string
+  soprano: string
+  rawResponse?: string
+  savedAt?: number
+}
+
+function OcrTextPanel({
+  tuneId, tuneName, onResultSaved,
+}: {
+  tuneId: number
+  tuneName: string
+  onResultSaved?: (tuneId: number) => void
+}) {
+  const mode: OcrMode = 'ocr-text'
+  const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+  const [fromCache, setFromCache] = useState(false)
+  const [error, setError] = useState('')
+  const [doh, setDoh] = useState('C')
+  const [time, setTime] = useState('C')
+  const [soprano, setSoprano] = useState('')
+  const [convertedAbc, setConvertedAbc] = useState<string | null>(null)
+  const [warnings, setWarnings] = useState<string[]>([])
+
+  useEffect(() => {
+    const cached = loadCache(tuneId, mode) as (OcrTextResult & { savedAt?: number }) | null
+    if (cached) {
+      setDoh(cached.doh ?? 'C')
+      setTime(cached.time ?? 'C')
+      setSoprano(cached.soprano ?? '')
+      setState('done')
+      setFromCache(true)
+    } else {
+      setState('idle')
+      setDoh('C'); setTime('C'); setSoprano('')
+      setFromCache(false)
+    }
+    setConvertedAbc(null)
+    setWarnings([])
+    setError('')
+  }, [tuneId])
+
+  const run = async () => {
+    setState('loading')
+    setFromCache(false)
+    setConvertedAbc(null)
+    setWarnings([])
+    setError('')
+    try {
+      const res = await fetch(`/api/dev/test-ocr?tuneId=${tuneId}&mode=ocr-text`)
+      const data = await res.json() as OcrTextResult
+      if (!res.ok) throw new Error((data as unknown as { error: string }).error ?? 'Request failed')
+      setDoh(data.doh ?? 'C')
+      setTime(data.time ?? 'C')
+      setSoprano(data.soprano ?? '')
+      saveCache(tuneId, mode, data as unknown as OcrResult)
+      setState('done')
+      setFromCache(false)
+      onResultSaved?.(tuneId)
+    } catch (e) {
+      setError(String(e))
+      setState('error')
+    }
+  }
+
+  const handleClear = () => {
+    clearCache(tuneId, mode)
+    setState('idle')
+    setDoh('C'); setTime('C'); setSoprano('')
+    setFromCache(false)
+    setConvertedAbc(null)
+    setWarnings([])
+    setError('')
+  }
+
+  const convert = () => {
+    const { abc, warnings: w } = solFaToAbc(soprano, doh, time, tuneName)
+    setConvertedAbc(abc)
+    setWarnings(w)
+  }
+
+  const savedAt = (() => {
+    try {
+      const raw = localStorage.getItem(cacheKey(tuneId, mode))
+      const d = raw ? (JSON.parse(raw) as { savedAt?: number }) : null
+      return d?.savedAt
+        ? new Date(d.savedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+        : null
+    } catch { return null }
+  })()
+
+  return (
+    <div className="mt-4 border-t pt-4">
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">OCR text (editable)</span>
+        {fromCache && savedAt && (
+          <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">cached {savedAt}</span>
+        )}
+        <button onClick={run} disabled={state === 'loading'}
+          className="px-3 py-1 rounded border text-sm hover:bg-muted disabled:opacity-50">
+          {state === 'loading' ? 'Running… (~15s)' : fromCache ? 'Re-run OCR' : 'Run OCR text'}
+        </button>
+        {fromCache && (
+          <button onClick={handleClear} className="text-xs text-muted-foreground hover:text-foreground underline">clear</button>
+        )}
+      </div>
+
+      {state === 'error' && (
+        <div className="text-sm text-red-600 bg-red-50 rounded p-2 whitespace-pre-wrap">{error}</div>
+      )}
+
+      {(state === 'done' || soprano) && (
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2 items-center flex-wrap">
+            <label className="text-xs text-muted-foreground">DOH =</label>
+            <input value={doh} onChange={e => { setDoh(e.target.value); setConvertedAbc(null) }}
+              className="border rounded px-2 py-0.5 text-sm w-16 bg-background" />
+            <label className="text-xs text-muted-foreground">TIME =</label>
+            <input value={time} onChange={e => { setTime(e.target.value); setConvertedAbc(null) }}
+              className="border rounded px-2 py-0.5 text-sm w-16 bg-background" />
+          </div>
+          <textarea
+            value={soprano}
+            onChange={e => { setSoprano(e.target.value); setConvertedAbc(null) }}
+            rows={4}
+            spellCheck={false}
+            placeholder=":d | d :r | m :f | s :— | — ||"
+            className="w-full border rounded px-2 py-1.5 text-sm font-mono bg-background resize-y"
+          />
+          <button onClick={convert}
+            className="self-start px-3 py-1 rounded border text-sm hover:bg-muted">
+            Convert to ABC →
+          </button>
+          {warnings.length > 0 && (
+            <div className="text-xs text-amber-600 bg-amber-50 rounded p-2">
+              {warnings.map((w, i) => <div key={i}>{w}</div>)}
+            </div>
+          )}
+          {convertedAbc && (
+            <div>
+              <AbcPlayerPanel abc={convertedAbc} title={tuneName} />
+              <details className="mt-1">
+                <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">ABC output</summary>
+                <pre className="mt-1 text-xs bg-muted rounded p-2 overflow-x-auto whitespace-pre-wrap max-h-48">{convertedAbc}</pre>
+              </details>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function NotationCompareClient({ tunes }: { tunes: TuneRow[] }) {
@@ -362,6 +517,9 @@ export function NotationCompareClient({ tunes }: { tunes: TuneRow[] }) {
             />
 
             {/* OCR panels */}
+            <OcrTextPanel key={`${tune.id}-ocr-text`} tuneId={tune.id} tuneName={tune.name}
+              onResultSaved={handleResultSaved} />
+
             <OcrPanel key={`${tune.id}-staff`} tuneId={tune.id} tuneName={tune.name}
               mode="staff" label="Staff → ABC (Claude vision)" timeWarning="~15s"
               onResultSaved={handleResultSaved} />
