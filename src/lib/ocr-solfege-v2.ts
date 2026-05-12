@@ -95,16 +95,18 @@ async function prepareImageBuffer(imagePath: string): Promise<Buffer> {
     : Buffer.from(rawFile)
 }
 
-async function callClaude(imageBuffer: Buffer, prompt: string, maxTokens = 3000): Promise<string> {
+async function callClaude(imageBuffers: Buffer | Buffer[], prompt: string, maxTokens = 3000): Promise<string> {
+  const buffers = Array.isArray(imageBuffers) ? imageBuffers : [imageBuffers]
+  const imageContent = buffers.map(buf => ({
+    type: 'image' as const,
+    source: { type: 'base64' as const, media_type: 'image/jpeg' as const, data: buf.toString('base64') },
+  }))
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: maxTokens,
     messages: [{
       role: 'user',
-      content: [
-        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageBuffer.toString('base64') } },
-        { type: 'text', text: prompt },
-      ],
+      content: [...imageContent, { type: 'text' as const, text: prompt }],
     }],
   })
   return response.content[0].type === 'text' ? response.content[0].text : ''
@@ -126,9 +128,10 @@ export interface TranscriptionResult {
 // ─── Stage 1: transcribe solfège image → raw text ────────────────────────────
 
 /** Returns the raw transcribed solfège text (all 4 voices) without converting to ABC. */
-export async function transcribeOnly(tuneName: string, imagePath: string): Promise<TranscriptionResult & { rawResponse: string }> {
-  const imageBuffer = await prepareImageBuffer(imagePath)
-  const rawResponse = await callClaude(imageBuffer, TRANSCRIPTION_PROMPT)
+export async function transcribeOnly(tuneName: string, imagePaths: string | string[]): Promise<TranscriptionResult & { rawResponse: string }> {
+  const paths = Array.isArray(imagePaths) ? imagePaths : [imagePaths]
+  const imageBuffers = await Promise.all(paths.map(prepareImageBuffer))
+  const rawResponse = await callClaude(imageBuffers, TRANSCRIPTION_PROMPT)
 
   const jsonMatch = rawResponse.match(/\{[\s\S]*\}/)
   if (!jsonMatch) throw new Error(`No JSON in Claude response:\n${rawResponse.slice(0, 500)}`)
@@ -149,14 +152,15 @@ export async function transcribeOnly(tuneName: string, imagePath: string): Promi
 
 // ─── Stage 1+2: transcribe + convert to multi-voice ABC ──────────────────────
 
-export async function extractTuneV3(tuneName: string, imagePath: string): Promise<{
+export async function extractTuneV3(tuneName: string, imagePaths: string | string[]): Promise<{
   transcription: TranscriptionResult
   abc: string
   warnings: string[]
   rawResponse: string
 }> {
-  const imageBuffer = await prepareImageBuffer(imagePath)
-  const rawResponse = await callClaude(imageBuffer, TRANSCRIPTION_PROMPT)
+  const paths = Array.isArray(imagePaths) ? imagePaths : [imagePaths]
+  const imageBuffers = await Promise.all(paths.map(prepareImageBuffer))
+  const rawResponse = await callClaude(imageBuffers, TRANSCRIPTION_PROMPT)
 
   const jsonMatch = rawResponse.match(/\{[\s\S]*\}/)
   if (!jsonMatch) throw new Error(`No JSON in Claude response:\n${rawResponse.slice(0, 500)}`)
