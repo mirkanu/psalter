@@ -157,8 +157,8 @@ async function run() {
       const isDisabled = await toggle.isDisabled()
 
       if (isDisabled) {
-        // Tune has no JPEG — show-original disabled is correct behaviour; mark skipped/pass
-        pass('PLAYER-04: Show original toggles to JPEG (no JPEG available — toggle correctly disabled)')
+        // JPEG files should now be derived from filesystem — disabled means derivation failed
+        fail('PLAYER-04: Show original toggles to JPEG', 'Toggle is disabled — JPEG URL derivation from filesystem may have failed')
       } else {
         await toggle.click()
         await page.waitForTimeout(300)
@@ -168,14 +168,21 @@ async function run() {
         if (imgCount === 0) {
           fail('PLAYER-04: Show original toggles to JPEG', 'No img[alt*="Original score"] found after toggle')
         } else {
-          // Toggle back
-          await toggle.click()
-          await page.waitForTimeout(300)
-          const svgAfter = await page.locator('svg').count()
-          if (svgAfter === 0) {
-            fail('PLAYER-04: Show original toggles to JPEG', 'SVG did not return after second toggle')
+          // If both staff and solfège are available, sub-toggle buttons should be present
+          const subToggleCount = await page.locator('button[aria-pressed]').count()
+          // At least the show-original toggle itself should be aria-pressed
+          if (subToggleCount === 0) {
+            fail('PLAYER-04: Show original toggles to JPEG', 'No aria-pressed buttons found after toggle')
           } else {
-            pass('PLAYER-04: Show original toggles to JPEG')
+            // Toggle back
+            await toggle.click()
+            await page.waitForTimeout(300)
+            const svgAfter = await page.locator('svg').count()
+            if (svgAfter === 0) {
+              fail('PLAYER-04: Show original toggles to JPEG', 'SVG did not return after second toggle')
+            } else {
+              pass('PLAYER-04: Show original toggles to JPEG')
+            }
           }
         }
       }

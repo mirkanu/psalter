@@ -23,6 +23,8 @@ interface AbcPlayerProps {
   solfegeJpgUrl?: string | null
   tuneName?: string
   initialMode?: 'staff' | 'solfege'
+  /** Plain-text lyrics for the current stanza group, lines separated by \n */
+  lyricsText?: string
 }
 
 const SOUNDFONT_URL = 'https://paulrosen.github.io/midi-js-soundfonts/abcjs/'
@@ -40,10 +42,13 @@ export default function AbcPlayer({
   solfegeJpgUrl,
   tuneName,
   initialMode = 'staff',
+  lyricsText,
 }: AbcPlayerProps) {
   const [transpose, setTranspose] = useState(0)
   const [bpm, setBpm] = useState(100)
   const [showOriginal, setShowOriginal] = useState(false)
+  // Which JPEG to show when showOriginal=true
+  const [originalMode, setOriginalMode] = useState<'staff' | 'solfege'>(initialMode)
   const [isPlaying, setIsPlaying] = useState(false)
   const [audioReady, setAudioReady] = useState(false)
   const [audioError, setAudioError] = useState<string | null>(null)
@@ -219,7 +224,8 @@ export default function AbcPlayer({
   }, [])
 
   const hasOriginal = !!(staffJpgUrl || solfegeJpgUrl)
-  const originalSrc = initialMode === 'solfege' ? (solfegeJpgUrl ?? staffJpgUrl) : (staffJpgUrl ?? solfegeJpgUrl)
+  const hasBothOriginals = !!(staffJpgUrl && solfegeJpgUrl)
+  const originalSrc = originalMode === 'solfege' ? (solfegeJpgUrl ?? staffJpgUrl) : (staffJpgUrl ?? solfegeJpgUrl)
 
   return (
     <div
@@ -230,7 +236,28 @@ export default function AbcPlayer({
 
       {/* Notation area: SVG OR original JPEG */}
       {showOriginal ? (
-        <div className="relative w-full">
+        <div className="relative w-full space-y-2">
+          {/* Staff / Solfège sub-toggle — only when both are available */}
+          {hasBothOriginals && (
+            <div className="flex gap-1 justify-center">
+              <Button
+                variant={originalMode === 'staff' ? 'default' : 'outline'}
+                size="xs"
+                onClick={() => setOriginalMode('staff')}
+                aria-pressed={originalMode === 'staff'}
+              >
+                Staff
+              </Button>
+              <Button
+                variant={originalMode === 'solfege' ? 'default' : 'outline'}
+                size="xs"
+                onClick={() => setOriginalMode('solfege')}
+                aria-pressed={originalMode === 'solfege'}
+              >
+                Solfège
+              </Button>
+            </div>
+          )}
           {originalSrc ? (
             <img
               src={originalSrc}
@@ -242,12 +269,23 @@ export default function AbcPlayer({
           )}
         </div>
       ) : (
-        <div
-          ref={containerRef}
-          role="img"
-          aria-label={title ? `Music notation for ${title}` : 'Music notation'}
-          className="w-full"
-        />
+        <>
+          <div
+            ref={containerRef}
+            role="img"
+            aria-label={title ? `Music notation for ${title}` : 'Music notation'}
+            className="w-full"
+          />
+          {/* Lyrics text block — shown below notation in interactive mode */}
+          {lyricsText && lyricsText.trim() && (
+            <pre
+              className="text-xs text-muted-foreground whitespace-pre-wrap text-center max-w-2xl mx-auto leading-relaxed font-sans"
+              data-testid="abc-lyrics"
+            >
+              {lyricsText}
+            </pre>
+          )}
+        </>
       )}
 
       {audioError && (
