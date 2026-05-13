@@ -380,7 +380,6 @@ export function PsalmNotationPlayer({
               staffJpgUrl={scoreJpgUrl}
               solfegeJpgUrl={solfegeJpgUrl}
               initialMode="staff"
-              lyricsText={currentGroup.join('\n\n')}
             />
           ) : (
             /* Solfège mode: R2 JPG */
