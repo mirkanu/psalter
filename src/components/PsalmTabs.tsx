@@ -19,6 +19,10 @@ type TuneRow = NonNullable<
 interface PsalmTabsProps {
   psalm: PsalmDetail
   primaryTune: TuneRow | null
+  /** Filesystem-derived staff JPEG URL for the primary tune (DB column is NULL) */
+  primaryTuneDerivedStaffUrl?: string | null
+  /** Filesystem-derived solfège JPEG URL for the primary tune (DB column is NULL) */
+  primaryTuneDerivedSolfegeUrl?: string | null
   alternateTunes: AlternateTune[]
   activeVersionId?: number
   recommendedVersionSlug?: string | null
@@ -332,7 +336,7 @@ const DESKTOP_TABS = MOBILE_TABS.filter((t) => t.value !== 'sing')
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId, recommendedVersionSlug }: PsalmTabsProps) {
+export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, primaryTuneDerivedSolfegeUrl, alternateTunes, activeVersionId, recommendedVersionSlug }: PsalmTabsProps) {
   const mobileTabsRef = useRef<HTMLDivElement>(null)
   const searchParams = useSearchParams()
   const [noRecDialogOpen, setNoRecDialogOpen] = useState(false)
@@ -371,7 +375,8 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId,
     .map((s) => s.trim().replace(/^(\d+)([A-Za-z])/, '$1 $2'))
     .filter(Boolean)
 
-  // Derive active tune — override wins when set
+  // Derive active tune — override wins when set.
+  // For the primary tune, use filesystem-derived JPEG URLs (DB columns are NULL for all tunes).
   const activeTune = overrideTune
     ? {
         id: overrideTune.id,
@@ -385,6 +390,12 @@ export function PsalmTabs({ psalm, primaryTune, alternateTunes, activeVersionId,
         precentingComment: null,
       }
     : primaryTune
+      ? {
+          ...primaryTune,
+          scoreJpgUrl: primaryTuneDerivedStaffUrl ?? primaryTune.scoreJpgUrl,
+          solfegeJpgUrl: primaryTuneDerivedSolfegeUrl ?? primaryTune.solfegeJpgUrl,
+        }
+      : null
 
   const makeSingPanel = (stickyScoreMode: boolean, mobileStickyScore: boolean = false) => (
     <div className={stickyScoreMode ? 'flex flex-col h-full' : 'space-y-4'}>
