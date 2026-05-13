@@ -87,6 +87,7 @@ export interface AlternateTune {
   name: string
   meter: string | null
   abcNotation: string | null
+  abcSatb: string | null
   scoreJpgUrl: string | null
   solfegeJpgUrl: string | null
   soundcloudUrl: string | null
@@ -101,6 +102,7 @@ export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]>
       name: true,
       meter: true,
       abcNotation: true,
+      abcSatb: true,
       scoreJpgUrl: true,
       solfegeJpgUrl: true,
       soundcloudUrl: true,

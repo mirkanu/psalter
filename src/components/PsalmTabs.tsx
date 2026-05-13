@@ -382,7 +382,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
         id: overrideTune.id,
         name: overrideTune.name,
         meter: overrideTune.meter,
-        abcNotation: overrideTune.abcNotation,
+        abcNotation: overrideTune.abcSatb?.trim() || overrideTune.abcNotation,
         scoreJpgUrl: overrideTune.scoreJpgUrl,
         solfegeJpgUrl: overrideTune.solfegeJpgUrl,
         soundcloudUrl: overrideTune.soundcloudUrl,
@@ -412,7 +412,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
       )}
       {activeTune ? (
         <PsalmNotationPlayerClient
-          abc={activeTune.abcNotation ?? null}
+          abc={(activeTune as any).abcSatb?.trim() || activeTune.abcNotation || null}
           lyrics={lyrics ?? ''}
           scoreJpgUrl={activeTune.scoreJpgUrl ?? null}
           solfegeJpgUrl={activeTune.solfegeJpgUrl ?? null}
