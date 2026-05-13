@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sketch 005: Desktop Fullscreen Layout</title>
+  <link rel="stylesheet" href="../themes/default.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-sans);
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sketch-toolbar {
+      display: flex;
+      gap: var(--space-3);
+      padding: var(--space-4);
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      flex-shrink: 0;
+    }
+
+    .toolbar-group {
+      display: flex;
+      gap: var(--space-2);
+      align-items: center;
+    }
+
+    .toolbar-label {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    button {
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: var(--text-sm);
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background: var(--color-primary);
+      color: white;
+      border-color: var(--color-primary);
+    }
+
+    button.active {
+      background: var(--color-primary);
+      color: white;
+      border-color: var(--color-primary);
+    }
+
+    .variants {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .variant {
+      display: none;
+      width: 100%;
+      flex-direction: column;
+    }
+
+    .variant.active {
+      display: flex;
+    }
+
+    .variant-label {
+      position: absolute;
+      top: var(--space-6);
+      left: var(--space-6);
+      font-size: var(--text-xs);
+      color: white;
+      background: rgba(0, 0, 0, 0.6);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-md);
+      z-index: 10;
+    }
+
+    /* Fullscreen Tune View */
+    .fullscreen-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: var(--space-8);
+      background: var(--color-bg);
+    }
+
+    .fullscreen-header {
+      text-align: center;
+      margin-bottom: var(--space-8);
+      flex-shrink: 0;
+    }
+
+    .fullscreen-title {
+      font-size: var(--text-3xl);
+      font-weight: 700;
+      margin-bottom: var(--space-2);
+      color: var(--color-text);
+    }
+
+    .fullscreen-meta {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      display: flex;
+      justify-content: center;
+      gap: var(--space-4);
+    }
+
+    .fullscreen-controls {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-8);
+      flex-shrink: 0;
+    }
+
+    .fullscreen-controls button {
+      padding: var(--space-3) var(--space-4);
+      font-weight: 600;
+    }
+
+    /* Two-Column Layout (Desktop Primary) */
+    .two-column {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-8);
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: var(--space-6);
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-border);
+    }
+
+    .column-title {
+      font-size: var(--text-sm);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-4);
+      padding-bottom: var(--space-3);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .score-column {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .score-display {
+      font-family: var(--font-mono);
+      font-size: var(--text-base);
+      line-height: 1.8;
+      white-space: pre;
+      margin: var(--space-6) 0;
+      color: var(--color-text);
+    }
+
+    .score-display.hidden {
+      display: none;
+    }
+
+    .lyrics-column {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stanza {
+      margin-bottom: var(--space-6);
+    }
+
+    .stanza:last-child {
+      margin-bottom: 0;
+    }
+
+    .stanza-number {
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: var(--space-2);
+      font-size: var(--text-sm);
+    }
+
+    .stanza-text {
+      line-height: 1.8;
+      color: var(--color-text);
+      font-size: var(--text-base);
+    }
+
+    .lyric-line {
+      margin-bottom: var(--space-2);
+    }
+
+    /* Single Column (Stacked) */
+    .single-column {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-8);
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .single-column .column {
+      flex: 0 0 auto;
+    }
+
+    /* Navigation Bar */
+    .fullscreen-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: var(--space-8);
+      padding-top: var(--space-6);
+      border-top: 1px solid var(--color-border);
+      flex-shrink: 0;
+    }
+
+    .nav-info {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+
+    .nav-buttons {
+      display: flex;
+      gap: var(--space-3);
+    }
+
+    .nav-buttons button {
+      padding: var(--space-2) var(--space-4);
+    }
+
+    /* Scrollbar Styling */
+    .column::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .column::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .column::-webkit-scrollbar-thumb {
+      background: var(--color-border);
+      border-radius: var(--radius-md);
+    }
+
+    .column::-webkit-scrollbar-thumb:hover {
+      background: var(--color-text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toolbar -->
+  <div class="sketch-toolbar">
+    <div class="toolbar-group">
+      <span class="toolbar-label">Variant</span>
+      <button class="variant-btn active" data-variant="a">A: Two-Column Layout</button>
+      <button class="variant-btn" data-variant="b">B: Stacked Layout</button>
+      <button class="variant-btn" data-variant="c">C: Score Focused</button>
+    </div>
+  </div>
+
+  <!-- Variants Container -->
+  <div class="variants">
+    <!-- Variant A: Two-Column Layout -->
+    <div class="variant active" id="variant-a">
+      <div class="variant-label">Variant A: Two-Column Layout — Score and lyrics side-by-side</div>
+
+      <div class="fullscreen-container">
+        <div class="fullscreen-header">
+          <div class="fullscreen-title">O God of Hosts, the Mighty LORD</div>
+          <div class="fullscreen-meta">
+            <span>Scottish Psalter</span>
+            <span>Tune: Dunfermline (CM)</span>
+          </div>
+        </div>
+
+        <div class="fullscreen-controls">
+          <button class="score-toggle active" data-mode="both">Score + Lyrics</button>
+          <button class="score-toggle" data-mode="lyrics-only">Lyrics Only</button>
+          <button>⊕ Zoom In</button>
+          <button>⊖ Zoom Out</button>
+          <button>↻ Reset</button>
+        </div>
+
+        <div class="two-column">
+          <!-- Score Column -->
+          <div class="column score-column">
+            <div class="column-title">Score</div>
+            <div class="score-display score-content">L: "O God of hosts, the migh-ty LORD"
+C: |:G2 G2 A B | c2 c2 c | d2 d2 d | c4 c2 :|
+  "And hear the prais-es of thy saints"
+|: B c d e | f2 f2 f | e2 e2 d | c4 c2 :|</div>
+          </div>
+
+          <!-- Lyrics Column -->
+          <div class="column lyrics-column">
+            <div class="column-title">Lyrics</div>
+
+            <div class="stanza">
+              <div class="stanza-number">1</div>
+              <div class="stanza-text">
+                <div class="lyric-line">O God of hosts, the mighty LORD,</div>
+                <div class="lyric-line">And hear the praises of thy saints;</div>
+              </div>
+            </div>
+
+            <div class="stanza">
+              <div class="stanza-number">2</div>
+              <div class="stanza-text">
+                <div class="lyric-line">With might we come before thy face,</div>
+                <div class="lyric-line">And lift our hearts in joyful praise;</div>
+              </div>
+            </div>
+
+            <div class="stanza">
+              <div class="stanza-number">3</div>
+              <div class="stanza-text">
+                <div class="lyric-line">So shall we ever dwell in thee,</div>
+                <div class="lyric-line">And sing to thee eternal days.</div>
+              </div>
+            </div>
+
+            <div class="stanza">
+              <div class="stanza-number">4</div>
+              <div class="stanza-text">
+                <div class="lyric-line">Then shall our songs for ever ring</div>
+                <div class="lyric-line">With praises to the eternal King.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fullscreen-nav">
+          <div class="nav-info">Psalm 89:7-8 · Verse 1 of 4</div>
+          <div class="nav-buttons">
+            <button>← Previous</button>
+            <button>Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variant B: Stacked Layout -->
+    <div class="variant" id="variant-b">
+      <div class="variant-label">Variant B: Stacked Layout — Score above, lyrics below</div>
+
+      <div class="fullscreen-container">
+        <div class="fullscreen-header">
+          <div class="fullscreen-title">O God of Hosts, the Mighty LORD</div>
+          <div class="fullscreen-meta">
+            <span>Scottish Psalter</span>
+            <span>Tune: Dunfermline (CM)</span>
+          </div>
+        </div>
+
+        <div class="fullscreen-controls">
+          <button class="score-toggle active" data-mode="both">Score + Lyrics</button>
+          <button class="score-toggle" data-mode="lyrics-only">Lyrics Only</button>
+          <button>⊕ Zoom In</button>
+          <button>⊖ Zoom Out</button>
+          <button>↻ Reset</button>
+        </div>
+
+        <div class="single-column">
+          <!-- Score Column -->
+          <div class="column score-column">
+            <div class="column-title">Score</div>
+            <div class="score-display score-content" style="font-size: var(--text-lg); padding: var(--space-4) 0;">L: "O God of hosts, the migh-ty LORD"
+C: |:G2 G2 A B | c2 c2 c | d2 d2 d | c4 c2 :|
+  "And hear the prais-es of thy saints"
+|: B c d e | f2 f2 f | e2 e2 d | c4 c2 :|</div>
+          </div>
+
+          <!-- Lyrics Column -->
+          <div class="column lyrics-column" style="flex: 1;">
+            <div class="column-title">Lyrics</div>
+
+            <div class="stanza">
+              <div class="stanza-number">1</div>
+              <div class="stanza-text">
+                <div class="lyric-line">O God of hosts, the mighty LORD,</div>
+                <div class="lyric-line">And hear the praises of thy saints;</div>
+              </div>
+            </div>
+
+            <div class="stanza">
+              <div class="stanza-number">2</div>
+              <div class="stanza-text">
+                <div class="lyric-line">With might we come before thy face,</div>
+                <div class="lyric-line">And lift our hearts in joyful praise;</div>
+              </div>
+            </div>
+
+            <div class="stanza">
+              <div class="stanza-number">3</div>
+              <div class="stanza-text">
+                <div class="lyric-line">So shall we ever dwell in thee,</div>
+                <div class="lyric-line">And sing to thee eternal days.</div>
+              </div>
+            </div>
+
+            <div class="stanza">
+              <div class="stanza-number">4</div>
+              <div class="stanza-text">
+                <div class="lyric-line">Then shall our songs for ever ring</div>
+                <div class="lyric-line">With praises to the eternal King.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fullscreen-nav">
+          <div class="nav-info">Psalm 89:7-8 · Verse 1 of 4</div>
+          <div class="nav-buttons">
+            <button>← Previous</button>
+            <button>Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variant C: Score Focused -->
+    <div class="variant" id="variant-c">
+      <div class="variant-label">Variant C: Score Focused — Large score with inline lyrics below</div>
+
+      <div class="fullscreen-container">
+        <div class="fullscreen-header" style="margin-bottom: var(--space-6);">
+          <div class="fullscreen-title">O God of Hosts, the Mighty LORD</div>
+          <div class="fullscreen-meta">
+            <span>Scottish Psalter</span>
+            <span>Tune: Dunfermline (CM)</span>
+          </div>
+        </div>
+
+        <div class="fullscreen-controls">
+          <button class="score-toggle active" data-mode="both">Score + Lyrics</button>
+          <button class="score-toggle" data-mode="lyrics-only">Lyrics Only</button>
+          <button>⊕ Zoom In</button>
+          <button>⊖ Zoom Out</button>
+          <button>↻ Reset</button>
+        </div>
+
+        <div class="single-column" style="align-items: center;">
+          <!-- Score Column (Large) -->
+          <div class="column" style="flex: 0 0 auto; max-width: 800px; width: 100%;">
+            <div class="column-title">Score</div>
+            <div class="score-display score-content" style="font-size: var(--text-xl); padding: var(--space-8) 0; text-align: center;">L: "O God of hosts, the migh-ty LORD"
+C: |:G2 G2 A B | c2 c2 c | d2 d2 d | c4 c2 :|
+  "And hear the prais-es of thy saints"
+|: B c d e | f2 f2 f | e2 e2 d | c4 c2 :|</div>
+          </div>
+
+          <!-- Lyrics Column (Inline Below) -->
+          <div class="column" style="max-width: 800px; width: 100%; margin-top: var(--space-6);">
+            <div class="column-title">Lyrics</div>
+
+            <div class="stanza" style="margin-bottom: var(--space-4);">
+              <div class="stanza-number">1</div>
+              <div class="stanza-text">
+                <div class="lyric-line">O God of hosts, the mighty LORD,</div>
+                <div class="lyric-line">And hear the praises of thy saints;</div>
+              </div>
+            </div>
+
+            <div class="stanza" style="margin-bottom: var(--space-4);">
+              <div class="stanza-number">2</div>
+              <div class="stanza-text">
+                <div class="lyric-line">With might we come before thy face,</div>
+                <div class="lyric-line">And lift our hearts in joyful praise;</div>
+              </div>
+            </div>
+
+            <div class="stanza" style="margin-bottom: var(--space-4);">
+              <div class="stanza-number">3</div>
+              <div class="stanza-text">
+                <div class="lyric-line">So shall we ever dwell in thee,</div>
+                <div class="lyric-line">And sing to thee eternal days.</div>
+              </div>
+            </div>
+
+            <div class="stanza">
+              <div class="stanza-number">4</div>
+              <div class="stanza-text">
+                <div class="lyric-line">Then shall our songs for ever ring</div>
+                <div class="lyric-line">With praises to the eternal King.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fullscreen-nav">
+          <div class="nav-info">Psalm 89:7-8 · Verse 1 of 4</div>
+          <div class="nav-buttons">
+            <button>← Previous</button>
+            <button>Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Variant switching
+    document.querySelectorAll('.variant-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const variant = btn.dataset.variant;
+        document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.variant').forEach(v => v.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(`variant-${variant}`).classList.add('active');
+      });
+    });
+
+    // Score toggle functionality
+    document.querySelectorAll('.score-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.mode;
+        const variant = document.querySelector('.variant.active');
+        if (!variant) return;
+
+        const scoreContent = variant.querySelector('.score-content');
+        const toggleBtns = variant.querySelectorAll('.score-toggle');
+
+        toggleBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        if (mode === 'lyrics-only') {
+          scoreContent.classList.add('hidden');
+        } else {
+          scoreContent.classList.remove('hidden');
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>
