@@ -208,10 +208,10 @@ export default function AbcPlayer({
       const synth = new abcjs.synth.CreateSynth()
       await synth.init({
         visualObj: visualObjRef.current,
+        millisecondsPerMeasure: visualObjRef.current.millisecondsPerMeasure?.(bpm),
         options: {
           soundFontUrl: SOUNDFONT_URL,
           midiTranspose: transpose,
-          millisecondsPerMeasure: visualObjRef.current.millisecondsPerMeasure?.(bpm),
         },
       })
       await synth.prime()
@@ -219,11 +219,10 @@ export default function AbcPlayer({
       setAudioReady(true)
       needsSynthReinitRef.current = false
 
-      // Create fresh timing callbacks — pass millisecondsPerMeasure so
-      // highlight fires in sync with the synth's actual playback tempo
+      // qpm drives TimingCallbacks tick rate — must match synth's BPM so highlights stay in sync
       const timing = new abcjs.TimingCallbacks(visualObjRef.current, {
         eventCallback: highlightEvent,
-        millisecondsPerMeasure: visualObjRef.current.millisecondsPerMeasure?.(bpm),
+        qpm: bpm,
       })
       timingRef.current = timing
 

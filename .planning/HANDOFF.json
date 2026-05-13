@@ -1,1 +1,41 @@
-{"version":"1.0","timestamp":"2026-05-13T09:09:45Z","phase":"04.9.1","phase_name":"interactive-abcjs-player","phase_dir":".planning/phases/04.9.1-interactive-abcjs-player","plan":2,"status":"paused","completed_tasks":[{"id":1,"name":"Fix abc_satb rendering — use v2 OCR output instead of corrupted v1","status":"done","commit":"88f4ac9"},{"id":2,"name":"Soprano-only display (copyright)","status":"done","commit":"af6433c"},{"id":3,"name":"Key labels, OCR tempo default, highlight sync, psalm ABC fix, no duplicate lyrics","status":"done","commit":"c6c5fa9"},{"id":4,"name":"Audio transpose (midiTranspose) + sync fix (millisecondsPerMeasure in options)","status":"done","commit":"aa8a8fc"}],"remaining_tasks":[{"id":5,"name":"Re-run OCR for 5 incomplete tunes: Farrant, Artaxerxes (EPC tune), Kathrine, Azmon/Denfield, Dunlapscreek","status":"not_started"}],"blockers":[],"human_actions_pending":[{"action":"Verify audio plays in correct transposed key","context":"midiTranspose just deployed, not yet user-verified","blocking":false}],"decisions":[{"decision":"Display soprano only from abc_satb (copyright)","rationale":"All 4 voices kept in DB"},{"decision":"abc_satb canonical; abc_notation (v1) fallback only","rationale":"v1 had LLM monologue leaked into ABC text for many tunes"}],"uncommitted_files":["scripts/output/apply-run.log","scripts/output/ocr-run.log"],"next_action":"Re-run OCR for 5 incomplete tunes using ocr-solfege.ts with targeted filter, then apply-abc-notation.ts to push results to DB"}
+{
+  "version": "1.0",
+  "timestamp": "2026-05-13T12:30:00Z",
+  "phase": "quick-260513-q07",
+  "phase_name": "abcplayer-bpm-fix + OCR completion",
+  "phase_dir": ".planning/quick/260513-q07-abcplayer-bpm-fix",
+  "plan": 1,
+  "task": 4,
+  "total_tasks": 5,
+  "status": "paused",
+  "completed_tasks": [
+    {"id": 1, "name": "Fix AbcPlayer.tsx: millisecondsPerMeasure moved to top-level of synth.init()", "status": "done", "commit": "uncommitted"},
+    {"id": 2, "name": "Fix AbcPlayer.tsx: TimingCallbacks now uses qpm:bpm instead of millisecondsPerMeasure", "status": "done", "commit": "uncommitted"},
+    {"id": 3, "name": "Switch OCR model to Haiku in ocr-solfege-v2.ts + ocr-solfege.ts", "status": "done", "commit": "uncommitted"},
+    {"id": 4, "name": "Re-run OCR for 5 failures (Bays of Harris, Kingsfold, Wallace, Effingham, Forest Green) — 100% success, applied to DB, rebuilt + redeployed", "status": "done", "commit": "uncommitted"}
+  ],
+  "remaining_tasks": [
+    {"id": 5, "name": "Commit all changes + push to GitHub, write SUMMARY.md, update STATE.md", "status": "not_started"}
+  ],
+  "blockers": [],
+  "human_actions_pending": [
+    {
+      "action": "Restart Claude Code with Haiku model for next session",
+      "context": "settings.json model change does not take effect mid-session",
+      "blocking": false
+    }
+  ],
+  "decisions": [
+    {"decision": "millisecondsPerMeasure is a top-level param of synth.init(), not inside options:{}", "rationale": "abcjs source reads options.millisecondsPerMeasure — nested inside options.options is ignored"},
+    {"decision": "TimingCallbacks uses qpm:bpm for tick rate control", "rationale": "TimingCallbacks reads params.qpm, not params.millisecondsPerMeasure"},
+    {"decision": "OCR model switched to claude-haiku-4-5-20251001", "rationale": "Sonnet limit hit; Haiku succeeded on all 5 remaining tunes"}
+  ],
+  "uncommitted_files": [
+    "src/components/AbcPlayer.tsx",
+    "src/lib/ocr-solfege-v2.ts",
+    "scripts/ocr-solfege.ts",
+    "scripts/output/solfege-ocr.json",
+    ".planning/quick/260513-q07-abcplayer-bpm-fix/"
+  ],
+  "next_action": "Commit: git add src/components/AbcPlayer.tsx src/lib/ocr-solfege-v2.ts scripts/ocr-solfege.ts scripts/output/solfege-ocr.json .planning/quick/260513-q07-abcplayer-bpm-fix/ && git commit -m 'fix(player): BPM changes affect audio speed and highlight sync; switch OCR to Haiku; 144/144 tunes complete'. Then push and write SUMMARY.md."
+}
