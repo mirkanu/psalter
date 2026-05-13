@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sketch 004: Realistic Tune with Inline Lyrics</title>
+  <link rel="stylesheet" href="../themes/default.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-sans);
+      padding: var(--space-6);
+    }
+
+    .sketch-toolbar {
+      display: flex;
+      gap: var(--space-3);
+      margin-bottom: var(--space-8);
+      padding: var(--space-4);
+      background: var(--color-surface);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+    }
+
+    .toolbar-group {
+      display: flex;
+      gap: var(--space-2);
+      align-items: center;
+    }
+
+    .toolbar-label {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    button {
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: var(--text-sm);
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background: var(--color-primary);
+      color: white;
+      border-color: var(--color-primary);
+    }
+
+    button.active {
+      background: var(--color-primary);
+      color: white;
+      border-color: var(--color-primary);
+    }
+
+    .variants {
+      display: none;
+    }
+
+    .variant {
+      display: none;
+    }
+
+    .variant.active {
+      display: block;
+    }
+
+    .variant-label {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-4);
+      padding: var(--space-3);
+      background: var(--color-bg);
+      border-radius: var(--radius-md);
+      border-left: 3px solid var(--color-primary);
+    }
+
+    /* Content Layout */
+    .tune-container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: var(--color-surface);
+      padding: var(--space-8);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-border);
+    }
+
+    .tune-header {
+      margin-bottom: var(--space-6);
+    }
+
+    .tune-title {
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      margin-bottom: var(--space-2);
+      color: var(--color-text);
+    }
+
+    .tune-meta {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      display: flex;
+      gap: var(--space-4);
+    }
+
+    .toggle-section {
+      display: flex;
+      gap: var(--space-3);
+      margin-bottom: var(--space-6);
+      padding: var(--space-4);
+      background: var(--color-bg);
+      border-radius: var(--radius-md);
+      align-items: center;
+    }
+
+    .toggle-label {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text);
+      margin: 0;
+    }
+
+    .toggle-button {
+      padding: var(--space-2) var(--space-4);
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: var(--text-sm);
+      transition: all 0.2s;
+      font-weight: 600;
+    }
+
+    .toggle-button.active {
+      background: var(--color-primary);
+      color: white;
+      border-color: var(--color-primary);
+    }
+
+    .toggle-button:hover {
+      border-color: var(--color-primary);
+    }
+
+    /* Score Section */
+    .score-section {
+      margin-bottom: var(--space-8);
+    }
+
+    .score-display {
+      background: var(--color-bg);
+      padding: var(--space-6);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+      margin-bottom: var(--space-4);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.6;
+      color: var(--color-text);
+      overflow-x: auto;
+    }
+
+    .score-display.hidden {
+      display: none;
+    }
+
+    .score-label {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: var(--space-2);
+      font-weight: 600;
+    }
+
+    /* Lyrics Section */
+    .lyrics-section {
+      background: var(--color-bg);
+      padding: var(--space-6);
+      border-radius: var(--radius-md);
+    }
+
+    .lyrics-section.fullscreen {
+      padding: var(--space-8);
+    }
+
+    .stanza {
+      margin-bottom: var(--space-6);
+    }
+
+    .stanza:last-child {
+      margin-bottom: 0;
+    }
+
+    .stanza-number {
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: var(--space-2);
+      font-size: var(--text-sm);
+    }
+
+    .stanza-text {
+      line-height: 1.8;
+      color: var(--color-text);
+      font-size: var(--text-base);
+    }
+
+    .lyric-line {
+      margin-bottom: var(--space-3);
+    }
+
+    /* Fullscreen Variants */
+    .variant.fullscreen-display {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: var(--space-8);
+    }
+
+    .fullscreen-container {
+      max-width: 1000px;
+      width: 100%;
+    }
+
+    .variant.mobile-fullscreen .tune-container {
+      max-width: 100%;
+      padding: var(--space-6);
+    }
+
+    .variant.mobile-fullscreen .tune-title {
+      font-size: var(--text-xl);
+    }
+
+    .variant.mobile-fullscreen .score-display {
+      font-size: var(--text-xs);
+      padding: var(--space-4);
+    }
+
+    .variant.mobile-fullscreen .stanza-text {
+      font-size: var(--text-sm);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toolbar -->
+  <div class="sketch-toolbar">
+    <div class="toolbar-group">
+      <span class="toolbar-label">Variant</span>
+      <button class="variant-btn active" data-variant="a">A: Basic Layout</button>
+      <button class="variant-btn" data-variant="b">B: Compact Spacing</button>
+      <button class="variant-btn" data-variant="c">C: Large Typography</button>
+    </div>
+  </div>
+
+  <!-- Variants Container -->
+  <div class="variants">
+    <!-- Variant A: Basic Layout -->
+    <div class="variant active" id="variant-a">
+      <div class="variant-label">Variant A: Basic Layout — Standard spacing, readable typography</div>
+
+      <div class="tune-container">
+        <div class="tune-header">
+          <div class="tune-title">O God of Hosts, the Mighty LORD</div>
+          <div class="tune-meta">
+            <span>Scottish Psalter</span>
+            <span>Tune: Dunfermline</span>
+            <span>Meter: CM</span>
+          </div>
+        </div>
+
+        <!-- Toggle Controls -->
+        <div class="toggle-section">
+          <label class="toggle-label">Display Mode:</label>
+          <button class="toggle-button active score-toggle" data-mode="both">Score + Lyrics</button>
+          <button class="toggle-button score-toggle" data-mode="lyrics-only">Lyrics Only</button>
+        </div>
+
+        <!-- Score Section -->
+        <div class="score-section">
+          <div class="score-label">Score</div>
+          <div class="score-display score-content">
+L: "O God of hosts, the migh-ty LORD"  C: |:G2 G2 A B | c2 c2 c | d2 d2 d | c4 c2 :|
+  "And hear the prais-es of thy saints"  |: B c d e | f2 f2 f | e2 e2 d | c4 c2 :|
+          </div>
+        </div>
+
+        <!-- Lyrics Section -->
+        <div class="lyrics-section">
+          <div class="stanza">
+            <div class="stanza-number">1</div>
+            <div class="stanza-text">
+              <div class="lyric-line">O God of hosts, the mighty LORD,</div>
+              <div class="lyric-line">And hear the praises of thy saints;</div>
+            </div>
+          </div>
+
+          <div class="stanza">
+            <div class="stanza-number">2</div>
+            <div class="stanza-text">
+              <div class="lyric-line">With might we come before thy face,</div>
+              <div class="lyric-line">And lift our hearts in joyful praise;</div>
+            </div>
+          </div>
+
+          <div class="stanza">
+            <div class="stanza-number">3</div>
+            <div class="stanza-text">
+              <div class="lyric-line">So shall we ever dwell in thee,</div>
+              <div class="lyric-line">And sing to thee eternal days.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variant B: Compact Spacing -->
+    <div class="variant" id="variant-b">
+      <div class="variant-label">Variant B: Compact Spacing — Closer line spacing, smaller margins</div>
+
+      <div class="tune-container" style="padding: var(--space-6);">
+        <div class="tune-header" style="margin-bottom: var(--space-4);">
+          <div class="tune-title" style="font-size: var(--text-xl); margin-bottom: var(--space-1);">O God of Hosts, the Mighty LORD</div>
+          <div class="tune-meta" style="font-size: var(--text-xs);">
+            <span>Scottish Psalter</span>
+            <span>Tune: Dunfermline</span>
+            <span>Meter: CM</span>
+          </div>
+        </div>
+
+        <div class="toggle-section" style="padding: var(--space-3); margin-bottom: var(--space-4);">
+          <label class="toggle-label">Display:</label>
+          <button class="toggle-button active score-toggle" data-mode="both">Score + Lyrics</button>
+          <button class="toggle-button score-toggle" data-mode="lyrics-only">Lyrics Only</button>
+        </div>
+
+        <div class="score-section" style="margin-bottom: var(--space-4);">
+          <div class="score-label">Score</div>
+          <div class="score-display score-content" style="padding: var(--space-4); font-size: var(--text-xs); line-height: 1.4;">
+L: "O God of hosts, the migh-ty LORD"  C: |:G2 G2 A B | c2 c2 c | d2 d2 d | c4 c2 :|
+  "And hear the prais-es of thy saints"  |: B c d e | f2 f2 f | e2 e2 d | c4 c2 :|
+          </div>
+        </div>
+
+        <div class="lyrics-section" style="padding: var(--space-4);">
+          <div class="stanza" style="margin-bottom: var(--space-4);">
+            <div class="stanza-number" style="font-size: var(--text-xs); margin-bottom: var(--space-1);">1</div>
+            <div class="stanza-text" style="font-size: var(--text-sm); line-height: 1.6;">
+              <div class="lyric-line" style="margin-bottom: var(--space-1);">O God of hosts, the mighty LORD,</div>
+              <div class="lyric-line" style="margin-bottom: 0;">And hear the praises of thy saints;</div>
+            </div>
+          </div>
+
+          <div class="stanza" style="margin-bottom: var(--space-4);">
+            <div class="stanza-number" style="font-size: var(--text-xs); margin-bottom: var(--space-1);">2</div>
+            <div class="stanza-text" style="font-size: var(--text-sm); line-height: 1.6;">
+              <div class="lyric-line" style="margin-bottom: var(--space-1);">With might we come before thy face,</div>
+              <div class="lyric-line" style="margin-bottom: 0;">And lift our hearts in joyful praise;</div>
+            </div>
+          </div>
+
+          <div class="stanza" style="margin-bottom: 0;">
+            <div class="stanza-number" style="font-size: var(--text-xs); margin-bottom: var(--space-1);">3</div>
+            <div class="stanza-text" style="font-size: var(--text-sm); line-height: 1.6;">
+              <div class="lyric-line" style="margin-bottom: var(--space-1);">So shall we ever dwell in thee,</div>
+              <div class="lyric-line" style="margin-bottom: 0;">And sing to thee eternal days.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variant C: Large Typography -->
+    <div class="variant" id="variant-c">
+      <div class="variant-label">Variant C: Large Typography — Bigger fonts for worship reading</div>
+
+      <div class="tune-container" style="padding: var(--space-8);">
+        <div class="tune-header" style="margin-bottom: var(--space-8);">
+          <div class="tune-title" style="font-size: var(--text-3xl); font-weight: 700; margin-bottom: var(--space-3);">O God of Hosts, the Mighty LORD</div>
+          <div class="tune-meta" style="font-size: var(--text-sm);">
+            <span>Scottish Psalter</span>
+            <span>Tune: Dunfermline</span>
+            <span>Meter: CM</span>
+          </div>
+        </div>
+
+        <div class="toggle-section" style="padding: var(--space-4); margin-bottom: var(--space-6);">
+          <label class="toggle-label">Display:</label>
+          <button class="toggle-button active score-toggle" data-mode="both">Score + Lyrics</button>
+          <button class="toggle-button score-toggle" data-mode="lyrics-only">Lyrics Only</button>
+        </div>
+
+        <div class="score-section" style="margin-bottom: var(--space-8);">
+          <div class="score-label">Score</div>
+          <div class="score-display score-content" style="padding: var(--space-6); font-size: var(--text-base); line-height: 2;">
+L: "O God of hosts, the migh-ty LORD"  C: |:G2 G2 A B | c2 c2 c | d2 d2 d | c4 c2 :|
+  "And hear the prais-es of thy saints"  |: B c d e | f2 f2 f | e2 e2 d | c4 c2 :|
+          </div>
+        </div>
+
+        <div class="lyrics-section" style="padding: var(--space-6);">
+          <div class="stanza" style="margin-bottom: var(--space-8);">
+            <div class="stanza-number" style="font-size: var(--text-lg); margin-bottom: var(--space-2);">1</div>
+            <div class="stanza-text" style="font-size: var(--text-lg); line-height: 2;">
+              <div class="lyric-line" style="margin-bottom: var(--space-2);">O God of hosts, the mighty LORD,</div>
+              <div class="lyric-line" style="margin-bottom: 0;">And hear the praises of thy saints;</div>
+            </div>
+          </div>
+
+          <div class="stanza" style="margin-bottom: var(--space-8);">
+            <div class="stanza-number" style="font-size: var(--text-lg); margin-bottom: var(--space-2);">2</div>
+            <div class="stanza-text" style="font-size: var(--text-lg); line-height: 2;">
+              <div class="lyric-line" style="margin-bottom: var(--space-2);">With might we come before thy face,</div>
+              <div class="lyric-line" style="margin-bottom: 0;">And lift our hearts in joyful praise;</div>
+            </div>
+          </div>
+
+          <div class="stanza" style="margin-bottom: 0;">
+            <div class="stanza-number" style="font-size: var(--text-lg); margin-bottom: var(--space-2);">3</div>
+            <div class="stanza-text" style="font-size: var(--text-lg); line-height: 2;">
+              <div class="lyric-line" style="margin-bottom: var(--space-2);">So shall we ever dwell in thee,</div>
+              <div class="lyric-line" style="margin-bottom: 0;">And sing to thee eternal days.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Variant switching
+    document.querySelectorAll('.variant-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const variant = btn.dataset.variant;
+        document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.variant').forEach(v => v.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(`variant-${variant}`).classList.add('active');
+      });
+    });
+
+    // Score toggle functionality
+    document.querySelectorAll('.score-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.mode;
+        const variant = document.querySelector('.variant.active');
+        const scoreContent = variant.querySelector('.score-content');
+        const toggleBtns = variant.querySelectorAll('.score-toggle');
+
+        toggleBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        if (mode === 'lyrics-only') {
+          scoreContent.classList.add('hidden');
+        } else {
+          scoreContent.classList.remove('hidden');
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>
