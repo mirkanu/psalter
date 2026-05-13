@@ -53,7 +53,7 @@ interface OutputEntry {
   // new fields:
   solfegeText: string | null      // JSON.stringify(TranscriptionResult) — raw transcribed voices
   abcSatb: string | null          // 4-voice ABC from solFaToAbcMultiVoice
-  model: 'claude-sonnet-4-6' | null
+  model: 'claude-haiku-4-5-20251001' | null
   warningCount?: number
   pageCount?: number
 }
@@ -132,7 +132,7 @@ async function tryProcessTune(
     transcription = await transcribeOnly(tuneName, pages)
   } catch (err) {
     console.warn(`  transcription failed for "${tuneName}": ${err instanceof Error ? err.message : String(err)}`)
-    return { status: 'transcription_failure', abc: null, solfegeText: null, abcSatb: null, model: 'claude-sonnet-4-6', pageCount }
+    return { status: 'transcription_failure', abc: null, solfegeText: null, abcSatb: null, model: 'claude-haiku-4-5-20251001', pageCount }
   }
 
   const { doh, time, soprano, alto, tenor, bass, lah, mode } = transcription
@@ -176,7 +176,7 @@ async function tryProcessTune(
     abc: sopranoAbc,
     solfegeText,
     abcSatb,
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     warningCount,
     pageCount,
   }

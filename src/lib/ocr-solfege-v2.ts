@@ -108,7 +108,7 @@ async function callClaude(imageBuffers: Buffer | Buffer[], prompt: string, maxTo
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       const response = await client.messages.create({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: maxTokens,
         messages: [{
           role: 'user',
