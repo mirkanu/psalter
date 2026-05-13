@@ -1,33 +1,55 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-13T13:47:00Z",
+  "timestamp": "2026-05-13T16:33:49Z",
   "context": "sketch",
-  "sketch_name": "003-fullscreen-navigation",
+  "phase": "4.9.2",
+  "phase_name": "Tune Notation UI Design — Dynamic ABC Polish",
   "status": "paused",
   "completed_work": [
-    "Set up sketch viewer at /sketch-viewer/index.html with 3 sketches accessible",
-    "Created initial 3 sketches: hymnal-layout-variants, dynamic-sizing-interaction, fullscreen-navigation"
+    "Created Sketch 004: Realistic Tune with Inline Lyrics (2-line ABC + 3 stanzas, 3 variants: basic/compact/large typography)",
+    "Created Sketch 005: Desktop Fullscreen Layout (3 variants: two-column/stacked/score-focused)",
+    "Created Sketch 006: Mobile Fullscreen Layout (3 variants: tabbed/stacked/lyrics-focus, notch-safe)",
+    "All three sketches have functional Score+Lyrics / Lyrics Only toggle",
+    "Deployed sketches to /public/sketches/ for static serving",
+    "Updated sketch viewer (/src/app/dev/sketch-viewer.tsx) with new sketches 004-006",
+    "Verified all sketches load and toggle works via Playwright"
   ],
   "remaining_work": [
-    "Recreate sketches using /gsd-sketch to show typical complete tune",
-    "Score split minimum 2 lines (implies 2-line lyrics split)",
-    "Add 3 stanzas per score (6 lines of lyrics for 2 score lines)",
-    "Create fullscreen mockups (desktop + mobile)",
-    "Implement feedback: skip sidebar lyrics, show inline only unless user clicks 'Lyrics Only'"
+    "Generate UI-SPEC.md via /gsd-ui-phase to formalize design contract",
+    "Create formal PLAN.md for Phase 4.9.2 (break work into executable tasks)",
+    "Execute plan and generate SUMMARY.md files"
   ],
   "decisions": [
     {
-      "decision": "Sketch viewer served from public/sketches/ directly",
-      "rationale": "Public files bypass Next.js routing complexity",
-      "status": "successful"
+      "decision": "Sketch before plan: validate layout patterns first",
+      "rationale": "User feedback on variants before formal commitment",
+      "status": "confirmed"
+    },
+    {
+      "decision": "Inline lyrics, no sidebar",
+      "rationale": "Matches hymnal conventions + simplifies responsive",
+      "status": "confirmed"
+    },
+    {
+      "decision": "Functional toggle in mockups",
+      "rationale": "Test interaction, not just show button",
+      "status": "confirmed"
     }
   ],
   "blockers": [],
-  "human_actions_pending": [],
-  "uncommitted_files": [
-    "public/sketches/ (new sketch files)",
-    "public/dev/index.html (sketch viewer)"
+  "human_actions_pending": [
+    {
+      "action": "Review three sketches and select winning variants",
+      "context": "Optional—user can eyeball sketches before running /gsd-ui-phase",
+      "blocking": false
+    }
   ],
-  "next_action": "Use /gsd-sketch to create new mockups showing: (1) 2-line score split with 3 stanzas (6 lyrics lines), (2) fullscreen desktop view, (3) fullscreen mobile view. Update feedback: skip sidebar, inline lyrics only",
-  "context_notes": "Just set up the sketch viewer infrastructure. User feedback is clear on next sketches. Context running low (78%), pausing to resume with fresh context."
+  "uncommitted_files": [
+    "public/dev/",
+    "public/sketches/ (copied from .planning/)",
+    "src/app/dev/page.tsx",
+    "src/app/api/dev/ (auto-generated)"
+  ],
+  "next_action": "Run /gsd-resume-work, then /gsd-ui-phase to generate 4.9.2-UI-SPEC.md design contract",
+  "context_notes": "All three sketch mockups are complete, deployed, and working. User ready to move to formal UI-SPEC phase. Sketches provide solid baseline for design contract generation."
 }
