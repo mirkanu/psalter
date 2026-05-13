@@ -413,7 +413,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
       )}
       {activeTune ? (
         <PsalmNotationPlayerClient
-          abc={activeTune.abcNotation ? sopranoOnly(activeTune.abcNotation) : null}
+          abc={(() => { const r = (activeTune as any).abcSatb?.trim() || activeTune.abcNotation?.trim(); return r ? sopranoOnly(r) : null })()}
           lyrics={lyrics ?? ''}
           scoreJpgUrl={activeTune.scoreJpgUrl ?? null}
           solfegeJpgUrl={activeTune.solfegeJpgUrl ?? null}

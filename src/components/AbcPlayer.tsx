@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import * as abcjsModule from 'abcjs'
 // abcjs uses CJS module.exports — in bundlers the default may be nested under .default
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -14,7 +14,30 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select'
-import { Play, Pause } from 'lucide-react'
+import { Play, Pause, RotateCcw } from 'lucide-react'
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B']
+const KEY_SEMITONES: Record<string, number> = {
+  C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11,
+}
+
+function parseKeyFromAbc(abc: string): number {
+  const m = abc.match(/^K:\s*([A-Ga-g][#b]?)/m)
+  if (!m) return 0
+  const letter = m[1][0].toUpperCase()
+  const acc = m[1][1] ?? ''
+  const base = KEY_SEMITONES[letter] ?? 0
+  return (base + (acc === '#' ? 1 : acc === 'b' ? -1 : 0) + 12) % 12
+}
+
+function parseBpmFromAbc(abc: string): number {
+  const m = abc.match(/^Q:.*?=(\d+)/m) ?? abc.match(/^Q:\s*(\d+)/m)
+  return m ? Math.max(40, Math.min(200, parseInt(m[1], 10))) : 100
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface AbcPlayerProps {
   abc: string
@@ -44,8 +67,14 @@ export default function AbcPlayer({
   initialMode = 'staff',
   lyricsText,
 }: AbcPlayerProps) {
+  const baseKeySemitone = useMemo(() => parseKeyFromAbc(abc), [abc])
+  const defaultBpm = useMemo(() => parseBpmFromAbc(abc), [abc])
+
   const [transpose, setTranspose] = useState(0)
-  const [bpm, setBpm] = useState(100)
+  const [bpm, setBpm] = useState(defaultBpm)
+
+  // Reset BPM when the tune changes
+  useEffect(() => { setBpm(defaultBpm) }, [defaultBpm])
   const [showOriginal, setShowOriginal] = useState(false)
   // Which JPEG to show when showOriginal=true
   const [originalMode, setOriginalMode] = useState<'staff' | 'solfege'>(initialMode)
@@ -189,9 +218,11 @@ export default function AbcPlayer({
       setAudioReady(true)
       needsSynthReinitRef.current = false
 
-      // Create fresh timing callbacks for highlighting
+      // Create fresh timing callbacks — pass millisecondsPerMeasure so
+      // highlight fires in sync with the synth's actual playback tempo
       const timing = new abcjs.TimingCallbacks(visualObjRef.current, {
         eventCallback: highlightEvent,
+        millisecondsPerMeasure: visualObjRef.current.millisecondsPerMeasure?.(bpm),
       })
       timingRef.current = timing
 
@@ -316,12 +347,12 @@ export default function AbcPlayer({
             disabled={showOriginal}
           >
             <SelectTrigger className="h-8 w-20" data-testid="abc-transpose-select">
-              <SelectValue />
+              <SelectValue>{NOTE_NAMES[(baseKeySemitone + transpose + 12) % 12]}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {[-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6].map((n) => (
                 <SelectItem key={n} value={String(n)}>
-                  {n > 0 ? `+${n}` : n}
+                  {NOTE_NAMES[(baseKeySemitone + n + 12) % 12]}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -358,6 +389,20 @@ export default function AbcPlayer({
             +
           </Button>
         </div>
+
+        {/* Reset key + BPM */}
+        {(transpose !== 0 || bpm !== defaultBpm) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2"
+            onClick={() => { setTranspose(0); setBpm(defaultBpm) }}
+            disabled={showOriginal}
+            aria-label="Reset key and tempo"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+          </Button>
+        )}
 
         {/* Show original */}
         <Button
