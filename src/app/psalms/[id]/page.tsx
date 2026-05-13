@@ -7,6 +7,7 @@ import { fetchPsalmDetail } from '@/db/queries/psalms'
 import { fetchTunesByMeter } from '@/db/queries/tunes'
 import { PsalmTabs } from '@/components/PsalmTabs'
 import { parseSlug, deriveVersionSlug, stripStar, slugToDisplayTitle } from '@/lib/psalm-slugs'
+import { deriveTuneJpgPages } from '@/lib/tune-jpg-urls'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -108,7 +109,25 @@ export default async function PsalmPage({ params }: PageProps) {
 
   // Fetch alternate tunes matching the active version's meter
   const primaryMeter = activeVersion?.meter ?? rawTune?.meter ?? null
-  const alternateTunes = primaryMeter ? await fetchTunesByMeter(primaryMeter) : []
+  const rawAlternateTunes = primaryMeter ? await fetchTunesByMeter(primaryMeter) : []
+
+  // Enrich alternate tunes with filesystem-derived JPEG URLs (DB columns are NULL)
+  const alternateTunes = rawAlternateTunes.map((t) => {
+    const { staffPages, solfegePages } = deriveTuneJpgPages(t.name)
+    return {
+      ...t,
+      scoreJpgUrl: staffPages[0] ?? t.scoreJpgUrl,
+      solfegeJpgUrl: solfegePages[0] ?? t.solfegeJpgUrl,
+    }
+  })
+
+  // Derive JPEG URLs for the primary tune from filesystem
+  const primaryTuneDerivedStaffUrl = primaryTune
+    ? (deriveTuneJpgPages(primaryTune.name).staffPages[0] ?? null)
+    : null
+  const primaryTuneDerivedSolfegeUrl = primaryTune
+    ? (deriveTuneJpgPages(primaryTune.name).solfegePages[0] ?? null)
+    : null
 
   const displayTitle = slugToDisplayTitle(slug)
 
@@ -128,6 +147,8 @@ export default async function PsalmPage({ params }: PageProps) {
       <PsalmTabs
         psalm={psalm}
         primaryTune={primaryTune}
+        primaryTuneDerivedStaffUrl={primaryTuneDerivedStaffUrl}
+        primaryTuneDerivedSolfegeUrl={primaryTuneDerivedSolfegeUrl}
         alternateTunes={alternateTunes}
         activeVersionId={activeVersion?.id}
         recommendedVersionSlug={recommendedVersionSlug}
