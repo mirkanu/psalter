@@ -7,6 +7,7 @@ import { AbcPlayerSection } from "@/components/AbcPlayerSection"
 import { TuneDetailClient } from "@/components/TuneDetailClient"
 import { PsalmsByTuneSection } from "@/components/PsalmsByTuneSection"
 import { deriveTuneJpgPages } from "@/lib/tune-jpg-urls"
+import { sopranoOnly } from "@/lib/utils"
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -64,7 +65,8 @@ export default async function TunePage({ params }: PageProps) {
   const psalmsForMeter = tune.meter ? await fetchPsalmsByMeter(tune.meter) : []
 
   const moods = tune.tuneMoods.map((tm) => tm.mood.name).filter(Boolean) as string[]
-  const bestAbc = tune.abcSatb?.trim() || tune.abcNotation?.trim() || null
+  const rawAbc = tune.abcSatb?.trim() || tune.abcNotation?.trim() || null
+  const bestAbc = rawAbc ? sopranoOnly(rawAbc) : null
   const hasAbc = !!bestAbc
   const hasImages = staffPages.length > 0 || solfegePages.length > 0
   const hasAudio = !!(tune.soundcloudUrl || tune.youtubeUrl)
