@@ -258,6 +258,21 @@ Plans:
 - [ ] 04.9.1-01-PLAN.md — Build AbcPlayer + AbcPlayerSection components; wire into /tunes/[id] and PsalmNotationPlayer; Playwright UAT (5 tests) + human visual verify checkpoint
 **UI hint**: yes
 
+### Phase 4.9.2 (INSERTED): Dynamic ABC Polish
+**Goal**: Live ABC notation is fully functional and visually polished — lyrics split by syllables and rendered inline with staff, all renders fit dynamically to screen, full-screen mode available for both staff and solfège with verse navigation, score button layout is consistent and intentional
+**Depends on**: Phase 4.9.1
+**Requirements**: NOTATION-01, NOTATION-02, NOTATION-03, NOTATION-04, NOTATION-05, NOTATION-06
+**Success Criteria** (what must be TRUE):
+  1. Lyrics are split by syllables and aligned to notes via the ABC `w:` field; unsplit lyrics remain available as reference and for lyrics-only display
+  2. Solfège rendering is dynamically generated from ABC (not a static JPEG); a "Show Original" toggle displays the original JPEG alongside generated solfège
+  3. ABC score + inline lyrics fit dynamically to viewport width; default is 2 lines of staff (4 for double-length tunes); A+/A- buttons adjust base size, auto-fit scales proportionally
+  4. A+/A- font size buttons are always visible (not hidden in lyrics-only mode) and control both the score rendering size and the inline verse text display
+  5. Full-screen mode available for both staff and solfège; retains Prev/Next verse buttons for navigation on mobile (landscape preferred)
+  6. Score controls (Staff/Solfège/Lyrics Only) and media buttons (Play YouTube/SC) are visually grouped, clearly labeled, and use distinct icons to prevent confusion
+**Plans**: TBD (depends on design sprint — likely 4-5 plans)
+**UI hint**: yes
+**Design dependency**: Hymnal layout mockup needed before implementation (see `/gsd-sketch`)
+
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
 **Depends on**: Phase 4.5
@@ -286,7 +301,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 5 → 6
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -299,6 +314,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 →
 | 4.7. Psalm Listing Overhaul | 3/3 | Complete | 2026-05-09 |
 | 4.8. Explore & Tunes Overhaul | 3/3 | Complete | 2026-05-10 |
 | 4.9. Tune Notation Conversion | 0/3 | Not started | - |
-| 4.9.1. Interactive abcjs Player | 0/1 | Not started | - |
+| 4.9.1. Interactive abcjs Player | 1/1 | Complete | 2026-05-13 |
+| 4.9.2. Dynamic ABC Polish | 0/TBD | Not started | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
