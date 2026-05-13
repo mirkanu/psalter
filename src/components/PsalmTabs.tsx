@@ -11,6 +11,7 @@ import { PsalmNotationPlayerClient } from '@/components/PsalmNotationPlayerClien
 import { ChangeTuneDialog } from '@/components/ChangeTuneDialog'
 import type { PsalmDetail } from '@/db/queries/psalms'
 import type { AlternateTune } from '@/db/queries/tunes'
+import { sopranoOnly } from '@/lib/utils'
 
 type TuneRow = NonNullable<
   PsalmDetail['psalmVersions'][number]['psalmVersionTunes'][number]['tune']
@@ -382,7 +383,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
         id: overrideTune.id,
         name: overrideTune.name,
         meter: overrideTune.meter,
-        abcNotation: overrideTune.abcSatb?.trim() || overrideTune.abcNotation,
+        abcNotation: sopranoOnly(overrideTune.abcSatb?.trim() || overrideTune.abcNotation || ''),
         scoreJpgUrl: overrideTune.scoreJpgUrl,
         solfegeJpgUrl: overrideTune.solfegeJpgUrl,
         soundcloudUrl: overrideTune.soundcloudUrl,
@@ -412,7 +413,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
       )}
       {activeTune ? (
         <PsalmNotationPlayerClient
-          abc={(activeTune as any).abcSatb?.trim() || activeTune.abcNotation || null}
+          abc={activeTune.abcNotation ? sopranoOnly(activeTune.abcNotation) : null}
           lyrics={lyrics ?? ''}
           scoreJpgUrl={activeTune.scoreJpgUrl ?? null}
           solfegeJpgUrl={activeTune.solfegeJpgUrl ?? null}
