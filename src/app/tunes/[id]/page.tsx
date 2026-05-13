@@ -64,7 +64,8 @@ export default async function TunePage({ params }: PageProps) {
   const psalmsForMeter = tune.meter ? await fetchPsalmsByMeter(tune.meter) : []
 
   const moods = tune.tuneMoods.map((tm) => tm.mood.name).filter(Boolean) as string[]
-  const hasAbc = !!(tune.abcNotation?.trim())
+  const bestAbc = tune.abcSatb?.trim() || tune.abcNotation?.trim() || null
+  const hasAbc = !!bestAbc
   const hasImages = staffPages.length > 0 || solfegePages.length > 0
   const hasAudio = !!(tune.soundcloudUrl || tune.youtubeUrl)
 
@@ -129,7 +130,7 @@ export default async function TunePage({ params }: PageProps) {
             Score
           </h2>
           <AbcPlayerSection
-            abc={tune.abcNotation!}
+            abc={bestAbc!}
             title={tune.name ?? undefined}
             tuneName={tune.name ?? `Tune ${tune.id}`}
             staffJpgUrl={staffPages[0] ?? null}
