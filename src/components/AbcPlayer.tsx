@@ -208,10 +208,11 @@ export default function AbcPlayer({
       const synth = new abcjs.synth.CreateSynth()
       await synth.init({
         visualObj: visualObjRef.current,
-        options: { soundFontUrl: SOUNDFONT_URL },
-        millisecondsPerMeasure: visualObjRef.current.millisecondsPerMeasure
-          ? visualObjRef.current.millisecondsPerMeasure(bpm)
-          : undefined,
+        options: {
+          soundFontUrl: SOUNDFONT_URL,
+          midiTranspose: transpose,
+          millisecondsPerMeasure: visualObjRef.current.millisecondsPerMeasure?.(bpm),
+        },
       })
       await synth.prime()
       synthRef.current = synth
@@ -234,7 +235,7 @@ export default function AbcPlayer({
       setAudioError('Audio not available in this browser.')
       setAudioReady(false)
     }
-  }, [bpm, highlightEvent])
+  }, [bpm, transpose, highlightEvent])
 
   // ── Pause handler ─────────────────────────────────────────────────────────
   const onPause = useCallback(() => {
