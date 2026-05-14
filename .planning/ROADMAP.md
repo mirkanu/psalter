@@ -269,9 +269,23 @@ Plans:
   4. A+/A- font size buttons are always visible (not hidden in lyrics-only mode) and control both the score rendering size and the inline verse text display
   5. Full-screen mode available for both staff and solfège; retains Prev/Next verse buttons for navigation on mobile (landscape preferred)
   6. Score controls (Staff/Solfège/Lyrics Only) and media buttons (Play YouTube/SC) are visually grouped, clearly labeled, and use distinct icons to prevent confusion
-**Plans**: TBD (depends on design sprint — likely 4-5 plans)
+**Plans**: 5 plans
 **UI hint**: yes
 **Design dependency**: Hymnal layout mockup needed before implementation (see `/gsd-sketch`)
+
+Plans:
+**Wave 1**
+- [ ] 04.9.2-01-PLAN.md — Pure-function foundation: lib/abc-phrases, lib/abc-phrase-meter-map, lib/lyrics.buildAbcWithSyllables + unit tests
+
+**Wave 2** *(parallel — both depend on Wave 1)*
+- [ ] 04.9.2-02-PLAN.md — Annotation script: backfill % PHRASE_BREAK markers into 75 existing tunes.abc_notation rows (human checkpoint)
+- [ ] 04.9.2-03-PLAN.md — Primitives: AbcPlayer scale prop, --staff-base-size CSS, FullscreenOverlay component
+
+**Wave 3** *(depends on Wave 1 + Wave 2)*
+- [ ] 04.9.2-04-PLAN.md — NotationRenderer + NotationRendererClient (dynamic ssr:false wrapper)
+
+**Wave 4** *(depends on Wave 2 + Wave 3)*
+- [ ] 04.9.2-05-PLAN.md — Wire into /psalms/[id] + /tunes/[id], delete legacy components, Playwright UAT, human visual verify (human checkpoint)
 
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
@@ -315,6 +329,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 →
 | 4.8. Explore & Tunes Overhaul | 3/3 | Complete | 2026-05-10 |
 | 4.9. Tune Notation Conversion | 0/3 | Not started | - |
 | 4.9.1. Interactive abcjs Player | 1/1 | Complete | 2026-05-13 |
-| 4.9.2. Dynamic ABC Polish | 0/TBD | Not started | - |
+| 4.9.2. Dynamic ABC Polish | 0/5 | Not started | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
