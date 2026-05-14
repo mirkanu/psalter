@@ -80,6 +80,15 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 - [ ] **PERF-01**: Every Next.js route that fetches data has a `loading.tsx` file rendering a skeleton matching the page shape — no blank or white screen on navigation. Phase 4.5 covers /psalms, /psalms/[id], /tunes, /tunes/[id]. Phase 6 covers remaining routes (search, explore, daily, homepage).
 - [ ] **PERF-02**: All clickable elements (buttons, links, cards) show immediate visual feedback: CSS `:active` state and `useTransition` pending indicator for navigation actions
 
+### Notation (Phase 4.9.2 — Dynamic ABC Polish)
+
+- [x] **NOTATION-01**: Lyrics are split by syllables and aligned to notes via the ABC `w:` field; unsplit lyrics remain available for the Lyrics-only view mode
+- [x] **NOTATION-02**: Solfège rendering shows the original JPEG via the Solfège view-mode toggle (dynamic solfège generation deferred to v2 per D-14); Staff/Solfège/Lyrics-only view modes are mutually exclusive
+- [x] **NOTATION-03**: ABC score + inline lyrics fit dynamically to viewport width; staff renders as one row per phrase (D-19); A+/A− buttons adjust base size; auto-fit scales proportionally
+- [x] **NOTATION-04**: A+/A− font size buttons are always visible (not hidden in lyrics-only mode) and control both score rendering size and inline verse text display; selection persists in localStorage
+- [x] **NOTATION-05**: Full-screen mode available for both staff and solfège; sticky bottom bar retains Prev/Exit/Next; Escape exits; tune-half pagination available on mobile landscape
+- [x] **NOTATION-06**: Score view controls (Staff/Solfège/Lyrics Only) and media controls (Play, BPM, Transpose) are visually grouped into the unified control bar with vertical dividers between functional regions
+
 ---
 
 ## v2 Requirements (Deferred)
@@ -143,3 +152,9 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 | PREC-05 | Phase 5: Precentor Portal | Pending |
 | PREC-06 | Phase 5: Precentor Portal | Pending |
 | PERF-02 | Phase 6: Polish | Pending |
+| NOTATION-01 | Phase 4.9.2: Dynamic ABC Polish | Complete |
+| NOTATION-02 | Phase 4.9.2: Dynamic ABC Polish | Complete |
+| NOTATION-03 | Phase 4.9.2: Dynamic ABC Polish | Complete |
+| NOTATION-04 | Phase 4.9.2: Dynamic ABC Polish | Complete |
+| NOTATION-05 | Phase 4.9.2: Dynamic ABC Polish | Complete |
+| NOTATION-06 | Phase 4.9.2: Dynamic ABC Polish | Complete |

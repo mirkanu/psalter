@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Q07 quick task complete — BPM fix tested and verified on site
-last_updated: "2026-05-14T12:56:15.969Z"
+stopped_at: Phase 04.9.2 complete — dynamic ABC polish shipped, all 5 plans done, visual approval recorded
+last_updated: "2026-05-14T18:00:00.000Z"
 last_activity: 2026-05-14
 progress:
   total_phases: 6
-  completed_phases: 4
-  total_plans: 20
-  completed_plans: 20
+  completed_phases: 5
+  total_plans: 25
+  completed_plans: 25
   percent: 100
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 
 ## Current Position
 
-Phase: 04.9.2 (dynamic-abc-polish) — EXECUTING
-Plan: 2 of 5
-UI-SPEC: Complete — REVISED & RE-APPROVED (hymnal phrase-split layout, syllable alignment, verse numbers clarified — 2026-05-13)
-Status: Ready to execute
+Phase: 04.9.2 (dynamic-abc-polish) — COMPLETE
+Plan: 5 of 5 (final)
+UI-SPEC: Complete — REVISED & RE-APPROVED (hymnal phrase-split layout, syllable alignment, verse numbers clarified — 2026-05-13). Visual re-review of single-AbcPlayer + auto-advance architecture: APPROVED 2026-05-14.
+Status: Phase 04.9.2 closed. Next phase TBD (4.6 polish, 4.9 OCR completion, or Phase 5 portal).
 Last activity: 2026-05-14
 
 Progress: [██████████] 100%
@@ -116,6 +116,14 @@ Recent decisions affecting current work:
 - [04.5-04]: psalter-db container password mismatch diagnosed and fixed via ALTER USER — db was initialised with stale credentials; production verified via E2E curl tests
 - [04.7-02]: renderSnippet uses strong (not b) — Wave 0 Playwright stub selects [data-psalm-box] strong; globals.css updated to target both b and strong
 - [04.7-02]: psalter-db password re-fixed via ALTER USER (regressed between sessions); .env password is 'postgres'
+- [04.9.2-01]: Phrase-split + stanza-cycle library (splitOnPhraseBreaks, buildPhraseAbc, phrasesForMeter, splitStanzaIntoPhrasePortions, buildAbcWithSyllables, groupStanzasIntoCycles, mapCycleToPhraseSyllableLines) — pure functions, fully unit-tested
+- [04.9.2-02]: % PHRASE_BREAK markers backfilled into 75 tunes.abc_notation rows via annotate-phrase-breaks script; SATB column NOT yet backfilled (follow-up)
+- [04.9.2-03]: AbcPlayer scale prop, FullscreenOverlay component, --staff-base-size CSS var, .verse-text / .verse-number utility classes
+- [04.9.2-04]: NotationRenderer + NotationRendererClient (dynamic ssr:false wrapper) implementing D-19 (one row per phrase), D-20 (stanza-cycle pairing), D-21 (two-axis pagination, tune-half flips first)
+- [04.9.2-05]: pickAbcWithMarkers selects ABC variant containing % PHRASE_BREAK markers (preserves D-19 when tune has both abc_notation and abc_satb)
+- [04.9.2-05]: Single AbcPlayer instance replaces per-phrase array — visual N-row layout via ABC native newlines; preserves D-19 while enabling single synth, single BPM source, single highlight target
+- [04.9.2-05]: Auto-advance pagination during synth playback — cyclePage/halfPage advance as synth crosses phrase/cycle boundaries; manual nav and pause both interrupt
+- [04.9.2-05]: Phase 04.9.2 ships unified control bar grouping stanza-nav, view-mode, A+/A−, and play/BPM/transpose with vertical dividers (D-19 control-grouping rule). Visual re-review: APPROVED 2026-05-14.
 
 ### Pending Todos
 
@@ -150,6 +158,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-14T12:56:15.934Z
-Stopped at: Q07 quick task complete — BPM fix tested and verified on site
+Last session: 2026-05-14T18:00:00.000Z
+Stopped at: Phase 04.9.2 complete (5/5 plans). Visual approval recorded. Ready for next phase.
 Resume file: None

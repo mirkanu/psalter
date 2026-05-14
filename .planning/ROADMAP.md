@@ -258,7 +258,7 @@ Plans:
 - [ ] 04.9.1-01-PLAN.md — Build AbcPlayer + AbcPlayerSection components; wire into /tunes/[id] and PsalmNotationPlayer; Playwright UAT (5 tests) + human visual verify checkpoint
 **UI hint**: yes
 
-### Phase 4.9.2 (INSERTED): Dynamic ABC Polish
+### Phase 4.9.2 (INSERTED): Dynamic ABC Polish — COMPLETE (2026-05-14)
 **Goal**: Live ABC notation is fully functional and visually polished — lyrics split by syllables and rendered inline with staff, all renders fit dynamically to screen, full-screen mode available for both staff and solfège with verse navigation, score button layout is consistent and intentional
 **Depends on**: Phase 4.9.1
 **Requirements**: NOTATION-01, NOTATION-02, NOTATION-03, NOTATION-04, NOTATION-05, NOTATION-06
@@ -282,10 +282,10 @@ Plans:
 - [x] 04.9.2-03-PLAN.md — Primitives: AbcPlayer scale prop, --staff-base-size CSS, FullscreenOverlay component
 
 **Wave 3** *(depends on Wave 1 + Wave 2)*
-- [ ] 04.9.2-04-PLAN.md — NotationRenderer + NotationRendererClient (dynamic ssr:false wrapper)
+- [x] 04.9.2-04-PLAN.md — NotationRenderer + NotationRendererClient (dynamic ssr:false wrapper)
 
 **Wave 4** *(depends on Wave 2 + Wave 3)*
-- [ ] 04.9.2-05-PLAN.md — Wire into /psalms/[id] + /tunes/[id], delete legacy components, Playwright UAT, human visual verify (human checkpoint)
+- [x] 04.9.2-05-PLAN.md — Wire into /psalms/[id] + /tunes/[id], delete legacy components, Playwright UAT, human visual verify (human checkpoint)
 
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
@@ -329,6 +329,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 →
 | 4.8. Explore & Tunes Overhaul | 3/3 | Complete | 2026-05-10 |
 | 4.9. Tune Notation Conversion | 0/3 | Not started | - |
 | 4.9.1. Interactive abcjs Player | 1/1 | Complete | 2026-05-13 |
-| 4.9.2. Dynamic ABC Polish | 0/5 | Not started | - |
+| 4.9.2. Dynamic ABC Polish | 5/5 | Complete | 2026-05-14 |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
