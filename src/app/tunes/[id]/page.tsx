@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import { fetchTuneDetail, fetchTuneIds } from "@/db/queries/tunes"
 import { fetchPsalmsByMeter } from "@/db/queries/psalms"
 import { Badge } from "@/components/ui/badge"
-import { AbcPlayerSection } from "@/components/AbcPlayerSection"
+import { NotationRendererClient } from "@/components/notation/NotationRendererClient"
 import { TuneDetailClient } from "@/components/TuneDetailClient"
 import { PsalmsByTuneSection } from "@/components/PsalmsByTuneSection"
 import { deriveTuneJpgPages } from "@/lib/tune-jpg-urls"
@@ -126,21 +126,26 @@ export default async function TunePage({ params }: PageProps) {
       )}
 
       {/* Score — ABC notation with interactive player */}
-      {hasAbc && (
-        <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-            Score
-          </h2>
-          <AbcPlayerSection
-            abc={bestAbc!}
-            title={tune.name ?? undefined}
-            tuneName={tune.name ?? `Tune ${tune.id}`}
-            staffJpgUrl={staffPages[0] ?? null}
-            solfegeJpgUrl={solfegePages[0] ?? null}
-            initialMode="staff"
-          />
-        </section>
-      )}
+      {hasAbc && (() => {
+        const firstLinkedPsalmVersion = tune.psalmVersionTunes?.[0]?.psalmVersion ?? null
+        const tunesLyrics = firstLinkedPsalmVersion?.lyrics ?? ''
+        return (
+          <section>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+              Score
+            </h2>
+            <NotationRendererClient
+              abc={bestAbc!}
+              lyrics={tunesLyrics}
+              scoreJpgUrl={staffPages[0] ?? null}
+              solfegeJpgUrl={solfegePages[0] ?? null}
+              tuneName={tune.name ?? `Tune ${tune.id}`}
+              tuneMeter={tune.meter ?? null}
+              stanzaMeter={firstLinkedPsalmVersion?.meter ?? null}
+            />
+          </section>
+        )
+      })()}
 
       {/* Score — image-based with Staff/Solfège tabs, multi-page arrows, play button */}
       {!hasAbc && (hasImages || hasAudio) && (

@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Pencil } from 'lucide-react'
-import { PsalmNotationPlayerClient } from '@/components/PsalmNotationPlayerClient'
+import { NotationRendererClient } from '@/components/notation/NotationRendererClient'
 import { ChangeTuneDialog } from '@/components/ChangeTuneDialog'
 import type { PsalmDetail } from '@/db/queries/psalms'
 import type { AlternateTune } from '@/db/queries/tunes'
@@ -412,20 +412,14 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
         </div>
       )}
       {activeTune ? (
-        <PsalmNotationPlayerClient
-          abc={(() => { const r = (activeTune as any).abcSatb?.trim() || activeTune.abcNotation?.trim(); return r ? sopranoOnly(r) : null })()}
+        <NotationRendererClient
+          abc={(() => { const r = (activeTune as { abcSatb?: string | null }).abcSatb?.trim() || activeTune.abcNotation?.trim(); return r ? sopranoOnly(r) : '' })()}
           lyrics={lyrics ?? ''}
           scoreJpgUrl={activeTune.scoreJpgUrl ?? null}
           solfegeJpgUrl={activeTune.solfegeJpgUrl ?? null}
-          tuneName={activeTune.name}
-          tuneMeter={activeTune.meter ?? primaryVersion?.meter ?? null}
-          tuneId={activeTune.id}
-          soundcloudUrl={activeTune.soundcloudUrl ?? null}
-          youtubeUrl={(activeTune as { youtubeUrl?: string | null })?.youtubeUrl ?? null}
-          alternateTunes={alternateTunes}
-          onChangeTune={setOverrideTune}
-          stickyScoreMode={stickyScoreMode}
-          mobileStickyScore={mobileStickyScore}
+          tuneName={activeTune.name ?? 'Tune'}
+          tuneMeter={activeTune.meter ?? null}
+          stanzaMeter={primaryVersion?.meter ?? null}
         />
       ) : (
         <div className="space-y-4">
