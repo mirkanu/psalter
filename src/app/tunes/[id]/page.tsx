@@ -7,7 +7,7 @@ import { NotationRendererClient } from "@/components/notation/NotationRendererCl
 import { TuneDetailClient } from "@/components/TuneDetailClient"
 import { PsalmsByTuneSection } from "@/components/PsalmsByTuneSection"
 import { deriveTuneJpgPages } from "@/lib/tune-jpg-urls"
-import { sopranoOnly } from "@/lib/utils"
+import { sopranoOnly, pickAbcWithMarkers } from "@/lib/utils"
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -65,7 +65,7 @@ export default async function TunePage({ params }: PageProps) {
   const psalmsForMeter = tune.meter ? await fetchPsalmsByMeter(tune.meter) : []
 
   const moods = tune.tuneMoods.map((tm) => tm.mood.name).filter(Boolean) as string[]
-  const rawAbc = tune.abcSatb?.trim() || tune.abcNotation?.trim() || null
+  const rawAbc = pickAbcWithMarkers(tune.abcSatb, tune.abcNotation)
   const bestAbc = rawAbc ? sopranoOnly(rawAbc) : null
   const hasAbc = !!bestAbc
   const hasImages = staffPages.length > 0 || solfegePages.length > 0

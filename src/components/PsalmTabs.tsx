@@ -11,7 +11,7 @@ import { NotationRendererClient } from '@/components/notation/NotationRendererCl
 import { ChangeTuneDialog } from '@/components/ChangeTuneDialog'
 import type { PsalmDetail } from '@/db/queries/psalms'
 import type { AlternateTune } from '@/db/queries/tunes'
-import { sopranoOnly } from '@/lib/utils'
+import { sopranoOnly, pickAbcWithMarkers } from '@/lib/utils'
 
 type TuneRow = NonNullable<
   PsalmDetail['psalmVersions'][number]['psalmVersionTunes'][number]['tune']
@@ -413,7 +413,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
       )}
       {activeTune ? (
         <NotationRendererClient
-          abc={(() => { const r = (activeTune as { abcSatb?: string | null }).abcSatb?.trim() || activeTune.abcNotation?.trim(); return r ? sopranoOnly(r) : '' })()}
+          abc={(() => { const r = pickAbcWithMarkers((activeTune as { abcSatb?: string | null }).abcSatb, activeTune.abcNotation); return r ? sopranoOnly(r) : '' })()}
           lyrics={lyrics ?? ''}
           scoreJpgUrl={activeTune.scoreJpgUrl ?? null}
           solfegeJpgUrl={activeTune.solfegeJpgUrl ?? null}
