@@ -275,11 +275,11 @@ Plans:
 
 Plans:
 **Wave 1**
-- [ ] 04.9.2-01-PLAN.md — Pure-function foundation: lib/abc-phrases, lib/abc-phrase-meter-map, lib/lyrics.buildAbcWithSyllables + unit tests
+- [x] 04.9.2-01-PLAN.md — Pure-function foundation: lib/abc-phrases, lib/abc-phrase-meter-map, lib/lyrics.buildAbcWithSyllables + unit tests
 
 **Wave 2** *(parallel — both depend on Wave 1)*
-- [ ] 04.9.2-02-PLAN.md — Annotation script: backfill % PHRASE_BREAK markers into 75 existing tunes.abc_notation rows (human checkpoint)
-- [ ] 04.9.2-03-PLAN.md — Primitives: AbcPlayer scale prop, --staff-base-size CSS, FullscreenOverlay component
+- [x] 04.9.2-02-PLAN.md — Annotation script: backfill % PHRASE_BREAK markers into 75 existing tunes.abc_notation rows (human checkpoint)
+- [x] 04.9.2-03-PLAN.md — Primitives: AbcPlayer scale prop, --staff-base-size CSS, FullscreenOverlay component
 
 **Wave 3** *(depends on Wave 1 + Wave 2)*
 - [ ] 04.9.2-04-PLAN.md — NotationRenderer + NotationRendererClient (dynamic ssr:false wrapper)
