@@ -7,13 +7,22 @@
  *
  * Idempotent: rows already containing `% PHRASE_BREAK` are skipped by default.
  *
- * Usage (CLI loop added in Plan 02 Task 2):
+ * Usage:
  *   npx tsx scripts/annotate-phrase-breaks.ts            # apply all eligible rows
  *   npx tsx scripts/annotate-phrase-breaks.ts --dry-run  # print plan, no writes
  *   npx tsx scripts/annotate-phrase-breaks.ts --overwrite# re-annotate rows that already have a marker
  */
 
-// ─── Pure helper (exported for unit tests — Plan 02 Task 1) ──────────────────
+import 'dotenv/config'
+import { fileURLToPath } from 'node:url'
+import { realpathSync } from 'node:fs'
+import { drizzle } from 'drizzle-orm/postgres-js'
+import postgres from 'postgres'
+import { eq, and, isNotNull, not, like } from 'drizzle-orm'
+import * as schema from '../src/db/schema'
+import { phrasesForMeter } from '../src/lib/abc-phrase-meter-map'
+
+// ─── Pure helper (exported for unit tests) ───────────────────────────────────
 
 /**
  * Insert (n-1) `% PHRASE_BREAK` markers into the music body of an ABC string,
@@ -70,4 +79,91 @@ export function insertPhraseBreaks(abc: string, n: number): string {
   }
 
   return [...header, ...newBody].join('\n')
+}
+
+// ─── CLI / main loop ─────────────────────────────────────────────────────────
+
+const args = process.argv.slice(2)
+const DRY_RUN = args.includes('--dry-run')
+const OVERWRITE = args.includes('--overwrite')
+
+async function main() {
+  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL not set')
+  const pgClient = postgres(process.env.DATABASE_URL!)
+  const db = drizzle({ client: pgClient, schema })
+
+  console.log(`Running ${DRY_RUN ? '[DRY RUN]' : '[LIVE]'}${OVERWRITE ? ' [OVERWRITE]' : ''}`)
+
+  // Build query: always require abc_notation; default mode also excludes rows
+  // that already contain the marker (idempotency).
+  const whereClause = OVERWRITE
+    ? isNotNull(schema.tunes.abcNotation)
+    : and(
+        isNotNull(schema.tunes.abcNotation),
+        not(like(schema.tunes.abcNotation, '%% PHRASE_BREAK%')),
+      )
+
+  const rows = await db.select().from(schema.tunes).where(whereClause)
+  console.log(`Found ${rows.length} candidate row(s)`)
+
+  let updated = 0
+  let skipped = 0
+
+  for (const t of rows) {
+    const n = phrasesForMeter(t.meter)
+    if (n <= 1) {
+      console.log(`  - skip ${t.name} (${t.meter ?? 'no meter'}): n=1`)
+      skipped++
+      continue
+    }
+
+    let source = t.abcNotation!
+    if (OVERWRITE) {
+      // Strip any existing markers + collapse the resulting blank lines so the
+      // pure helper re-annotates from a clean slate.
+      source = source.replace(/^\s*%\s*PHRASE_BREAK\s*$/gm, '').replace(/\n\n+/g, '\n')
+    }
+
+    const updatedAbc = insertPhraseBreaks(source, n)
+    if (updatedAbc === source) {
+      console.log(`  - skip ${t.name} (${t.meter}): annotation unsafe (no K:, too few measures, or already marked)`)
+      skipped++
+      continue
+    }
+
+    if (DRY_RUN) {
+      console.log(`  ✓ [dry] ${t.name} (${t.meter}) -> ${n} phrases`)
+    } else {
+      await db
+        .update(schema.tunes)
+        .set({ abcNotation: updatedAbc })
+        .where(eq(schema.tunes.id, t.id))
+      console.log(`  ✓ ${t.name} (${t.meter}) -> ${n} phrases`)
+    }
+    updated++
+  }
+
+  console.log(
+    `\nSummary: ${updated} annotated, ${skipped} skipped, ${rows.length} total candidates`,
+  )
+  await pgClient.end()
+}
+
+// Only run main() when invoked directly (not when imported by tests). Compare
+// the resolved entry script path to this module's path.
+const isEntry = (() => {
+  try {
+    const thisFile = realpathSync(fileURLToPath(import.meta.url))
+    const argvFile = process.argv[1] ? realpathSync(process.argv[1]) : ''
+    return thisFile === argvFile
+  } catch {
+    return false
+  }
+})()
+
+if (isEntry) {
+  main().catch((e) => {
+    console.error(e)
+    process.exit(1)
+  })
 }
