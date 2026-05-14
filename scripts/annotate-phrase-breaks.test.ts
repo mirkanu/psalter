@@ -119,4 +119,121 @@ describe('insertPhraseBreaks', () => {
     const twice = insertPhraseBreaks(once, 2)
     expect(twice).toBe(once)
   })
+
+  // ─── Regression: Bug 1 — w: lyric lines must not be counted as music lines ─
+
+  // Realistic St-Peter-style fixture: 2 music lines, each followed by `w:`
+  // lyric lines that contain `|` for syllable-to-barline alignment. The
+  // previous (broken) implementation treated `w:` lines as music lines and
+  // inserted the marker AFTER the 1st w: lyric line of the 2nd music line.
+  // Correct behaviour: place the marker AFTER the 1st music line (between
+  // the two staves), unaffected by the embedded `|` in the lyric lines.
+  const ST_PETER_LIKE = [
+    'X:1',
+    'T:St. Peter-like',
+    'M:4/4',
+    'L:1/4',
+    'K:D',
+    'V:1 treble',
+    'V:1',
+    ' A | d c B A | A G F F | E D G F | E3 |1$ F | %5',
+    'w: How|sweet the name of|Je- sus sounds in|a be- liev- er\'s|ear!|It|',
+    'w: It|makes the wound- ed|spir- it whole and|calms the trou- bled|breast;|\'tis|',
+    ' G F B A | A G F D | F E D C | D3 x |] %10',
+    'w: fear.|',
+    'w: rest.|',
+  ].join('\n')
+
+  it('Bug 1 regression: w: lyric lines are NOT counted as music lines', () => {
+    const out = insertPhraseBreaks(ST_PETER_LIKE, 2)
+    const lines = out.split('\n')
+    const markerIdx = lines.findIndex((l) => /^\s*%\s*PHRASE_BREAK\s*$/.test(l))
+    expect(markerIdx).toBeGreaterThan(-1)
+    // The line immediately before the marker MUST be a music line (starts with
+    // a space and contains `|` and notes), NOT a `w:` lyric line.
+    const lineBefore = lines[markerIdx - 1]
+    expect(lineBefore.startsWith('w:')).toBe(false)
+    expect(lineBefore).toContain('|')
+    // There should be exactly one marker for n=2.
+    const markerCount = (out.match(/^\s*%\s*PHRASE_BREAK\s*$/gm) ?? []).length
+    expect(markerCount).toBe(1)
+  })
+
+  it('Bug 1 regression: V: voice lines also excluded as music', () => {
+    const withVoice = [
+      'X:1',
+      'T:Voice-only header',
+      'M:C',
+      'L:1/4',
+      'K:G',
+      'V:1 treble nm="S A" snm="S.A." | extra',
+      ' G2 G G | G F E D |',
+      ' E G F E | D2 D2 |',
+    ].join('\n')
+    // V: line contains '|' but should NOT count. We have 2 real music lines,
+    // so n=2 should put the marker between them (after index of first music line).
+    const out = insertPhraseBreaks(withVoice, 2)
+    const lines = out.split('\n')
+    const markerIdx = lines.findIndex((l) => /^\s*%\s*PHRASE_BREAK\s*$/.test(l))
+    expect(markerIdx).toBeGreaterThan(-1)
+    expect(lines[markerIdx - 1].trim().startsWith('V:')).toBe(false)
+  })
+
+  // ─── Regression: Bug 2 — single-line music bodies (Old 100th, Effingham) ──
+
+  // Single physical music line containing 6 internal barlines — must be
+  // spliced mid-line for n=2.
+  const SINGLE_LINE_CM = [
+    'X:1',
+    'T:Single-line CM',
+    'M:C',
+    'L:1/4',
+    'K:G',
+    ' G2 G F | E D G2 | A2 B2 | c2 B2 | A2 G2 | F2 G2 |] %6',
+  ].join('\n')
+
+  it('Bug 2 regression: single-line CM body gets 1 mid-line marker', () => {
+    const out = insertPhraseBreaks(SINGLE_LINE_CM, 2)
+    expect(out).not.toBe(SINGLE_LINE_CM)
+    const markerCount = (out.match(/^\s*%\s*PHRASE_BREAK\s*$/gm) ?? []).length
+    expect(markerCount).toBe(1)
+    // Round-trip: splitOnPhraseBreaks must see exactly 2 phrases.
+    const { phrases } = splitOnPhraseBreaks(out)
+    expect(phrases.length).toBe(2)
+  })
+
+  // DCM body on a single line — must get 3 markers for n=4.
+  const SINGLE_LINE_DCM = [
+    'X:1',
+    'T:Single-line DCM',
+    'M:C',
+    'L:1/4',
+    'K:G',
+    ' G G | G F | E D | G2 | A B | c2 | B A | G2 | E E | F G | A2 | B c | d2 | B G | A2 | G2 |]',
+  ].join('\n')
+
+  it('Bug 2 regression: single-line DCM body gets 3 mid-line markers', () => {
+    const out = insertPhraseBreaks(SINGLE_LINE_DCM, 4)
+    const markerCount = (out.match(/^\s*%\s*PHRASE_BREAK\s*$/gm) ?? []).length
+    expect(markerCount).toBe(3)
+    const { phrases } = splitOnPhraseBreaks(out)
+    expect(phrases.length).toBe(4)
+  })
+
+  it('Bug 2 regression: re-running on already-marked single-line body is a no-op', () => {
+    const once = insertPhraseBreaks(SINGLE_LINE_CM, 2)
+    const twice = insertPhraseBreaks(once, 2)
+    expect(twice).toBe(once)
+  })
+
+  it('Bug 2 regression: single-line body with too few barlines returns unchanged', () => {
+    const tiny = [
+      'X:1',
+      'T:Too-short single line',
+      'K:G',
+      ' G2 |] %1',
+    ].join('\n')
+    // Only one barline, none internal — cannot split for n=2.
+    expect(insertPhraseBreaks(tiny, 2)).toBe(tiny)
+  })
 })

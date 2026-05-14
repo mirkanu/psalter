@@ -25,8 +25,19 @@ import { phrasesForMeter } from '../src/lib/abc-phrase-meter-map'
 // ─── Pure helper (exported for unit tests) ───────────────────────────────────
 
 /**
+ * True iff a body line is an ABC info-field line (e.g. `w:` lyrics, `V:` voice,
+ * `K:` key, `M:` meter, …). ABC info fields are single ASCII letters followed
+ * by `:` at the start of the line. These lines may contain `|` (notably `w:`
+ * lyric lines, where `|` aligns syllables to barlines) so they MUST NOT be
+ * counted as music lines for phrase splitting.
+ */
+function isInfoFieldLine(line: string): boolean {
+  return /^\s*[A-Za-z]:/.test(line)
+}
+
+/**
  * Insert (n-1) `% PHRASE_BREAK` markers into the music body of an ABC string,
- * dividing the music lines into n roughly-equal phrases.
+ * dividing the music into n roughly-equal phrases.
  *
  * Pure function. No DB, no fs, no env.
  *
@@ -34,15 +45,20 @@ import { phrasesForMeter } from '../src/lib/abc-phrase-meter-map'
  *   1. n <= 1 → return input unchanged.
  *   2. Input already contains `% PHRASE_BREAK` → return unchanged (idempotent).
  *   3. Locate K: line. If absent → return unchanged (cannot annotate safely).
- *   4. Body = lines after K:. Identify "music lines" = lines containing '|'.
- *   5. If fewer music lines than n → return unchanged (cannot split cleanly).
- *   6. Distribute music lines into n roughly-equal chunks (floor + remainder).
- *   7. After the last music line of each non-final chunk, splice in a line
- *      consisting of exactly `% PHRASE_BREAK`.
+ *   4. Body = lines after K:. Music lines = lines containing '|' that are NOT
+ *      ABC info fields (`w:` lyrics, `V:` voice, etc.).
+ *   5. If we have >= n music lines: distribute music lines into n chunks
+ *      (line-based split — preferred, keeps stave boundaries intact).
+ *   6. Else if exactly one music line with enough internal barlines: distribute
+ *      barline-delimited measure tokens into n chunks and splice markers
+ *      mid-line (single-line-body fallback for compact ABC sources).
+ *   7. Else return unchanged (cannot split cleanly).
  *
- * For Scottish Psalter tunes, music lines roughly correspond to staff lines
- * / lyrical lines (D-04). Splitting on music-line boundaries is the simplest
- * approximation of "split where the lyric lines break".
+ * For Scottish Psalter tunes, music lines roughly correspond to staff lines /
+ * lyrical lines (D-04). Splitting on music-line boundaries is the simplest
+ * approximation of "split where the lyric lines break"; the mid-line fallback
+ * applies the same idea (equal measure groups) to tunes whose entire body has
+ * been collapsed onto one physical line.
  */
 export function insertPhraseBreaks(abc: string, n: number): string {
   if (n <= 1) return abc
@@ -55,29 +71,96 @@ export function insertPhraseBreaks(abc: string, n: number): string {
   const header = lines.slice(0, kIdx + 1)
   const body = lines.slice(kIdx + 1)
 
-  // Music line = line containing at least one bar separator
+  // Music line = contains a bar separator AND is not an ABC info field
+  // (w:, V:, etc. — these can contain `|` for lyric alignment).
   const musicLineIndices = body
-    .map((l, i) => (l.includes('|') ? i : -1))
+    .map((l, i) => (l.includes('|') && !isInfoFieldLine(l) ? i : -1))
     .filter((i) => i !== -1)
-  if (musicLineIndices.length < n) return abc
 
-  // Distribute music lines into n chunks; chunk k gets floor(L/n) + (k<remainder?1:0).
-  const chunkSize = Math.floor(musicLineIndices.length / n)
-  const remainder = musicLineIndices.length % n
-  // breakIndices = body-array indices AFTER which to insert a marker
-  const breakIndices: number[] = []
-  let consumed = 0
-  for (let k = 0; k < n - 1; k++) {
-    consumed += chunkSize + (k < remainder ? 1 : 0)
-    breakIndices.push(musicLineIndices[consumed - 1])
+  // ─── Path A: multi-music-line body — split on music-line boundaries ────────
+  if (musicLineIndices.length >= n) {
+    const chunkSize = Math.floor(musicLineIndices.length / n)
+    const remainder = musicLineIndices.length % n
+    const breakIndices: number[] = []
+    let consumed = 0
+    for (let k = 0; k < n - 1; k++) {
+      consumed += chunkSize + (k < remainder ? 1 : 0)
+      breakIndices.push(musicLineIndices[consumed - 1])
+    }
+
+    const newBody: string[] = []
+    for (let i = 0; i < body.length; i++) {
+      newBody.push(body[i])
+      if (breakIndices.includes(i)) newBody.push('% PHRASE_BREAK')
+    }
+    return [...header, ...newBody].join('\n')
   }
 
-  const newBody: string[] = []
-  for (let i = 0; i < body.length; i++) {
-    newBody.push(body[i])
-    if (breakIndices.includes(i)) newBody.push('% PHRASE_BREAK')
-  }
+  // ─── Path B: single-music-line body — mid-line barline split (fallback) ────
+  // Some Airtable-sourced tunes (e.g. Old 100th, Effingham, Walton) have their
+  // entire music body on one physical line. We split that line at internal
+  // barline positions so the must-have ("every eligible row gets >=1 marker")
+  // can still be satisfied. Phrase-break markers MUST sit on their own line
+  // (the consumer regex uses /m flag), so we wrap the splice in newlines.
+  if (musicLineIndices.length !== 1) return abc
 
+  const musicLineIdx = musicLineIndices[0]
+  const musicLine = body[musicLineIdx]
+
+  // Find candidate split positions: positions of `|` characters that are NOT
+  // followed/preceded by `|` (so we treat `||` as a single separator), and not
+  // the trailing end-of-piece marker `|]`. Each `|` is a measure boundary; we
+  // pick (n-1) positions roughly evenly spaced across them.
+  const barPositions: number[] = []
+  for (let i = 0; i < musicLine.length; i++) {
+    if (musicLine[i] !== '|') continue
+    // Skip second char of a `||` pair (we keep the first).
+    if (i > 0 && musicLine[i - 1] === '|') continue
+    // Skip trailing `|]` end-of-piece marker.
+    if (musicLine[i + 1] === ']') continue
+    barPositions.push(i)
+  }
+  // The leading bar (if the line starts with `|`) is not a measure boundary,
+  // and the very last bar (if followed only by whitespace / end-of-line) is
+  // the closing barline — drop both as splice candidates.
+  const internalBars = barPositions.filter((p, idx) => {
+    if (idx === 0 && /^\s*$/.test(musicLine.slice(0, p))) return false
+    if (/^[|\s]*$/.test(musicLine.slice(p + 1))) return false
+    return true
+  })
+  if (internalBars.length < n - 1) return abc
+
+  // Distribute splice points across internal bar positions.
+  // We want (n-1) markers at roughly equal positions: pick indices
+  // floor(internalBars.length * k / n) for k = 1..n-1.
+  const splicePositions: number[] = []
+  for (let k = 1; k < n; k++) {
+    const idx = Math.floor((internalBars.length * k) / n) - 1
+    const clamped = Math.max(0, Math.min(internalBars.length - 1, idx))
+    // Splice AFTER the chosen barline character (so the bar belongs to the
+    // preceding phrase). Position is `internalBars[clamped] + 1`.
+    splicePositions.push(internalBars[clamped] + 1)
+  }
+  // De-duplicate (cheap guard in case rounding collides) and sort.
+  const unique = Array.from(new Set(splicePositions)).sort((a, b) => a - b)
+  if (unique.length < n - 1) return abc
+
+  // Build the spliced line: walk left-to-right, inserting `\n% PHRASE_BREAK\n`
+  // at each splice position.
+  let spliced = ''
+  let cursor = 0
+  for (const pos of unique) {
+    spliced += musicLine.slice(cursor, pos) + '\n% PHRASE_BREAK\n'
+    cursor = pos
+    // Trim leading whitespace on the next chunk so the marker doesn't sit
+    // immediately before a leading space that visually disconnects it.
+    while (cursor < musicLine.length && musicLine[cursor] === ' ') cursor++
+  }
+  spliced += musicLine.slice(cursor)
+
+  const newBody = [...body]
+  // Replace the single music line with the spliced multi-line block.
+  newBody.splice(musicLineIdx, 1, ...spliced.split('\n'))
   return [...header, ...newBody].join('\n')
 }
 
