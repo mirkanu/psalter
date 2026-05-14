@@ -4,6 +4,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useCallback,
   type CSSProperties,
   type ReactNode,
 } from 'react'
@@ -16,8 +17,8 @@ import {
 } from 'lucide-react'
 import AbcPlayer from '@/components/AbcPlayer'
 import { FullscreenOverlay } from './FullscreenOverlay'
-import { splitOnPhraseBreaks, buildPhraseAbc } from '@/lib/abc-phrases'
-import { buildAbcWithSyllables } from '@/lib/lyrics'
+import { splitOnPhraseBreaks } from '@/lib/abc-phrases'
+import { syllabifyForAbc } from '@/lib/lyrics'
 import {
   groupStanzasIntoCycles,
   mapCycleToPhraseSyllableLines,
@@ -375,22 +376,84 @@ export function NotationRenderer({
     </div>
   )
 
+  // ── Unified multi-staff ABC body (D-19 — one AbcPlayer per visible cycle) ──
+  // abcjs renders each newline-separated music line as a separate staff line
+  // within ONE rendered tune. We compose: header → for each visible phrase i,
+  // emit its body line followed by one `w:` line per stanza-portion. This
+  // gives the visual effect of N stacked phrase rows while remaining a single
+  // tune for the synth (Play traverses end-to-end naturally).
+  const unifiedAbc = useMemo(() => {
+    if (split.phrases.length === 0) return split.header
+    const parts: string[] = [split.header]
+    for (const i of visiblePhraseIndices) {
+      const phraseBody = (split.phrases[i] ?? '').trim()
+      if (!phraseBody) continue
+      // Strip any pre-existing w: lines from the phrase body (defensive).
+      const cleanedBody = phraseBody
+        .split('\n')
+        .filter((l) => !/^w:/.test(l.trim()))
+        .join('\n')
+        .trim()
+      parts.push(cleanedBody)
+      const wLines = wLinesForPhrase(i)
+      for (const portion of wLines) {
+        if (portion && portion.trim()) {
+          parts.push(`w: ${syllabifyForAbc(portion.replace(/\n/g, ' '))}`)
+        }
+      }
+    }
+    return parts.join('\n')
+    // wLinesForPhrase depends on visibleCycles + paginateTuneHalf + halfPage; those
+    // are captured implicitly here via visiblePhraseIndices + closure. eslint-disable
+    // is fine since the recompute on page change is the desired behaviour.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [split, visiblePhraseIndices, visibleCycles, paginateTuneHalf, halfPage, tuneMeter, stanzaMeter])
+
+  // ── Auto-advance pagination during playback (D-21 axis B + axis A) ─────────
+  // Fallback approach (per plan guidance): on natural end of synth, if more
+  // pages remain, advance and re-trigger play via an autoPlayToken increment.
+  const [autoPlayToken, setAutoPlayToken] = useState(0)
+  const [chainingPlayback, setChainingPlayback] = useState(false)
+
+  const onPlaybackComplete = useCallback(() => {
+    if (!chainingPlayback) return
+    if (atEnd) {
+      setChainingPlayback(false)
+      return
+    }
+    next()
+    // Bump the token so AbcPlayer re-triggers Play after re-render.
+    setAutoPlayToken((t) => t + 1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chainingPlayback, atEnd])
+
+  const onPlayStart = useCallback(() => {
+    // User pressed Play: if pagination is active, enable chaining so playback
+    // continues across pages until the end. If not paginated, no-op (single
+    // play cycle ends normally).
+    if (showPagination && !atEnd) {
+      setChainingPlayback(true)
+    }
+  }, [showPagination, atEnd])
+
+  const onPlaybackStop = useCallback(() => {
+    // User manually paused/stopped — break the chain.
+    setChainingPlayback(false)
+  }, [])
+
   // ── View area ─────────────────────────────────────────────────────────────
   let viewArea: ReactNode
   if (viewMode === 'staff') {
     viewArea = (
-      <div className="space-y-4">
-        {visiblePhraseIndices.map((i) => {
-          const wLines = wLinesForPhrase(i)
-          const phraseAbc = buildPhraseAbc(split, i)
-          const abcWithLyrics = buildAbcWithSyllables(phraseAbc, wLines)
-          return (
-            <div key={i} className="phrase-row">
-              <AbcPlayer abc={abcWithLyrics} scale={scale} tuneName={tuneName} />
-            </div>
-          )
-        })}
-      </div>
+      <AbcPlayer
+        abc={unifiedAbc}
+        scale={scale}
+        tuneName={tuneName}
+        autoPlayToken={autoPlayToken}
+        onPlayStart={onPlayStart}
+        onPlaybackComplete={onPlaybackComplete}
+        onPlaybackStop={onPlaybackStop}
+      />
     )
   } else if (viewMode === 'solfege') {
     viewArea = solfegeJpgUrl ? (

@@ -50,6 +50,18 @@ interface AbcPlayerProps {
   lyricsText?: string
   /** abcjs render scale factor; derived from --staff-base-size by parent (NOTATION-04) */
   scale?: number
+  /**
+   * When this value changes (and >0), the player auto-triggers Play once the
+   * notation has rendered. Used by NotationRenderer to chain playback across
+   * paginated cycles (D-21).
+   */
+  autoPlayToken?: number
+  /** Fired when the user initiates Play. */
+  onPlayStart?: () => void
+  /** Fired when synth reaches end-of-tune naturally (not via user pause). */
+  onPlaybackComplete?: () => void
+  /** Fired when the user pauses or stops playback. */
+  onPlaybackStop?: () => void
 }
 
 const SOUNDFONT_URL = 'https://paulrosen.github.io/midi-js-soundfonts/abcjs/'
@@ -63,6 +75,10 @@ export default function AbcPlayer({
   initialMode = 'staff',
   lyricsText,
   scale,
+  autoPlayToken,
+  onPlayStart,
+  onPlaybackComplete,
+  onPlaybackStop,
 }: AbcPlayerProps) {
   const baseKeySemitone = useMemo(() => parseKeyFromAbc(abc), [abc])
   const defaultBpm = useMemo(() => parseBpmFromAbc(abc), [abc])
@@ -103,11 +119,12 @@ export default function AbcPlayer({
       }
 
       if (!ev || !ev.elements) {
-        // End of tune — stop playback
+        // End of tune — stop playback and notify parent (D-21 chain)
         if (synthRef.current) {
           synthRef.current.stop()
         }
         setIsPlaying(false)
+        if (onPlaybackComplete) onPlaybackComplete()
         return
       }
 
@@ -124,7 +141,7 @@ export default function AbcPlayer({
       }
       lastHighlightedRef.current = highlighted
     },
-    []
+    [onPlaybackComplete]
   )
 
   // ── Stop all audio helpers ─────────────────────────────────────────────────
@@ -227,12 +244,32 @@ export default function AbcPlayer({
       synth.start()
       timing.start()
       setIsPlaying(true)
+      if (onPlayStart) onPlayStart()
     } catch (e) {
       console.error('abcjs audio init failed:', e)
       setAudioError('Audio not available in this browser.')
       setAudioReady(false)
     }
-  }, [bpm, transpose, highlightEvent])
+  }, [bpm, transpose, highlightEvent, onPlayStart])
+
+  // ── Auto-play trigger: parent bumps autoPlayToken to chain playback across
+  // paginated cycles (D-21). Wait one tick so the new abc has rendered.
+  useEffect(() => {
+    if (autoPlayToken === undefined || autoPlayToken <= 0) return
+    let cancelled = false
+    const id = setTimeout(() => {
+      if (!cancelled && visualObjRef.current) {
+        onPlay()
+      }
+    }, 50)
+    return () => {
+      cancelled = true
+      clearTimeout(id)
+    }
+    // Intentionally only depend on autoPlayToken — we want exactly one trigger
+    // per token increment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoPlayToken])
 
   // ── Pause handler ─────────────────────────────────────────────────────────
   const onPause = useCallback(() => {
@@ -250,7 +287,8 @@ export default function AbcPlayer({
       lastHighlightedRef.current = null
     }
     setIsPlaying(false)
-  }, [])
+    if (onPlaybackStop) onPlaybackStop()
+  }, [onPlaybackStop])
 
   const hasOriginal = !!(staffJpgUrl || solfegeJpgUrl)
   const hasBothOriginals = !!(staffJpgUrl && solfegeJpgUrl)
