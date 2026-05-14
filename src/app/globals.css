@@ -134,3 +134,8 @@
 [data-snippet] strong {
   font-weight: 700;
 }
+
+/* abcjs note highlight — lifted from AbcPlayer per Pitfall 6 (avoid duplicated <style> tags on multi-instance pages) */
+.abcjs-current-note { fill: #2563eb !important; }
+.abcjs-current-note path { fill: #2563eb !important; }
+.abcjs-current-note rect { fill: #2563eb !important; }
