@@ -5,6 +5,7 @@ import {
   useMemo,
   useState,
   useCallback,
+  useRef,
   type CSSProperties,
   type ReactNode,
 } from 'react'
@@ -412,33 +413,45 @@ export function NotationRenderer({
   // ── Auto-advance pagination during playback (D-21 axis B + axis A) ─────────
   // Fallback approach (per plan guidance): on natural end of synth, if more
   // pages remain, advance and re-trigger play via an autoPlayToken increment.
+  //
+  // Closure-stale guard: AbcPlayer's internal TimingCallbacks captures the
+  // highlightEvent callback at play-time; that callback in turn captures
+  // `onPlaybackComplete`, which would close over `chainingPlayback`'s initial
+  // value. We use refs so the natural-end branch reads CURRENT values when
+  // it fires (seconds later, after state updates have applied).
   const [autoPlayToken, setAutoPlayToken] = useState(0)
-  const [chainingPlayback, setChainingPlayback] = useState(false)
+  const chainingRef = useRef(false)
+  const atEndRef = useRef(atEnd)
+  const showPaginationRef = useRef(showPagination)
+  useEffect(() => { atEndRef.current = atEnd }, [atEnd])
+  useEffect(() => { showPaginationRef.current = showPagination }, [showPagination])
+
+  // Stable refs to pagination handlers so the complete callback can call next()
+  // without re-binding (TimingCallbacks captures the callback at play-time).
+  const nextRef = useRef<() => void>(() => {})
+  useEffect(() => { nextRef.current = next })
 
   const onPlaybackComplete = useCallback(() => {
-    if (!chainingPlayback) return
-    if (atEnd) {
-      setChainingPlayback(false)
+    if (!chainingRef.current) return
+    if (atEndRef.current) {
+      chainingRef.current = false
       return
     }
-    next()
-    // Bump the token so AbcPlayer re-triggers Play after re-render.
+    nextRef.current()
     setAutoPlayToken((t) => t + 1)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chainingPlayback, atEnd])
+  }, [])
 
   const onPlayStart = useCallback(() => {
-    // User pressed Play: if pagination is active, enable chaining so playback
-    // continues across pages until the end. If not paginated, no-op (single
-    // play cycle ends normally).
-    if (showPagination && !atEnd) {
-      setChainingPlayback(true)
+    // User pressed Play: if pagination is active and more pages remain,
+    // enable chaining so playback continues across pages until end.
+    if (showPaginationRef.current && !atEndRef.current) {
+      chainingRef.current = true
     }
-  }, [showPagination, atEnd])
+  }, [])
 
   const onPlaybackStop = useCallback(() => {
     // User manually paused/stopped — break the chain.
-    setChainingPlayback(false)
+    chainingRef.current = false
   }, [])
 
   // ── View area ─────────────────────────────────────────────────────────────
