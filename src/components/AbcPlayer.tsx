@@ -48,15 +48,11 @@ interface AbcPlayerProps {
   initialMode?: 'staff' | 'solfege'
   /** Plain-text lyrics for the current stanza group, lines separated by \n */
   lyricsText?: string
+  /** abcjs render scale factor; derived from --staff-base-size by parent (NOTATION-04) */
+  scale?: number
 }
 
 const SOUNDFONT_URL = 'https://paulrosen.github.io/midi-js-soundfonts/abcjs/'
-
-const noteHighlightStyle = `
-.abcjs-current-note { fill: #2563eb !important; }
-.abcjs-current-note path { fill: #2563eb !important; }
-.abcjs-current-note rect { fill: #2563eb !important; }
-`
 
 export default function AbcPlayer({
   abc,
@@ -66,6 +62,7 @@ export default function AbcPlayer({
   tuneName,
   initialMode = 'staff',
   lyricsText,
+  scale,
 }: AbcPlayerProps) {
   const baseKeySemitone = useMemo(() => parseKeyFromAbc(abc), [abc])
   const defaultBpm = useMemo(() => parseBpmFromAbc(abc), [abc])
@@ -170,6 +167,7 @@ export default function AbcPlayer({
         add_classes: true,
         visualTranspose: transpose,
         defaultTempo: { duration: 0.25, bpm },
+        scale: scale ?? 1,
       })
       visualObjRef.current = visualObjs?.[0] ?? null
     } catch (e) {
@@ -177,7 +175,7 @@ export default function AbcPlayer({
       setAudioError('Could not render notation.')
       visualObjRef.current = null
     }
-  }, [abc, transpose, bpm, stopAudio])
+  }, [abc, transpose, bpm, scale, stopAudio])
 
   // ── Cleanup on unmount ────────────────────────────────────────────────────
   useEffect(() => {
@@ -263,8 +261,6 @@ export default function AbcPlayer({
       className="w-full max-w-3xl mx-auto space-y-3"
       aria-label={title ? `Music player for ${title}` : 'Music player'}
     >
-      <style dangerouslySetInnerHTML={{ __html: noteHighlightStyle }} />
-
       {/* Notation area: SVG OR original JPEG */}
       {showOriginal ? (
         <div className="relative w-full space-y-2">
