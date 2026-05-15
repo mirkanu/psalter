@@ -6,8 +6,10 @@ import { asc, eq } from 'drizzle-orm'
 import { fetchPsalmDetail } from '@/db/queries/psalms'
 import { fetchTunesByMeter } from '@/db/queries/tunes'
 import { PsalmTabs } from '@/components/PsalmTabs'
+import { PsalmNav } from '@/components/PsalmNav'
 import { parseSlug, deriveVersionSlug, stripStar, slugToDisplayTitle } from '@/lib/psalm-slugs'
 import { deriveTuneJpgPages } from '@/lib/tune-jpg-urls'
+import { getPsalmNeighbors } from '@/lib/psalm-navigation'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -130,18 +132,22 @@ export default async function PsalmPage({ params }: PageProps) {
     : null
 
   const displayTitle = slugToDisplayTitle(slug)
+  const { prev, next } = await getPsalmNeighbors(slug)
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl md:text-4xl font-bold text-foreground">
-          Psalm {displayTitle}
-        </h1>
-        {psalm.bibleTitle && (
-          <p className="text-base md:text-lg text-muted-foreground mt-1">
-            {psalm.bibleTitle}
-          </p>
-        )}
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl md:text-4xl font-bold text-foreground">
+            Psalm {displayTitle}
+          </h1>
+          {psalm.bibleTitle && (
+            <p className="text-base md:text-lg text-muted-foreground mt-1">
+              {psalm.bibleTitle}
+            </p>
+          )}
+        </div>
+        <PsalmNav prev={prev} next={next} />
       </div>
 
       <PsalmTabs
