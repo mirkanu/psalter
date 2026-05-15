@@ -384,8 +384,14 @@ export function NotationRenderer({
   // gives the visual effect of N stacked phrase rows while remaining a single
   // tune for the synth (Play traverses end-to-end naturally).
   const unifiedAbc = useMemo(() => {
-    if (split.phrases.length === 0) return split.header
-    const parts: string[] = [split.header]
+    // Strip any `T:` title lines from the header — abcjs auto-renders them as a
+    // staff title, but the surrounding page UI already carries the tune name.
+    const cleanedHeader = split.header
+      .split('\n')
+      .filter((l) => !/^\s*T:/.test(l))
+      .join('\n')
+    if (split.phrases.length === 0) return cleanedHeader
+    const parts: string[] = [cleanedHeader]
     for (const i of visiblePhraseIndices) {
       const phraseBody = (split.phrases[i] ?? '').trim()
       if (!phraseBody) continue
