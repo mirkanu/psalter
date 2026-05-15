@@ -260,6 +260,11 @@ export default function AbcPlayer({
         scale: scale ?? 1,
       })
       visualObjRef.current = visualObjs?.[0] ?? null
+      // abcjs sets inline overflow:hidden + height on our container and forces
+      // its width to parent's. Re-apply max-content so the wrapper's
+      // overflow-x-auto can actually scroll when the staff exceeds viewport.
+      el.style.width = 'max-content'
+      el.style.maxWidth = 'none'
     } catch (e) {
       console.error('abcjs render failed:', e)
       setAudioError('Could not render notation.')
@@ -410,12 +415,13 @@ export default function AbcPlayer({
         </div>
       ) : (
         <>
-          <div
-            ref={containerRef}
-            role="img"
-            aria-label={title ? `Music notation for ${title}` : 'Music notation'}
-            className="w-full overflow-x-auto"
-          />
+          <div className="w-full overflow-x-auto">
+            <div
+              ref={containerRef}
+              role="img"
+              aria-label={title ? `Music notation for ${title}` : 'Music notation'}
+            />
+          </div>
           {/* Lyrics text block — shown below notation in interactive mode */}
           {lyricsText && lyricsText.trim() && (
             <pre
