@@ -167,7 +167,7 @@ async function shot(page, file) {
     if (await showOrigBtn2.count() > 0) {
       await showOrigBtn2.click()
       await page2.waitForTimeout(400)
-      const pagHidden = await page2.locator('text=/Stanzas \\d+\\/\\d+/').count() === 0
+      const pagHidden = await page2.locator('[data-notation-renderer]:visible >> text=/Stanzas \\d+\\/\\d+/').count() === 0
       pagHidden ? ok('Mobile show original: pagination hidden') : fail('Mobile pag hide', 'still visible')
       const back = await page2.locator('[data-testid="back-to-notation"]:visible').count()
       back > 0 ? ok('Mobile show original: back button rendered') : fail('Mobile back button', 'missing')

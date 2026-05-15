@@ -265,7 +265,7 @@ export default function AbcPlayer({
       setAudioError('Could not render notation.')
       visualObjRef.current = null
     }
-  }, [abc, transpose, bpm, scale, stopAudio])
+  }, [abc, transpose, bpm, scale, showOriginal, stopAudio])
 
   // ── Cleanup on unmount ────────────────────────────────────────────────────
   useEffect(() => {
