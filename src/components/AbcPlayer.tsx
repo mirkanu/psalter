@@ -67,6 +67,21 @@ interface AbcPlayerProps {
    * Used to surface the stanza list beside the legacy JPG (Item 1).
    */
   renderLyricsBelow?: ReactNode
+  /**
+   * Optional controlled state for "Show original" mode. When provided, the
+   * player becomes controlled — the parent (e.g. NotationRenderer) owns the
+   * boolean so it can hide pagination affordances while the JPG is shown.
+   * When omitted, the player falls back to internal state.
+   */
+  showOriginal?: boolean
+  onShowOriginalChange?: (next: boolean) => void
+  /**
+   * Optional node rendered ABOVE the original JPG (e.g. a prominent
+   * "← Back to notation" button). Parent supplies this when it owns the
+   * showOriginal state so the back-action can do more than just toggle the
+   * local state (e.g. analytics, focus management).
+   */
+  renderAboveOriginal?: ReactNode
 }
 
 const SOUNDFONT_URL = 'https://paulrosen.github.io/midi-js-soundfonts/abcjs/'
@@ -100,6 +115,9 @@ export default function AbcPlayer({
   onPlaybackComplete,
   onPlaybackStop,
   renderLyricsBelow,
+  showOriginal: showOriginalProp,
+  onShowOriginalChange,
+  renderAboveOriginal,
 }: AbcPlayerProps) {
   const baseKeySemitone = useMemo(() => parseKeyFromAbc(abc), [abc])
   const defaultBpm = useMemo(() => parseBpmFromAbc(abc), [abc])
@@ -126,7 +144,20 @@ export default function AbcPlayer({
       /* ignore */
     }
   }, [bpm, defaultBpm])
-  const [showOriginal, setShowOriginal] = useState(false)
+  const [showOriginalUncontrolled, setShowOriginalUncontrolled] = useState(false)
+  const isControlled = showOriginalProp !== undefined
+  const showOriginal = isControlled ? showOriginalProp : showOriginalUncontrolled
+  const setShowOriginal = useCallback(
+    (next: boolean | ((prev: boolean) => boolean)) => {
+      const resolved =
+        typeof next === 'function'
+          ? (next as (prev: boolean) => boolean)(showOriginal)
+          : next
+      if (onShowOriginalChange) onShowOriginalChange(resolved)
+      if (!isControlled) setShowOriginalUncontrolled(resolved)
+    },
+    [isControlled, showOriginal, onShowOriginalChange],
+  )
   // Which JPEG to show when showOriginal=true
   const [originalMode, setOriginalMode] = useState<'staff' | 'solfege'>(initialMode)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -344,6 +375,7 @@ export default function AbcPlayer({
       {/* Notation area: SVG OR original JPEG */}
       {showOriginal ? (
         <div className="relative w-full space-y-2">
+          {renderAboveOriginal}
           {/* Staff / Solfège sub-toggle — only when both are available */}
           {hasBothOriginals && (
             <div className="flex gap-1 justify-center">
