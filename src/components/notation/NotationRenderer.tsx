@@ -3,6 +3,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
@@ -252,6 +253,27 @@ export function NotationRenderer({
     [cycles, cyclePage],
   )
 
+  // ── Staff height tracking (last-page spacing) ─────────────────────────────
+  // Measures the AbcPlayer height on full pages (CYCLES_PER_PAGE stanzas) and
+  // applies it as min-height on partial last pages so stave spacing stays consistent.
+  const staffRef = useRef<HTMLDivElement>(null)
+  const [minStaffHeight, setMinStaffHeight] = useState<number>(0)
+
+  useEffect(() => {
+    setMinStaffHeight(0)
+  }, [baseSize])
+
+  useEffect(() => {
+    if (!staffRef.current) return
+    if (viewMode !== 'staff' || showOriginal) return
+    if (visibleCycles.length < CYCLES_PER_PAGE) return
+    const timer = setTimeout(() => {
+      const h = staffRef.current?.getBoundingClientRect().height ?? 0
+      if (h > 0) setMinStaffHeight(h)
+    }, 150)
+    return () => clearTimeout(timer)
+  }, [visibleCycles, viewMode, showOriginal, baseSize])
+
   const visiblePhraseIndices = useMemo<number[]>(
     () => Array.from({ length: T }, (_, i) => i),
     [T],
@@ -272,18 +294,12 @@ export function NotationRenderer({
 
   // ── w: lines for one phrase ────────────────────────────────────────────────
   function wLinesForPhrase(i: number): string[] {
-    const lines = visibleCycles
+    return visibleCycles
       .flatMap((cycle) => {
         const grid = mapCycleToPhraseSyllableLines(cycle, tuneMeter, stanzaMeter)
         return grid[i] ?? ['']
       })
       .filter((s) => s.length > 0)
-    // Pad to CYCLES_PER_PAGE so the last page always renders the same number
-    // of w: lines as earlier pages, keeping staff heights consistent.
-    while (lines.length < CYCLES_PER_PAGE) {
-      lines.push(' ')
-    }
-    return lines
   }
 
   // ── Pagination indicator ───────────────────────────────────────────────────
@@ -460,21 +476,27 @@ export function NotationRenderer({
 
   let viewArea: ReactNode
   if (viewMode === 'staff') {
+    const isPartialPage = visibleCycles.length < CYCLES_PER_PAGE
     viewArea = (
-      <AbcPlayer
-        abc={unifiedAbc}
-        scale={scale}
-        tuneName={tuneName}
-        staffJpgUrl={scoreJpgUrl}
-        solfegeJpgUrl={solfegeJpgUrl}
-        renderLyricsBelow={lyricsBelow}
-        showOriginal={showOriginal}
-        onShowOriginalChange={setShowOriginal}
-        renderAboveOriginal={
-          <BackToNotationButton onClick={() => setShowOriginal(false)} />
-        }
-        hidePlayerControls={isFullscreen}
-      />
+      <div
+        ref={staffRef}
+        style={isPartialPage && minStaffHeight > 0 ? { minHeight: minStaffHeight } : undefined}
+      >
+        <AbcPlayer
+          abc={unifiedAbc}
+          scale={scale}
+          tuneName={tuneName}
+          staffJpgUrl={scoreJpgUrl}
+          solfegeJpgUrl={solfegeJpgUrl}
+          renderLyricsBelow={lyricsBelow}
+          showOriginal={showOriginal}
+          onShowOriginalChange={setShowOriginal}
+          renderAboveOriginal={
+            <BackToNotationButton onClick={() => setShowOriginal(false)} />
+          }
+          hidePlayerControls={isFullscreen}
+        />
+      </div>
     )
   } else if (viewMode === 'solfege') {
     viewArea = (
@@ -504,9 +526,7 @@ export function NotationRenderer({
       stanzas.length === 0 ? (
         <p className="text-sm text-muted-foreground italic">No lyrics available.</p>
       ) : (
-        <div data-view="lyrics">
-          <StanzaList stanzas={stanzas} />
-        </div>
+        <StanzaList stanzas={stanzas} />
       )
   }
 

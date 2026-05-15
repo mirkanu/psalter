@@ -150,6 +150,3 @@
   vertical-align: super;
   line-height: 1;
 }
-[data-view="lyrics"] .verse-number {
-  font-size: calc(var(--staff-base-size, 14px) * 0.75);
-}

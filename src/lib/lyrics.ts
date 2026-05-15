@@ -163,7 +163,7 @@ export function buildAbcWithSyllables(
     .trim()
   if (stanzaPortionsForThisPhrase.length === 0) return cleaned
   const wLines = stanzaPortionsForThisPhrase
-    .filter((p) => p && p.trim().length > 0)
+    .filter((p) => !!p && p.length > 0)
     .map((p) => `w: ${syllabifyForAbc(p.replace(/\n/g, ' '))}`)
     .join('\n')
   if (!wLines) return cleaned
