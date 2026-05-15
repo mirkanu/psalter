@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, type ReactNode } from 'react'
 import * as abcjsModule from 'abcjs'
 // abcjs uses CJS module.exports — in bundlers the default may be nested under .default
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -82,6 +82,8 @@ interface AbcPlayerProps {
    * local state (e.g. analytics, focus management).
    */
   renderAboveOriginal?: ReactNode
+  /** When true, hides Play/Key/BPM/ShowOriginal controls (used in fullscreen mode). */
+  hidePlayerControls?: boolean
 }
 
 const SOUNDFONT_URL = 'https://paulrosen.github.io/midi-js-soundfonts/abcjs/'
@@ -118,6 +120,7 @@ export default function AbcPlayer({
   showOriginal: showOriginalProp,
   onShowOriginalChange,
   renderAboveOriginal,
+  hidePlayerControls = false,
 }: AbcPlayerProps) {
   const baseKeySemitone = useMemo(() => parseKeyFromAbc(abc), [abc])
   const defaultBpm = useMemo(() => parseBpmFromAbc(abc), [abc])
@@ -174,6 +177,27 @@ export default function AbcPlayer({
   const lastHighlightedRef = useRef<SVGElement[] | null>(null)
   // Track whether synth needs re-init (e.g. after re-render due to abc/transpose/bpm change)
   const needsSynthReinitRef = useRef(true)
+
+  const outerRef = useRef<HTMLDivElement>(null)
+  const [staffWidth, setStaffWidth] = useState(0)
+
+  // Synchronous initial measurement so abcjs never paints at a wrong staffwidth.
+  useLayoutEffect(() => {
+    const w = outerRef.current?.clientWidth ?? 0
+    if (w > 0) setStaffWidth(w)
+  }, [])
+
+  // Keep staffwidth in sync on viewport / container resize.
+  useEffect(() => {
+    const el = outerRef.current
+    if (!el) return
+    const obs = new ResizeObserver(() => {
+      const w = el.clientWidth
+      if (w > 0) setStaffWidth(w)
+    })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
 
   // ── Note highlight callback ────────────────────────────────────────────────
   const highlightEvent = useCallback(
@@ -235,7 +259,7 @@ export default function AbcPlayer({
     needsSynthReinitRef.current = true
   }, [])
 
-  // ── Render effect — reruns on abc / transpose / bpm changes ───────────────
+  // ── Render effect — reruns on abc / transpose / bpm / staffWidth changes ──
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
@@ -248,29 +272,23 @@ export default function AbcPlayer({
     setAudioError(null)
 
     try {
-      // Note: intentionally NOT setting `responsive: 'resize'`. abcjs's
-      // responsive mode auto-fits the SVG to container width, which nullifies
-      // the visible effect of `scale`. Without it, the `scale` option drives
-      // intrinsic sizing — A+/A− have a real visual impact. Container has
-      // overflow-x-auto so large scales scroll rather than clip.
+      // staffWidth is measured from outerRef (ResizeObserver + useLayoutEffect).
+      // Passing it as `staffwidth` constrains abcjs to the available width so
+      // notes wrap to more rows as scale increases rather than overflowing.
       const visualObjs = abcjs.renderAbc(el, abc, {
         add_classes: true,
         visualTranspose: transpose,
         defaultTempo: { duration: 0.25, bpm },
         scale: scale ?? 1,
+        staffwidth: staffWidth || 600,
       })
       visualObjRef.current = visualObjs?.[0] ?? null
-      // abcjs sets inline overflow:hidden + height on our container and forces
-      // its width to parent's. Re-apply max-content so the wrapper's
-      // overflow-x-auto can actually scroll when the staff exceeds viewport.
-      el.style.width = 'max-content'
-      el.style.maxWidth = 'none'
     } catch (e) {
       console.error('abcjs render failed:', e)
       setAudioError('Could not render notation.')
       visualObjRef.current = null
     }
-  }, [abc, transpose, bpm, scale, showOriginal, stopAudio])
+  }, [abc, transpose, bpm, scale, showOriginal, stopAudio, staffWidth])
 
   // ── Cleanup on unmount ────────────────────────────────────────────────────
   useEffect(() => {
@@ -374,7 +392,8 @@ export default function AbcPlayer({
 
   return (
     <div
-      className="w-full max-w-3xl mx-auto space-y-3"
+      ref={outerRef}
+      className="w-full space-y-3"
       aria-label={title ? `Music player for ${title}` : 'Music player'}
     >
       {/* Notation area: SVG OR original JPEG */}
@@ -415,13 +434,11 @@ export default function AbcPlayer({
         </div>
       ) : (
         <>
-          <div className="w-full overflow-x-auto">
-            <div
-              ref={containerRef}
-              role="img"
-              aria-label={title ? `Music notation for ${title}` : 'Music notation'}
-            />
-          </div>
+          <div
+            ref={containerRef}
+            role="img"
+            aria-label={title ? `Music notation for ${title}` : 'Music notation'}
+          />
           {/* Lyrics text block — shown below notation in interactive mode */}
           {lyricsText && lyricsText.trim() && (
             <pre
@@ -438,8 +455,9 @@ export default function AbcPlayer({
         <p className="text-sm text-destructive">{audioError}</p>
       )}
 
-      {/* Controls row — flex-wrap so 375px viewport collapses cleanly */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Controls row — hidden in fullscreen mode */}
+      {!hidePlayerControls && (
+        <div className="flex flex-wrap items-center gap-2">
         {/* Play / Pause */}
         <Button
           variant="default"
@@ -540,7 +558,8 @@ export default function AbcPlayer({
         >
           {showOriginal ? 'Show notation' : 'Show original'}
         </Button>
-      </div>
+        </div>
+      )}
 
       {/* Unused — suppress TS warning about audioReady */}
       {audioReady && false && <span />}

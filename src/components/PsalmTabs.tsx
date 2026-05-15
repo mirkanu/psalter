@@ -342,6 +342,11 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
   const searchParams = useSearchParams()
   const [noRecDialogOpen, setNoRecDialogOpen] = useState(false)
   const [changeTuneOpen, setChangeTuneOpen] = useState(false)
+  // Tracks the active notation view mode so the desktop layout can switch
+  // between stacked (Staff/Solfège) and 2-column (Lyrics only).
+  const [notationViewMode, setNotationViewMode] = useState<'staff' | 'solfege' | 'lyrics'>('staff')
+  // Preserve the active desktop tab when the layout mode switches.
+  const [desktopTab, setDesktopTab] = useState('overview')
 
   // Pre-select a tune when navigating from a tune page via ?tune={id}
   const tuneParam = searchParams.get('tune')
@@ -443,6 +448,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
             tuneName={activeTune.name ?? 'Tune'}
             tuneMeter={activeTune.meter ?? null}
             stanzaMeter={primaryVersion?.meter ?? null}
+            onViewModeChange={setNotationViewMode}
           />
           <ChangeTuneDialog
             open={changeTuneOpen}
@@ -553,28 +559,50 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
       </div>
 
       {/* ══ DESKTOP / LANDSCAPE LAYOUT (≥ md) ══════════════════════════════ */}
-      <div className="hidden md:grid md:grid-cols-2 gap-8 sticky top-14 h-[calc(100vh-3.5rem)] overflow-hidden">
-        {/* Left: Sing content — always visible */}
-        <div className="flex flex-col h-full overflow-hidden pb-8">{makeSingPanel(true)}</div>
-
-        {/* Right: tabs (no Sing tab) */}
-        <div className="overflow-y-auto h-full pb-8">
-          <Tabs defaultValue="overview">
-            <TabsList className="flex flex-wrap h-auto gap-0 mb-6 bg-transparent p-0 border-b border-border">
-              {DESKTOP_TABS.map(({ value, label }) => (
-                <TabsTrigger
-                  key={value}
-                  value={value}
-                  className="rounded-none border-b-[3px] border-b-transparent -mb-px data-[active]:border-b-foreground data-[active]:bg-transparent data-[active]:text-foreground"
-                >
-                  {label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            {sharedTabContents('')}
-          </Tabs>
+      {/* Stacked layout when notation (Staff/Solfège) is active — notation
+          spans full width at top, tabs scroll below. Reverts to the original
+          2-column sticky layout when Lyrics-only mode is active. */}
+      {notationViewMode !== 'lyrics' ? (
+        <div className="hidden md:block space-y-8">
+          <div>{makeSingPanel(false)}</div>
+          <div>
+            <Tabs value={desktopTab} onValueChange={setDesktopTab}>
+              <TabsList className="flex flex-wrap h-auto gap-0 mb-6 bg-transparent p-0 border-b border-border">
+                {DESKTOP_TABS.map(({ value, label }) => (
+                  <TabsTrigger
+                    key={value}
+                    value={value}
+                    className="rounded-none border-b-[3px] border-b-transparent -mb-px data-[active]:border-b-foreground data-[active]:bg-transparent data-[active]:text-foreground"
+                  >
+                    {label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              {sharedTabContents('')}
+            </Tabs>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="hidden md:grid md:grid-cols-2 gap-8 sticky top-14 h-[calc(100vh-3.5rem)] overflow-hidden">
+          <div className="flex flex-col h-full overflow-hidden pb-8">{makeSingPanel(true)}</div>
+          <div className="overflow-y-auto h-full pb-8">
+            <Tabs value={desktopTab} onValueChange={setDesktopTab}>
+              <TabsList className="flex flex-wrap h-auto gap-0 mb-6 bg-transparent p-0 border-b border-border">
+                {DESKTOP_TABS.map(({ value, label }) => (
+                  <TabsTrigger
+                    key={value}
+                    value={value}
+                    className="rounded-none border-b-[3px] border-b-transparent -mb-px data-[active]:border-b-foreground data-[active]:bg-transparent data-[active]:text-foreground"
+                  >
+                    {label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              {sharedTabContents('')}
+            </Tabs>
+          </div>
+        </div>
+      )}
     </>
   )
 }
