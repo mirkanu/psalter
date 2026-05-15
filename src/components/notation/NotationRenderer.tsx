@@ -4,8 +4,6 @@ import {
   useEffect,
   useMemo,
   useState,
-  useCallback,
-  useRef,
   type CSSProperties,
   type ReactNode,
 } from 'react'
@@ -24,7 +22,6 @@ import {
   groupStanzasIntoCycles,
   mapCycleToPhraseSyllableLines,
 } from '@/lib/stanza-cycles'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,17 +37,18 @@ export interface NotationRendererProps {
 }
 
 type ViewMode = 'staff' | 'solfege' | 'lyrics'
-type BaseSize = 12 | 14 | 16 | 18
+type BaseSize = number
 
-const SIZES: readonly BaseSize[] = [12, 14, 16, 18] as const
+const MIN_SIZE = 12
+const MAX_SIZE = 44
+const SIZE_STEP = 2
 const DEFAULT_SIZE: BaseSize = 14
 const STORAGE_SIZE_KEY = 'psalter-staff-size'
 const STORAGE_MODE_KEY = 'psalter-score-mode'
 const CYCLES_PER_PAGE = 3
-const LANDSCAPE_NARROW_QUERY = '(orientation: landscape) and (max-width: 900px)'
 
 function isBaseSize(n: number): n is BaseSize {
-  return n === 12 || n === 14 || n === 16 || n === 18
+  return Number.isFinite(n) && n >= MIN_SIZE && n <= MAX_SIZE
 }
 
 function isViewMode(s: string): s is ViewMode {
@@ -127,15 +125,8 @@ export function NotationRenderer({
 
   const totalStanzaPages = Math.max(1, Math.ceil(cycles.length / CYCLES_PER_PAGE))
 
-  // ── Responsive: D-21 axis B trigger ────────────────────────────────────────
-  const isLandscapeNarrow = useMediaQuery(LANDSCAPE_NARROW_QUERY)
-  const paginateTuneHalf = isLandscapeNarrow && T > 2
-  const halfCount = paginateTuneHalf ? 2 : 1
-  const halfSize = paginateTuneHalf ? T / 2 : T
-
   // ── State ──────────────────────────────────────────────────────────────────
   const [cyclePage, setCyclePage] = useState(0)
-  const [halfPage, setHalfPage] = useState<'A' | 'B'>('A')
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     try {
       const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_MODE_KEY) : null
@@ -181,60 +172,35 @@ export function NotationRenderer({
     }
   }, [cyclePage, totalStanzaPages])
 
-  // When paginateTuneHalf flips off, reset halfPage to 'A' so re-entry is fresh
-  useEffect(() => {
-    if (!paginateTuneHalf && halfPage !== 'A') setHalfPage('A')
-  }, [paginateTuneHalf, halfPage])
-
   // ── Derived: visible cycles & phrase indices ───────────────────────────────
   const visibleCycles = useMemo(
     () => cycles.slice(cyclePage * CYCLES_PER_PAGE, (cyclePage + 1) * CYCLES_PER_PAGE),
     [cycles, cyclePage],
   )
 
-  const visiblePhraseIndices = useMemo<number[]>(() => {
-    if (!paginateTuneHalf) {
-      return Array.from({ length: T }, (_, i) => i)
-    }
-    return halfPage === 'A'
-      ? Array.from({ length: halfSize }, (_, i) => i)
-      : Array.from({ length: halfSize }, (_, i) => i + halfSize)
-  }, [paginateTuneHalf, halfPage, halfSize, T])
+  const visiblePhraseIndices = useMemo<number[]>(
+    () => Array.from({ length: T }, (_, i) => i),
+    [T],
+  )
 
-  // ── Pagination handlers (D-21 — tune-half flips first) ─────────────────────
-  const atStart = cyclePage === 0 && (!paginateTuneHalf || halfPage === 'A')
-  const atEnd =
-    cyclePage === totalStanzaPages - 1 && (!paginateTuneHalf || halfPage === 'B')
+  // ── Pagination handlers (cycle-page only) ──────────────────────────────────
+  const atStart = cyclePage === 0
+  const atEnd = cyclePage === totalStanzaPages - 1
 
   function next() {
-    if (paginateTuneHalf && halfPage === 'A') {
-      setHalfPage('B')
-    } else {
-      if (paginateTuneHalf) setHalfPage('A')
-      setCyclePage((p) => Math.min(p + 1, totalStanzaPages - 1))
-    }
+    setCyclePage((p) => Math.min(p + 1, totalStanzaPages - 1))
   }
   function prev() {
-    if (paginateTuneHalf && halfPage === 'B') {
-      setHalfPage('A')
-    } else {
-      if (paginateTuneHalf) setHalfPage('B')
-      setCyclePage((p) => Math.max(p - 1, 0))
-    }
+    setCyclePage((p) => Math.max(p - 1, 0))
   }
 
   const scale = baseSize / 14
 
-  // ── w: lines for one phrase, sliced for the active tune-half if needed ─────
+  // ── w: lines for one phrase ────────────────────────────────────────────────
   function wLinesForPhrase(i: number): string[] {
     return visibleCycles
       .flatMap((cycle) => {
-        const cycleSlice = paginateTuneHalf
-          ? halfPage === 'A'
-            ? cycle.slice(0, Math.ceil(cycle.length / 2))
-            : cycle.slice(Math.ceil(cycle.length / 2))
-          : cycle
-        const grid = mapCycleToPhraseSyllableLines(cycleSlice, tuneMeter, stanzaMeter)
+        const grid = mapCycleToPhraseSyllableLines(cycle, tuneMeter, stanzaMeter)
         return grid[i] ?? ['']
       })
       .filter((s) => s.length > 0)
@@ -259,10 +225,7 @@ export function NotationRenderer({
   }
 
   // ── Pagination indicator ───────────────────────────────────────────────────
-  const totalPages = totalStanzaPages * halfCount
-  const currentPage =
-    cyclePage * halfCount + (paginateTuneHalf ? (halfPage === 'A' ? 1 : 2) : 1)
-  const showPagination = totalStanzaPages > 1 || paginateTuneHalf
+  const showPagination = totalStanzaPages > 1
 
   // ── Sub-renders ───────────────────────────────────────────────────────────
   const sizeGroup = (
@@ -270,8 +233,8 @@ export function NotationRenderer({
       <Button
         variant="outline"
         size="xs"
-        onClick={() => setBaseSize((s) => (s > 12 ? ((s - 2) as BaseSize) : s))}
-        disabled={baseSize <= 12}
+        onClick={() => setBaseSize((s) => (s - SIZE_STEP < MIN_SIZE ? s : s - SIZE_STEP))}
+        disabled={baseSize <= MIN_SIZE}
         aria-label="Decrease notation size"
       >
         <ChevronDown className="h-3.5 w-3.5" />
@@ -280,8 +243,8 @@ export function NotationRenderer({
       <Button
         variant="outline"
         size="xs"
-        onClick={() => setBaseSize((s) => (s < 18 ? ((s + 2) as BaseSize) : s))}
-        disabled={baseSize >= 18}
+        onClick={() => setBaseSize((s) => (s + SIZE_STEP > MAX_SIZE ? s : s + SIZE_STEP))}
+        disabled={baseSize >= MAX_SIZE}
         aria-label="Increase notation size"
       >
         <ChevronUp className="h-3.5 w-3.5" />
@@ -331,11 +294,7 @@ export function NotationRenderer({
         ← Prev
       </Button>
       <span className="text-xs text-muted-foreground px-1">
-        {totalStanzaPages > 1 && paginateTuneHalf
-          ? `Page ${currentPage}/${totalPages}`
-          : paginateTuneHalf
-            ? `Half ${halfPage}`
-            : `Stanzas ${cyclePage + 1}/${totalStanzaPages}`}
+        {`Stanzas ${cyclePage + 1}/${totalStanzaPages}`}
       </span>
       <Button
         variant="outline"
@@ -410,57 +369,14 @@ export function NotationRenderer({
       }
     }
     return parts.join('\n')
-    // wLinesForPhrase depends on visibleCycles + paginateTuneHalf + halfPage; those
-    // are captured implicitly here via visiblePhraseIndices + closure. eslint-disable
-    // is fine since the recompute on page change is the desired behaviour.
+    // wLinesForPhrase depends on visibleCycles, captured by closure.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [split, visiblePhraseIndices, visibleCycles, paginateTuneHalf, halfPage, tuneMeter, stanzaMeter])
-
-  // ── Auto-advance pagination during playback (D-21 axis B + axis A) ─────────
-  // Fallback approach (per plan guidance): on natural end of synth, if more
-  // pages remain, advance and re-trigger play via an autoPlayToken increment.
-  //
-  // Closure-stale guard: AbcPlayer's internal TimingCallbacks captures the
-  // highlightEvent callback at play-time; that callback in turn captures
-  // `onPlaybackComplete`, which would close over `chainingPlayback`'s initial
-  // value. We use refs so the natural-end branch reads CURRENT values when
-  // it fires (seconds later, after state updates have applied).
-  const [autoPlayToken, setAutoPlayToken] = useState(0)
-  const chainingRef = useRef(false)
-  const atEndRef = useRef(atEnd)
-  const showPaginationRef = useRef(showPagination)
-  useEffect(() => { atEndRef.current = atEnd }, [atEnd])
-  useEffect(() => { showPaginationRef.current = showPagination }, [showPagination])
-
-  // Stable refs to pagination handlers so the complete callback can call next()
-  // without re-binding (TimingCallbacks captures the callback at play-time).
-  const nextRef = useRef<() => void>(() => {})
-  useEffect(() => { nextRef.current = next })
-
-  const onPlaybackComplete = useCallback(() => {
-    if (!chainingRef.current) return
-    if (atEndRef.current) {
-      chainingRef.current = false
-      return
-    }
-    nextRef.current()
-    setAutoPlayToken((t) => t + 1)
-  }, [])
-
-  const onPlayStart = useCallback(() => {
-    // User pressed Play: if pagination is active and more pages remain,
-    // enable chaining so playback continues across pages until end.
-    if (showPaginationRef.current && !atEndRef.current) {
-      chainingRef.current = true
-    }
-  }, [])
-
-  const onPlaybackStop = useCallback(() => {
-    // User manually paused/stopped — break the chain.
-    chainingRef.current = false
-  }, [])
+  }, [split, visiblePhraseIndices, visibleCycles, tuneMeter, stanzaMeter])
 
   // ── View area ─────────────────────────────────────────────────────────────
+  // Item 2: Play plays once — no chain/repeat. We deliberately do NOT pass
+  // autoPlayToken / onPlayStart / onPlaybackComplete so playback stops at end
+  // and pagination is fully manual.
   let viewArea: ReactNode
   if (viewMode === 'staff') {
     viewArea = (
@@ -468,10 +384,6 @@ export function NotationRenderer({
         abc={unifiedAbc}
         scale={scale}
         tuneName={tuneName}
-        autoPlayToken={autoPlayToken}
-        onPlayStart={onPlayStart}
-        onPlaybackComplete={onPlaybackComplete}
-        onPlaybackStop={onPlaybackStop}
       />
     )
   } else if (viewMode === 'solfege') {
