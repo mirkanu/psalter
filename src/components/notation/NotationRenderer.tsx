@@ -54,6 +54,7 @@ const DEFAULT_SIZE: BaseSize = 14
 /** Larger default on narrow portrait screens so phrases naturally wrap to 4 rows. */
 const MOBILE_DEFAULT_SIZE: BaseSize = 24
 const STORAGE_SIZE_KEY = 'psalter-staff-size'
+const STORAGE_SIZE_FS_KEY = 'psalter-staff-size-fs'
 const STORAGE_MODE_KEY = 'psalter-score-mode'
 const CYCLES_PER_PAGE = 3
 
@@ -164,7 +165,7 @@ export function NotationRenderer({
   // shown (and can therefore hide the stanza-pagination row, which is
   // meaningless when the image is displayed).
   const [showOriginal, setShowOriginal] = useState(false)
-  const [baseSize, setBaseSize] = useState<BaseSize>(() => {
+  const [normalSize, setNormalSize] = useState<BaseSize>(() => {
     try {
       const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_SIZE_KEY) : null
       const n = raw ? Number(raw) : NaN
@@ -183,15 +184,48 @@ export function NotationRenderer({
     }
     return DEFAULT_SIZE
   })
+  const [fullscreenSize, setFullscreenSize] = useState<BaseSize>(() => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_SIZE_FS_KEY) : null
+      const n = raw ? Number(raw) : NaN
+      if (Number.isFinite(n) && isBaseSize(n)) return n
+      if (
+        typeof window !== 'undefined' &&
+        window.innerWidth < 480 &&
+        window.innerHeight > window.innerWidth
+      ) {
+        return MOBILE_DEFAULT_SIZE
+      }
+    } catch {
+      /* ignore */
+    }
+    return DEFAULT_SIZE
+  })
+  const baseSize = isFullscreen ? fullscreenSize : normalSize
+  function setBaseSize(updater: ((s: BaseSize) => BaseSize) | BaseSize) {
+    if (isFullscreen) {
+      setFullscreenSize(updater as ((s: BaseSize) => BaseSize))
+    } else {
+      setNormalSize(updater as ((s: BaseSize) => BaseSize))
+    }
+  }
 
   // ── Persistence effects ───────────────────────────────────────────────────
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_SIZE_KEY, String(baseSize))
+      localStorage.setItem(STORAGE_SIZE_KEY, String(normalSize))
     } catch {
       /* ignore */
     }
-  }, [baseSize])
+  }, [normalSize])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_SIZE_FS_KEY, String(fullscreenSize))
+    } catch {
+      /* ignore */
+    }
+  }, [fullscreenSize])
 
   useEffect(() => {
     try {
@@ -238,12 +272,18 @@ export function NotationRenderer({
 
   // ── w: lines for one phrase ────────────────────────────────────────────────
   function wLinesForPhrase(i: number): string[] {
-    return visibleCycles
+    const lines = visibleCycles
       .flatMap((cycle) => {
         const grid = mapCycleToPhraseSyllableLines(cycle, tuneMeter, stanzaMeter)
         return grid[i] ?? ['']
       })
       .filter((s) => s.length > 0)
+    // Pad to CYCLES_PER_PAGE so the last page always renders the same number
+    // of w: lines as earlier pages, keeping staff heights consistent.
+    while (lines.length < CYCLES_PER_PAGE) {
+      lines.push(' ')
+    }
+    return lines
   }
 
   // ── Pagination indicator ───────────────────────────────────────────────────
@@ -464,7 +504,9 @@ export function NotationRenderer({
       stanzas.length === 0 ? (
         <p className="text-sm text-muted-foreground italic">No lyrics available.</p>
       ) : (
-        <StanzaList stanzas={stanzas} />
+        <div data-view="lyrics">
+          <StanzaList stanzas={stanzas} />
+        </div>
       )
   }
 

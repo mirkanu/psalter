@@ -412,11 +412,10 @@ export function solFaToAbcMultiVoice(
     `T:${tuneName}`,
     `M:${meter}`,
     `L:1/8`,
-    `Q:1/4=76`,
-    `V:1 clef=treble name="Soprano"`,
-    `V:2 clef=treble name="Alto"`,
-    `V:3 clef=treble name="Tenor"`,
-    `V:4 clef=bass name="Bass"`,
+    `V:1 clef=treble`,
+    `V:2 clef=treble`,
+    `V:3 clef=treble`,
+    `V:4 clef=bass`,
     `K:${key}`,
     `[V:1] ${eventsToAbcStr(sopranoEvents, barUnits, sharps, flats)}`,
     `[V:2] ${eventsToAbcStr(altoEvents,    barUnits, sharps, flats)}`,
@@ -463,6 +462,6 @@ export function solFaToAbc(
   }
   if (current.length > 0) bars.push(current)
 
-  const abc = [`X:1`, `T:${tuneName}`, `M:${meter}`, `L:1/8`, `Q:1/4=76`, `K:${key}`, musicStr].join('\n')
+  const abc = [`X:1`, `T:${tuneName}`, `M:${meter}`, `L:1/8`, `K:${key}`, musicStr].join('\n')
   return { abc, bars, warnings }
 }

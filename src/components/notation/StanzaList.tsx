@@ -27,18 +27,28 @@ export function StanzaList({ stanzas, className }: StanzaListProps): ReactNode {
 }
 
 function renderStanza(s: string, key: number): ReactNode {
-  const m = s.match(/^(\d+)\s*([\s\S]*)$/)
-  if (!m) {
+  const lines = s.split('\n')
+  const renderedLines = lines.map((line, li) => {
+    const m = line.match(/^(\d+)\s*([\s\S]*)$/)
+    if (m) {
+      return (
+        <span key={li}>
+          <sup className="verse-number">{m[1]}</sup>
+          {m[2]}
+          {li < lines.length - 1 ? '\n' : ''}
+        </span>
+      )
+    }
     return (
-      <p key={key} className="verse-text whitespace-pre-line">
-        {s}
-      </p>
+      <span key={li}>
+        {line}
+        {li < lines.length - 1 ? '\n' : ''}
+      </span>
     )
-  }
+  })
   return (
     <p key={key} className="verse-text whitespace-pre-line">
-      <sup className="verse-number">{m[1]}</sup>
-      {m[2]}
+      {renderedLines}
     </p>
   )
 }

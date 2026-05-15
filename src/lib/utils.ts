@@ -5,18 +5,24 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-/** Extract soprano-only ABC from a 4-voice SATB string (inline [V:n] format). */
+/** Extract soprano-only ABC from a 4-voice SATB string (inline [V:n] format).
+ * Also strips tempo markings (Q: lines) and voice name= attributes so the
+ * rendered staff is clean. */
 export function sopranoOnly(abc: string): string {
   return abc
     .split('\n')
     .flatMap((line) => {
       const t = line.trim()
+      // Drop tempo markings (Q: lines)
+      if (/^Q:/.test(t)) return []
       // Drop non-soprano voice declarations and directives
       if (/^V:[2-9]/.test(t) || /^%%/.test(t) || /^I:/.test(t)) return []
       // Drop non-soprano music lines
       if (/^\[V:[2-9]\]/.test(t)) return []
       // Strip [V:1] prefix from soprano music lines
       if (t.startsWith('[V:1]')) return [t.slice(5).trimStart()]
+      // Strip name= attribute from V:1 voice declaration (keep clef and other attrs)
+      if (/^V:1/.test(t)) return [t.replace(/\s*name="[^"]*"/g, '')]
       return [line]
     })
     .join('\n')
