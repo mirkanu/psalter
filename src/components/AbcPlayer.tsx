@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from 'react'
 import * as abcjsModule from 'abcjs'
 // abcjs uses CJS module.exports — in bundlers the default may be nested under .default
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -62,6 +62,11 @@ interface AbcPlayerProps {
   onPlaybackComplete?: () => void
   /** Fired when the user pauses or stops playback. */
   onPlaybackStop?: () => void
+  /**
+   * Optional content rendered below the image when "Show original" is active.
+   * Used to surface the stanza list beside the legacy JPG (Item 1).
+   */
+  renderLyricsBelow?: ReactNode
 }
 
 const SOUNDFONT_URL = 'https://paulrosen.github.io/midi-js-soundfonts/abcjs/'
@@ -79,6 +84,7 @@ export default function AbcPlayer({
   onPlayStart,
   onPlaybackComplete,
   onPlaybackStop,
+  renderLyricsBelow,
 }: AbcPlayerProps) {
   const baseKeySemitone = useMemo(() => parseKeyFromAbc(abc), [abc])
   const defaultBpm = useMemo(() => parseBpmFromAbc(abc), [abc])
@@ -332,6 +338,7 @@ export default function AbcPlayer({
           ) : (
             <p className="text-sm text-muted-foreground italic">Original score not available.</p>
           )}
+          {renderLyricsBelow}
         </div>
       ) : (
         <>

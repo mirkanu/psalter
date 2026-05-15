@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import AbcPlayer from '@/components/AbcPlayer'
 import { FullscreenOverlay } from './FullscreenOverlay'
+import { StanzaList } from './StanzaList'
 import { splitOnPhraseBreaks } from '@/lib/abc-phrases'
 import { syllabifyForAbc } from '@/lib/lyrics'
 import {
@@ -103,6 +104,7 @@ function isViewMode(s: string): s is ViewMode {
 export function NotationRenderer({
   abc,
   lyrics,
+  scoreJpgUrl,
   solfegeJpgUrl,
   tuneName,
   tuneMeter,
@@ -218,24 +220,6 @@ export function NotationRenderer({
         return grid[i] ?? ['']
       })
       .filter((s) => s.length > 0)
-  }
-
-  // ── Lyrics-only stanza rendering (D-17: verse number as <sup>) ─────────────
-  function renderStanza(s: string, key: number): ReactNode {
-    const m = s.match(/^(\d+)\s*([\s\S]*)$/)
-    if (!m) {
-      return (
-        <p key={key} className="verse-text whitespace-pre-line">
-          {s}
-        </p>
-      )
-    }
-    return (
-      <p key={key} className="verse-text whitespace-pre-line">
-        <sup className="verse-number">{m[1]}</sup>
-        {m[2]}
-      </p>
-    )
   }
 
   // ── Pagination indicator ───────────────────────────────────────────────────
@@ -395,6 +379,15 @@ export function NotationRenderer({
   // Item 2: Play plays once — no chain/repeat. We deliberately do NOT pass
   // autoPlayToken / onPlayStart / onPlaybackComplete so playback stops at end
   // and pagination is fully manual.
+  // Item 1: pass renderLyricsBelow so Show Original mode in AbcPlayer can
+  // render the same StanzaList below the JPG.
+  const lyricsBelow =
+    showLyrics && stanzas.length > 0 ? (
+      <div className="mt-4 max-h-[60vh] overflow-y-auto">
+        <StanzaList stanzas={stanzas} />
+      </div>
+    ) : null
+
   let viewArea: ReactNode
   if (viewMode === 'staff') {
     viewArea = (
@@ -402,19 +395,31 @@ export function NotationRenderer({
         abc={unifiedAbc}
         scale={scale}
         tuneName={tuneName}
+        staffJpgUrl={scoreJpgUrl}
+        solfegeJpgUrl={solfegeJpgUrl}
+        renderLyricsBelow={lyricsBelow}
       />
     )
   } else if (viewMode === 'solfege') {
-    viewArea = solfegeJpgUrl ? (
-      <img
-        src={solfegeJpgUrl}
-        alt={`Solfège for ${tuneName}`}
-        className="w-full h-auto rounded-md border border-border"
-      />
-    ) : (
-      <p className="text-sm text-muted-foreground italic">
-        Solfège not available for this tune.
-      </p>
+    viewArea = (
+      <div className="space-y-4">
+        {solfegeJpgUrl ? (
+          <img
+            src={solfegeJpgUrl}
+            alt={`Solfège for ${tuneName}`}
+            className="w-full h-auto rounded-md border border-border"
+          />
+        ) : (
+          <p className="text-sm text-muted-foreground italic">
+            Solfège not available for this tune.
+          </p>
+        )}
+        {showLyrics && stanzas.length > 0 && (
+          <div className="max-h-[60vh] overflow-y-auto">
+            <StanzaList stanzas={stanzas} />
+          </div>
+        )}
+      </div>
     )
   } else {
     // Lyrics-only: single-column scrollable list of all stanzas (D-17 verse numbers).
@@ -422,7 +427,7 @@ export function NotationRenderer({
       stanzas.length === 0 ? (
         <p className="text-sm text-muted-foreground italic">No lyrics available.</p>
       ) : (
-        <div className="space-y-4">{stanzas.map((s, i) => renderStanza(s, i))}</div>
+        <StanzaList stanzas={stanzas} />
       )
   }
 
