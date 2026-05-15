@@ -136,18 +136,18 @@ export default async function PsalmPage({ params }: PageProps) {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
+      <div className="mb-6">
+        <div className="flex items-start justify-between gap-4">
           <h1 className="text-2xl md:text-4xl font-bold text-foreground">
             Psalm {displayTitle}
           </h1>
-          {psalm.bibleTitle && (
-            <p className="text-base md:text-lg text-muted-foreground mt-1">
-              {psalm.bibleTitle}
-            </p>
-          )}
+          <PsalmNav prev={prev} next={next} />
         </div>
-        <PsalmNav prev={prev} next={next} />
+        {psalm.bibleTitle && (
+          <p className="text-sm md:text-base text-muted-foreground mt-3">
+            {psalm.bibleTitle}
+          </p>
+        )}
       </div>
 
       <PsalmTabs
