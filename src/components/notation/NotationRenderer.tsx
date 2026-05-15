@@ -39,15 +39,20 @@ export interface NotationRendererProps {
   /** When false, hides the "Lyrics only" view mode and omits `w:` lines from
    *  the staff. Used on tune detail pages where lyrics are out of scope. */
   showLyrics?: boolean
+  /** Called whenever the active view mode changes. Used by PsalmTabs to switch
+   *  the desktop layout between stacked (Staff/Solfège) and 2-column (Lyrics). */
+  onViewModeChange?: (mode: ViewMode) => void
 }
 
-type ViewMode = 'staff' | 'solfege' | 'lyrics'
+export type ViewMode = 'staff' | 'solfege' | 'lyrics'
 type BaseSize = number
 
-const MIN_SIZE = 12
-const MAX_SIZE = 44
+const MIN_SIZE = 4
+const MAX_SIZE = 120
 const SIZE_STEP = 2
 const DEFAULT_SIZE: BaseSize = 14
+/** Larger default on narrow portrait screens so phrases naturally wrap to 4 rows. */
+const MOBILE_DEFAULT_SIZE: BaseSize = 24
 const STORAGE_SIZE_KEY = 'psalter-staff-size'
 const STORAGE_MODE_KEY = 'psalter-score-mode'
 const CYCLES_PER_PAGE = 3
@@ -111,6 +116,7 @@ export function NotationRenderer({
   tuneMeter,
   stanzaMeter,
   showLyrics = true,
+  onViewModeChange,
 }: NotationRendererProps) {
   // ── Derived: phrases & cycles ──────────────────────────────────────────────
   const split = useMemo(() => splitOnPhraseBreaks(abc), [abc])
@@ -163,6 +169,15 @@ export function NotationRenderer({
       const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_SIZE_KEY) : null
       const n = raw ? Number(raw) : NaN
       if (Number.isFinite(n) && isBaseSize(n)) return n
+      // No stored preference — use a larger default on narrow portrait screens so
+      // phrases wrap to ~4 rows without the user needing to press A+.
+      if (
+        typeof window !== 'undefined' &&
+        window.innerWidth < 480 &&
+        window.innerHeight > window.innerWidth
+      ) {
+        return MOBILE_DEFAULT_SIZE
+      }
     } catch {
       /* ignore */
     }
@@ -185,6 +200,10 @@ export function NotationRenderer({
       /* ignore */
     }
   }, [viewMode])
+
+  useEffect(() => {
+    onViewModeChange?.(viewMode)
+  }, [viewMode, onViewModeChange])
 
   // Clamp cyclePage if cycles shrink
   useEffect(() => {
@@ -414,6 +433,7 @@ export function NotationRenderer({
         renderAboveOriginal={
           <BackToNotationButton onClick={() => setShowOriginal(false)} />
         }
+        hidePlayerControls={isFullscreen}
       />
     )
   } else if (viewMode === 'solfege') {
@@ -454,40 +474,42 @@ export function NotationRenderer({
 
   // ── Fullscreen branch ─────────────────────────────────────────────────────
   if (isFullscreen) {
-    const fullscreenBottomBar = (
-      <>
-        {showPagination ? (
-          <Button onClick={prev} disabled={atStart} aria-label="Previous page">
-            ← Prev
-          </Button>
-        ) : (
-          <span aria-hidden />
-        )}
+    const fullscreenTopBar = (
+      <div className="flex items-center justify-between w-full">
+        {sizeGroup}
         <Button
-          variant="outline"
+          variant="ghost"
+          size="xs"
           onClick={() => setIsFullscreen(false)}
           aria-label="Exit fullscreen"
         >
           <X className="h-4 w-4" />
         </Button>
-        {showPagination ? (
-          <Button onClick={next} disabled={atEnd} aria-label="Next page">
-            Next →
-          </Button>
-        ) : (
-          <span aria-hidden />
-        )}
-      </>
+      </div>
     )
+
+    const fullscreenBottomBar = showPagination ? (
+      <>
+        <Button onClick={prev} disabled={atStart} aria-label="Previous page">
+          ← Prev
+        </Button>
+        <span className="text-sm text-muted-foreground">
+          {`Stanzas ${cyclePage + 1}/${totalStanzaPages}`}
+        </span>
+        <Button onClick={next} disabled={atEnd} aria-label="Next page">
+          Next →
+        </Button>
+      </>
+    ) : undefined
 
     return (
       <FullscreenOverlay
         open
         onClose={() => setIsFullscreen(false)}
+        topBar={fullscreenTopBar}
         bottomBar={fullscreenBottomBar}
       >
-        <div data-notation-renderer style={rootStyle} className="space-y-3">
-          {controlBar}
+        <div data-notation-renderer style={rootStyle} className="w-full">
           {viewArea}
         </div>
       </FullscreenOverlay>
