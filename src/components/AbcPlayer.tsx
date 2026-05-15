@@ -217,8 +217,12 @@ export default function AbcPlayer({
     setAudioError(null)
 
     try {
+      // Note: intentionally NOT setting `responsive: 'resize'`. abcjs's
+      // responsive mode auto-fits the SVG to container width, which nullifies
+      // the visible effect of `scale`. Without it, the `scale` option drives
+      // intrinsic sizing — A+/A− have a real visual impact. Container has
+      // overflow-x-auto so large scales scroll rather than clip.
       const visualObjs = abcjs.renderAbc(el, abc, {
-        responsive: 'resize',
         add_classes: true,
         visualTranspose: transpose,
         defaultTempo: { duration: 0.25, bpm },
@@ -378,7 +382,7 @@ export default function AbcPlayer({
             ref={containerRef}
             role="img"
             aria-label={title ? `Music notation for ${title}` : 'Music notation'}
-            className="w-full"
+            className="w-full overflow-x-auto"
           />
           {/* Lyrics text block — shown below notation in interactive mode */}
           {lyricsText && lyricsText.trim() && (
