@@ -341,6 +341,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
   const mobileTabsRef = useRef<HTMLDivElement>(null)
   const searchParams = useSearchParams()
   const [noRecDialogOpen, setNoRecDialogOpen] = useState(false)
+  const [changeTuneOpen, setChangeTuneOpen] = useState(false)
 
   // Pre-select a tune when navigating from a tune page via ?tune={id}
   const tuneParam = searchParams.get('tune')
@@ -412,15 +413,46 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
         </div>
       )}
       {activeTune ? (
-        <NotationRendererClient
-          abc={(() => { const r = pickAbcWithMarkers((activeTune as { abcSatb?: string | null }).abcSatb, activeTune.abcNotation); return r ? sopranoOnly(r) : '' })()}
-          lyrics={lyrics ?? ''}
-          scoreJpgUrl={activeTune.scoreJpgUrl ?? null}
-          solfegeJpgUrl={activeTune.solfegeJpgUrl ?? null}
-          tuneName={activeTune.name ?? 'Tune'}
-          tuneMeter={activeTune.meter ?? null}
-          stanzaMeter={primaryVersion?.meter ?? null}
-        />
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-medium text-foreground">
+              Tune{activeTune.meter ? ` (${activeTune.meter})` : ''}:
+            </span>
+            <Link
+              href={`/tunes/${activeTune.id}`}
+              className="text-sm font-medium text-foreground underline underline-offset-2 hover:no-underline"
+            >
+              {activeTune.name ?? 'Tune'}
+            </Link>
+            {alternateTunes.length > 0 && (
+              <Button
+                variant="default"
+                size="xs"
+                onClick={() => setChangeTuneOpen(true)}
+                aria-label="Change tune"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+          <NotationRendererClient
+            abc={(() => { const r = pickAbcWithMarkers((activeTune as { abcSatb?: string | null }).abcSatb, activeTune.abcNotation); return r ? sopranoOnly(r) : '' })()}
+            lyrics={lyrics ?? ''}
+            scoreJpgUrl={activeTune.scoreJpgUrl ?? null}
+            solfegeJpgUrl={activeTune.solfegeJpgUrl ?? null}
+            tuneName={activeTune.name ?? 'Tune'}
+            tuneMeter={activeTune.meter ?? null}
+            stanzaMeter={primaryVersion?.meter ?? null}
+          />
+          <ChangeTuneDialog
+            open={changeTuneOpen}
+            onClose={() => setChangeTuneOpen(false)}
+            currentTuneId={activeTune.id}
+            tunes={alternateTunes}
+            meter={primaryVersion?.meter ?? null}
+            onSelect={(tune) => { setOverrideTune(tune); setChangeTuneOpen(false) }}
+          />
+        </div>
       ) : (
         <div className="space-y-4">
           <div className="flex items-center gap-2">
