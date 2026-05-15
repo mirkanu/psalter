@@ -17,6 +17,7 @@ import {
 import AbcPlayer from '@/components/AbcPlayer'
 import { FullscreenOverlay } from './FullscreenOverlay'
 import { StanzaList } from './StanzaList'
+import { BackToNotationButton } from './BackToNotationButton'
 import { splitOnPhraseBreaks } from '@/lib/abc-phrases'
 import { syllabifyForAbc } from '@/lib/lyrics'
 import {
@@ -153,6 +154,10 @@ export function NotationRenderer({
     if (!showLyrics && viewMode === 'lyrics') setViewMode('staff')
   }, [showLyrics, viewMode])
   const [isFullscreen, setIsFullscreen] = useState(false)
+  // Lifted from AbcPlayer so NotationRenderer knows when the legacy JPG is
+  // shown (and can therefore hide the stanza-pagination row, which is
+  // meaningless when the image is displayed).
+  const [showOriginal, setShowOriginal] = useState(false)
   const [baseSize, setBaseSize] = useState<BaseSize>(() => {
     try {
       const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_SIZE_KEY) : null
@@ -223,7 +228,13 @@ export function NotationRenderer({
   }
 
   // ── Pagination indicator ───────────────────────────────────────────────────
-  const showPagination = totalStanzaPages > 1
+  // Pagination row is meaningful ONLY when live abcjs notation is visible.
+  // Hide when:
+  //   - viewMode is not 'staff' (Solfège / Lyrics-only show full stanza list)
+  //   - showOriginal is true (AbcPlayer is showing the legacy JPG inside Staff
+  //     view, so pagination doesn't drive what's rendered)
+  const showPagination =
+    totalStanzaPages > 1 && viewMode === 'staff' && !showOriginal
 
   // ── Sub-renders ───────────────────────────────────────────────────────────
   const sizeGroup = (
@@ -398,11 +409,17 @@ export function NotationRenderer({
         staffJpgUrl={scoreJpgUrl}
         solfegeJpgUrl={solfegeJpgUrl}
         renderLyricsBelow={lyricsBelow}
+        showOriginal={showOriginal}
+        onShowOriginalChange={setShowOriginal}
+        renderAboveOriginal={
+          <BackToNotationButton onClick={() => setShowOriginal(false)} />
+        }
       />
     )
   } else if (viewMode === 'solfege') {
     viewArea = (
       <div className="space-y-4">
+        <BackToNotationButton onClick={() => setViewMode('staff')} />
         {solfegeJpgUrl ? (
           <img
             src={solfegeJpgUrl}
