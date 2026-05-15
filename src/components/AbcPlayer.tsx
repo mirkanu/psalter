@@ -70,6 +70,21 @@ interface AbcPlayerProps {
 }
 
 const SOUNDFONT_URL = 'https://paulrosen.github.io/midi-js-soundfonts/abcjs/'
+const STORAGE_BPM_KEY = 'psalter-bpm'
+
+function readStoredBpm(): number | null {
+  try {
+    if (typeof window === 'undefined') return null
+    const raw = window.localStorage.getItem(STORAGE_BPM_KEY)
+    if (!raw) return null
+    const n = Number(raw)
+    if (!Number.isFinite(n)) return null
+    if (n < 40 || n > 200) return null
+    return n
+  } catch {
+    return null
+  }
+}
 
 export default function AbcPlayer({
   abc,
@@ -90,10 +105,27 @@ export default function AbcPlayer({
   const defaultBpm = useMemo(() => parseBpmFromAbc(abc), [abc])
 
   const [transpose, setTranspose] = useState(0)
-  const [bpm, setBpm] = useState(defaultBpm)
+  // Item 3: persist BPM across tunes in localStorage. Initial value reads from
+  // storage if present (lazy initializer runs only on mount), else falls back
+  // to the tune-derived default. We deliberately do NOT reset to defaultBpm
+  // when the tune changes.
+  const [bpm, setBpm] = useState<number>(() => readStoredBpm() ?? defaultBpm)
 
-  // Reset BPM when the tune changes
-  useEffect(() => { setBpm(defaultBpm) }, [defaultBpm])
+  // Persist on change. Skip on SSR. If BPM equals the tune-derived default we
+  // remove the key entirely so a future tune's default applies unless the
+  // user has explicitly chosen a non-default tempo.
+  useEffect(() => {
+    try {
+      if (typeof window === 'undefined') return
+      if (bpm === defaultBpm) {
+        window.localStorage.removeItem(STORAGE_BPM_KEY)
+      } else {
+        window.localStorage.setItem(STORAGE_BPM_KEY, String(bpm))
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [bpm, defaultBpm])
   const [showOriginal, setShowOriginal] = useState(false)
   // Which JPEG to show when showOriginal=true
   const [originalMode, setOriginalMode] = useState<'staff' | 'solfege'>(initialMode)
@@ -437,7 +469,17 @@ export default function AbcPlayer({
             variant="ghost"
             size="sm"
             className="h-8 px-2"
-            onClick={() => { setTranspose(0); setBpm(defaultBpm) }}
+            onClick={() => {
+              setTranspose(0)
+              setBpm(defaultBpm)
+              try {
+                if (typeof window !== 'undefined') {
+                  window.localStorage.removeItem(STORAGE_BPM_KEY)
+                }
+              } catch {
+                /* ignore */
+              }
+            }}
             disabled={showOriginal}
             aria-label="Reset key and tempo"
           >
