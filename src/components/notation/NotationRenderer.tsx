@@ -34,6 +34,9 @@ export interface NotationRendererProps {
   tuneMeter: string | null
   /** Stanza meter (e.g. "CM" or "double-CM") — required for D-20 cycle pairing. */
   stanzaMeter: string | null
+  /** When false, hides the "Lyrics only" view mode and omits `w:` lines from
+   *  the staff. Used on tune detail pages where lyrics are out of scope. */
+  showLyrics?: boolean
 }
 
 type ViewMode = 'staff' | 'solfege' | 'lyrics'
@@ -104,6 +107,7 @@ export function NotationRenderer({
   tuneName,
   tuneMeter,
   stanzaMeter,
+  showLyrics = true,
 }: NotationRendererProps) {
   // ── Derived: phrases & cycles ──────────────────────────────────────────────
   const split = useMemo(() => splitOnPhraseBreaks(abc), [abc])
@@ -130,12 +134,22 @@ export function NotationRenderer({
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     try {
       const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_MODE_KEY) : null
-      if (stored && isViewMode(stored)) return stored
+      if (stored && isViewMode(stored)) {
+        // If lyrics view stored but lyrics are disabled on this page, fall back to staff.
+        if (stored === 'lyrics' && !showLyrics) return 'staff'
+        return stored
+      }
     } catch {
       /* ignore */
     }
     return 'staff'
   })
+
+  // If showLyrics flips off (or remounts with showLyrics=false) and current
+  // viewMode is 'lyrics', fall back to 'staff'.
+  useEffect(() => {
+    if (!showLyrics && viewMode === 'lyrics') setViewMode('staff')
+  }, [showLyrics, viewMode])
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [baseSize, setBaseSize] = useState<BaseSize>(() => {
     try {
@@ -271,14 +285,16 @@ export function NotationRenderer({
       >
         Solfège
       </Button>
-      <Button
-        variant={viewMode === 'lyrics' ? 'default' : 'outline'}
-        size="xs"
-        onClick={() => setViewMode('lyrics')}
-        aria-pressed={viewMode === 'lyrics'}
-      >
-        Lyrics only
-      </Button>
+      {showLyrics && (
+        <Button
+          variant={viewMode === 'lyrics' ? 'default' : 'outline'}
+          size="xs"
+          onClick={() => setViewMode('lyrics')}
+          aria-pressed={viewMode === 'lyrics'}
+        >
+          Lyrics only
+        </Button>
+      )}
     </div>
   )
 
@@ -361,17 +377,19 @@ export function NotationRenderer({
         .join('\n')
         .trim()
       parts.push(cleanedBody)
-      const wLines = wLinesForPhrase(i)
-      for (const portion of wLines) {
-        if (portion && portion.trim()) {
-          parts.push(`w: ${syllabifyForAbc(portion.replace(/\n/g, ' '))}`)
+      if (showLyrics) {
+        const wLines = wLinesForPhrase(i)
+        for (const portion of wLines) {
+          if (portion && portion.trim()) {
+            parts.push(`w: ${syllabifyForAbc(portion.replace(/\n/g, ' '))}`)
+          }
         }
       }
     }
     return parts.join('\n')
     // wLinesForPhrase depends on visibleCycles, captured by closure.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [split, visiblePhraseIndices, visibleCycles, tuneMeter, stanzaMeter])
+  }, [split, visiblePhraseIndices, visibleCycles, tuneMeter, stanzaMeter, showLyrics])
 
   // ── View area ─────────────────────────────────────────────────────────────
   // Item 2: Play plays once — no chain/repeat. We deliberately do NOT pass
