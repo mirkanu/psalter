@@ -3,10 +3,13 @@ import type { Metadata } from 'next'
 import { db } from '@/db'
 import { psalms, psalmVersions } from '@/db/schema'
 import { asc, eq } from 'drizzle-orm'
-import { fetchPsalmDetail } from '@/db/queries/psalms'
+import {
+  fetchPsalmDetail,
+  getEditoriallyLinkedTuneIdsForPsalm,
+  fetchPsalmListRows,
+} from '@/db/queries/psalms'
 import { fetchTunesByMeter } from '@/db/queries/tunes'
-import { PsalmTabs } from '@/components/PsalmTabs'
-import { PsalmNav } from '@/components/PsalmNav'
+import { SingingView } from '@/components/singing/SingingView'
 import { parseSlug, deriveVersionSlug, stripStar, slugToDisplayTitle } from '@/lib/psalm-slugs'
 import { deriveTuneJpgPages } from '@/lib/tune-jpg-urls'
 import { getPsalmNeighbors } from '@/lib/psalm-navigation'
@@ -65,7 +68,7 @@ export default async function PsalmPage({ params }: PageProps) {
   const psalm = await fetchPsalmDetail(psalmId)
   if (!psalm) notFound()
 
-  // Find the active version based on the slug
+  // Find the active version based on the slug — verbatim from prior version
   const sortedVersions = psalm.psalmVersions.slice().sort((a, b) => a.id - b.id)
   let activeVersion = sortedVersions[0] ?? null
 
@@ -92,28 +95,11 @@ export default async function PsalmPage({ params }: PageProps) {
     activeVersion?.psalmVersionTunes.find((pvt) => pvt.isPrimary)?.tune ??
     activeVersion?.psalmVersionTunes[0]?.tune ??
     null
-
-  // Detect placeholder tunes ("use aots..." / "do NOT use aots...")
   const isPlaceholderTune = !!rawTune?.name?.toLowerCase().includes('aots')
-  const primaryTune = isPlaceholderTune ? null : rawTune
+  const primaryTuneRow = isPlaceholderTune ? null : rawTune
 
-  // If placeholder, find the recommended version and compute its slug
-  let recommendedVersionSlug: string | null = null
-  if (isPlaceholderTune && psalm.psalmVersions.length > 1) {
-    const recVersion = psalm.psalmVersions.find(
-      (v) => v.psalterNumber?.includes('Recommended') && v.id !== activeVersion?.id
-    )
-    if (recVersion) {
-      const rawLabel = deriveVersionSlug(psalmId, recVersion.psalterNumber, true)
-      recommendedVersionSlug = stripStar(rawLabel)
-    }
-  }
-
-  // Fetch alternate tunes matching the active version's meter
   const primaryMeter = activeVersion?.meter ?? rawTune?.meter ?? null
   const rawAlternateTunes = primaryMeter ? await fetchTunesByMeter(primaryMeter) : []
-
-  // Enrich alternate tunes with filesystem-derived JPEG URLs (DB columns are NULL)
   const alternateTunes = rawAlternateTunes.map((t) => {
     const { staffPages, solfegePages } = deriveTuneJpgPages(t.name)
     return {
@@ -123,42 +109,45 @@ export default async function PsalmPage({ params }: PageProps) {
     }
   })
 
-  // Derive JPEG URLs for the primary tune from filesystem
-  const primaryTuneDerivedStaffUrl = primaryTune
-    ? (deriveTuneJpgPages(primaryTune.name).staffPages[0] ?? null)
-    : null
-  const primaryTuneDerivedSolfegeUrl = primaryTune
-    ? (deriveTuneJpgPages(primaryTune.name).solfegePages[0] ?? null)
+  // Wrap primaryTune in TuneOption (AlternateTune) shape — used uniformly by SingingView
+  const primaryTune = primaryTuneRow
+    ? (() => {
+        const { staffPages, solfegePages } = deriveTuneJpgPages(primaryTuneRow.name)
+        return {
+          id: primaryTuneRow.id,
+          name: primaryTuneRow.name,
+          meter: primaryTuneRow.meter ?? null,
+          abcNotation: primaryTuneRow.abcNotation ?? null,
+          abcSatb: (primaryTuneRow as { abcSatb?: string | null }).abcSatb ?? null,
+          scoreJpgUrl: staffPages[0] ?? primaryTuneRow.scoreJpgUrl ?? null,
+          solfegeJpgUrl: solfegePages[0] ?? primaryTuneRow.solfegeJpgUrl ?? null,
+          soundcloudUrl: primaryTuneRow.soundcloudUrl ?? null,
+          youtubeUrl: primaryTuneRow.youtubeUrl ?? null,
+        }
+      })()
     : null
 
-  const displayTitle = slugToDisplayTitle(slug)
+  const editorialSet = await getEditoriallyLinkedTuneIdsForPsalm(psalmId)
+  const psalmListRows = await fetchPsalmListRows()
   const { prev, next } = await getPsalmNeighbors(slug)
 
-  return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-      <div className="mb-6">
-        <div className="flex items-start justify-between gap-4">
-          <h1 className="text-2xl md:text-4xl font-bold text-foreground">
-            Psalm {displayTitle}
-          </h1>
-          <PsalmNav prev={prev} next={next} />
-        </div>
-        {psalm.bibleTitle && (
-          <p className="text-sm md:text-base text-muted-foreground mt-3">
-            {psalm.bibleTitle}
-          </p>
-        )}
-      </div>
+  const lyrics = activeVersion?.lyrics ?? ''
+  const stanzaMeter = activeVersion?.meter ?? null
 
-      <PsalmTabs
-        psalm={psalm}
-        primaryTune={primaryTune}
-        primaryTuneDerivedStaffUrl={primaryTuneDerivedStaffUrl}
-        primaryTuneDerivedSolfegeUrl={primaryTuneDerivedSolfegeUrl}
-        alternateTunes={alternateTunes}
-        activeVersionId={activeVersion?.id}
-        recommendedVersionSlug={recommendedVersionSlug}
-      />
-    </div>
+  return (
+    <SingingView
+      psalm={psalm}
+      currentSlug={slug}
+      prevSlug={prev}
+      nextSlug={next}
+      primaryTune={primaryTune}
+      alternateTunes={alternateTunes}
+      editoriallyLinkedTuneIds={Array.from(editorialSet)}
+      meter={primaryMeter}
+      stanzaMeter={stanzaMeter}
+      lyrics={lyrics}
+      psalmListRows={psalmListRows}
+      studyHref={`/psalms/${slug}/study`}
+    />
   )
 }
