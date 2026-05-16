@@ -323,23 +323,33 @@ export default function AbcPlayer({
       //      proportionally and re-render once.
       const containerWidth = Math.max(0, (staffWidth || 600) - 16)
       const effectiveScale = scale ?? 1
-      // UAT v6 issue #1(c): A+/A− must visibly grow the rendered SVG. abcjs's
-      // `responsive: 'resize'` viewBox locks the SVG to container width and
-      // scales the entire layout to fit — which means `scale` only re-flows
-      // notes, the on-screen size never changes. We drop responsive and
-      // compute staffwidth in *abcjs units* such that rendered pixel width
-      // (= staffwidth * scale) ≈ container width × staffWidthFactor. With
-      // that, increasing `scale` keeps width pinned to container but forces
-      // abcjs to wrap to more (smaller in abcjs-units, but larger in pixels)
-      // systems, so the rendered SVG grows vertically as scale grows.
-      const targetPixelWidth = Math.max(120, Math.floor(containerWidth * staffWidthFactor))
-      const effectiveStaffWidth = Math.max(120, Math.floor(targetPixelWidth / effectiveScale))
+      // UAT v7 bug-fix (MOBILE-03, UAT v6 #1c regression):
+      //
+      // Strategy: `responsive: 'resize'` ON (so SVG always fills container
+      // width exactly via viewBox — no right gap, no lyric clipping), and
+      // we modulate VISUAL size by varying `staffwidth` inversely with
+      // `scale`. abcjs's `scale` option, combined with responsive viewBox,
+      // does NOT visibly change rendering (the viewBox absorbs the change),
+      // so we keep abcjs's internal scale at 1 and let staffwidth do the
+      // work.
+      //
+      // - Bigger requested size (effectiveScale > 1) → narrower staffwidth
+      //   → fewer notes fit per system → more system wraps → viewBox grows
+      //   taller-relative-to-wide → SVG renders TALLER (per-unit scale =
+      //   container_width / staffwidth grows, so notes and lyrics render
+      //   bigger). A+ visibly grows the staff.
+      // - Smaller requested size → wider staffwidth → fewer wraps → shorter
+      //   SVG.
+      const targetStaffwidth = (containerWidth * staffWidthFactor) / effectiveScale
+      const effectiveStaffWidth = Math.max(120, Math.floor(targetStaffwidth))
       const visualObjs = abcjs.renderAbc(el, abc, {
         add_classes: true,
         visualTranspose: transpose,
         defaultTempo: { duration: 0.25, bpm },
-        scale: effectiveScale,
+        // Keep abcjs `scale` at 1; visual size is driven by staffwidth above.
+        scale: 1,
         staffwidth: effectiveStaffWidth,
+        responsive: 'resize',
         // UAT v6 issue #2(a): force every system — including the last — to
         // span the full staffwidth so all lines are visually even-length.
         format: { stretchlast: 1 },
