@@ -197,11 +197,20 @@ export function SingingView({
   const [miniBarVisible, setMiniBarVisible] = useState(false)
   const [currentStanza, setCurrentStanza] = useState<number | null>(null)
   const [totalStanzas, setTotalStanzas] = useState<number | null>(null)
+  const [stanzaPage, setStanzaPage] = useState<number>(1)
 
   const handleStanzaChange = useCallback((current: number, total: number) => {
     setCurrentStanza(current)
     setTotalStanzas(total)
+    setStanzaPage(current)
   }, [])
+
+  const handleStanzaPrev = useCallback(() => {
+    setStanzaPage((p) => Math.max(1, p - 1))
+  }, [])
+  const handleStanzaNext = useCallback(() => {
+    setStanzaPage((p) => (totalStanzas ? Math.min(totalStanzas, p + 1) : p + 1))
+  }, [totalStanzas])
 
   const handlePlayToggle = useCallback(() => {
     setIsPlaying((prev) => {
@@ -297,6 +306,8 @@ export function SingingView({
             onBaseSizeChange={handleBaseSizeChange}
             chromeless={true}
             onStanzaChange={handleStanzaChange}
+            stanzaPage={stanzaPage}
+            onStanzaPageChange={setStanzaPage}
           />
         ) : (
           <div className="p-6 text-sm text-muted-foreground italic">
@@ -324,6 +335,8 @@ export function SingingView({
         onBaseSizeChange={handleBaseSizeChange}
         currentStanza={currentStanza}
         totalStanzas={totalStanzas}
+        onStanzaPrev={handleStanzaPrev}
+        onStanzaNext={handleStanzaNext}
         isPlaying={isPlaying}
         onPlayToggle={handlePlayToggle}
         onGearOpen={() => setGearOpen(true)}

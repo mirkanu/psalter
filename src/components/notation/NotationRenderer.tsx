@@ -75,6 +75,13 @@ export interface NotationRendererProps {
    * Optional — when omitted the renderer behaves exactly as before.
    */
   onStanzaChange?: (current: number, total: number) => void
+  /**
+   * Controlled stanza page (1-indexed). When provided, NotationRenderer mirrors
+   * its internal `cyclePage` to `stanzaPage - 1`. Pair with `onStanzaPageChange`
+   * to let parent chrome (e.g. GlassBottomBar) drive pagination.
+   */
+  stanzaPage?: number
+  onStanzaPageChange?: (page: number) => void
 }
 
 export type ViewMode = 'staff' | 'solfege' | 'lyrics'
@@ -158,6 +165,8 @@ export function NotationRenderer({
   onBaseSizeChange,
   chromeless = false,
   onStanzaChange,
+  stanzaPage,
+  onStanzaPageChange,
 }: NotationRendererProps) {
   // chromeless mode permanently disables the FS overlay; the singing view IS the fullscreen.
   const allowFullscreen = !chromeless
@@ -182,7 +191,23 @@ export function NotationRenderer({
   const totalStanzaPages = Math.max(1, Math.ceil(cycles.length / CYCLES_PER_PAGE))
 
   // ── State ──────────────────────────────────────────────────────────────────
-  const [cyclePage, setCyclePage] = useState(0)
+  const isStanzaPageControlled = stanzaPage !== undefined
+  const [cyclePageInternal, setCyclePageInternal] = useState(0)
+  const cyclePage = isStanzaPageControlled
+    ? Math.max(0, (stanzaPage as number) - 1)
+    : cyclePageInternal
+  const setCyclePage = (updater: number | ((prev: number) => number)) => {
+    if (isStanzaPageControlled) {
+      const nextRaw = typeof updater === 'function' ? updater(cyclePage) : updater
+      const next = Math.max(0, Math.min(nextRaw, totalStanzaPages - 1))
+      onStanzaPageChange?.(next + 1)
+      return
+    }
+    setCyclePageInternal((prev) => {
+      const nextRaw = typeof updater === 'function' ? updater(prev) : updater
+      return Math.max(0, Math.min(nextRaw, totalStanzaPages - 1))
+    })
+  }
   const isViewModeControlled = viewModeProp !== undefined
   const [viewModeInternal, setViewModeInternal] = useState<ViewMode>(() => {
     try {
@@ -514,76 +539,10 @@ export function NotationRenderer({
     </div>
   ) : null
 
-  // Chromeless Size row — UAT v6: A−/A+ moved out of FAB onto the main canvas
-  // chrome so users see the size change effect immediately (especially on
-  // mobile). Affects lyric size in all view modes, and notation size in Staff
-  // mode. Visual register matches the stanza nav: foreground/muted-foreground
-  // only, ≥44×44 tap targets.
-  const chromelessSizeRow = (
-    <div
-      data-chromeless-size-row
-      className="mt-2 flex items-center justify-center gap-3"
-    >
-      <button
-        type="button"
-        data-testid="canvas-size-decrease"
-        onClick={() => setBaseSize((s) => (s - SIZE_STEP < MIN_SIZE ? s : s - SIZE_STEP))}
-        disabled={baseSize <= MIN_SIZE}
-        aria-label="Decrease size"
-        className="min-h-11 min-w-11 inline-flex items-center justify-center gap-1 rounded-md text-foreground active:scale-[0.97] transition-transform motion-reduce:transition-none disabled:opacity-40 disabled:pointer-events-none"
-      >
-        <ZoomOut className="h-4 w-4" />
-        <span className="text-sm font-medium">A−</span>
-      </button>
-      <span className="text-xs text-muted-foreground tabular-nums w-8 text-center">
-        {baseSize}
-      </span>
-      <button
-        type="button"
-        data-testid="canvas-size-increase"
-        onClick={() => setBaseSize((s) => (s + SIZE_STEP > MAX_SIZE ? s : s + SIZE_STEP))}
-        disabled={baseSize >= MAX_SIZE}
-        aria-label="Increase size"
-        className="min-h-11 min-w-11 inline-flex items-center justify-center gap-1 rounded-md text-foreground active:scale-[0.97] transition-transform motion-reduce:transition-none disabled:opacity-40 disabled:pointer-events-none"
-      >
-        <ZoomIn className="h-4 w-4" />
-        <span className="text-sm font-medium">A+</span>
-      </button>
-    </div>
-  )
-
-  // Chromeless stanza nav — slim inline row for SingingView (issue #5).
-  // Rendered directly below the notation viewArea, not in the FAB sheet,
-  // so singers reach it without opening a menu. Matches PsalmTopBar's
-  // chevron-button idiom: 44×44 tap targets, foreground/muted-foreground only.
-  const chromelessStanzaNav = showPagination ? (
-    <div
-      data-chromeless-stanza-nav
-      className="mt-2 flex items-center justify-center gap-3"
-    >
-      <button
-        type="button"
-        onClick={prev}
-        disabled={atStart}
-        aria-label="Previous stanza page"
-        className="min-h-11 min-w-11 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.97] transition-transform motion-reduce:transition-none disabled:opacity-40 disabled:pointer-events-none"
-      >
-        <ChevronLeft className="h-5 w-5" />
-      </button>
-      <span className="text-sm text-muted-foreground tabular-nums">
-        {`Stanzas ${cyclePage + 1}/${totalStanzaPages}`}
-      </span>
-      <button
-        type="button"
-        onClick={next}
-        disabled={atEnd}
-        aria-label="Next stanza page"
-        className="min-h-11 min-w-11 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.97] transition-transform motion-reduce:transition-none disabled:opacity-40 disabled:pointer-events-none"
-      >
-        <ChevronRight className="h-5 w-5" />
-      </button>
-    </div>
-  ) : null
+  // Chromeless Size row / Stanza nav removed in 04.9.4-chrome-dedup.
+  // SingingView now owns A−/A+ and stanza prev/next via GlassBottomBar.
+  // NotationRenderer exposes pagination via the `stanzaPage` controlled prop
+  // and the `onStanzaChange` callback.
 
   const divider = <div className="h-6 w-px bg-border" aria-hidden />
 
@@ -885,12 +844,9 @@ export function NotationRenderer({
       ) : (
         viewArea
       )}
-      {chromeless && (
-        <div className="shrink-0">
-          {chromelessSizeRow}
-          {chromelessStanzaNav}
-        </div>
-      )}
+      {/* chromelessSizeRow + chromelessStanzaNav are intentionally NOT rendered
+         here: SingingView (the only chromeless caller) owns these via the
+         GlassBottomBar. Rendering them here produced visible duplicates. */}
     </div>
   )
 }
