@@ -5,7 +5,7 @@ milestone_name: milestone
 status: executing
 stopped_at: Phase 04.9.2 complete (5/5 plans). Visual approval recorded. Ready for next phase.
 last_updated: "2026-05-16T11:00:00.000Z"
-last_activity: 2026-05-16 -- Plan 04.9.3-03 complete (singing-view chrome components: PsalmTopBar, TuneSubBar, PsalmSelectorSheet, TuneSwitcherSheet, types.ts)
+last_activity: 2026-05-16 -- Plan 04.9.3-04 complete (FAB-side chrome: AbcAudioControls, MetadataPanel, PsalmActionsFAB)
 progress:
   total_phases: 6
   completed_phases: 4
@@ -26,10 +26,10 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 ## Current Position
 
 Phase: 04.9.3 (mobile-first-psalm-display) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 UI-SPEC: Complete — REVISED & RE-APPROVED (hymnal phrase-split layout, syllable alignment, verse numbers clarified — 2026-05-13). Visual re-review of single-AbcPlayer + auto-advance architecture: APPROVED 2026-05-14.
 Status: Executing Phase 04.9.3
-Last activity: 2026-05-16 -- Plan 04.9.3-02 complete (NotationRenderer optionally-controlled + chromeless)
+Last activity: 2026-05-16 -- Plan 04.9.3-04 complete (FAB-side chrome: AbcAudioControls, MetadataPanel, PsalmActionsFAB)
 
 Progress: [██████████] 100%
 
@@ -126,6 +126,7 @@ Recent decisions affecting current work:
 - [04.9.2-05]: Phase 04.9.2 ships unified control bar grouping stanza-nav, view-mode, A+/A−, and play/BPM/transpose with vertical dividers (D-19 control-grouping rule). Visual re-review: APPROVED 2026-05-14.
 - [04.9.3-02]: NotationRenderer optionally-controlled (viewMode + baseSize props) with chromeless mode that suppresses internal controlBar and disables FS overlay; chromeless mobile (<768px) default --staff-base-size lowered to 13 per UI-SPEC §3, legacy uncontrolled default (24 at <480 portrait) preserved for zero regression; STORAGE_SIZE_FS_KEY no longer WRITTEN; data-notation-body + data-view-mode root attrs added for Plan 06 UATs.
 - [04.9.3-03]: Singing-view chrome components built (PsalmTopBar, TuneSubBar, PsalmSelectorSheet, TuneSwitcherSheet) + shared types.ts. PsalmTopBar uses useTransition + ArrowLeft/ArrowRight keyboard nav (bails on editable focus). TuneSubBar inlines meter abbreviation (C.M./L.M./S.M./D.C.M.). TuneSwitcherSheet writes ?tune={id} via router.replace({scroll:false}) and auto-closes 120ms after select. PsalmListingGrid confirmed as named export; PsalmSelectorSheet imports it named. All data-singing-* / data-tune-* markers in place for Phase 06 UATs. Not yet wired into a route (Plan 05 composes).
+- [04.9.3-04]: FAB-side chrome built — AbcAudioControls (standalone Play/Key/BPM block with own off-DOM abcjs visualObj + synth, AbcPlayer.tsx untouched), MetadataPanel (About-this-psalm content with SheetClose-wrapped study link), PsalmActionsFAB (56x56 fixed FAB + bottom Sheet with View radiogroup / Audio / About sections, auto-closes 120ms after view select). shadcn Sheet is built on @base-ui/react/dialog (not Radix) — switched from `asChild` to base-ui `render={...}` slot prop on SheetClose + SheetTrigger; semantically equivalent. Audio section omitted silently when abcForAudio is null. data-singing-fab / data-singing-fab-sheet / data-view-option markers in place for Phase 06 UATs. Not yet wired into a route (Plan 05 composes).
 
 ### Pending Todos
 
