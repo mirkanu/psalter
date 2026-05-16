@@ -322,20 +322,27 @@ export default function AbcPlayer({
       //      loop max, guarded by a ref so we don't loop), shrink `scale`
       //      proportionally and re-render once.
       const containerWidth = Math.max(0, (staffWidth || 600) - 16)
-      // Apply staffWidthFactor to force more system wraps in chromeless mode.
-      // The abcjs SVG is still constrained by `responsive: 'resize'` (viewBox +
-      // width:100%), so a smaller staffwidth doesn't shrink the visual — it
-      // just makes abcjs lay out more, narrower rows that then scale up via
-      // the SVG viewBox to fill the container.
-      const effectiveStaffWidth = Math.max(120, Math.floor(containerWidth * staffWidthFactor))
       const effectiveScale = scale ?? 1
+      // UAT v6 issue #1(c): A+/A− must visibly grow the rendered SVG. abcjs's
+      // `responsive: 'resize'` viewBox locks the SVG to container width and
+      // scales the entire layout to fit — which means `scale` only re-flows
+      // notes, the on-screen size never changes. We drop responsive and
+      // compute staffwidth in *abcjs units* such that rendered pixel width
+      // (= staffwidth * scale) ≈ container width × staffWidthFactor. With
+      // that, increasing `scale` keeps width pinned to container but forces
+      // abcjs to wrap to more (smaller in abcjs-units, but larger in pixels)
+      // systems, so the rendered SVG grows vertically as scale grows.
+      const targetPixelWidth = Math.max(120, Math.floor(containerWidth * staffWidthFactor))
+      const effectiveStaffWidth = Math.max(120, Math.floor(targetPixelWidth / effectiveScale))
       const visualObjs = abcjs.renderAbc(el, abc, {
         add_classes: true,
         visualTranspose: transpose,
         defaultTempo: { duration: 0.25, bpm },
         scale: effectiveScale,
         staffwidth: effectiveStaffWidth,
-        responsive: 'resize',
+        // UAT v6 issue #2(a): force every system — including the last — to
+        // span the full staffwidth so all lines are visually even-length.
+        format: { stretchlast: 1 },
       })
       visualObjRef.current = visualObjs?.[0] ?? null
     } catch (e) {

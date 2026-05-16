@@ -580,11 +580,23 @@ export function NotationRenderer({
   // gives the visual effect of N stacked phrase rows while remaining a single
   // tune for the synth (Play traverses end-to-end naturally).
   const unifiedAbc = useMemo(() => {
-    // Strip any `T:` title lines from the header — abcjs auto-renders them as a
-    // staff title, but the surrounding page UI already carries the tune name.
+    // Strip header lines that produce visible chrome we already render elsewhere:
+    //   - `T:` titles — abcjs renders these as staff title; page UI already
+    //      shows the tune name.
+    //   - `Q:` tempo lines (chromeless only) — singing view has no tempo
+    //      indication; the global synth BPM is controlled via FAB audio
+    //      controls instead. Stripping prevents "♩ = 76" emission. (UAT v6)
+    // We also strip the `name="..."` attribute from any `V:` voice declaration
+    // in chromeless mode so abcjs doesn't print "Soprano" beside the stave.
     const cleanedHeader = split.header
       .split('\n')
-      .filter((l) => !/^\s*T:/.test(l))
+      .filter((l) => {
+        const t = l.trim()
+        if (/^T:/.test(t)) return false
+        if (chromeless && /^Q:/.test(t)) return false
+        return true
+      })
+      .map((l) => (chromeless ? l.replace(/\s*name="[^"]*"/g, '') : l))
       .join('\n')
     if (split.phrases.length === 0) return cleanedHeader
     const parts: string[] = [cleanedHeader]
@@ -663,7 +675,7 @@ export function NotationRenderer({
     return parts.join('\n')
     // wLinesForPhrase depends on visibleCycles, captured by closure.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [split, visiblePhraseIndices, visibleCycles, tuneMeter, stanzaMeter, showLyrics, phraseSubdivisions])
+  }, [split, visiblePhraseIndices, visibleCycles, tuneMeter, stanzaMeter, showLyrics, phraseSubdivisions, chromeless])
 
   // ── View area ─────────────────────────────────────────────────────────────
   // Item 2: Play plays once — no chain/repeat. We deliberately do NOT pass
@@ -681,10 +693,15 @@ export function NotationRenderer({
   let viewArea: ReactNode
   if (viewMode === 'staff') {
     const isPartialPage = visibleCycles.length < CYCLES_PER_PAGE
+    // In chromeless staff mode the parent flex-1 + max-h-full SVG already
+    // pins layout to the viewport — applying a measured min-height would
+    // force vertical scroll back. Only apply minStaffHeight outside chromeless.
+    const applyMinHeight = !chromeless && isPartialPage && minStaffHeight > 0
     viewArea = (
       <div
         ref={staffRef}
-        style={isPartialPage && minStaffHeight > 0 ? { minHeight: minStaffHeight } : undefined}
+        className={chromeless ? 'h-full flex flex-col' : undefined}
+        style={applyMinHeight ? { minHeight: minStaffHeight } : undefined}
       >
         <AbcPlayer
           abc={unifiedAbc}
@@ -784,21 +801,49 @@ export function NotationRenderer({
   }
 
   // ── Normal branch ─────────────────────────────────────────────────────────
+  // In chromeless+staff mode (singing view), we lay out as a vertical flex
+  // column so the notation viewArea fills the available height (set by the
+  // <main data-notation-region> calc(100dvh - 144px)) and the size/stanza
+  // footer rows stick to the bottom. The viewArea uses `min-h-0` so it can
+  // shrink, and overflow is hidden so the SVG (responsive:resize → viewBox)
+  // scales DOWN to fit both width AND height — eliminating the vertical
+  // scroll in Staff mode. (UAT v6 issue #3)
+  // Lyrics/Solfège modes inside chromeless keep their own vertical scroll
+  // (overflow-y-auto on the viewArea) since multi-stanza text is expected
+  // to exceed viewport.
+  const chromelessStaff = chromeless && viewMode === 'staff'
   return (
     <div
       data-notation-renderer
       data-notation-body
       data-view-mode={viewMode}
       style={rootStyle}
-      className="space-y-3"
+      className={
+        chromeless
+          ? 'flex flex-col h-full'
+          : 'space-y-3'
+      }
     >
       {!chromeless && controlBar}
-      {viewArea}
+      {chromeless ? (
+        <div
+          data-notation-viewarea
+          className={
+            chromelessStaff
+              ? 'flex-1 min-h-0 overflow-hidden flex flex-col [&_svg]:max-h-full [&_svg]:w-auto [&_svg]:mx-auto'
+              : 'flex-1 min-h-0 overflow-y-auto'
+          }
+        >
+          {viewArea}
+        </div>
+      ) : (
+        viewArea
+      )}
       {chromeless && (
-        <>
+        <div className="shrink-0">
           {chromelessSizeRow}
           {chromelessStanzaNav}
-        </>
+        </div>
       )}
     </div>
   )

@@ -164,7 +164,7 @@ export function SingingView({
          horizontal clipping. The `overflow-x-hidden` is defensive only. */}
       <main
         data-notation-region
-        className="overflow-x-hidden"
+        className="overflow-x-hidden flex flex-col"
         style={{
           // 144px = 56 SiteHeader + 48 topbar + 40 subbar mobile;
           // 156px = 56 + 56 + 44 ≥md.
