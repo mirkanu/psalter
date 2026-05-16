@@ -287,6 +287,36 @@ Plans:
 **Wave 4** *(depends on Wave 2 + Wave 3)*
 - [x] 04.9.2-05-PLAN.md — Wire into /psalms/[id] + /tunes/[id], delete legacy components, Playwright UAT, human visual verify (human checkpoint)
 
+### Phase 4.9.3 (INSERTED): Mobile-first Psalm Display
+**Goal**: Rethink the single psalm page as a singing instrument — notation + integrated lyrics fill the entire viewport immediately on open; all secondary UI hidden behind a minimal chrome; abc overflow permanently fixed
+**Depends on**: Phase 4.9.2
+**Requirements**: MOBILE-01, MOBILE-02, MOBILE-03
+**Success Criteria** (what must be TRUE):
+  1. Opening any psalm page on a 375px mobile viewport shows the abcjs notation + lyrics immediately with no tabs, metadata blocks, or controls visible — just a slim psalm/tune header and a FAB
+  2. The top bar shows `← Psalm N →` (prev/next navigation) with the psalm label tapping to the psalm selector; below it shows `Tune (M): TuneName [Edit]` for inline tune switching
+  3. The FAB expands to reveal: view switcher (Staff / Lyrics-only / Solfège), audio player, and metadata/topics panel
+  4. abc notation never overflows the right edge of the viewport at any zoom level — staffwidth is derived from container offsetWidth at render time and the container is hard-clamped with overflow-x: hidden
+  5. On orientation change and resize, notation re-renders at the correct width
+**Plans**: 6 plans
+
+Plans:
+**Wave 1**
+- [ ] 04.9.3-01-PLAN.md — AbcPlayer overflow clamp + orientation/visualViewport listeners; create /psalms/[id]/study legacy route shell; create 4 Playwright UAT script stubs (RED)
+
+**Wave 2** *(depends on Wave 1)*
+- [ ] 04.9.3-02-PLAN.md — NotationRenderer refactor: optional controlled viewMode + baseSize props; chromeless mode; mobile default 13px
+
+**Wave 3** *(parallel — both depend on Wave 2)*
+- [ ] 04.9.3-03-PLAN.md — singing/types.ts + PsalmTopBar + TuneSubBar + PsalmSelectorSheet + TuneSwitcherSheet (4 chrome components + shared types)
+- [ ] 04.9.3-04-PLAN.md — AbcAudioControls (extracted) + MetadataPanel + PsalmActionsFAB (FAB + bottom Sheet with View/Audio/About sections)
+
+**Wave 4** *(depends on Wave 3)*
+- [ ] 04.9.3-05-PLAN.md — SingingView client root + wire /psalms/[id]/page.tsx + loading.tsx skeleton + extend psalms.ts queries
+
+**Wave 5** *(depends on Wave 4)*
+- [ ] 04.9.3-06-PLAN.md — Run Playwright UAT scripts to GREEN + /study regression check + human visual verify (checkpoint)
+**UI hint**: yes — run /gsd-ui-phase before planning to produce UI-SPEC.md layout contracts
+
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
 **Depends on**: Phase 4.5
@@ -315,7 +345,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 5 → 6
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -330,5 +360,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 →
 | 4.9. Tune Notation Conversion | 0/3 | Not started | - |
 | 4.9.1. Interactive abcjs Player | 1/1 | Complete | 2026-05-13 |
 | 4.9.2. Dynamic ABC Polish | 5/5 | Complete | 2026-05-14 |
+| 4.9.3. Mobile-first Psalm Display | 0/6 | Not started | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
