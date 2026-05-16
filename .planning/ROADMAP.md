@@ -332,7 +332,7 @@ Plans:
 - [x] 04.9.4-01-header-restructure-PLAN.md — PsalmTopBar two-slot centre group (tune promoted, pencil/Tune-label removed)
 - [x] 04.9.4-02-bottom-chrome-restructure-PLAN.md — GlassBottomBar + PlayMiniBar + GearDrawer; lift AbcAudioControls isPlaying; delete TuneSubBar/PsalmActionsFAB; update loading.tsx
 - [x] 04.9.4-03-dynamic-zoom-PLAN.md — referenceWidthRef + debounced resize/orientationchange proportional zoom heuristic
-- [ ] 04.9.4-04-onboarding-tour-PLAN.md — OnboardingTour custom React portal (4 steps, localStorage psalter_tour_v1)
+- [x] 04.9.4-04-onboarding-tour-PLAN.md — OnboardingTour custom React portal (4 steps, localStorage psalter_tour_v1)
 - [ ] 04.9.4-05-playwright-uat-PLAN.md — Quick + Full UAT scripts at 375/768/1024; study regression; human visual sign-off
 **UI hint**: yes — run /gsd-ui-phase before planning to produce UI-SPEC.md layout contracts
 
