@@ -10,7 +10,9 @@ interface Props {
   next: string | null
   currentSlug: string
   psalmId: number
+  tuneName?: string | null
   onOpenPsalmSelector: () => void
+  onOpenTuneSwitcher?: () => void
 }
 
 function isEditableTarget(el: Element | null): boolean {
@@ -25,7 +27,15 @@ const ICON_BTN =
   'min-h-11 min-w-11 rounded-md inline-flex items-center justify-center active:scale-[0.97] transition-transform motion-reduce:transition-none'
 const DISABLED = 'opacity-40 pointer-events-none'
 
-export function PsalmTopBar({ prev, next, currentSlug, psalmId, onOpenPsalmSelector }: Props) {
+export function PsalmTopBar({
+  prev,
+  next,
+  currentSlug,
+  psalmId,
+  tuneName,
+  onOpenPsalmSelector,
+  onOpenTuneSwitcher,
+}: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [narrow, setNarrow] = useState(false)
@@ -69,6 +79,7 @@ export function PsalmTopBar({ prev, next, currentSlug, psalmId, onOpenPsalmSelec
             href={`/psalms/${prev}`}
             rel="prev"
             aria-label="Previous psalm"
+            data-tour-target="prev-next"
             onClick={(e) => {
               // Preserve modifier-key / middle-click "open in new tab" behavior.
               if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
@@ -80,18 +91,47 @@ export function PsalmTopBar({ prev, next, currentSlug, psalmId, onOpenPsalmSelec
             <ChevronLeft className="h-5 w-5" />
           </Link>
         ) : (
-          <span aria-disabled="true" aria-label="Already at Psalm 1" className={cn(ICON_BTN, DISABLED)}>
+          <span
+            aria-disabled="true"
+            aria-label="Already at Psalm 1"
+            data-tour-target="prev-next"
+            className={cn(ICON_BTN, DISABLED)}
+          >
             <ChevronLeft className="h-5 w-5" />
           </span>
         )}
-        <button
-          type="button"
-          onClick={onOpenPsalmSelector}
-          aria-label={`Choose psalm (currently Psalm ${psalmId})`}
-          className="flex-1 min-w-0 truncate text-base font-semibold active:scale-[0.97] transition-transform motion-reduce:transition-none"
-        >
-          {label}
-        </button>
+        <div className="flex-1 flex justify-center items-center gap-2 min-w-0">
+          <button
+            type="button"
+            onClick={onOpenPsalmSelector}
+            aria-label={`Choose psalm (currently Psalm ${psalmId})`}
+            data-tour-target="psalm-label"
+            className="text-base font-semibold active:scale-[0.95] transition-transform motion-reduce:transition-none whitespace-nowrap"
+          >
+            {label}
+          </button>
+          {onOpenTuneSwitcher ? (
+            <button
+              type="button"
+              onClick={onOpenTuneSwitcher}
+              aria-label={tuneName ? `${tuneName} — tap to switch tune` : 'No tune — tap to choose'}
+              data-tour-target="tune-name"
+              data-singing-tune-slot
+              className="flex items-center gap-1 text-sm font-normal text-muted-foreground active:scale-[0.95] transition-transform motion-reduce:transition-none max-w-[40vw] truncate cursor-pointer hover:text-foreground transition-colors"
+            >
+              <span aria-hidden>♩</span>
+              <span className="truncate">{tuneName || '—'}</span>
+            </button>
+          ) : (
+            <span
+              data-singing-tune-slot
+              className="flex items-center gap-1 text-sm font-normal text-muted-foreground max-w-[40vw] truncate"
+            >
+              <span aria-hidden>♩</span>
+              <span className="truncate">{tuneName || '—'}</span>
+            </span>
+          )}
+        </div>
         {next ? (
           <Link
             href={`/psalms/${next}`}
