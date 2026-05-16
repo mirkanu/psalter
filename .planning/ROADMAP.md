@@ -317,6 +317,20 @@ Plans:
 - [x] 04.9.3-06-PLAN.md — Run Playwright UAT scripts to GREEN + /study regression check + human visual verify (checkpoint)
 **UI hint**: yes — run /gsd-ui-phase before planning to produce UI-SPEC.md layout contracts
 
+### Phase 4.9.4 (INSERTED): Staff View Refinements & Onboarding
+**Goal**: The Staff psalm view is polished into a singing-ready instrument — compact header with the tune name promoted alongside the psalm number, a glass-style bottom bar that reorganises font controls / play / settings, dynamic zoom that survives viewport changes, and a first-run mini tour that teaches the three core interactions
+**Depends on**: Phase 4.9.3
+**Requirements**: TBD (to be derived during /gsd-discuss-phase)
+**Success Criteria** (what must be TRUE):
+  1. The Staff view header shows `Psalm N` and the tune name on a single row (tune name in smaller font, preceded by a music icon); no pencil icon, no `Tune ([meter])` label
+  2. On first visit to the Staff view a lightweight in-app product tour highlights (i) the top prev/next arrows, (ii) tapping `Psalm N` to open the psalm selector, (iii) tapping the tune name to change tune; the tour persists a "seen" flag and does not re-trigger on subsequent visits
+  3. When the viewport changes (window resize on desktop, orientation change on mobile) the zoom level is recomputed dynamically so screen fill/density approximates the user's previous setting while continuing to respect the no-horizontal-overflow rule from Phase 4.9.3
+  4. The bottom bar has a glass appearance — translucent background with backdrop blur — and contains the A+/A- font-size controls anchored left and the stanzas indicator centred
+  5. The bottom-right control set is split into two icons: a Play icon that toggles a secondary glass mini-bar (sliding up out of it) containing the existing media playback controls, and a Gear icon at the very bottom-right corner that opens the existing drawer minus the moved player controls
+  6. All controls remain reachable and tappable at 375 px viewport width with no horizontal overflow; the original FAB/burger drawer behaviour is fully replaced
+**Plans**: TBD
+**UI hint**: yes — run /gsd-ui-phase before planning to produce UI-SPEC.md layout contracts
+
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
 **Depends on**: Phase 4.5
@@ -345,7 +359,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 5 → 6
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -361,5 +375,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 →
 | 4.9.1. Interactive abcjs Player | 1/1 | Complete | 2026-05-13 |
 | 4.9.2. Dynamic ABC Polish | 5/5 | Complete | 2026-05-14 |
 | 4.9.3. Mobile-first Psalm Display | 3/6 | In progress | - |
+| 4.9.4. Staff View Refinements & Onboarding | 0/TBD | Not started | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |

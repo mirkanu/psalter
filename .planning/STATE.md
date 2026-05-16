@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready_to_plan
+status: planning
 stopped_at: Phase 04.9.2 complete (5/5 plans). Visual approval recorded. Ready for next phase.
-last_updated: "2026-05-16T12:28:49.672Z"
+last_updated: "2026-05-16T18:40:43.042Z"
 last_activity: 2026-05-16
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 4
   total_plans: 20
   completed_plans: 20
-  percent: 83
+  percent: 100
 ---
 
 # Project State
@@ -71,6 +71,10 @@ Progress: [██████████] 100%
 | Phase 04.9.3 P05 | 12 | 3 tasks | 5 files |
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 4.9.4 inserted after Phase 4.9.3: Staff View Refinements & Onboarding — header cleanup, first-run tour, dynamic zoom, glass bottom bar, A+/A- relocation, Play/Gear split (URGENT)
 
 ### Decisions
 
