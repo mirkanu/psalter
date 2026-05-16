@@ -14,9 +14,9 @@ const navLinks = [
 ]
 
 // UAT v6 reversal: user explicitly wants the global SiteHeader visible on the
-// singing view (overrides UI-SPEC §"Page anatomy"). PsalmTopBar and TuneSubBar
-// stick below it (offsets adjusted in those components). Body height in
-// SingingView subtracts SiteHeader height (~56px) accordingly.
+// singing view (overrides UI-SPEC §"Page anatomy"). PsalmTopBar sticks below
+// it (offset adjusted in that component). Body height in SingingView subtracts
+// SiteHeader height (~56px) accordingly. (TuneSubBar removed in 04.9.4-02.)
 
 export function SiteHeader() {
   const pathname = usePathname()

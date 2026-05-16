@@ -1,10 +1,11 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { NotationRendererClient } from '@/components/notation/NotationRendererClient'
 import { PsalmTopBar } from './PsalmTopBar'
-import { TuneSubBar } from './TuneSubBar'
-import { PsalmActionsFAB } from './PsalmActionsFAB'
+import { GlassBottomBar } from './GlassBottomBar'
+import { PlayMiniBar } from './PlayMiniBar'
+import { GearDrawer } from './GearDrawer'
 import { PsalmSelectorSheet } from './PsalmSelectorSheet'
 import { TuneSwitcherSheet } from './TuneSwitcherSheet'
 import type { TuneOption, TuneSwitcherSections } from './types'
@@ -124,6 +125,44 @@ export function SingingView({
   const [psalmSelectorOpen, setPsalmSelectorOpen] = useState(false)
   const [tuneSwitcherOpen, setTuneSwitcherOpen] = useState(false)
 
+  // 04.9.4-02 lifted state: audio + gear drawer + stanza indicator
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [gearOpen, setGearOpen] = useState(false)
+  const [miniBarMounted, setMiniBarMounted] = useState(false)
+  const [miniBarVisible, setMiniBarVisible] = useState(false)
+  const [currentStanza, setCurrentStanza] = useState<number | null>(null)
+  const [totalStanzas, setTotalStanzas] = useState<number | null>(null)
+
+  const handleStanzaChange = useCallback((current: number, total: number) => {
+    setCurrentStanza(current)
+    setTotalStanzas(total)
+  }, [])
+
+  const handlePlayToggle = useCallback(() => {
+    setIsPlaying((prev) => {
+      const next = !prev
+      if (next) {
+        if (!miniBarMounted) {
+          setMiniBarMounted(true)
+          requestAnimationFrame(() => setMiniBarVisible(true))
+        } else {
+          setMiniBarVisible(true)
+        }
+      }
+      return next
+    })
+  }, [miniBarMounted])
+
+  const handlePlayingChange = useCallback((p: boolean) => {
+    setIsPlaying(p)
+    if (p && !miniBarMounted) {
+      setMiniBarMounted(true)
+      requestAnimationFrame(() => setMiniBarVisible(true))
+    } else if (p) {
+      setMiniBarVisible(true)
+    }
+  }, [miniBarMounted])
+
   // Compute TuneSwitcherSections
   const tuneSections = useMemo<TuneSwitcherSections>(() => {
     const editorialSet = new Set(editoriallyLinkedTuneIds)
@@ -156,12 +195,9 @@ export function SingingView({
         next={nextSlug}
         currentSlug={currentSlug}
         psalmId={psalm.id}
-        onOpenPsalmSelector={() => setPsalmSelectorOpen(true)}
-      />
-      <TuneSubBar
         tuneName={tuneName || null}
-        meter={meter}
-        onOpenSwitcher={() => setTuneSwitcherOpen(true)}
+        onOpenPsalmSelector={() => setPsalmSelectorOpen(true)}
+        onOpenTuneSwitcher={() => setTuneSwitcherOpen(true)}
       />
 
       {/* Body — single scroll container, hard horizontal clamp.
@@ -171,14 +207,14 @@ export function SingingView({
          account for that. Adding `px-N` here would double-pad and force
          horizontal clipping. The `overflow-x-hidden` is defensive only. */}
       {/*
-         147px = 56 SiteHeader + 48 topbar + 40 subbar + 3 border-b pixels (mobile).
-         159px = 56 + 56 + 44 + 3 borders (≥md).
+         104 = 56 SiteHeader + 48 topbar (mobile).
+         116 = 56 SiteHeader + 60 topbar (≥md).
+         Glass bottom bar is fixed (z-40), accounted via pb-14/pb-15.
          overflow-y is controlled by NotationRenderer's chromeless wrapper.
-         WR-07: arbitrary-value Tailwind utilities replace previous inline <style>.
       */}
       <main
         data-notation-region
-        className="overflow-x-hidden flex flex-col h-[calc(100dvh-147px)] md:h-[calc(100dvh-159px)]"
+        className="overflow-x-hidden flex flex-col h-[calc(100dvh-104px)] md:h-[calc(100dvh-116px)] pb-14 md:pb-15"
       >
         {abc ? (
           <NotationRendererClient
@@ -195,6 +231,7 @@ export function SingingView({
             baseSize={baseSize}
             onBaseSizeChange={setBaseSize}
             chromeless={true}
+            onStanzaChange={handleStanzaChange}
           />
         ) : (
           <div className="p-6 text-sm text-muted-foreground italic">
@@ -202,15 +239,6 @@ export function SingingView({
           </div>
         )}
       </main>
-
-      <PsalmActionsFAB
-        psalm={psalm}
-        meter={meter}
-        studyHref={studyHref}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        abcForAudio={abc || null}
-      />
 
       <PsalmSelectorSheet
         open={psalmSelectorOpen}
@@ -222,6 +250,39 @@ export function SingingView({
         onOpenChange={setTuneSwitcherOpen}
         sections={tuneSections}
         meterLabel={meter}
+      />
+
+      <GlassBottomBar
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        baseSize={baseSize}
+        onBaseSizeChange={setBaseSize}
+        currentStanza={currentStanza}
+        totalStanzas={totalStanzas}
+        isPlaying={isPlaying}
+        onPlayToggle={handlePlayToggle}
+        onGearOpen={() => setGearOpen(true)}
+        showLyricsOption={!!showLyrics}
+      />
+      {abc && (
+        <PlayMiniBar
+          abc={abc}
+          mounted={miniBarMounted}
+          visible={miniBarVisible}
+          onCollapse={() => setMiniBarVisible(false)}
+          isPlaying={isPlaying}
+          onPlayingChange={handlePlayingChange}
+        />
+      )}
+      <GearDrawer
+        open={gearOpen}
+        onOpenChange={setGearOpen}
+        psalm={psalm}
+        meter={meter}
+        studyHref={studyHref}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        showLyricsOption={!!showLyrics}
       />
     </div>
   )
