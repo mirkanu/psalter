@@ -52,9 +52,9 @@ async function run() {
       return fail('FAB sheet did not open within 2s')
     }
 
-    for (const label of ['Staff', 'Lyrics only', 'Solfège']) {
-      const btn = sheet.getByRole('button', { name: label })
-      if ((await btn.count()) < 1) return fail(`view button "${label}" missing inside sheet`)
+    for (const mode of ['staff', 'lyrics', 'solfege']) {
+      const btn = sheet.locator(`[data-view-option="${mode}"]`)
+      if ((await btn.count()) < 1) return fail(`view option "${mode}" missing inside sheet`)
     }
 
     await page.screenshot({
@@ -62,7 +62,7 @@ async function run() {
       fullPage: false,
     })
 
-    await sheet.getByRole('button', { name: 'Lyrics only' }).click()
+    await sheet.locator('[data-view-option="lyrics"]').click()
 
     // Sheet should auto-close within 500ms.
     const closedAt = Date.now()
