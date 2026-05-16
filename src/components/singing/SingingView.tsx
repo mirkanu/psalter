@@ -96,11 +96,19 @@ export function SingingView({
 
   // Hydrate from localStorage AFTER first paint to avoid SSR mismatch — this
   // component itself is server-rendered (the notation child is dynamic ssr:false).
+  // Runs ONCE on mount; we don't want re-hydration to clobber the user's
+  // in-memory viewMode when showLyrics flips. (WR-01)
   useEffect(() => {
     setViewMode(readStoredViewMode(showLyrics))
     setBaseSize(readStoredBaseSize())
     setMounted(true)
-  }, [showLyrics])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Fallback: if showLyrics flips off while user is in 'lyrics' mode, drop to staff.
+  useEffect(() => {
+    if (mounted && !showLyrics && viewMode === 'lyrics') setViewMode('staff')
+  }, [showLyrics, viewMode, mounted])
 
   // Persist (skip pre-mount window so we don't clobber storage with defaults)
   useEffect(() => {
