@@ -26,7 +26,7 @@ export function TuneSubBar({ tuneName, meter, onOpenSwitcher }: Props) {
   return (
     <div
       data-singing-subbar
-      className="sticky top-12 md:top-14 landscape:top-10 z-20 bg-muted/60 backdrop-blur border-b"
+      className="sticky top-[6.5rem] md:top-28 z-20 bg-muted/60 backdrop-blur border-b"
     >
       <button
         type="button"
