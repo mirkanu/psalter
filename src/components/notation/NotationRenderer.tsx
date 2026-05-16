@@ -621,7 +621,10 @@ export function NotationRenderer({
         if (chromeless && /^Q:/.test(t)) return false
         return true
       })
-      .map((l) => (chromeless ? l.replace(/\s*name="[^"]*"/g, '') : l))
+      // Strip `name="..."` ONLY on V: voice declarations — other header
+      // directives (%%score, %%MIDI, %%text, macros) can legally contain
+      // `name="..."` and must not be mutated. (BL-04)
+      .map((l) => (chromeless && /^V:/.test(l.trim()) ? l.replace(/\s*name="[^"]*"/g, '') : l))
       .join('\n')
     if (split.phrases.length === 0) return cleanedHeader
     const parts: string[] = [cleanedHeader]
