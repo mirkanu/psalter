@@ -516,6 +516,11 @@ export default function AbcPlayer({
             </div>
           )}
           {originalSrc ? (
+            // R2-hosted JPG with unknown intrinsic dimensions — next/image
+            // requires either width/height or fill+sized parent, which the
+            // surrounding aspect-fitting layout doesn't provide. Match the
+            // disable used elsewhere (SiteHeader.tsx). (WR-09)
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={originalSrc}
               alt={`Original score for ${tuneName ?? 'tune'}`}
