@@ -75,6 +75,8 @@ const SIZE_STEP = 2
 const DEFAULT_SIZE: BaseSize = 14
 /** Larger default on narrow portrait screens so phrases naturally wrap to 4 rows. */
 const MOBILE_DEFAULT_SIZE: BaseSize = 24
+/** SingingView mobile default — UI-SPEC §3 (<768px when chromeless). */
+const MOBILE_DEFAULT_SIZE_CHROMELESS: BaseSize = 13
 const STORAGE_SIZE_KEY = 'psalter-staff-size'
 const STORAGE_SIZE_FS_KEY = 'psalter-staff-size-fs'
 const STORAGE_MODE_KEY = 'psalter-score-mode'
@@ -140,7 +142,13 @@ export function NotationRenderer({
   stanzaMeter,
   showLyrics = true,
   onViewModeChange,
+  viewMode: viewModeProp,
+  baseSize: baseSizeProp,
+  onBaseSizeChange,
+  chromeless = false,
 }: NotationRendererProps) {
+  // chromeless mode permanently disables the FS overlay; the singing view IS the fullscreen.
+  const allowFullscreen = !chromeless
   // ── Derived: phrases & cycles ──────────────────────────────────────────────
   const split = useMemo(() => splitOnPhraseBreaks(abc), [abc])
   const T = split.phrases.length
@@ -163,7 +171,8 @@ export function NotationRenderer({
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [cyclePage, setCyclePage] = useState(0)
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+  const isViewModeControlled = viewModeProp !== undefined
+  const [viewModeInternal, setViewModeInternal] = useState<ViewMode>(() => {
     try {
       const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_MODE_KEY) : null
       if (stored && isViewMode(stored)) {
@@ -176,6 +185,15 @@ export function NotationRenderer({
     }
     return 'staff'
   })
+  const viewMode: ViewMode = isViewModeControlled ? (viewModeProp as ViewMode) : viewModeInternal
+  const setViewMode = (next: ViewMode) => {
+    if (isViewModeControlled) {
+      onViewModeChange?.(next)
+    } else {
+      setViewModeInternal(next)
+      onViewModeChange?.(next)
+    }
+  }
 
   // If showLyrics flips off (or remounts with showLyrics=false) and current
   // viewMode is 'lyrics', fall back to 'staff'.
@@ -187,19 +205,25 @@ export function NotationRenderer({
   // shown (and can therefore hide the stanza-pagination row, which is
   // meaningless when the image is displayed).
   const [showOriginal, setShowOriginal] = useState(false)
+  const isBaseSizeControlled = baseSizeProp !== undefined
   const [normalSize, setNormalSize] = useState<BaseSize>(() => {
     try {
       const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_SIZE_KEY) : null
       const n = raw ? Number(raw) : NaN
       if (Number.isFinite(n) && isBaseSize(n)) return n
-      // No stored preference — use a larger default on narrow portrait screens so
-      // phrases wrap to ~4 rows without the user needing to press A+.
-      if (
-        typeof window !== 'undefined' &&
-        window.innerWidth < 480 &&
-        window.innerHeight > window.innerWidth
-      ) {
-        return MOBILE_DEFAULT_SIZE
+      if (typeof window !== 'undefined') {
+        if (chromeless && window.innerWidth < 768) {
+          // SingingView mobile-first default (UI-SPEC §3)
+          return MOBILE_DEFAULT_SIZE_CHROMELESS
+        }
+        if (
+          !chromeless &&
+          window.innerWidth < 480 &&
+          window.innerHeight > window.innerWidth
+        ) {
+          // Preserve legacy default for uncontrolled callers (/tunes/[id], /study)
+          return MOBILE_DEFAULT_SIZE
+        }
       }
     } catch {
       /* ignore */
@@ -211,24 +235,38 @@ export function NotationRenderer({
       const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_SIZE_FS_KEY) : null
       const n = raw ? Number(raw) : NaN
       if (Number.isFinite(n) && isBaseSize(n)) return n
-      if (
-        typeof window !== 'undefined' &&
-        window.innerWidth < 480 &&
-        window.innerHeight > window.innerWidth
-      ) {
-        return MOBILE_DEFAULT_SIZE
+      if (typeof window !== 'undefined') {
+        if (chromeless && window.innerWidth < 768) {
+          return MOBILE_DEFAULT_SIZE_CHROMELESS
+        }
+        if (
+          !chromeless &&
+          window.innerWidth < 480 &&
+          window.innerHeight > window.innerWidth
+        ) {
+          return MOBILE_DEFAULT_SIZE
+        }
       }
     } catch {
       /* ignore */
     }
     return DEFAULT_SIZE
   })
-  const baseSize = isFullscreen ? fullscreenSize : normalSize
+  const baseSizeUncontrolled: BaseSize = isFullscreen ? fullscreenSize : normalSize
+  const baseSize: BaseSize = isBaseSizeControlled
+    ? ((baseSizeProp as BaseSize) ?? baseSizeUncontrolled)
+    : baseSizeUncontrolled
   function setBaseSize(updater: ((s: BaseSize) => BaseSize) | BaseSize) {
-    if (isFullscreen) {
-      setFullscreenSize(updater as ((s: BaseSize) => BaseSize))
+    const resolved =
+      typeof updater === 'function'
+        ? (updater as (s: BaseSize) => BaseSize)(baseSize)
+        : updater
+    if (isBaseSizeControlled) {
+      onBaseSizeChange?.(resolved)
+    } else if (isFullscreen) {
+      setFullscreenSize(resolved)
     } else {
-      setNormalSize(updater as ((s: BaseSize) => BaseSize))
+      setNormalSize(resolved)
     }
   }
 
@@ -242,24 +280,13 @@ export function NotationRenderer({
   }, [normalSize])
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_SIZE_FS_KEY, String(fullscreenSize))
-    } catch {
-      /* ignore */
-    }
-  }, [fullscreenSize])
-
-  useEffect(() => {
+    if (isViewModeControlled) return
     try {
       localStorage.setItem(STORAGE_MODE_KEY, viewMode)
     } catch {
       /* ignore */
     }
-  }, [viewMode])
-
-  useEffect(() => {
-    onViewModeChange?.(viewMode)
-  }, [viewMode, onViewModeChange])
+  }, [viewMode, isViewModeControlled])
 
   // Clamp cyclePage if cycles shrink
   useEffect(() => {
@@ -556,7 +583,7 @@ export function NotationRenderer({
   } as CSSProperties
 
   // ── Fullscreen branch ─────────────────────────────────────────────────────
-  if (isFullscreen) {
+  if (isFullscreen && allowFullscreen) {
     const fullscreenTopBar = (
       <div className="flex items-center justify-between w-full">
         {sizeGroup}
@@ -601,8 +628,14 @@ export function NotationRenderer({
 
   // ── Normal branch ─────────────────────────────────────────────────────────
   return (
-    <div data-notation-renderer style={rootStyle} className="space-y-3">
-      {controlBar}
+    <div
+      data-notation-renderer
+      data-notation-body
+      data-view-mode={viewMode}
+      style={rootStyle}
+      className="space-y-3"
+    >
+      {!chromeless && controlBar}
       {viewArea}
     </div>
   )
