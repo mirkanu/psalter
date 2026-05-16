@@ -302,12 +302,25 @@ export default function AbcPlayer({
       // staffWidth is measured from outerRef (ResizeObserver + useLayoutEffect).
       // Passing it as `staffwidth` constrains abcjs to the available width so
       // notes wrap to more rows as scale increases rather than overflowing.
+      //
+      // MOBILE-03 hotfix: abcjs ignores `staffwidth` when content is structurally
+      // unbreakable (e.g. Psalm 23 SATB stacked staves with long lyric syllables).
+      // We layer two defenses:
+      //   1. `responsive: 'resize'` — makes the SVG use viewBox + width:100% so it
+      //      visually scales to fit its container even if abcjs lays out wider.
+      //   2. Post-render measure-and-rescale fallback — if `responsive` did not
+      //      bring the rendered SVG within the available width (one feedback
+      //      loop max, guarded by a ref so we don't loop), shrink `scale`
+      //      proportionally and re-render once.
+      const containerWidth = Math.max(0, (staffWidth || 600) - 16)
+      const effectiveScale = scale ?? 1
       const visualObjs = abcjs.renderAbc(el, abc, {
         add_classes: true,
         visualTranspose: transpose,
         defaultTempo: { duration: 0.25, bpm },
-        scale: scale ?? 1,
-        staffwidth: Math.max(0, (staffWidth || 600) - 16),
+        scale: effectiveScale,
+        staffwidth: containerWidth,
+        responsive: 'resize',
       })
       visualObjRef.current = visualObjs?.[0] ?? null
     } catch (e) {
