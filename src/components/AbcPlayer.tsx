@@ -193,11 +193,38 @@ export default function AbcPlayer({
     if (!el) return
     const obs = new ResizeObserver(() => {
       const w = el.clientWidth
-      if (w > 0) setStaffWidth(w)
+      if (w > 0 && Math.abs(w - staffWidth) >= 8) setStaffWidth(w)
     })
     obs.observe(el)
     return () => obs.disconnect()
-  }, [])
+  }, [staffWidth])
+
+  // iOS Safari: ResizeObserver does NOT reliably fire on URL-bar / orientation
+  // transitions. Add explicit listeners with rAF debounce + ≥8px threshold.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    let raf = 0
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+    const trigger = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => {
+        const w = outerRef.current?.clientWidth ?? 0
+        if (w > 0 && Math.abs(w - staffWidth) >= 8) setStaffWidth(w)
+      })
+    }
+    const debounced = () => {
+      if (timeoutId) clearTimeout(timeoutId)
+      timeoutId = setTimeout(trigger, 150)
+    }
+    window.addEventListener('orientationchange', debounced)
+    window.visualViewport?.addEventListener('resize', debounced)
+    return () => {
+      cancelAnimationFrame(raf)
+      if (timeoutId) clearTimeout(timeoutId)
+      window.removeEventListener('orientationchange', debounced)
+      window.visualViewport?.removeEventListener('resize', debounced)
+    }
+  }, [staffWidth])
 
   // ── Note highlight callback ────────────────────────────────────────────────
   const highlightEvent = useCallback(
@@ -280,7 +307,7 @@ export default function AbcPlayer({
         visualTranspose: transpose,
         defaultTempo: { duration: 0.25, bpm },
         scale: scale ?? 1,
-        staffwidth: staffWidth || 600,
+        staffwidth: Math.max(0, (staffWidth || 600) - 16),
       })
       visualObjRef.current = visualObjs?.[0] ?? null
     } catch (e) {
@@ -393,7 +420,7 @@ export default function AbcPlayer({
   return (
     <div
       ref={outerRef}
-      className="w-full space-y-3"
+      className="w-full max-w-full overflow-x-hidden px-2 space-y-3"
       aria-label={title ? `Music player for ${title}` : 'Music player'}
     >
       {/* Notation area: SVG OR original JPEG */}
