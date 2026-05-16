@@ -542,7 +542,7 @@ export function NotationRenderer({
           renderAboveOriginal={
             <BackToNotationButton onClick={() => setShowOriginal(false)} />
           }
-          hidePlayerControls={isFullscreen}
+          hidePlayerControls={isFullscreen || chromeless}
         />
       </div>
     )
