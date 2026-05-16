@@ -89,6 +89,12 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 - [x] **NOTATION-05**: Full-screen mode available for both staff and solfège; sticky bottom bar retains Prev/Exit/Next; Escape exits; tune-half pagination available on mobile landscape
 - [x] **NOTATION-06**: Score view controls (Staff/Solfège/Lyrics Only) and media controls (Play, BPM, Transpose) are visually grouped into the unified control bar with vertical dividers between functional regions
 
+### Mobile Singing View (Phase 4.9.3 — Mobile-first Psalm Display)
+
+- [ ] **MOBILE-01**: The default psalm detail page on all viewports opens directly to the notation+lyrics view — no tab selection required; a slim two-line header shows `← Psalm N →` (prev/next + psalm selector on tap) and `Tune (M): TuneName [Edit]` (inline tune switcher); all other UI is hidden
+- [ ] **MOBILE-02**: A single FAB (bottom-right) expands to reveal: view switcher (Staff / Lyrics-only / Solfège), tune audio player, and metadata/topics panel — these are the only secondary controls accessible from the psalm page
+- [ ] **MOBILE-03**: abc notation never overflows the right edge of the viewport at any zoom level; staffwidth is derived from the container's `offsetWidth` at render time and passed to `ABCJS.renderAbc`; the container is hard-clamped with `max-width: 100%; overflow-x: hidden`; notation re-renders on resize and orientation change
+
 ---
 
 ## v2 Requirements (Deferred)
@@ -158,3 +164,6 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 | NOTATION-04 | Phase 4.9.2: Dynamic ABC Polish | Complete |
 | NOTATION-05 | Phase 4.9.2: Dynamic ABC Polish | Complete |
 | NOTATION-06 | Phase 4.9.2: Dynamic ABC Polish | Complete |
+| MOBILE-01 | Phase 4.9.3: Mobile-first Psalm Display | Pending |
+| MOBILE-02 | Phase 4.9.3: Mobile-first Psalm Display | Pending |
+| MOBILE-03 | Phase 4.9.3: Mobile-first Psalm Display | Pending |
