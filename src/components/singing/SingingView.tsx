@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { NotationRendererClient } from '@/components/notation/NotationRendererClient'
 import { PsalmTopBar } from './PsalmTopBar'
@@ -95,6 +95,14 @@ export function SingingView({
   const [baseSize, setBaseSize] = useState<number>(14)
   const [mounted, setMounted] = useState(false)
 
+  // 04.9.4-03: Proportional zoom heuristic — refs avoid stale closures in the
+  // debounced resize handler. `referenceWidthRef` tracks the viewport width at
+  // the moment of the last manual A+/A− override (or initial mount).
+  const referenceWidthRef = useRef<number>(
+    typeof window !== 'undefined' ? window.innerWidth : 375
+  )
+  const baseSizeRef = useRef<number>(baseSize)
+
   // Hydrate from localStorage AFTER first paint to avoid SSR mismatch — this
   // component itself is server-rendered (the notation child is dynamic ssr:false).
   // Runs ONCE on mount; we don't want re-hydration to clobber the user's
@@ -120,6 +128,62 @@ export function SingingView({
     if (!mounted) return
     try { localStorage.setItem(STORAGE_SIZE_KEY, String(baseSize)) } catch { /* ignore */ }
   }, [baseSize, mounted])
+
+  // 04.9.4-03: Keep baseSizeRef in sync with state so the resize handler always
+  // reads the latest value without re-binding listeners.
+  useEffect(() => {
+    baseSizeRef.current = baseSize
+  }, [baseSize])
+
+  // 04.9.4-03: Proportional zoom heuristic.
+  // On viewport width change (resize / orientation flip / visualViewport),
+  // recompute baseSize as clamp(current * newWidth / refWidth, 8, 40).
+  // Debounced 150ms; ignores deltas < 8px to suppress mobile URL-bar churn.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    // Replace the SSR fallback (375) with the real viewport width post-hydration.
+    referenceWidthRef.current = window.innerWidth
+
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+    const handler = () => {
+      if (timeoutId) clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        const newWidth = window.innerWidth
+        const refWidth = referenceWidthRef.current
+        if (refWidth <= 0) {
+          referenceWidthRef.current = newWidth
+          return
+        }
+        if (Math.abs(newWidth - refWidth) < 8) return
+        const current = baseSizeRef.current
+        const computed = current * (newWidth / refWidth)
+        const clamped = Math.max(8, Math.min(40, computed))
+        const rounded = Math.round(clamped)
+        referenceWidthRef.current = newWidth
+        if (rounded !== current) {
+          setBaseSize(rounded)
+        }
+      }, 150)
+    }
+    window.addEventListener('resize', handler)
+    window.addEventListener('orientationchange', handler)
+    window.visualViewport?.addEventListener('resize', handler)
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId)
+      window.removeEventListener('resize', handler)
+      window.removeEventListener('orientationchange', handler)
+      window.visualViewport?.removeEventListener('resize', handler)
+    }
+  }, [])
+
+  // 04.9.4-03: Manual A+/A− override resets the reference width so subsequent
+  // viewport changes scale from the new reference.
+  const handleBaseSizeChange = useCallback((newSize: number) => {
+    if (typeof window !== 'undefined') {
+      referenceWidthRef.current = window.innerWidth
+    }
+    setBaseSize(newSize)
+  }, [])
 
   // Sheet open state
   const [psalmSelectorOpen, setPsalmSelectorOpen] = useState(false)
@@ -229,7 +293,7 @@ export function SingingView({
             viewMode={viewMode}
             onViewModeChange={setViewMode}
             baseSize={baseSize}
-            onBaseSizeChange={setBaseSize}
+            onBaseSizeChange={handleBaseSizeChange}
             chromeless={true}
             onStanzaChange={handleStanzaChange}
           />
@@ -256,7 +320,7 @@ export function SingingView({
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         baseSize={baseSize}
-        onBaseSizeChange={setBaseSize}
+        onBaseSizeChange={handleBaseSizeChange}
         currentStanza={currentStanza}
         totalStanzas={totalStanzas}
         isPlaying={isPlaying}
