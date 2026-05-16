@@ -13,9 +13,18 @@ const navLinks = [
   { href: "/daily", label: "Daily Plan" },
 ]
 
+// UI-SPEC 04.9.3: the singing view at /psalms/[id] is a full-viewport
+// instrument. Its slim PsalmTopBar (48/56px) replaces site chrome. The legacy
+// study page at /psalms/[id]/study and all other routes keep the site header.
+const SINGING_ROUTE_RE = /^\/psalms\/[^/]+\/?$/
+
 export function SiteHeader() {
   const pathname = usePathname()
   const [searchOpen, setSearchOpen] = useState(false)
+
+  if (pathname && SINGING_ROUTE_RE.test(pathname)) {
+    return null
+  }
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
