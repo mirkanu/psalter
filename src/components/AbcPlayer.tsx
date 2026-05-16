@@ -295,13 +295,26 @@ export default function AbcPlayer({
     needsSynthReinitRef.current = true
   }, [])
 
+  // Track previous synth-relevant inputs so layout-only re-renders (staffWidth /
+  // staffWidthFactor / scale) do NOT tear down active playback. (WR-03)
+  // iOS Safari's URL-bar collapse triggers a ≥8px viewport resize that would
+  // otherwise silently kill playback when the user scrolls.
+  const prevSynthInputsRef = useRef<{ abc: string; transpose: number; bpm: number } | null>(null)
+
   // ── Render effect — reruns on abc / transpose / bpm / staffWidth changes ──
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
 
-    // Stop any existing audio before re-rendering
-    stopAudio()
+    // Stop existing audio ONLY when synth-relevant inputs changed; pure layout
+    // changes re-render the SVG but keep the synth alive. (WR-03)
+    const prev = prevSynthInputsRef.current
+    const synthInputsChanged =
+      !prev || prev.abc !== abc || prev.transpose !== transpose || prev.bpm !== bpm
+    if (synthInputsChanged) {
+      stopAudio()
+    }
+    prevSynthInputsRef.current = { abc, transpose, bpm }
 
     // Clear previous SVG
     el.innerHTML = ''
