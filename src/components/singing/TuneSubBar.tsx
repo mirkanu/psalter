@@ -16,8 +16,10 @@ function abbrevMeter(m: string | null): string {
   if (lower.includes('long meter')) return 'L.M.'
   if (lower.includes('short meter')) return 'S.M.'
   const trimmed = m.trim()
-  if (/^[A-Z]{2,4}$/.test(trimmed)) return trimmed.split('').join('.') + '.'
-  if (/^[A-Z](\.[A-Z])+\.?$/.test(trimmed)) return trimmed
+  // Case-insensitive: meter strings in the DB are not strictly normalised, so
+  // 'cm' and 'CM' should both abbreviate to 'C.M.'. (WR-10)
+  if (/^[A-Za-z]{2,4}$/.test(trimmed)) return trimmed.toUpperCase().split('').join('.') + '.'
+  if (/^[A-Za-z](\.[A-Za-z])+\.?$/.test(trimmed)) return trimmed.toUpperCase()
   return trimmed
 }
 
