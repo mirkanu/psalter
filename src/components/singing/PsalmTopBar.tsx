@@ -70,6 +70,8 @@ export function PsalmTopBar({ prev, next, currentSlug, psalmId, onOpenPsalmSelec
             rel="prev"
             aria-label="Previous psalm"
             onClick={(e) => {
+              // Preserve modifier-key / middle-click "open in new tab" behavior.
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
               e.preventDefault()
               startTransition(() => router.push(`/psalms/${prev}`))
             }}
@@ -96,6 +98,8 @@ export function PsalmTopBar({ prev, next, currentSlug, psalmId, onOpenPsalmSelec
             rel="next"
             aria-label="Next psalm"
             onClick={(e) => {
+              // Preserve modifier-key / middle-click "open in new tab" behavior.
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
               e.preventDefault()
               startTransition(() => router.push(`/psalms/${next}`))
             }}
