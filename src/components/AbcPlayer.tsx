@@ -478,6 +478,7 @@ export default function AbcPlayer({
             ref={containerRef}
             role="img"
             aria-label={title ? `Music notation for ${title}` : 'Music notation'}
+            className="w-full max-w-full overflow-x-hidden [&_svg]:max-w-full [&_svg]:h-auto"
           />
           {/* Lyrics text block — shown below notation in interactive mode */}
           {lyricsText && lyricsText.trim() && (
