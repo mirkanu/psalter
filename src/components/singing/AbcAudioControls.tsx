@@ -82,7 +82,11 @@ export function AbcAudioControls({ abc, label }: Props) {
     } catch { /* ignore */ }
   }, [bpm, defaultBpm])
 
-  // Render hidden visualObj for synth init
+  // Render hidden visualObj for synth init.
+  // NOTE: deps deliberately exclude `bpm` — BPM is passed to synth.init() and
+  // TimingCallbacks at play time, so the visualObj does not need to be rebuilt
+  // when the user adjusts tempo. Including bpm here would re-run cleanup
+  // (stopping any active synth/timing) on every +/- tap mid-playback. (BL-03)
   useEffect(() => {
     const el = hiddenRef.current
     if (!el) return
@@ -90,7 +94,9 @@ export function AbcAudioControls({ abc, label }: Props) {
       const visualObjs = abcjs.renderAbc(el, abc, {
         add_classes: false,
         visualTranspose: transpose,
-        defaultTempo: { duration: 0.25, bpm },
+        // Use the parsed-from-abc default for the hidden render; runtime bpm
+        // is applied via synth.init({ millisecondsPerMeasure }) at play.
+        defaultTempo: { duration: 0.25, bpm: defaultBpm },
         scale: 0.5,
         staffwidth: 200,
       })
@@ -100,13 +106,21 @@ export function AbcAudioControls({ abc, label }: Props) {
       visualObjRef.current = null
       setAudioError('Audio not available for this tune.')
     }
+    // Intentionally NOT stopping synth/timing in this effect's cleanup —
+    // that would tear down active playback on abc/transpose change. The
+    // dedicated unmount cleanup below is the single source of synth teardown.
+  }, [abc, transpose, defaultBpm])
+
+  // Dedicated unmount cleanup — guarantees synth/timing are stopped exactly
+  // once when the component unmounts (FAB sheet close, route change, etc.). (BL-03)
+  useEffect(() => {
     return () => {
       if (synthRef.current) { try { synthRef.current.stop() } catch { /* ignore */ } }
       if (timingRef.current) { try { timingRef.current.stop() } catch { /* ignore */ } }
       synthRef.current = null
       timingRef.current = null
     }
-  }, [abc, transpose, bpm])
+  }, [])
 
   const onPlay = useCallback(async () => {
     if (!visualObjRef.current) {
