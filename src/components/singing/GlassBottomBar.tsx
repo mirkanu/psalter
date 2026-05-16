@@ -1,5 +1,5 @@
 'use client'
-import { Music, AlignLeft, FileImage, Settings, Play, Pause } from 'lucide-react'
+import { Music, AlignLeft, FileImage, Settings, Play, Pause, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
 import { cn } from '@/lib/utils'
 
@@ -12,6 +12,9 @@ interface Props {
   currentStanza: number | null
   /** total stanza/cycle pages; null when unknown */
   totalStanzas: number | null
+  /** Stanza prev/next nav — replaces NotationRenderer's removed chromeless stanza nav. */
+  onStanzaPrev?: () => void
+  onStanzaNext?: () => void
   isPlaying: boolean
   onPlayToggle: () => void
   onGearOpen: () => void
@@ -43,11 +46,17 @@ export function GlassBottomBar({
   onBaseSizeChange,
   currentStanza,
   totalStanzas,
+  onStanzaPrev,
+  onStanzaNext,
   isPlaying,
   onPlayToggle,
   onGearOpen,
   showLyricsOption,
 }: Props) {
+  const showStanza =
+    currentStanza != null && totalStanzas != null && currentStanza > 0 && totalStanzas > 1
+  const canPrev = showStanza && (currentStanza as number) > 1
+  const canNext = showStanza && (currentStanza as number) < (totalStanzas as number)
   return (
     <nav
       data-glass-bottom-bar
@@ -55,12 +64,12 @@ export function GlassBottomBar({
       aria-label="Psalm view controls"
     >
       {/* Left: A-/A+ group */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center shrink-0">
         <button
           type="button"
           aria-label="Decrease size"
           onClick={() => onBaseSizeChange(Math.max(8, baseSize - 1))}
-          className="min-h-11 min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75"
+          className="min-h-11 min-w-9 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75"
         >
           A−
         </button>
@@ -68,22 +77,44 @@ export function GlassBottomBar({
           type="button"
           aria-label="Increase size"
           onClick={() => onBaseSizeChange(Math.min(40, baseSize + 1))}
-          className="min-h-11 min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75"
+          className="min-h-11 min-w-9 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75"
         >
           A+
         </button>
       </div>
 
-      {/* Centre: stanzas indicator */}
-      <div className="flex-1 text-center">
+      {/* Centre: stanzas indicator with prev/next nav */}
+      <div className="flex-1 flex items-center justify-center min-w-0">
+        {showStanza && (
+          <button
+            type="button"
+            aria-label="Previous stanza page"
+            data-stanza-prev
+            onClick={onStanzaPrev}
+            disabled={!canPrev}
+            className="min-h-11 inline-flex items-center justify-center px-1 text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+        )}
         <span
           data-stanzas-indicator
-          className="text-xs text-muted-foreground tabular-nums"
+          className="text-[11px] text-muted-foreground tabular-nums text-center whitespace-nowrap"
         >
-          {currentStanza != null && totalStanzas != null && currentStanza > 0 && totalStanzas > 0
-            ? `Stanza ${currentStanza} / ${totalStanzas}`
-            : ''}
+          {showStanza ? `Stanza ${currentStanza} / ${totalStanzas}` : ''}
         </span>
+        {showStanza && (
+          <button
+            type="button"
+            aria-label="Next stanza page"
+            data-stanza-next
+            onClick={onStanzaNext}
+            disabled={!canNext}
+            className="min-h-11 inline-flex items-center justify-center px-1 text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        )}
       </div>
 
       {/* View radiogroup */}
@@ -91,7 +122,7 @@ export function GlassBottomBar({
         role="radiogroup"
         aria-label="View mode"
         data-tour-target="view-controls"
-        className="flex items-center gap-1"
+        className="flex items-center shrink-0"
       >
         {VIEW_OPTIONS.filter((o) => o.mode !== 'lyrics' || showLyricsOption).map(({ mode, label, Icon }) => {
           const isActive = viewMode === mode
@@ -104,14 +135,14 @@ export function GlassBottomBar({
               data-view-option={mode}
               onClick={() => onViewModeChange(mode)}
               className={cn(
-                'min-h-11 min-w-11 inline-flex flex-col items-center justify-center px-2 active:scale-[0.90] transition-transform duration-75',
+                'min-h-11 inline-flex flex-col items-center justify-center px-1.5 sm:px-2 active:scale-[0.90] transition-transform duration-75',
                 isActive
                   ? 'text-foreground border-b-2 border-foreground'
                   : 'text-muted-foreground',
               )}
             >
               <Icon className="h-5 w-5" />
-              <span className="text-[12px] leading-none mt-0.5">{label}</span>
+              <span className="hidden sm:inline text-[12px] leading-none mt-0.5">{label}</span>
             </button>
           )
         })}
@@ -123,7 +154,7 @@ export function GlassBottomBar({
         aria-label="Settings"
         data-singing-gear
         onClick={onGearOpen}
-        className="min-h-11 min-w-11 inline-flex flex-col items-center justify-center text-muted-foreground active:scale-[0.90] transition-transform duration-75"
+        className="min-h-11 min-w-9 sm:min-w-11 inline-flex flex-col items-center justify-center text-muted-foreground active:scale-[0.90] transition-transform duration-75 shrink-0"
       >
         <Settings className="h-5 w-5" />
       </button>
@@ -135,7 +166,7 @@ export function GlassBottomBar({
         data-tour-target="play-button"
         data-singing-play
         onClick={onPlayToggle}
-        className="min-h-11 min-w-11 inline-flex flex-col items-center justify-center text-foreground active:scale-[0.90] transition-transform duration-75"
+        className="min-h-11 min-w-9 sm:min-w-11 inline-flex flex-col items-center justify-center text-foreground active:scale-[0.90] transition-transform duration-75 shrink-0"
       >
         {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
         <span className="text-[12px] leading-none mt-0.5">{isPlaying ? 'Pause' : 'Play'}</span>
