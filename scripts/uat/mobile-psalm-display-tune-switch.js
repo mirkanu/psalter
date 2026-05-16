@@ -63,12 +63,12 @@ async function run() {
     const count = await tuneButtons.count()
     if (count < 2) return fail(`expected ≥2 [data-tune-slug] buttons in sheet, got ${count}`)
 
-    // Find the first alt tune that is NOT the current.
+    // Find the first alt tune that is NOT the current (Current row uses aria-current="true").
     let pickedSlug = null
     for (let i = 0; i < count; i++) {
       const slug = await tuneButtons.nth(i).getAttribute('data-tune-slug')
-      const isCurrent = await tuneButtons.nth(i).getAttribute('data-current')
-      if (slug && isCurrent !== 'true') {
+      const ariaCurrent = await tuneButtons.nth(i).getAttribute('aria-current')
+      if (slug && ariaCurrent !== 'true') {
         pickedSlug = slug
         await tuneButtons.nth(i).click()
         break
@@ -80,13 +80,23 @@ async function run() {
       timeout: 3000,
     })
 
-    const tuneNameAfter = await page
-      .locator('[data-tune-name]')
-      .first()
-      .textContent()
-      .catch(() => null)
-    if (tuneNameAfter === tuneNameBefore) {
-      return fail(`sub-bar tune name did not change ("${tuneNameBefore}" -> "${tuneNameAfter}")`)
+    // Wait for sub-bar tune name to actually change (router.replace + React re-render).
+    try {
+      await page.waitForFunction(
+        (before) => {
+          const el = document.querySelector('[data-tune-name]')
+          return el && el.textContent && el.textContent.trim() !== (before || '').trim()
+        },
+        tuneNameBefore,
+        { timeout: 3000 },
+      )
+    } catch {
+      const stuck = await page
+        .locator('[data-tune-name]')
+        .first()
+        .textContent()
+        .catch(() => null)
+      return fail(`sub-bar tune name did not change ("${tuneNameBefore}" -> "${stuck}")`)
     }
 
     const bodyStillThere = await page.locator('[data-notation-body]').count()
