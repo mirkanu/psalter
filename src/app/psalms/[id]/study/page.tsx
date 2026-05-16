@@ -1,4 +1,6 @@
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
 import type { Metadata } from 'next'
 import { db } from '@/db'
 import { psalms, psalmVersions } from '@/db/schema'
@@ -125,6 +127,16 @@ export default async function PsalmStudyPage({ params }: PageProps) {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+      <div className="mb-4">
+        <Link
+          href={`/psalms/${slug}`}
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          data-testid="study-back-to-singing"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Back to singing view</span>
+        </Link>
+      </div>
       <div className="mb-6">
         <div className="flex items-start justify-between gap-4">
           <h1 className="text-2xl md:text-4xl font-bold text-foreground">
