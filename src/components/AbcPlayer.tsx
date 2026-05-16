@@ -15,6 +15,7 @@ import {
   SelectItem,
 } from '@/components/ui/select'
 import { Play, Pause, RotateCcw } from 'lucide-react'
+import { SOUNDFONT_URL } from '@/lib/abc-soundfont'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -94,7 +95,6 @@ interface AbcPlayerProps {
   staffWidthFactor?: number
 }
 
-const SOUNDFONT_URL = 'https://paulrosen.github.io/midi-js-soundfonts/abcjs/'
 const STORAGE_BPM_KEY = 'psalter-bpm'
 
 function readStoredBpm(): number | null {

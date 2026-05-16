@@ -13,6 +13,7 @@ import {
   SelectItem,
 } from '@/components/ui/select'
 import { Play, Pause, RotateCcw } from 'lucide-react'
+import { SOUNDFONT_URL } from '@/lib/abc-soundfont'
 
 const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B']
 const KEY_SEMITONES: Record<string, number> = {
@@ -32,7 +33,6 @@ function parseBpmFromAbc(abc: string): number {
   return m ? Math.max(40, Math.min(200, parseInt(m[1], 10))) : 100
 }
 
-const SOUNDFONT_URL = 'https://paulrosen.github.io/midi-js-soundfonts/abcjs/'
 const STORAGE_BPM_KEY = 'psalter-bpm'
 
 function readStoredBpm(): number | null {
