@@ -6,6 +6,7 @@ import { PsalmTopBar } from './PsalmTopBar'
 import { GlassBottomBar } from './GlassBottomBar'
 import { PlayMiniBar } from './PlayMiniBar'
 import { GearDrawer } from './GearDrawer'
+import { OnboardingTour } from './OnboardingTour'
 import { PsalmSelectorSheet } from './PsalmSelectorSheet'
 import { TuneSwitcherSheet } from './TuneSwitcherSheet'
 import type { TuneOption, TuneSwitcherSections } from './types'
@@ -348,6 +349,7 @@ export function SingingView({
         onViewModeChange={setViewMode}
         showLyricsOption={!!showLyrics}
       />
+      <OnboardingTour />
     </div>
   )
 }
