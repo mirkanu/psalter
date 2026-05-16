@@ -101,6 +101,53 @@ async function assertSC4(page, ctxLabel, vpHeight) {
     fail(`${ctxLabel}: SC4 A+ missing`)
   }
   await assertStanzasIndicator(page, `${ctxLabel} SC4`)
+  await assertNoLegacyChrome(page, ctxLabel)
+}
+
+// SC4b — guards 04.9.4-chrome-dedup regression. Asserts that NotationRenderer's
+// pre-04.9.4 chromeless A−/A+ row and stanza nav are gone, and that GlassBottomBar
+// is the sole owner of these controls.
+async function assertNoLegacyChrome(page, ctxLabel) {
+  const r = await page.evaluate(() => ({
+    legacySizeRow: document.querySelectorAll('[data-chromeless-size-row]').length,
+    legacyStanzaNav: document.querySelectorAll('[data-chromeless-stanza-nav]').length,
+    legacyFab: document.querySelectorAll('[data-singing-fab]').length,
+    legacyTuneSubbar: document.querySelectorAll('[data-singing-tune-subbar]').length,
+    decreaseSize: document.querySelectorAll('button[aria-label="Decrease size"]').length,
+    increaseSize: document.querySelectorAll('button[aria-label="Increase size"]').length,
+    indicators: document.querySelectorAll('[data-stanzas-indicator]').length,
+    indicatorInsideGlass: !!document.querySelector('[data-glass-bottom-bar] [data-stanzas-indicator]'),
+    stanzaPrevInGlass: document.querySelectorAll('[data-glass-bottom-bar] [data-stanza-prev]').length,
+    stanzaNextInGlass: document.querySelectorAll('[data-glass-bottom-bar] [data-stanza-next]').length,
+  }))
+  if (r.legacySizeRow !== 0) fail(`${ctxLabel}: SC4b legacy [data-chromeless-size-row] still rendered (count=${r.legacySizeRow})`)
+  if (r.legacyStanzaNav !== 0) fail(`${ctxLabel}: SC4b legacy [data-chromeless-stanza-nav] still rendered (count=${r.legacyStanzaNav})`)
+  if (r.legacyFab !== 0) fail(`${ctxLabel}: SC4b legacy [data-singing-fab] still rendered`)
+  if (r.legacyTuneSubbar !== 0) fail(`${ctxLabel}: SC4b legacy [data-singing-tune-subbar] still rendered`)
+  if (r.decreaseSize !== 1) fail(`${ctxLabel}: SC4b expected exactly 1 "Decrease size" button, got ${r.decreaseSize}`)
+  if (r.increaseSize !== 1) fail(`${ctxLabel}: SC4b expected exactly 1 "Increase size" button, got ${r.increaseSize}`)
+  if (r.indicators !== 1) fail(`${ctxLabel}: SC4b expected exactly 1 stanzas indicator, got ${r.indicators}`)
+  if (!r.indicatorInsideGlass) fail(`${ctxLabel}: SC4b stanzas indicator is not inside [data-glass-bottom-bar]`)
+  if (r.stanzaPrevInGlass !== 1) fail(`${ctxLabel}: SC4b expected 1 [data-stanza-prev] in glass bar, got ${r.stanzaPrevInGlass}`)
+  if (r.stanzaNextInGlass !== 1) fail(`${ctxLabel}: SC4b expected 1 [data-stanza-next] in glass bar, got ${r.stanzaNextInGlass}`)
+}
+
+// SC4c — clicking stanza-next in GlassBottomBar advances the indicator text.
+// Requires a multi-stanza psalm (caller decides). Returns silently if not multi-stanza.
+async function assertStanzaNextAdvances(page, ctxLabel) {
+  const indicator = page.locator('[data-stanzas-indicator]')
+  const before = (await indicator.innerText()).trim()
+  const m = /^Stanza (\d+) \/ (\d+)$/.exec(before)
+  if (!m) fail(`${ctxLabel}: SC4c indicator text "${before}" does not match pattern`)
+  const total = parseInt(m[2], 10)
+  if (total < 2) return // not multi-stanza, nothing to assert
+  const nextBtn = page.locator('[data-glass-bottom-bar] [data-stanza-next]')
+  if ((await nextBtn.count()) !== 1) fail(`${ctxLabel}: SC4c stanza-next button not found`)
+  await nextBtn.click()
+  await page.waitForTimeout(400)
+  const after = (await indicator.innerText()).trim()
+  if (after === before) fail(`${ctxLabel}: SC4c indicator did not advance after clicking stanza-next ("${before}")`)
+  if (!/^Stanza 2 \//.test(after)) fail(`${ctxLabel}: SC4c expected "Stanza 2 /…" after first next click, got "${after}"`)
 }
 
 async function assertSC2Tour(page) {
@@ -327,6 +374,9 @@ async function run() {
         await assertSC1(page, vp.name)
         await assertSC4(page, vp.name, vp.height)
         await assertNoOverflow(page, `${vp.name} SC6`)
+
+        // SC4c — stanza-next interaction on a multi-stanza psalm (Psalm 23 has ≥2 stanzas)
+        await assertStanzaNextAdvances(page, `${vp.name} SC4c`)
 
         // SC2 only at 375 — separate fresh context to keep tour visible
         if (vp.width === 375) {

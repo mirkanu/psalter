@@ -107,6 +107,30 @@ async function run() {
       fail(`SC4: stanzas indicator text "${stanzaText}" does not match /^Stanza \\d+ \\/ \\d+$/`)
     }
 
+    // ---- SC4b: NO duplicate or legacy chrome — guards 04.9.4-chrome-dedup regression ----
+    const dedup = await page.evaluate(() => ({
+      legacySizeRow: document.querySelectorAll('[data-chromeless-size-row]').length,
+      legacyStanzaNav: document.querySelectorAll('[data-chromeless-stanza-nav]').length,
+      legacyFab: document.querySelectorAll('[data-singing-fab]').length,
+      legacyTuneSubbar: document.querySelectorAll('[data-singing-tune-subbar]').length,
+      decreaseSize: document.querySelectorAll('button[aria-label="Decrease size"]').length,
+      increaseSize: document.querySelectorAll('button[aria-label="Increase size"]').length,
+      indicators: document.querySelectorAll('[data-stanzas-indicator]').length,
+      indicatorInsideGlass: !!document.querySelector('[data-glass-bottom-bar] [data-stanzas-indicator]'),
+      stanzaPrevInGlass: document.querySelectorAll('[data-glass-bottom-bar] [data-stanza-prev]').length,
+      stanzaNextInGlass: document.querySelectorAll('[data-glass-bottom-bar] [data-stanza-next]').length,
+    }))
+    if (dedup.legacySizeRow !== 0) fail(`SC4b: legacy [data-chromeless-size-row] still rendered (count=${dedup.legacySizeRow})`)
+    if (dedup.legacyStanzaNav !== 0) fail(`SC4b: legacy [data-chromeless-stanza-nav] still rendered (count=${dedup.legacyStanzaNav})`)
+    if (dedup.legacyFab !== 0) fail(`SC4b: legacy [data-singing-fab] still rendered (count=${dedup.legacyFab})`)
+    if (dedup.legacyTuneSubbar !== 0) fail(`SC4b: legacy [data-singing-tune-subbar] still rendered (count=${dedup.legacyTuneSubbar})`)
+    if (dedup.decreaseSize !== 1) fail(`SC4b: expected exactly 1 "Decrease size" button, got ${dedup.decreaseSize}`)
+    if (dedup.increaseSize !== 1) fail(`SC4b: expected exactly 1 "Increase size" button, got ${dedup.increaseSize}`)
+    if (dedup.indicators !== 1) fail(`SC4b: expected exactly 1 [data-stanzas-indicator], got ${dedup.indicators}`)
+    if (!dedup.indicatorInsideGlass) fail('SC4b: [data-stanzas-indicator] is not inside [data-glass-bottom-bar]')
+    if (dedup.stanzaPrevInGlass !== 1) fail(`SC4b: expected 1 [data-stanza-prev] in glass bar, got ${dedup.stanzaPrevInGlass}`)
+    if (dedup.stanzaNextInGlass !== 1) fail(`SC4b: expected 1 [data-stanza-next] in glass bar, got ${dedup.stanzaNextInGlass}`)
+
     // ---- SC6: no horizontal overflow ----
     const overflow = await page.evaluate(() => ({
       doc: document.documentElement.scrollWidth > document.documentElement.clientWidth,
