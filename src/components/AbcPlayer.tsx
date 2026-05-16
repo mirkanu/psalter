@@ -449,6 +449,15 @@ export default function AbcPlayer({
     }
     // Intentionally only depend on autoPlayToken — we want exactly one trigger
     // per token increment.
+    //
+    // INVARIANT (WR-05): `onPlay` is recreated on every render (it is a
+    // `useCallback` whose deps include bpm/transpose/highlightEvent/onPlayStart).
+    // Because this effect re-runs each time the token increments, the call
+    // site reads `onPlay` from the latest render's closure — so the freshest
+    // bpm/transpose/highlightEvent are captured by the time setTimeout fires.
+    // If a future refactor stabilises `onPlay` (e.g. `useEvent` / a ref), this
+    // closure-capture-by-call assumption breaks and `onPlay` must be added to
+    // deps (or read through a ref). Re-evaluate this disable then.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoPlayToken])
 
