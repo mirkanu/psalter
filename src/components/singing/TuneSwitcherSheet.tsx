@@ -1,4 +1,5 @@
 'use client'
+import { useEffect, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import {
   Sheet,
@@ -68,12 +69,27 @@ export function TuneSwitcherSheet({ open, onOpenChange, sections, meterLabel }: 
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
+  // Track the close-delay timer in a ref so unmount can clear it. (WR-02)
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current)
+        closeTimerRef.current = null
+      }
+    }
+  }, [])
+
   const handleSelect = (tune: TuneOption) => {
     const params = new URLSearchParams(searchParams?.toString() ?? '')
     params.set('tune', String(tune.id))
     router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     // Close after a brief delay so the user sees the selection register (UI-SPEC §Interaction).
-    setTimeout(() => onOpenChange(false), 120)
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+    closeTimerRef.current = setTimeout(() => {
+      closeTimerRef.current = null
+      onOpenChange(false)
+    }, 120)
   }
 
   const hasAny =
