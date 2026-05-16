@@ -752,6 +752,11 @@ export function NotationRenderer({
       <div className="space-y-4">
         <BackToNotationButton onClick={() => setViewMode('staff')} />
         {solfegeJpgUrl ? (
+          // R2-hosted JPG with unknown intrinsic dimensions — next/image
+          // requires either width/height or fill+sized parent, which the
+          // surrounding aspect-fitting layout doesn't provide. Match the
+          // disable used elsewhere (SiteHeader.tsx). (WR-09)
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={solfegeJpgUrl}
             alt={`Solfège for ${tuneName}`}
