@@ -301,10 +301,10 @@ Plans:
 
 Plans:
 **Wave 1**
-- [ ] 04.9.3-01-PLAN.md — AbcPlayer overflow clamp + orientation/visualViewport listeners; create /psalms/[id]/study legacy route shell; create 4 Playwright UAT script stubs (RED)
+- [x] 04.9.3-01-PLAN.md — AbcPlayer overflow clamp + orientation/visualViewport listeners; create /psalms/[id]/study legacy route shell; create 4 Playwright UAT script stubs (RED)
 
 **Wave 2** *(depends on Wave 1)*
-- [ ] 04.9.3-02-PLAN.md — NotationRenderer refactor: optional controlled viewMode + baseSize props; chromeless mode; mobile default 13px
+- [x] 04.9.3-02-PLAN.md — NotationRenderer refactor: optional controlled viewMode + baseSize props; chromeless mode; mobile default 13px
 
 **Wave 3** *(parallel — both depend on Wave 2)*
 - [ ] 04.9.3-03-PLAN.md — singing/types.ts + PsalmTopBar + TuneSubBar + PsalmSelectorSheet + TuneSwitcherSheet (4 chrome components + shared types)

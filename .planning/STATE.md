@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 04.9.2 complete — dynamic ABC polish shipped, all 5 plans done, visual approval recorded
-last_updated: "2026-05-14T18:00:00.000Z"
-last_activity: 2026-05-14
+stopped_at: Phase 04.9.2 complete (5/5 plans). Visual approval recorded. Ready for next phase.
+last_updated: "2026-05-16T11:00:00.000Z"
+last_activity: 2026-05-16 -- Plan 04.9.3-02 complete (NotationRenderer optionally-controlled + chromeless)
 progress:
   total_phases: 6
-  completed_phases: 5
-  total_plans: 25
-  completed_plans: 25
+  completed_phases: 4
+  total_plans: 20
+  completed_plans: 20
   percent: 100
 ---
 
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-07)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 04.9.2 — dynamic-abc-polish
+**Current focus:** Phase 04.9.3 — mobile-first-psalm-display
 
 ## Current Position
 
-Phase: 04.9.2 (dynamic-abc-polish) — COMPLETE
-Plan: 5 of 5 (final)
+Phase: 04.9.3 (mobile-first-psalm-display) — EXECUTING
+Plan: 2 of 6
 UI-SPEC: Complete — REVISED & RE-APPROVED (hymnal phrase-split layout, syllable alignment, verse numbers clarified — 2026-05-13). Visual re-review of single-AbcPlayer + auto-advance architecture: APPROVED 2026-05-14.
-Status: Phase 04.9.2 closed. Next phase TBD (4.6 polish, 4.9 OCR completion, or Phase 5 portal).
-Last activity: 2026-05-14
+Status: Executing Phase 04.9.3
+Last activity: 2026-05-16 -- Plan 04.9.3-02 complete (NotationRenderer optionally-controlled + chromeless)
 
 Progress: [██████████] 100%
 
@@ -124,6 +124,7 @@ Recent decisions affecting current work:
 - [04.9.2-05]: Single AbcPlayer instance replaces per-phrase array — visual N-row layout via ABC native newlines; preserves D-19 while enabling single synth, single BPM source, single highlight target
 - [04.9.2-05]: Auto-advance pagination during synth playback — cyclePage/halfPage advance as synth crosses phrase/cycle boundaries; manual nav and pause both interrupt
 - [04.9.2-05]: Phase 04.9.2 ships unified control bar grouping stanza-nav, view-mode, A+/A−, and play/BPM/transpose with vertical dividers (D-19 control-grouping rule). Visual re-review: APPROVED 2026-05-14.
+- [04.9.3-02]: NotationRenderer optionally-controlled (viewMode + baseSize props) with chromeless mode that suppresses internal controlBar and disables FS overlay; chromeless mobile (<768px) default --staff-base-size lowered to 13 per UI-SPEC §3, legacy uncontrolled default (24 at <480 portrait) preserved for zero regression; STORAGE_SIZE_FS_KEY no longer WRITTEN; data-notation-body + data-view-mode root attrs added for Plan 06 UATs.
 
 ### Pending Todos
 
