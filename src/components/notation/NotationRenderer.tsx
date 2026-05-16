@@ -43,6 +43,27 @@ export interface NotationRendererProps {
   /** Called whenever the active view mode changes. Used by PsalmTabs to switch
    *  the desktop layout between stacked (Staff/Solfège) and 2-column (Lyrics). */
   onViewModeChange?: (mode: ViewMode) => void
+  /**
+   * When provided, NotationRenderer becomes controlled for viewMode.
+   * Parent owns persistence; internal localStorage is bypassed.
+   */
+  viewMode?: ViewMode
+  /**
+   * When provided, NotationRenderer becomes controlled for size.
+   * Parent owns persistence; internal localStorage is bypassed.
+   */
+  baseSize?: number
+  onBaseSizeChange?: (size: number) => void
+  /**
+   * When true, the internal controlBar (size + view-mode + pagination +
+   * fullscreen-enter button) is NOT rendered. Parent is expected to
+   * supply equivalent UI (see SingingView FAB sheet). Pagination state
+   * stays inside the renderer; parent has no reason to drive it.
+   *
+   * Implies: fullscreen mode is permanently disabled (the singing view
+   * IS the fullscreen — there is no second-level FS overlay).
+   */
+  chromeless?: boolean
 }
 
 export type ViewMode = 'staff' | 'solfege' | 'lyrics'
