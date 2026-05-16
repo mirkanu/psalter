@@ -58,7 +58,7 @@ export function PsalmTopBar({ prev, next, currentSlug, psalmId, onOpenPsalmSelec
   return (
     <header
       data-singing-topbar
-      className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b pt-[env(safe-area-inset-top)]"
+      className="sticky top-14 z-30 bg-background/95 backdrop-blur border-b"
     >
       <div className="relative flex items-center justify-between gap-2 px-2 h-12 md:h-14 landscape:h-10">
         {isPending && (

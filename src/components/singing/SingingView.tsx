@@ -164,15 +164,18 @@ export function SingingView({
          horizontal clipping. The `overflow-x-hidden` is defensive only. */}
       <main
         data-notation-region
-        className="overflow-x-hidden overflow-y-auto"
+        className="overflow-x-hidden"
         style={{
-          // 88px = 48 topbar + 40 subbar mobile; 100px = 56 + 44 ≥md
-          height: 'calc(100dvh - 88px)',
+          // 144px = 56 SiteHeader + 48 topbar + 40 subbar mobile;
+          // 156px = 56 + 56 + 44 ≥md.
+          // overflow-y is controlled by NotationRenderer per view mode (Staff:
+          // hidden / no-scroll; Lyrics & Solfège: auto).
+          height: 'calc(100dvh - 144px)',
         }}
       >
         <style>{`
           @media (min-width: 768px) {
-            [data-notation-region] { height: calc(100dvh - 100px) !important; }
+            [data-notation-region] { height: calc(100dvh - 156px) !important; }
           }
         `}</style>
         {abc ? (
