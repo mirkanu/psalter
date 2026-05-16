@@ -386,7 +386,7 @@ export function NotationRenderer({
   // sub-staves — each sub-stave has fewer notes, can be laid out wider per
   // note, and the resulting viewBox grows taller relative to its width,
   // making the SVG visibly TALLER on the canvas. Threshold-based to avoid
-  // re-flow on every single press: divisions step at baseSize 18, 24, 30.
+  // re-flow on every single press: divisions step at baseSize 18 and 28.
   const baseSubdivisions = chromeless && viewportW < 1280 ? 2 : 1
   const extraSubdivisions = chromeless
     ? baseSize >= 28
