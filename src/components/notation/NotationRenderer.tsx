@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button'
 import {
   ChevronUp,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Expand,
   X,
 } from 'lucide-react'
@@ -470,6 +472,39 @@ export function NotationRenderer({
     </div>
   ) : null
 
+  // Chromeless stanza nav — slim inline row for SingingView (issue #5).
+  // Rendered directly below the notation viewArea, not in the FAB sheet,
+  // so singers reach it without opening a menu. Matches PsalmTopBar's
+  // chevron-button idiom: 44×44 tap targets, foreground/muted-foreground only.
+  const chromelessStanzaNav = showPagination ? (
+    <div
+      data-chromeless-stanza-nav
+      className="mt-2 flex items-center justify-center gap-3"
+    >
+      <button
+        type="button"
+        onClick={prev}
+        disabled={atStart}
+        aria-label="Previous stanza page"
+        className="min-h-11 min-w-11 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.97] transition-transform motion-reduce:transition-none disabled:opacity-40 disabled:pointer-events-none"
+      >
+        <ChevronLeft className="h-5 w-5" />
+      </button>
+      <span className="text-sm text-muted-foreground tabular-nums">
+        {`Stanzas ${cyclePage + 1}/${totalStanzaPages}`}
+      </span>
+      <button
+        type="button"
+        onClick={next}
+        disabled={atEnd}
+        aria-label="Next stanza page"
+        className="min-h-11 min-w-11 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.97] transition-transform motion-reduce:transition-none disabled:opacity-40 disabled:pointer-events-none"
+      >
+        <ChevronRight className="h-5 w-5" />
+      </button>
+    </div>
+  ) : null
+
   const divider = <div className="h-6 w-px bg-border" aria-hidden />
 
   const controlBar = (
@@ -719,6 +754,7 @@ export function NotationRenderer({
     >
       {!chromeless && controlBar}
       {viewArea}
+      {chromeless && chromelessStanzaNav}
     </div>
   )
 }
