@@ -311,7 +311,7 @@ Plans:
 - [x] 04.9.3-04-PLAN.md — AbcAudioControls (extracted) + MetadataPanel + PsalmActionsFAB (FAB + bottom Sheet with View/Audio/About sections)
 
 **Wave 4** *(depends on Wave 3)*
-- [ ] 04.9.3-05-PLAN.md — SingingView client root + wire /psalms/[id]/page.tsx + loading.tsx skeleton + extend psalms.ts queries
+- [x] 04.9.3-05-PLAN.md — SingingView client root + wire /psalms/[id]/page.tsx + loading.tsx skeleton + extend psalms.ts queries
 
 **Wave 5** *(depends on Wave 4)*
 - [ ] 04.9.3-06-PLAN.md — Run Playwright UAT scripts to GREEN + /study regression check + human visual verify (checkpoint)
