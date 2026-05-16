@@ -284,6 +284,14 @@ export function NotationRenderer({
   }, [normalSize])
 
   useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_SIZE_FS_KEY, String(fullscreenSize))
+    } catch {
+      /* ignore */
+    }
+  }, [fullscreenSize])
+
+  useEffect(() => {
     if (isViewModeControlled) return
     try {
       localStorage.setItem(STORAGE_MODE_KEY, viewMode)
