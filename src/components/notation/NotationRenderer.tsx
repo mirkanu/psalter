@@ -68,6 +68,13 @@ export interface NotationRendererProps {
    * IS the fullscreen — there is no second-level FS overlay).
    */
   chromeless?: boolean
+  /**
+   * Fired whenever stanza navigation changes. `current` is reported 1-indexed
+   * (`cyclePage + 1`) so consumers can render directly as `Stanza ${current} / ${total}`.
+   * Fired once on mount with the initial values, and on every subsequent change.
+   * Optional — when omitted the renderer behaves exactly as before.
+   */
+  onStanzaChange?: (current: number, total: number) => void
 }
 
 export type ViewMode = 'staff' | 'solfege' | 'lyrics'
@@ -150,6 +157,7 @@ export function NotationRenderer({
   baseSize: baseSizeProp,
   onBaseSizeChange,
   chromeless = false,
+  onStanzaChange,
 }: NotationRendererProps) {
   // chromeless mode permanently disables the FS overlay; the singing view IS the fullscreen.
   const allowFullscreen = !chromeless
@@ -306,6 +314,13 @@ export function NotationRenderer({
       setCyclePage(Math.max(0, totalStanzaPages - 1))
     }
   }, [cyclePage, totalStanzaPages])
+
+  // Report stanza nav up to parent (SingingView reads this to drive the
+  // GlassBottomBar centre indicator). 1-indexed `current` so consumers can
+  // render `Stanza ${current} / ${total}` without re-deriving.
+  useEffect(() => {
+    onStanzaChange?.(cyclePage + 1, totalStanzaPages)
+  }, [cyclePage, totalStanzaPages, onStanzaChange])
 
   // ── Derived: visible cycles & phrase indices ───────────────────────────────
   const visibleCycles = useMemo(

@@ -51,16 +51,21 @@ function readStoredBpm(): number | null {
 interface Props {
   abc: string
   label?: string
+  /** When provided, AbcAudioControls is controlled by the parent for play state. */
+  isPlaying?: boolean
+  /** Called whenever the synth transitions between playing/paused. */
+  onPlayingChange?: (playing: boolean) => void
 }
 
-export function AbcAudioControls({ abc, label }: Props) {
+export function AbcAudioControls({ abc, label, isPlaying, onPlayingChange }: Props) {
   const baseKeySemitone = useMemo(() => parseKeyFromAbc(abc), [abc])
   const defaultBpm = useMemo(() => parseBpmFromAbc(abc), [abc])
 
   const [transpose, setTranspose] = useState(0)
   const [bpm, setBpm] = useState<number>(() => readStoredBpm() ?? defaultBpm)
-  const [isPlaying, setIsPlaying] = useState(false)
+  const [internalIsPlaying, setInternalIsPlaying] = useState(false)
   const [audioError, setAudioError] = useState<string | null>(null)
+  const effectiveIsPlaying = isPlaying ?? internalIsPlaying
 
   const hiddenRef = useRef<HTMLDivElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -146,7 +151,8 @@ export function AbcAudioControls({ abc, label }: Props) {
           if (!ev) {
             // end of tune
             if (synthRef.current) { try { synthRef.current.stop() } catch { /* ignore */ } }
-            setIsPlaying(false)
+            setInternalIsPlaying(false)
+            onPlayingChange?.(false)
           }
         },
         qpm: bpm,
@@ -155,18 +161,37 @@ export function AbcAudioControls({ abc, label }: Props) {
 
       synth.start()
       timing.start()
-      setIsPlaying(true)
+      setInternalIsPlaying(true)
+      onPlayingChange?.(true)
     } catch (e) {
       console.error('AbcAudioControls play failed:', e)
       setAudioError('Audio not available in this browser.')
     }
-  }, [bpm, transpose])
+  }, [bpm, transpose, onPlayingChange])
 
   const onPause = useCallback(() => {
     if (synthRef.current) { try { synthRef.current.pause() } catch { /* ignore */ } }
     if (timingRef.current) { try { timingRef.current.stop() } catch { /* ignore */ } }
-    setIsPlaying(false)
-  }, [])
+    setInternalIsPlaying(false)
+    onPlayingChange?.(false)
+  }, [onPlayingChange])
+
+  // React to controlled `isPlaying` flips from a parent (e.g. GlassBottomBar
+  // tapping its own Play button while the mini-bar is collapsed). Guarded so
+  // we don't recurse when our own onPlay/onPause has already pushed the new
+  // value back up through onPlayingChange. (T-04.9.4.02-02)
+  const prevControlledRef = useRef<boolean | undefined>(isPlaying)
+  useEffect(() => {
+    if (isPlaying === undefined) return
+    const prev = prevControlledRef.current
+    prevControlledRef.current = isPlaying
+    if (prev === isPlaying) return
+    if (isPlaying && !internalIsPlaying) {
+      void onPlay()
+    } else if (!isPlaying && internalIsPlaying) {
+      onPause()
+    }
+  }, [isPlaying, internalIsPlaying, onPlay, onPause])
 
   return (
     <div
@@ -182,12 +207,12 @@ export function AbcAudioControls({ abc, label }: Props) {
       <Button
         variant="default"
         size="sm"
-        onClick={() => (isPlaying ? onPause() : onPlay())}
-        aria-label={isPlaying ? 'Pause' : 'Play'}
+        onClick={() => (effectiveIsPlaying ? onPause() : onPlay())}
+        aria-label={effectiveIsPlaying ? 'Pause' : 'Play'}
         data-testid="audio-play-button"
       >
-        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-        <span className="ml-1">{isPlaying ? 'Pause' : 'Play'}</span>
+        {effectiveIsPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+        <span className="ml-1">{effectiveIsPlaying ? 'Pause' : 'Play'}</span>
       </Button>
 
       <div className="flex items-center gap-1">
