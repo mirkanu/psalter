@@ -41,7 +41,11 @@ export function MetadataPanel({ psalm, meter, studyHref }: Props) {
           </h4>
           <div className="flex flex-wrap gap-1.5">
             {psalm.psalmTopics.map((pt, i) => (
-              <Badge key={i} variant="secondary" className="text-xs">
+              <Badge
+                key={pt.topic?.id ?? `topic-${i}`}
+                variant="secondary"
+                className="text-xs"
+              >
                 {pt.topic?.name ?? ''}
               </Badge>
             ))}
