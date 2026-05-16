@@ -611,6 +611,12 @@ export function NotationRenderer({
     //   - `Q:` tempo lines (chromeless only) — singing view has no tempo
     //      indication; the global synth BPM is controlled via FAB audio
     //      controls instead. Stripping prevents "♩ = 76" emission. (UAT v6)
+    //      INTENTIONAL cross-route divergence (WR-11): the study/tune page
+    //      (`chromeless=false`) DOES show the engraved tempo because the
+    //      study view's purpose is musicological reference, where preserving
+    //      the original source tempo is informative. The singing view's
+    //      purpose is performance, where BPM is a live control. Reviewer
+    //      asked this be documented here rather than equalised across routes.
     // We also strip the `name="..."` attribute from any `V:` voice declaration
     // in chromeless mode so abcjs doesn't print "Soprano" beside the stave.
     const cleanedHeader = split.header
