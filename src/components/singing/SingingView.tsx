@@ -170,21 +170,16 @@ export function SingingView({
          (`px-2` → 8px L+R) and its staffwidth derivation subtracts 16px to
          account for that. Adding `px-N` here would double-pad and force
          horizontal clipping. The `overflow-x-hidden` is defensive only. */}
+      {/*
+         147px = 56 SiteHeader + 48 topbar + 40 subbar + 3 border-b pixels (mobile).
+         159px = 56 + 56 + 44 + 3 borders (≥md).
+         overflow-y is controlled by NotationRenderer's chromeless wrapper.
+         WR-07: arbitrary-value Tailwind utilities replace previous inline <style>.
+      */}
       <main
         data-notation-region
-        className="overflow-x-hidden flex flex-col"
-        style={{
-          // 147px = 56 SiteHeader + 48 topbar + 40 subbar + 3 border-b pixels (mobile).
-          // 159px = 56 + 56 + 44 + 3 borders (≥md).
-          // overflow-y is controlled by NotationRenderer's chromeless wrapper.
-          height: 'calc(100dvh - 147px)',
-        }}
+        className="overflow-x-hidden flex flex-col h-[calc(100dvh-147px)] md:h-[calc(100dvh-159px)]"
       >
-        <style>{`
-          @media (min-width: 768px) {
-            [data-notation-region] { height: calc(100dvh - 159px) !important; }
-          }
-        `}</style>
         {abc ? (
           <NotationRendererClient
             abc={abc}
