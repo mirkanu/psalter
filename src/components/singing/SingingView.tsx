@@ -166,16 +166,15 @@ export function SingingView({
         data-notation-region
         className="overflow-x-hidden flex flex-col"
         style={{
-          // 144px = 56 SiteHeader + 48 topbar + 40 subbar mobile;
-          // 156px = 56 + 56 + 44 ≥md.
-          // overflow-y is controlled by NotationRenderer per view mode (Staff:
-          // hidden / no-scroll; Lyrics & Solfège: auto).
-          height: 'calc(100dvh - 144px)',
+          // 147px = 56 SiteHeader + 48 topbar + 40 subbar + 3 border-b pixels (mobile).
+          // 159px = 56 + 56 + 44 + 3 borders (≥md).
+          // overflow-y is controlled by NotationRenderer's chromeless wrapper.
+          height: 'calc(100dvh - 147px)',
         }}
       >
         <style>{`
           @media (min-width: 768px) {
-            [data-notation-region] { height: calc(100dvh - 156px) !important; }
+            [data-notation-region] { height: calc(100dvh - 159px) !important; }
           }
         `}</style>
         {abc ? (

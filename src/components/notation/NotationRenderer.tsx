@@ -700,7 +700,6 @@ export function NotationRenderer({
     viewArea = (
       <div
         ref={staffRef}
-        className={chromeless ? 'h-full flex flex-col' : undefined}
         style={applyMinHeight ? { minHeight: minStaffHeight } : undefined}
       >
         <AbcPlayer
@@ -808,10 +807,7 @@ export function NotationRenderer({
   // shrink, and overflow is hidden so the SVG (responsive:resize → viewBox)
   // scales DOWN to fit both width AND height — eliminating the vertical
   // scroll in Staff mode. (UAT v6 issue #3)
-  // Lyrics/Solfège modes inside chromeless keep their own vertical scroll
-  // (overflow-y-auto on the viewArea) since multi-stanza text is expected
-  // to exceed viewport.
-  const chromelessStaff = chromeless && viewMode === 'staff'
+  // Lyrics/Solfège modes also use the same overflow-y-auto wrapper.
   return (
     <div
       data-notation-renderer
@@ -828,11 +824,7 @@ export function NotationRenderer({
       {chromeless ? (
         <div
           data-notation-viewarea
-          className={
-            chromelessStaff
-              ? 'flex-1 min-h-0 overflow-hidden flex flex-col [&_svg]:max-h-full [&_svg]:w-auto [&_svg]:mx-auto'
-              : 'flex-1 min-h-0 overflow-y-auto'
-          }
+          className="flex-1 min-h-0 overflow-y-auto"
         >
           {viewArea}
         </div>
