@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 4.9.4 UI-SPEC approved
-last_updated: "2026-05-16T20:46:17.352Z"
-last_activity: 2026-05-16 -- Phase 04.9.4 planning complete
+last_updated: "2026-05-16T20:59:56.903Z"
+last_activity: 2026-05-16 -- Phase 04.9.4 execution started
 progress:
   total_phases: 6
   completed_phases: 4
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-07)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 04.9.3 — mobile-first-psalm-display
+**Current focus:** Phase 04.9.4 — staff-view-refinements
 
 ## Current Position
 
-Phase: 5
-Plan: Not started
+Phase: 04.9.4 (staff-view-refinements) — EXECUTING
+Plan: 1 of 5
 UI-SPEC: Complete — REVISED & RE-APPROVED (hymnal phrase-split layout, syllable alignment, verse numbers clarified — 2026-05-13). Visual re-review of single-AbcPlayer + auto-advance architecture: APPROVED 2026-05-14.
-Status: Ready to execute
-Last activity: 2026-05-16 -- Phase 04.9.4 planning complete
+Status: Executing Phase 04.9.4
+Last activity: 2026-05-16 -- Phase 04.9.4 execution started
 
 Progress: [██████████] 100%
 
