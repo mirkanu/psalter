@@ -307,7 +307,7 @@ Plans:
 - [x] 04.9.3-02-PLAN.md — NotationRenderer refactor: optional controlled viewMode + baseSize props; chromeless mode; mobile default 13px
 
 **Wave 3** *(parallel — both depend on Wave 2)*
-- [ ] 04.9.3-03-PLAN.md — singing/types.ts + PsalmTopBar + TuneSubBar + PsalmSelectorSheet + TuneSwitcherSheet (4 chrome components + shared types)
+- [x] 04.9.3-03-PLAN.md — singing/types.ts + PsalmTopBar + TuneSubBar + PsalmSelectorSheet + TuneSwitcherSheet (4 chrome components + shared types)
 - [ ] 04.9.3-04-PLAN.md — AbcAudioControls (extracted) + MetadataPanel + PsalmActionsFAB (FAB + bottom Sheet with View/Audio/About sections)
 
 **Wave 4** *(depends on Wave 3)*
@@ -360,6 +360,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 →
 | 4.9. Tune Notation Conversion | 0/3 | Not started | - |
 | 4.9.1. Interactive abcjs Player | 1/1 | Complete | 2026-05-13 |
 | 4.9.2. Dynamic ABC Polish | 5/5 | Complete | 2026-05-14 |
-| 4.9.3. Mobile-first Psalm Display | 0/6 | Not started | - |
+| 4.9.3. Mobile-first Psalm Display | 3/6 | In progress | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
