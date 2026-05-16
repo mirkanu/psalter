@@ -207,8 +207,6 @@ export function SingingView({
         studyHref={studyHref}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
-        baseSize={baseSize}
-        onBaseSizeChange={setBaseSize}
         abcForAudio={abc || null}
       />
 

@@ -8,16 +8,11 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { Separator } from '@/components/ui/separator'
-import { Menu, Music, AlignLeft, FileImage, ZoomIn, ZoomOut } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Menu, Music, AlignLeft, FileImage } from 'lucide-react'
 import { AbcAudioControls } from './AbcAudioControls'
 import { MetadataPanel } from './MetadataPanel'
 import type { PsalmDetail } from '@/db/queries/psalms'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
-
-const MIN_SIZE = 4
-const MAX_SIZE = 120
-const SIZE_STEP = 2
 
 interface Props {
   psalm: PsalmDetail
@@ -25,8 +20,6 @@ interface Props {
   studyHref: string
   viewMode: ViewMode
   onViewModeChange: (mode: ViewMode) => void
-  baseSize: number
-  onBaseSizeChange: (size: number) => void
   abcForAudio: string | null
 }
 
@@ -42,8 +35,6 @@ export function PsalmActionsFAB({
   studyHref,
   viewMode,
   onViewModeChange,
-  baseSize,
-  onBaseSizeChange,
   abcForAudio,
 }: Props) {
   const [open, setOpen] = useState(false)
@@ -109,42 +100,9 @@ export function PsalmActionsFAB({
                 )
               })}
             </div>
-
-            {/* Size controls — UI-SPEC §FAB sheet: "A+/A− remains accessible
-                via the FAB sheet (not on canvas)" */}
-            <div className="mt-3 flex items-center gap-2">
-              <span className="text-sm font-medium text-muted-foreground w-12">Size</span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                data-testid="fab-size-decrease"
-                aria-label="Decrease size"
-                onClick={() =>
-                  onBaseSizeChange(Math.max(MIN_SIZE, baseSize - SIZE_STEP))
-                }
-                disabled={baseSize <= MIN_SIZE}
-                className="h-10 px-3"
-              >
-                <ZoomOut className="h-4 w-4 mr-1" />
-                <span>A−</span>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                data-testid="fab-size-increase"
-                aria-label="Increase size"
-                onClick={() =>
-                  onBaseSizeChange(Math.min(MAX_SIZE, baseSize + SIZE_STEP))
-                }
-                disabled={baseSize >= MAX_SIZE}
-                className="h-10 px-3"
-              >
-                <ZoomIn className="h-4 w-4 mr-1" />
-                <span>A+</span>
-              </Button>
-            </div>
+            {/* UAT v6: Size (A−/A+) buttons moved out of FAB onto the main
+                canvas chrome (NotationRenderer chromelessSizeNav). Users —
+                especially on mobile — now see the size change immediately. */}
           </section>
 
           {/* Section B — Audio (conditional) */}

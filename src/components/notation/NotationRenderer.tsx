@@ -16,6 +16,8 @@ import {
   ChevronRight,
   Expand,
   X,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react'
 import AbcPlayer from '@/components/AbcPlayer'
 import { FullscreenOverlay } from './FullscreenOverlay'
@@ -472,6 +474,44 @@ export function NotationRenderer({
     </div>
   ) : null
 
+  // Chromeless Size row — UAT v6: A−/A+ moved out of FAB onto the main canvas
+  // chrome so users see the size change effect immediately (especially on
+  // mobile). Affects lyric size in all view modes, and notation size in Staff
+  // mode. Visual register matches the stanza nav: foreground/muted-foreground
+  // only, ≥44×44 tap targets.
+  const chromelessSizeRow = (
+    <div
+      data-chromeless-size-row
+      className="mt-2 flex items-center justify-center gap-3"
+    >
+      <button
+        type="button"
+        data-testid="canvas-size-decrease"
+        onClick={() => setBaseSize((s) => (s - SIZE_STEP < MIN_SIZE ? s : s - SIZE_STEP))}
+        disabled={baseSize <= MIN_SIZE}
+        aria-label="Decrease size"
+        className="min-h-11 min-w-11 inline-flex items-center justify-center gap-1 rounded-md text-foreground active:scale-[0.97] transition-transform motion-reduce:transition-none disabled:opacity-40 disabled:pointer-events-none"
+      >
+        <ZoomOut className="h-4 w-4" />
+        <span className="text-sm font-medium">A−</span>
+      </button>
+      <span className="text-xs text-muted-foreground tabular-nums w-8 text-center">
+        {baseSize}
+      </span>
+      <button
+        type="button"
+        data-testid="canvas-size-increase"
+        onClick={() => setBaseSize((s) => (s + SIZE_STEP > MAX_SIZE ? s : s + SIZE_STEP))}
+        disabled={baseSize >= MAX_SIZE}
+        aria-label="Increase size"
+        className="min-h-11 min-w-11 inline-flex items-center justify-center gap-1 rounded-md text-foreground active:scale-[0.97] transition-transform motion-reduce:transition-none disabled:opacity-40 disabled:pointer-events-none"
+      >
+        <ZoomIn className="h-4 w-4" />
+        <span className="text-sm font-medium">A+</span>
+      </button>
+    </div>
+  )
+
   // Chromeless stanza nav — slim inline row for SingingView (issue #5).
   // Rendered directly below the notation viewArea, not in the FAB sheet,
   // so singers reach it without opening a menu. Matches PsalmTopBar's
@@ -754,7 +794,12 @@ export function NotationRenderer({
     >
       {!chromeless && controlBar}
       {viewArea}
-      {chromeless && chromelessStanzaNav}
+      {chromeless && (
+        <>
+          {chromelessSizeRow}
+          {chromelessStanzaNav}
+        </>
+      )}
     </div>
   )
 }
