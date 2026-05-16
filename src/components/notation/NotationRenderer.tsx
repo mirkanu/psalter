@@ -370,7 +370,24 @@ export function NotationRenderer({
   // "4 systems"), so we split each phrase into halves at every chromeless
   // viewport. At very wide desktop (≥1280) the layout can comfortably show
   // the original phrase-count without splitting.
-  const phraseSubdivisions = chromeless && viewportW < 1280 ? 2 : 1
+  //
+  // UAT v7 bug-fix Bug-2 (mobile A+ no-op): on dense mobile content abcjs
+  // hits a structural minimum width quickly, so staffwidth-modulation in
+  // AbcPlayer cannot make notation visibly grow. We additionally increase
+  // subdivisions as the user presses A+ so each phrase splits into more
+  // sub-staves — each sub-stave has fewer notes, can be laid out wider per
+  // note, and the resulting viewBox grows taller relative to its width,
+  // making the SVG visibly TALLER on the canvas. Threshold-based to avoid
+  // re-flow on every single press: divisions step at baseSize 18, 24, 30.
+  const baseSubdivisions = chromeless && viewportW < 1280 ? 2 : 1
+  const extraSubdivisions = chromeless
+    ? baseSize >= 28
+      ? 2
+      : baseSize >= 18
+      ? 1
+      : 0
+    : 0
+  const phraseSubdivisions = baseSubdivisions + extraSubdivisions
 
   // ── w: lines for one phrase ────────────────────────────────────────────────
   function wLinesForPhrase(i: number): string[] {
