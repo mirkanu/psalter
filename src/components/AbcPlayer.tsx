@@ -84,6 +84,14 @@ interface AbcPlayerProps {
   renderAboveOriginal?: ReactNode
   /** When true, hides Play/Key/BPM/ShowOriginal controls (used in fullscreen mode). */
   hidePlayerControls?: boolean
+  /**
+   * Multiplier applied to the measured container width when computing abcjs
+   * `staffwidth`. Values < 1 force abcjs to wrap notation to more systems
+   * (used in chromeless singing view to render ≥3 systems on mobile, ≥4 on
+   * tablet — UI-SPEC §Body, design-notes "4 systems"). Default 1 = legacy
+   * behavior (fill container width).
+   */
+  staffWidthFactor?: number
 }
 
 const SOUNDFONT_URL = 'https://paulrosen.github.io/midi-js-soundfonts/abcjs/'
@@ -121,6 +129,7 @@ export default function AbcPlayer({
   onShowOriginalChange,
   renderAboveOriginal,
   hidePlayerControls = false,
+  staffWidthFactor = 1,
 }: AbcPlayerProps) {
   const baseKeySemitone = useMemo(() => parseKeyFromAbc(abc), [abc])
   const defaultBpm = useMemo(() => parseBpmFromAbc(abc), [abc])
@@ -313,13 +322,19 @@ export default function AbcPlayer({
       //      loop max, guarded by a ref so we don't loop), shrink `scale`
       //      proportionally and re-render once.
       const containerWidth = Math.max(0, (staffWidth || 600) - 16)
+      // Apply staffWidthFactor to force more system wraps in chromeless mode.
+      // The abcjs SVG is still constrained by `responsive: 'resize'` (viewBox +
+      // width:100%), so a smaller staffwidth doesn't shrink the visual — it
+      // just makes abcjs lay out more, narrower rows that then scale up via
+      // the SVG viewBox to fill the container.
+      const effectiveStaffWidth = Math.max(120, Math.floor(containerWidth * staffWidthFactor))
       const effectiveScale = scale ?? 1
       const visualObjs = abcjs.renderAbc(el, abc, {
         add_classes: true,
         visualTranspose: transpose,
         defaultTempo: { duration: 0.25, bpm },
         scale: effectiveScale,
-        staffwidth: containerWidth,
+        staffwidth: effectiveStaffWidth,
         responsive: 'resize',
       })
       visualObjRef.current = visualObjs?.[0] ?? null
@@ -328,7 +343,7 @@ export default function AbcPlayer({
       setAudioError('Could not render notation.')
       visualObjRef.current = null
     }
-  }, [abc, transpose, bpm, scale, showOriginal, stopAudio, staffWidth])
+  }, [abc, transpose, bpm, scale, showOriginal, stopAudio, staffWidth, staffWidthFactor])
 
   // ── Cleanup on unmount ────────────────────────────────────────────────────
   useEffect(() => {

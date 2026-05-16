@@ -340,6 +340,34 @@ export function NotationRenderer({
 
   const scale = baseSize / 14
 
+  // Chromeless (singing view) wants ≥3 systems on mobile, ≥4 on tablet+
+  // (UI-SPEC §Body / design-notes "4 systems"). Force abcjs to wrap by
+  // narrowing staffwidth via a sub-1 factor; the SVG viewBox (responsive:resize)
+  // then scales rendered systems up to fill the container width.
+  const [viewportW, setViewportW] = useState<number>(() =>
+    typeof window === 'undefined' ? 1024 : window.innerWidth,
+  )
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const onResize = () => setViewportW(window.innerWidth)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+  const staffWidthFactor = chromeless
+    ? viewportW < 768
+      ? 0.55
+      : 0.85
+    : 1
+
+  // How many sub-systems to break each source phrase into. abcjs only wraps
+  // music where the ABC source contains an explicit newline; staffwidth alone
+  // does not split a single music-line. For the chromeless singing view we
+  // need ≥3 systems on mobile and ≥4 on tablet (UI-SPEC §Body, design-notes
+  // "4 systems"), so we split each phrase into halves at every chromeless
+  // viewport. At very wide desktop (≥1280) the layout can comfortably show
+  // the original phrase-count without splitting.
+  const phraseSubdivisions = chromeless && viewportW < 1280 ? 2 : 1
+
   // ── w: lines for one phrase ────────────────────────────────────────────────
   function wLinesForPhrase(i: number): string[] {
     return visibleCycles
@@ -485,6 +513,50 @@ export function NotationRenderer({
       .join('\n')
     if (split.phrases.length === 0) return cleanedHeader
     const parts: string[] = [cleanedHeader]
+
+    // Helper: split a phrase body into N sub-staves at measure boundaries.
+    // Music body is split on `|` into measures, then re-grouped into N chunks.
+    // Each chunk becomes its own newline-separated music line, which abcjs
+    // renders as a separate staff system.
+    function splitMusicIntoSubLines(body: string, n: number): string[] {
+      if (n <= 1) return [body]
+      // Tokenize on the bar `|` — keep the bars attached to the preceding measure.
+      const segs = body.split(/(\|)/).filter((s) => s.length > 0)
+      // Re-pair tokens so each measure includes its trailing bar.
+      const measures: string[] = []
+      let acc = ''
+      for (const s of segs) {
+        acc += s
+        if (s === '|') {
+          measures.push(acc.trim())
+          acc = ''
+        }
+      }
+      if (acc.trim()) measures.push(acc.trim())
+      const realMeasures = measures.filter((m) => m && m !== '|')
+      if (realMeasures.length < 2) return [body]
+      const per = Math.max(1, Math.ceil(realMeasures.length / n))
+      const lines: string[] = []
+      for (let k = 0; k < realMeasures.length; k += per) {
+        lines.push(realMeasures.slice(k, k + per).join(' '))
+      }
+      return lines
+    }
+
+    // Helper: split a syllabified w: payload into N sub-lines for the music
+    // sub-lines above. Splits by whitespace-separated tokens proportionally.
+    function splitWLineIntoChunks(payload: string, n: number): string[] {
+      if (n <= 1) return [payload]
+      const tokens = payload.split(/\s+/).filter(Boolean)
+      if (tokens.length < n) return [payload]
+      const per = Math.max(1, Math.ceil(tokens.length / n))
+      const chunks: string[] = []
+      for (let k = 0; k < tokens.length; k += per) {
+        chunks.push(tokens.slice(k, k + per).join(' '))
+      }
+      return chunks
+    }
+
     for (const i of visiblePhraseIndices) {
       const phraseBody = (split.phrases[i] ?? '').trim()
       if (!phraseBody) continue
@@ -494,20 +566,29 @@ export function NotationRenderer({
         .filter((l) => !/^w:/.test(l.trim()))
         .join('\n')
         .trim()
-      parts.push(cleanedBody)
-      if (showLyrics) {
-        const wLines = wLinesForPhrase(i)
+
+      const musicSubLines = splitMusicIntoSubLines(cleanedBody, phraseSubdivisions)
+      const actualSubdivisions = musicSubLines.length
+
+      const wLines = showLyrics ? wLinesForPhrase(i) : []
+
+      // For each music sub-line, emit the music followed by its share of
+      // each stanza's w: payload (one w: line per stanza per sub-line).
+      for (let sub = 0; sub < actualSubdivisions; sub++) {
+        parts.push(musicSubLines[sub])
         for (const portion of wLines) {
-          if (portion && portion.trim()) {
-            parts.push(`w: ${syllabifyForAbc(portion.replace(/\n/g, ' '))}`)
-          }
+          if (!portion || !portion.trim()) continue
+          const syllabified = syllabifyForAbc(portion.replace(/\n/g, ' '))
+          const chunks = splitWLineIntoChunks(syllabified, actualSubdivisions)
+          const piece = chunks[sub] ?? ''
+          if (piece) parts.push(`w: ${piece}`)
         }
       }
     }
     return parts.join('\n')
     // wLinesForPhrase depends on visibleCycles, captured by closure.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [split, visiblePhraseIndices, visibleCycles, tuneMeter, stanzaMeter, showLyrics])
+  }, [split, visiblePhraseIndices, visibleCycles, tuneMeter, stanzaMeter, showLyrics, phraseSubdivisions])
 
   // ── View area ─────────────────────────────────────────────────────────────
   // Item 2: Play plays once — no chain/repeat. We deliberately do NOT pass
@@ -543,6 +624,7 @@ export function NotationRenderer({
             <BackToNotationButton onClick={() => setShowOriginal(false)} />
           }
           hidePlayerControls={isFullscreen || chromeless}
+          staffWidthFactor={staffWidthFactor}
         />
       </div>
     )
