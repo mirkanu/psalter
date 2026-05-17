@@ -49,7 +49,7 @@ export function GlassBottomBar({
   return (
     <nav
       data-glass-bottom-bar
-      className="fixed bottom-0 inset-x-0 z-40 flex items-center gap-1 px-2 h-14 md:h-15 bg-background/70 backdrop-blur-md border-t border-border/50 pb-[env(safe-area-inset-bottom)]"
+      className="fixed bottom-0 inset-x-0 z-40 flex items-center gap-1 px-2 h-12 md:h-13 bg-background/70 backdrop-blur-md border-t border-border/50 pb-[max(env(safe-area-inset-bottom)-8px,0px)]"
       aria-label="Psalm view controls"
     >
       {/* Left: A-/A+ */}

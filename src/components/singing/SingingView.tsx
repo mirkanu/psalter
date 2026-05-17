@@ -298,7 +298,7 @@ export function SingingView({
       */}
       <main
         data-notation-region
-        className="overflow-x-hidden flex flex-col h-[calc(100dvh-104px)] md:h-[calc(100dvh-116px)] pb-14 md:pb-15"
+        className="overflow-x-hidden flex flex-col h-[calc(100dvh-104px)] md:h-[calc(100dvh-116px)] pb-12 md:pb-13"
       >
         {abc ? (
           <NotationRendererClient
