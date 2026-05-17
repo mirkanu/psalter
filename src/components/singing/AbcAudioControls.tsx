@@ -28,9 +28,17 @@ function parseKeyFromAbc(abc: string): number {
   const base = KEY_SEMITONES[letter] ?? 0
   return (base + (acc === '#' ? 1 : acc === 'b' ? -1 : 0) + 12) % 12
 }
+/** Default BPM for fresh users — UI-SPEC §audio (260517-cm0). The Scottish Psalter
+ *  tradition runs faster than the engraved Q: tempos in our ABC source, so we
+ *  ignore the per-tune Q: header for new users and use this single global
+ *  default. Existing users retain their localStorage override. */
+const DEFAULT_BPM = 151
+
+// parseBpmFromAbc kept for reference but no longer used as the default source.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function parseBpmFromAbc(abc: string): number {
   const m = abc.match(/^Q:.*?=(\d+)/m) ?? abc.match(/^Q:\s*(\d+)/m)
-  return m ? Math.max(40, Math.min(200, parseInt(m[1], 10))) : 100
+  return m ? Math.max(40, Math.min(200, parseInt(m[1], 10))) : DEFAULT_BPM
 }
 
 const STORAGE_BPM_KEY = 'psalter-bpm'
@@ -59,12 +67,14 @@ interface Props {
 
 export function AbcAudioControls({ abc, label, isPlaying, onPlayingChange }: Props) {
   const baseKeySemitone = useMemo(() => parseKeyFromAbc(abc), [abc])
-  const defaultBpm = useMemo(() => parseBpmFromAbc(abc), [abc])
+  // 260517-cm0 #1d: global 151 default (ignoring ABC Q: header). See DEFAULT_BPM doc.
+  const defaultBpm = DEFAULT_BPM
 
   const [transpose, setTranspose] = useState(0)
   const [bpm, setBpm] = useState<number>(() => readStoredBpm() ?? defaultBpm)
   const [internalIsPlaying, setInternalIsPlaying] = useState(false)
   const [audioError, setAudioError] = useState<string | null>(null)
+  const [visualObjReady, setVisualObjReady] = useState(false)
   const effectiveIsPlaying = isPlaying ?? internalIsPlaying
 
   const hiddenRef = useRef<HTMLDivElement>(null)
@@ -106,9 +116,11 @@ export function AbcAudioControls({ abc, label, isPlaying, onPlayingChange }: Pro
         staffwidth: 200,
       })
       visualObjRef.current = visualObjs?.[0] ?? null
+      setVisualObjReady(!!visualObjRef.current)
     } catch (e) {
       console.error('AbcAudioControls hidden render failed:', e)
       visualObjRef.current = null
+      setVisualObjReady(false)
       setAudioError('Audio not available for this tune.')
     }
     // Intentionally NOT stopping synth/timing in this effect's cleanup —
@@ -133,6 +145,13 @@ export function AbcAudioControls({ abc, label, isPlaying, onPlayingChange }: Pro
       return
     }
     setAudioError(null)
+    // Defensive: tear down any prior synth/timing before creating a fresh
+    // pair. Without this, rapid play/pause/play overlays multiple synths
+    // and the user hears the tune twice with a delay (260517-cm0 #1a).
+    if (synthRef.current) { try { synthRef.current.stop() } catch { /* ignore */ } }
+    if (timingRef.current) { try { timingRef.current.stop() } catch { /* ignore */ } }
+    synthRef.current = null
+    timingRef.current = null
     try {
       const synth = new abcjs.synth.CreateSynth()
       await synth.init({
@@ -149,8 +168,12 @@ export function AbcAudioControls({ abc, label, isPlaying, onPlayingChange }: Pro
       const timing = new abcjs.TimingCallbacks(visualObjRef.current, {
         eventCallback: (ev: unknown) => {
           if (!ev) {
-            // end of tune
+            // end of tune — fully tear down synth/timing so the next play
+            // creates a fresh pair (prevents double-playback / lag #1a).
             if (synthRef.current) { try { synthRef.current.stop() } catch { /* ignore */ } }
+            if (timingRef.current) { try { timingRef.current.stop() } catch { /* ignore */ } }
+            synthRef.current = null
+            timingRef.current = null
             setInternalIsPlaying(false)
             onPlayingChange?.(false)
           }
@@ -170,8 +193,13 @@ export function AbcAudioControls({ abc, label, isPlaying, onPlayingChange }: Pro
   }, [bpm, transpose, onPlayingChange])
 
   const onPause = useCallback(() => {
-    if (synthRef.current) { try { synthRef.current.pause() } catch { /* ignore */ } }
+    // Fully stop both synth and timing — `pause` leaves the AudioContext in a
+    // half-state that the next `new CreateSynth()` overlays, producing the
+    // "two tunes with lag" double-playback bug (260517-cm0 #1a).
+    if (synthRef.current) { try { synthRef.current.stop() } catch { /* ignore */ } }
     if (timingRef.current) { try { timingRef.current.stop() } catch { /* ignore */ } }
+    synthRef.current = null
+    timingRef.current = null
     setInternalIsPlaying(false)
     onPlayingChange?.(false)
   }, [onPlayingChange])
@@ -180,18 +208,39 @@ export function AbcAudioControls({ abc, label, isPlaying, onPlayingChange }: Pro
   // tapping its own Play button while the mini-bar is collapsed). Guarded so
   // we don't recurse when our own onPlay/onPause has already pushed the new
   // value back up through onPlayingChange. (T-04.9.4.02-02)
+  //
+  // Additional guard for 260517-cm0 #1b: when the GlassBottomBar Play tap
+  // mounts AbcAudioControls for the first time, the hidden visualObj render
+  // happens in the same effect tick as the controlled-mode flip. Waiting
+  // until `visualObjReady` is true ensures `onPlay()` has a valid visualObj
+  // to drive synth.init() — otherwise the first tap silently sets audioError
+  // and the user has to pause/play to recover.
   const prevControlledRef = useRef<boolean | undefined>(isPlaying)
+  const pendingPlayRef = useRef(false)
   useEffect(() => {
     if (isPlaying === undefined) return
     const prev = prevControlledRef.current
     prevControlledRef.current = isPlaying
     if (prev === isPlaying) return
     if (isPlaying && !internalIsPlaying) {
-      void onPlay()
+      if (visualObjReady) {
+        void onPlay()
+      } else {
+        // Defer until visualObj-ready effect fires
+        pendingPlayRef.current = true
+      }
     } else if (!isPlaying && internalIsPlaying) {
       onPause()
     }
-  }, [isPlaying, internalIsPlaying, onPlay, onPause])
+  }, [isPlaying, internalIsPlaying, onPlay, onPause, visualObjReady])
+
+  // Drain pending play once the hidden visualObj is ready.
+  useEffect(() => {
+    if (visualObjReady && pendingPlayRef.current && !internalIsPlaying) {
+      pendingPlayRef.current = false
+      void onPlay()
+    }
+  }, [visualObjReady, internalIsPlaying, onPlay])
 
   return (
     <div
