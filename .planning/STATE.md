@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
+status: completed
 stopped_at: Phase 4.9.5 context gathered
-last_updated: "2026-05-17T15:08:43.091Z"
-last_activity: 2026-05-17 — 04.9.4 polish complete; user confirmed
+last_updated: "2026-05-17T18:35:10.588Z"
+last_activity: 2026-05-17 -- Phase 04.9.5 marked complete
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 20
   completed_plans: 20
-  percent: 100
+  percent: 67
 ---
 
 # Project State
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-07)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 5 — Precentor Portal (next to plan)
+**Current focus:** Phase 04.9.5 — scottish-psalter-metrical-knowledge
 
 ## Current Position
 
-Phase: 5
-Plan: Not started
+Phase: 04.9.5 — COMPLETE
+Plan: 1 of 2
 UI-SPEC: Phase 04.9.4 closed out. Singing-view chrome refined across 4 polish rounds (chrome-dedup, singing-chrome-polish, r3, r4); audio first-press bug fixed; tour redesigned (4 steps, per-element spotlights); mobile bar h-11 (44px); lyrics/solfège views get bigger font + padding + inline YouTube embed; "Ps 119:N-M" range titles.
-Status: Ready to plan Phase 5
-Last activity: 2026-05-17 — 04.9.4 polish complete; user confirmed
+Status: Phase 04.9.5 complete
+Last activity: 2026-05-17 -- Phase 04.9.5 marked complete
 
 Progress: [██████████] 100%
 

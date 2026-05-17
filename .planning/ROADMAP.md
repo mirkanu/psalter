@@ -349,8 +349,8 @@ Plans:
   6. The process explicitly mirrors `tonic-solfa-notation.md`: user briefing → agreed research questions → research pass → convergence; no code changes ship in this phase
 **Plans**: 2 plans
 Plans:
-- [ ] 04.9.5-01-PLAN.md — Briefing capture, data re-snapshot, ABC scans, source reading, draft authoring
-- [ ] 04.9.5-02-PLAN.md — Self-review, revision, user sign-off, cross-link, commit
+- [x] 04.9.5-01-PLAN.md — Briefing capture, data re-snapshot, ABC scans, source reading, draft authoring
+- [x] 04.9.5-02-PLAN.md — Self-review, revision, user sign-off, cross-link, commit
 **UI hint**: no — knowledge phase, no UI work
 
 ### Phase 5: Precentor Portal
