@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready_to_plan
-stopped_at: Phase 04.9.4 complete (incl. 4 polish quick tasks) — Phase 5 ready to plan
-last_updated: "2026-05-17T22:30:00.000Z"
-last_activity: 2026-05-17 -- Phase 04.9.4 complete + 4 polish rounds (vi4, bmz, cm0, ht8) shipped
+status: planning
+stopped_at: Phase 4.9.5 context gathered
+last_updated: "2026-05-17T15:08:43.091Z"
+last_activity: 2026-05-17 — 04.9.4 polish complete; user confirmed
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 4
   total_plans: 20
   completed_plans: 20
-  percent: 83
+  percent: 100
 ---
 
 # Project State
@@ -172,9 +172,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-17T22:30:00.000Z
-Stopped at: Phase 04.9.4 complete (4 polish quick tasks shipped + user-confirmed). Phase 5 ready to plan.
-Resume file: .planning/ROADMAP.md (Phase 5 — Precentor Portal). Run `/gsd-discuss-phase 5` then `/gsd-plan-phase 5`.
+Last session: 2026-05-17T15:08:43.081Z
+Stopped at: Phase 4.9.5 context gathered
+Resume file: .planning/phases/04.9.5-scottish-psalter-metrical-knowledge/04.9.5-CONTEXT.md
 
 ### Deferred from 04.9.4 polish (separate tickets when needed)
 
