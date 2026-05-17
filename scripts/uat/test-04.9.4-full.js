@@ -163,6 +163,46 @@ async function assertGearHasRestartTour(page, ctxLabel) {
   await page.waitForTimeout(150)
 }
 
+// SC10 (260517-cm0) — default BPM = 151 for fresh users (cleared localStorage).
+async function assertDefaultBpm(page, ctxLabel) {
+  await page.evaluate(() => { try { localStorage.removeItem('psalter-bpm') } catch {} })
+  await page.click('[data-singing-play]')
+  await page.waitForTimeout(900)
+  const bpmText = await page.evaluate(() => {
+    const el = document.querySelector('[data-play-mini-bar] .tabular-nums')
+    return el ? (el.textContent || '').trim() : ''
+  })
+  if (bpmText !== '151') fail(`${ctxLabel}: SC10 expected BPM 151, got "${bpmText}"`)
+  // Pause to clean up
+  await page.click('[data-singing-play]')
+  await page.waitForTimeout(300)
+}
+
+// SC11 (260517-cm0 #4b) — stanza indicator hidden in non-staff views.
+async function assertStanzaHiddenInNonStaff(page, ctxLabel) {
+  // Switch to lyrics via gear
+  await page.click('[data-singing-gear]')
+  await page.waitForTimeout(300)
+  const lyricsBtn = page.locator('[data-gear-drawer] [data-view-option="lyrics"]')
+  if ((await lyricsBtn.count()) === 0) {
+    // No lyrics for this psalm — skip silently
+    await page.keyboard.press('Escape').catch(() => {})
+    return
+  }
+  await lyricsBtn.click()
+  await page.waitForTimeout(500)
+  const txt = await page.evaluate(() => {
+    const el = document.querySelector('[data-stanzas-indicator]')
+    return el ? (el.textContent || '').trim() : ''
+  })
+  if (txt !== '') fail(`${ctxLabel}: SC11 stanza indicator should be empty in lyrics view, got "${txt}"`)
+  // Restore to staff
+  await page.click('[data-singing-gear]')
+  await page.waitForTimeout(300)
+  await page.locator('[data-gear-drawer] [data-view-option="staff"]').click()
+  await page.waitForTimeout(400)
+}
+
 // SC9 (260517-bmz polish) — Solfège view in chromeless SingingView must NOT show
 // the "Back to notation" button (which is for the non-chromeless study view).
 async function assertSolfegeNoBackButton(page, ctxLabel) {
@@ -200,21 +240,22 @@ async function assertStanzaNextAdvances(page, ctxLabel) {
 }
 
 async function assertSC2Tour(page) {
-  // Tour must already be visible (caller cleared localStorage and reloaded)
+  // Tour must already be visible (caller cleared localStorage and reloaded).
+  // 260517-cm0 #2F — tour is now 3 focused steps (was 4).
   const tour = page.locator('[data-onboarding-tour]')
   if ((await tour.count()) === 0) fail('SC2: tour not visible on first load')
   let txt = (await tour.innerText()).trim()
-  if (!txt.includes('Step 1 of 4')) fail(`SC2: expected "Step 1 of 4", got: ${txt}`)
-  for (let i = 1; i <= 3; i++) {
+  if (!txt.includes('Step 1 of 3')) fail(`SC2: expected "Step 1 of 3", got: ${txt}`)
+  for (let i = 1; i <= 2; i++) {
     const nextBtn = page.locator('[data-onboarding-tour] button', { hasText: 'Next' })
     if ((await nextBtn.count()) === 0) fail(`SC2: Next button missing at step ${i}`)
     await nextBtn.first().click()
     await page.waitForTimeout(150)
   }
   txt = (await tour.innerText()).trim()
-  if (!txt.includes('Step 4 of 4')) fail(`SC2: expected "Step 4 of 4", got: ${txt}`)
+  if (!txt.includes('Step 3 of 3')) fail(`SC2: expected "Step 3 of 3", got: ${txt}`)
   const done = page.locator('[data-onboarding-tour] button', { hasText: 'Done' })
-  if ((await done.count()) === 0) fail('SC2: Done button missing on step 4')
+  if ((await done.count()) === 0) fail('SC2: Done button missing on step 3')
   await done.first().click()
   await page.waitForTimeout(200)
   if ((await page.locator('[data-onboarding-tour]').count()) !== 0) {
@@ -432,6 +473,10 @@ async function run() {
         await assertGearHasRestartTour(page, vp.name)
         // SC9 — Solfège in chromeless SingingView has no Back-to-notation button
         await assertSolfegeNoBackButton(page, vp.name)
+        // SC10 — default BPM 151 (fresh user)
+        if (vp.width === 375) await assertDefaultBpm(page, vp.name)
+        // SC11 — stanza indicator hidden in non-staff views
+        await assertStanzaHiddenInNonStaff(page, vp.name)
 
         // SC2 only at 375 — separate fresh context to keep tour visible
         if (vp.width === 375) {
