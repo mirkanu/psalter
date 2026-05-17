@@ -30,6 +30,8 @@ interface Props {
   lyrics: string
   psalmListRows: PsalmRow[]
   studyHref: string
+  /** Verse range for individual Psalm 119 (etc) versifications, e.g. "45-85". */
+  versePartLabel?: string | null
 }
 
 function readStoredViewMode(showLyrics: boolean): ViewMode {
@@ -67,6 +69,7 @@ export function SingingView({
   lyrics,
   psalmListRows,
   studyHref,
+  versePartLabel = null,
 }: Props) {
   const searchParams = useSearchParams()
   const tuneParam = searchParams?.get('tune') ?? null
@@ -281,6 +284,7 @@ export function SingingView({
         next={nextSlug}
         currentSlug={currentSlug}
         psalmId={psalm.id}
+        versePartLabel={versePartLabel}
         tuneName={tuneName || null}
         onOpenPsalmSelector={() => setPsalmSelectorOpen(true)}
         onOpenTuneSwitcher={() => setTuneSwitcherOpen(true)}
