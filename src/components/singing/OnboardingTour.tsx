@@ -13,7 +13,7 @@ interface Step {
 const STEPS: Step[] = [
   { target: 'prev-next', copy: 'Swipe through all 150 psalms' },
   { target: 'tune-name', copy: 'Tap to switch to a different tune' },
-  { target: 'view-controls', copy: 'Choose how you want to read — notation, lyrics, or solfège' },
+  { target: 'view-controls', copy: 'Open settings to switch between notation, lyrics, or solfège' },
   { target: 'play-button', copy: 'Tap to hear the tune played' },
 ]
 

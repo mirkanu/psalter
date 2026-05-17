@@ -6,7 +6,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Separator } from '@/components/ui/separator'
-import { Music, AlignLeft, FileImage } from 'lucide-react'
+import { Music, AlignLeft, FileImage, HelpCircle } from 'lucide-react'
 import { MetadataPanel } from './MetadataPanel'
 import type { PsalmDetail } from '@/db/queries/psalms'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
@@ -20,6 +20,7 @@ interface Props {
   viewMode: ViewMode
   onViewModeChange: (m: ViewMode) => void
   showLyricsOption: boolean
+  onRestartTour: () => void
 }
 
 type IconType = typeof Music
@@ -45,11 +46,17 @@ export function GearDrawer({
   viewMode,
   onViewModeChange,
   showLyricsOption,
+  onRestartTour,
 }: Props) {
   const handleViewSelect = (mode: ViewMode) => {
     onViewModeChange(mode)
     // Brief delay so the user perceives the active-state register before close (UI-SPEC §Interaction).
     setTimeout(() => onOpenChange(false), 120)
+  }
+  const handleRestartTour = () => {
+    onOpenChange(false)
+    // Small delay so the drawer close animation completes before the tour overlay paints.
+    setTimeout(onRestartTour, 160)
   }
 
   return (
@@ -92,6 +99,21 @@ export function GearDrawer({
                 },
               )}
             </div>
+          </section>
+
+          <Separator />
+
+          {/* Section 1.5 — Help / tour restart */}
+          <section>
+            <button
+              type="button"
+              data-restart-tour
+              onClick={handleRestartTour}
+              className="flex items-center gap-3 w-full h-11 min-h-11 px-3 rounded-md text-base font-medium text-left text-muted-foreground hover:bg-muted active:scale-[0.99] transition-transform motion-reduce:transition-none"
+            >
+              <HelpCircle className="h-4 w-4 shrink-0" />
+              <span>Restart tour</span>
+            </button>
           </section>
 
           <Separator />
