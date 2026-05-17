@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: ready_to_plan
-stopped_at: Phase 4.9.4 UI-SPEC approved
-last_updated: "2026-05-16T20:59:56.903Z"
-last_activity: 2026-05-16 -- Phase 04.9.4 execution started
+stopped_at: Phase 04.9.4 complete (incl. 4 polish quick tasks) — Phase 5 ready to plan
+last_updated: "2026-05-17T22:30:00.000Z"
+last_activity: 2026-05-17 -- Phase 04.9.4 complete + 4 polish rounds (vi4, bmz, cm0, ht8) shipped
 progress:
   total_phases: 6
   completed_phases: 5
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-07)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 04.9.4 — staff-view-refinements
+**Current focus:** Phase 5 — Precentor Portal (next to plan)
 
 ## Current Position
 
 Phase: 5
 Plan: Not started
-UI-SPEC: Complete — REVISED & RE-APPROVED (hymnal phrase-split layout, syllable alignment, verse numbers clarified — 2026-05-13). Visual re-review of single-AbcPlayer + auto-advance architecture: APPROVED 2026-05-14.
-Status: Ready to plan
-Last activity: 2026-05-16
+UI-SPEC: Phase 04.9.4 closed out. Singing-view chrome refined across 4 polish rounds (chrome-dedup, singing-chrome-polish, r3, r4); audio first-press bug fixed; tour redesigned (4 steps, per-element spotlights); mobile bar h-11 (44px); lyrics/solfège views get bigger font + padding + inline YouTube embed; "Ps 119:N-M" range titles.
+Status: Ready to plan Phase 5
+Last activity: 2026-05-17 — 04.9.4 polish complete; user confirmed
 
 Progress: [██████████] 100%
 
@@ -172,6 +172,11 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-16T18:59:29.295Z
-Stopped at: Phase 4.9.4 UI-SPEC approved
-Resume file: .planning/phases/04.9.4-staff-view-refinements/04.9.4-UI-SPEC.md
+Last session: 2026-05-17T22:30:00.000Z
+Stopped at: Phase 04.9.4 complete (4 polish quick tasks shipped + user-confirmed). Phase 5 ready to plan.
+Resume file: .planning/ROADMAP.md (Phase 5 — Precentor Portal). Run `/gsd-discuss-phase 5` then `/gsd-plan-phase 5`.
+
+### Deferred from 04.9.4 polish (separate tickets when needed)
+
+- **abcjs note-highlight on visible staff:** restoring the playing-note highlight in chromeless SingingView requires sharing AbcPlayer's visualObjRef with AbcAudioControls (or moving synth back into AbcPlayer). See `.planning/quick/260517-cm0-04.9.4-singing-r3/SUMMARY.md` "Deferred" section.
+- **SoundCloud embedding:** 12/172 `tunes.soundcloud_url` rows; top entries are placeholder strings ("Missing, also from youtube"). YouTube fallback active via TuneAudioPlayer; plug SoundCloud in when real URLs are populated.
