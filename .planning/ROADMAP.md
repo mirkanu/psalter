@@ -22,6 +22,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 4.8 (INSERTED): Explore & Tunes Overhaul** - Playwright audit of psalter.cprc.co.uk/explore and /tunes; replicate both pages at psalter.gsdlabs.dev/explore and /tunes to match the reference site; remove /search route (superseded by inline search on /psalms)
 - [ ] **Phase 4.9 (INSERTED): Tune Notation Conversion** - OCR all solfège JPEGs via vision LLM, parse tonic sol-fa → ABC, store ABC strings in DB; all tunes render live in abcjs
 - [ ] **Phase 4.9.1 (INSERTED): Interactive abcjs Player** - Replace static AbcRenderer with interactive player: play/pause + note highlighting, transpose dropdown, BPM controls, show-original JPEG toggle; applied to /tunes/[id] and /psalms/[id]
+- [ ] **Phase 4.9.6 (INSERTED): Psalter Alignment Implementation** - Redesign lyrics data model (Stanza→Line→Syllable + bibleVerseRef); parse current Airtable lyric blobs into the new structured form; implement the alignment + line-break algorithm so DCM tunes render against two CM stanzas correctly, alternate meters align, and amen endings don't consume lyric syllables. Promotes seeds/psalter-alignment-implementation.md; consumes the canonical doc from Phase 4.9.5
 - [ ] **Phase 5: Precentor Portal** - Better Auth login, service event CRUD, psalm+tune set list builder, live service view with pre-loaded notation
 - [ ] **Phase 6: Polish** - OG images, Lighthouse 90+, bundle analysis, click feedback, loading skeletons on remaining routes
 
@@ -352,6 +353,21 @@ Plans:
 - [x] 04.9.5-01-PLAN.md — Briefing capture, data re-snapshot, ABC scans, source reading, draft authoring
 - [x] 04.9.5-02-PLAN.md — Self-review, revision, user sign-off, cross-link, commit
 **UI hint**: no — knowledge phase, no UI work
+
+### Phase 4.9.6 (INSERTED): Psalter Alignment Implementation
+**Goal**: Fix the live DCM mis-render, mid-stanza-verse-split, alternate-meter mis-align, and amen-ending bugs by redesigning the lyrics data model into a structured `Stanza→Line→Syllable` form with `bibleVerseRef` per line, parsing all existing Airtable lyric blobs into that form, and implementing the alignment + line-break algorithm against `tune.double_length` (not against `meter='CMD'`).
+**Depends on**: Phase 4.9.5 (canonical doc), quick task 260517-u35 (`tunes.double_length` migration)
+**Requirements**: TBD — to be derived during `/gsd-discuss-phase`; likely DATA-* + RENDER-* requirements
+**Success Criteria** (what must be TRUE):
+  1. New structured lyrics representation lives in the DB (or is computed deterministically from the existing blob via a parser), preserving 1-stanza:N-verses and 1-verse:N-stanzas relationships per `.planning/research/scottish-psalter-structure.md` §3
+  2. Parser handles every existing psalm version's lyric blob without data loss; round-trip test passes (parsed → re-serialized matches input modulo whitespace)
+  3. Staff view renders the correct lyric stanza(s) for any psalm/tune pairing: for `tune.double_length=true` two consecutive lyric stanzas appear under one tune-pass; otherwise one stanza per tune-pass (DCM bug fixed)
+  4. Mid-stanza verse boundaries are surfaced visually without disrupting metrical line flow (rendering surface choice deferred-but-implemented in this phase)
+  5. Alternate-meter psalms (Ps 124 Second Version + Old 124th `10.10.10.10.10`, etc.) align syllable-to-note correctly with the printed-psalter's line-break placement
+  6. No regression on Psalm 23 + Crimond canonical case (syllable-by-syllable mapping per doc §4)
+  7. Amens are not present in the digitised ABCs and the renderer does not synthesise them (CPRC convention per doc §2)
+**Plans**: TBD (likely 3 plans: data model + parser, alignment algorithm, regression UAT)
+**UI hint**: yes — staff/lyrics rendering changes; run /gsd-ui-phase before planning
 
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation

@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 status: completed
 stopped_at: Phase 4.9.5 context gathered
-last_updated: "2026-05-17T18:35:10.588Z"
+last_updated: "2026-05-17T22:00:16.964Z"
 last_activity: 2026-05-17 -- Phase 04.9.5 marked complete
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 20
   completed_plans: 20
-  percent: 67
+  percent: 100
 ---
 
 # Project State
@@ -76,6 +76,7 @@ Progress: [██████████] 100%
 ### Roadmap Evolution
 
 - Phase 4.9.4 inserted after Phase 4.9.3: Staff View Refinements & Onboarding — header cleanup, first-run tour, dynamic zoom, glass bottom bar, A+/A- relocation, Play/Gear split (URGENT)
+- Phase 4.9.6 inserted after Phase 4.9.5: Psalter Alignment Implementation — promotes seeds/psalter-alignment-implementation.md; consumes Phase 4.9.5 doc; fixes DCM/alternate-meter/amen alignment bugs (URGENT)
 
 ### Decisions
 
