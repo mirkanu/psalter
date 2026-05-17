@@ -150,3 +150,15 @@
   vertical-align: super;
   line-height: 1;
 }
+/* 260517-cm0 #4a — in chromeless lyrics/solfège views, scale verse text up so
+   readers see a comfortable size when staff context is absent. The 1.6x multiplier
+   on baseSize=14 yields 22px, matching prose body sizes; A+/A− still adjusts. */
+[data-notation-body][data-view-mode="lyrics"] .verse-text,
+[data-notation-body][data-view-mode="solfege"] .verse-text {
+  font-size: calc(var(--staff-base-size, 14px) * 1.6);
+  line-height: 1.45;
+}
+[data-notation-body][data-view-mode="lyrics"] .verse-number,
+[data-notation-body][data-view-mode="solfege"] .verse-number {
+  font-size: calc(var(--staff-base-size, 14px) * 0.85);
+}

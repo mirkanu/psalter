@@ -23,6 +23,7 @@ import AbcPlayer from '@/components/AbcPlayer'
 import { FullscreenOverlay } from './FullscreenOverlay'
 import { StanzaList } from './StanzaList'
 import { BackToNotationButton } from './BackToNotationButton'
+import { TuneAudioPlayer } from '@/components/TuneAudioPlayer'
 import { splitOnPhraseBreaks } from '@/lib/abc-phrases'
 import { syllabifyForAbc } from '@/lib/lyrics'
 import {
@@ -41,6 +42,9 @@ export interface NotationRendererProps {
   tuneMeter: string | null
   /** Stanza meter (e.g. "CM" or "double-CM") — required for D-20 cycle pairing. */
   stanzaMeter: string | null
+  /** Optional recording URLs surfaced in lyrics/solfège views as inline player (260517-cm0 #1f). */
+  youtubeUrl?: string | null
+  soundcloudUrl?: string | null
   /** When false, hides the "Lyrics only" view mode and omits `w:` lines from
    *  the staff. Used on tune detail pages where lyrics are out of scope. */
   showLyrics?: boolean
@@ -167,6 +171,8 @@ export function NotationRenderer({
   onStanzaChange,
   stanzaPage,
   onStanzaPageChange,
+  youtubeUrl = null,
+  soundcloudUrl = null,
 }: NotationRendererProps) {
   // chromeless mode permanently disables the FS overlay; the singing view IS the fullscreen.
   const allowFullscreen = !chromeless
@@ -728,10 +734,22 @@ export function NotationRenderer({
       </div>
     )
   } else if (viewMode === 'solfege') {
+    // 260517-cm0 #4c: solfège JPG scales with --staff-base-size so A+/A− re-flows.
+    // Default scale at baseSize=14 lands at ~0.7 (75% of available width), giving
+    // room for lyrics below the image while still being legible.
+    const solfegeImgScale = chromeless ? Math.max(0.5, Math.min(1.0, baseSize / 20)) : 1.0
     viewArea = (
-      <div className="space-y-4">
+      <div className={chromeless ? 'space-y-4 px-4 pt-4' : 'space-y-4'}>
         {!chromeless && (
           <BackToNotationButton onClick={() => setViewMode('staff')} />
+        )}
+        {/* 260517-cm0 #1f: inline recording player for chromeless (singing) view */}
+        {chromeless && (youtubeUrl || soundcloudUrl) && (
+          <TuneAudioPlayer
+            youtubeUrl={youtubeUrl}
+            soundcloudUrl={soundcloudUrl}
+            tuneName={tuneName}
+          />
         )}
         {solfegeJpgUrl ? (
           // R2-hosted JPG with unknown intrinsic dimensions — next/image
@@ -742,7 +760,8 @@ export function NotationRenderer({
           <img
             src={solfegeJpgUrl}
             alt={`Solfège for ${tuneName}`}
-            className="w-full h-auto rounded-md border border-border"
+            style={chromeless ? { width: `${solfegeImgScale * 100}%`, maxWidth: '100%' } : undefined}
+            className={chromeless ? 'h-auto rounded-md border border-border' : 'w-full h-auto rounded-md border border-border'}
           />
         ) : (
           <p className="text-sm text-muted-foreground italic">
@@ -750,7 +769,7 @@ export function NotationRenderer({
           </p>
         )}
         {showLyrics && stanzas.length > 0 && (
-          <div className="max-h-[60vh] overflow-y-auto">
+          <div className={chromeless ? '' : 'max-h-[60vh] overflow-y-auto'}>
             <StanzaList stanzas={stanzas} />
           </div>
         )}
@@ -758,11 +777,22 @@ export function NotationRenderer({
     )
   } else {
     // Lyrics-only: single-column scrollable list of all stanzas (D-17 verse numbers).
+    // 260517-cm0 #4a: in chromeless (singing) view, apply generous padding +
+    // larger base font so lyrics read comfortably without staff context.
     viewArea =
       stanzas.length === 0 ? (
         <p className="text-sm text-muted-foreground italic">No lyrics available.</p>
       ) : (
-        <StanzaList stanzas={stanzas} />
+        <div className={chromeless ? 'px-4 pt-4 space-y-4' : ''}>
+          {chromeless && (youtubeUrl || soundcloudUrl) && (
+            <TuneAudioPlayer
+              youtubeUrl={youtubeUrl}
+              soundcloudUrl={soundcloudUrl}
+              tuneName={tuneName}
+            />
+          )}
+          <StanzaList stanzas={stanzas} />
+        </div>
       )
   }
 
