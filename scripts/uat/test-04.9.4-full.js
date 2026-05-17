@@ -132,6 +132,55 @@ async function assertNoLegacyChrome(page, ctxLabel) {
   if (r.stanzaNextInGlass !== 1) fail(`${ctxLabel}: SC4b expected 1 [data-stanza-next] in glass bar, got ${r.stanzaNextInGlass}`)
 }
 
+// SC7 (260517-bmz polish) — glass bar layout: no view buttons, Gear at far right,
+// Play (icon-only) just to its left.
+async function assertPolishedGlassLayout(page, ctxLabel) {
+  const r = await page.evaluate(() => {
+    const bar = document.querySelector('[data-glass-bottom-bar]')
+    const order = bar ? Array.from(bar.children) : []
+    const last = order[order.length - 1]
+    const lastButOne = order[order.length - 2]
+    return {
+      viewOptionsInBar: document.querySelectorAll('[data-glass-bottom-bar] [data-view-option]').length,
+      gearIsLast: !!(last && last.matches('[data-singing-gear]')),
+      playIsSecondToLast: !!(lastButOne && lastButOne.matches('[data-singing-play]')),
+      playText: (document.querySelector('[data-singing-play]')?.textContent || '').trim(),
+    }
+  })
+  if (r.viewOptionsInBar !== 0) fail(`${ctxLabel}: SC7 glass bar contains ${r.viewOptionsInBar} [data-view-option] elements`)
+  if (!r.gearIsLast) fail(`${ctxLabel}: SC7 [data-singing-gear] is not the last glass-bar child`)
+  if (!r.playIsSecondToLast) fail(`${ctxLabel}: SC7 [data-singing-play] is not the 2nd-to-last glass-bar child`)
+  if (r.playText !== '') fail(`${ctxLabel}: SC7 Play/Pause button has visible text "${r.playText}" — expected icon-only`)
+}
+
+// SC8 (260517-bmz polish) — GearDrawer has Restart tour button.
+async function assertGearHasRestartTour(page, ctxLabel) {
+  await page.locator('[data-singing-gear]').click()
+  await page.waitForTimeout(300)
+  const count = await page.evaluate(() => document.querySelectorAll('[data-restart-tour]').length)
+  if (count !== 1) fail(`${ctxLabel}: SC8 expected exactly 1 [data-restart-tour] in GearDrawer, got ${count}`)
+  await page.keyboard.press('Escape').catch(() => {})
+  await page.waitForTimeout(150)
+}
+
+// SC9 (260517-bmz polish) — Solfège view in chromeless SingingView must NOT show
+// the "Back to notation" button (which is for the non-chromeless study view).
+async function assertSolfegeNoBackButton(page, ctxLabel) {
+  // Open gear → click solfege option → close → check
+  await page.locator('[data-singing-gear]').click()
+  await page.waitForTimeout(300)
+  const sol = page.locator('[data-gear-drawer] [data-view-option="solfege"]')
+  if ((await sol.count()) === 0) {
+    // No solfege option (likely no Solfège JPG for this tune) — skip cleanly.
+    await page.keyboard.press('Escape').catch(() => {})
+    return
+  }
+  await sol.click()
+  await page.waitForTimeout(500)
+  const backCount = await page.evaluate(() => document.querySelectorAll('[data-testid="back-to-notation"]').length)
+  if (backCount !== 0) fail(`${ctxLabel}: SC9 Solfège (chromeless) renders ${backCount} back-to-notation button(s) — expected 0`)
+}
+
 // SC4c — clicking stanza-next in GlassBottomBar advances the indicator text.
 // Requires a multi-stanza psalm (caller decides). Returns silently if not multi-stanza.
 async function assertStanzaNextAdvances(page, ctxLabel) {
@@ -377,6 +426,12 @@ async function run() {
 
         // SC4c — stanza-next interaction on a multi-stanza psalm (Psalm 23 has ≥2 stanzas)
         await assertStanzaNextAdvances(page, `${vp.name} SC4c`)
+        // SC7 — polished glass-bar layout (no view buttons, gear last, play icon-only)
+        await assertPolishedGlassLayout(page, vp.name)
+        // SC8 — GearDrawer has Restart tour
+        await assertGearHasRestartTour(page, vp.name)
+        // SC9 — Solfège in chromeless SingingView has no Back-to-notation button
+        await assertSolfegeNoBackButton(page, vp.name)
 
         // SC2 only at 375 — separate fresh context to keep tour visible
         if (vp.width === 375) {
