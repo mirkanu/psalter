@@ -134,6 +134,12 @@ export default async function PsalmPage({ params }: PageProps) {
   const lyrics = activeVersion?.lyrics ?? ''
   const stanzaMeter = activeVersion?.meter ?? null
 
+  // 260517-cm0 #3 — derive "N:start-end" range from psalterNumber so the topbar
+  // can render e.g. "Ps 119:45-85" for individual Psalm 119 versifications.
+  // psalterNumber values look like "119:45-85 (8)" or "119:1-8 (1)".
+  const rangeMatch = activeVersion?.psalterNumber?.match(/^\d+:(\d+(?:-\d+)?)/) ?? null
+  const versePartLabel = rangeMatch ? rangeMatch[1] : null
+
   return (
     <SingingView
       psalm={psalm}
@@ -148,6 +154,7 @@ export default async function PsalmPage({ params }: PageProps) {
       lyrics={lyrics}
       psalmListRows={psalmListRows}
       studyHref={`/psalms/${slug}/study`}
+      versePartLabel={versePartLabel}
     />
   )
 }

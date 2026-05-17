@@ -10,6 +10,9 @@ interface Props {
   next: string | null
   currentSlug: string
   psalmId: number
+  /** Verse range for individual Psalm 119 (etc) versifications, e.g. "45-85". When
+   *  set, the label becomes "Ps {id}:{range}" (260517-cm0 #3). */
+  versePartLabel?: string | null
   tuneName?: string | null
   onOpenPsalmSelector: () => void
   onOpenTuneSwitcher?: () => void
@@ -32,6 +35,7 @@ export function PsalmTopBar({
   next,
   currentSlug,
   psalmId,
+  versePartLabel,
   tuneName,
   onOpenPsalmSelector,
   onOpenTuneSwitcher,
@@ -63,7 +67,14 @@ export function PsalmTopBar({
     return () => window.removeEventListener('keydown', onKey)
   }, [prev, next, router])
 
-  const label = narrow && psalmId >= 100 ? `Ps ${psalmId}` : `Psalm ${psalmId}`
+  // 260517-cm0 #3: when versePartLabel is provided, the title becomes "Ps {id}:{range}".
+  // Long ranges (e.g. "Ps 119:105-123") downsize to text-sm to avoid wrapping.
+  const label = versePartLabel
+    ? `Ps ${psalmId}:${versePartLabel}`
+    : narrow && psalmId >= 100
+      ? `Ps ${psalmId}`
+      : `Psalm ${psalmId}`
+  const labelSizeClass = label.length >= 12 ? 'text-sm' : 'text-base'
 
   return (
     <header
@@ -106,7 +117,10 @@ export function PsalmTopBar({
             onClick={onOpenPsalmSelector}
             aria-label={`Choose psalm (currently Psalm ${psalmId})`}
             data-tour-target="psalm-label"
-            className="text-base font-semibold active:scale-[0.95] transition-transform motion-reduce:transition-none whitespace-nowrap"
+            className={cn(
+              labelSizeClass,
+              'font-semibold active:scale-[0.95] transition-transform motion-reduce:transition-none whitespace-nowrap',
+            )}
           >
             {label}
           </button>
