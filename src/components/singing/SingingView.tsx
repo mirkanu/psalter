@@ -198,6 +198,16 @@ export function SingingView({
   const [currentStanza, setCurrentStanza] = useState<number | null>(null)
   const [totalStanzas, setTotalStanzas] = useState<number | null>(null)
   const [stanzaPage, setStanzaPage] = useState<number>(1)
+  const [tourKey, setTourKey] = useState<number>(0)
+
+  const handleRestartTour = useCallback(() => {
+    try {
+      localStorage.removeItem('psalter_tour_v1')
+    } catch {
+      /* ignore */
+    }
+    setTourKey((k) => k + 1)
+  }, [])
 
   const handleStanzaChange = useCallback((current: number, total: number) => {
     setCurrentStanza(current)
@@ -361,8 +371,9 @@ export function SingingView({
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         showLyricsOption={!!showLyrics}
+        onRestartTour={handleRestartTour}
       />
-      <OnboardingTour />
+      <OnboardingTour key={tourKey} />
     </div>
   )
 }

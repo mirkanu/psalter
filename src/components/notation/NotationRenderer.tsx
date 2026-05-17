@@ -730,7 +730,9 @@ export function NotationRenderer({
   } else if (viewMode === 'solfege') {
     viewArea = (
       <div className="space-y-4">
-        <BackToNotationButton onClick={() => setViewMode('staff')} />
+        {!chromeless && (
+          <BackToNotationButton onClick={() => setViewMode('staff')} />
+        )}
         {solfegeJpgUrl ? (
           // R2-hosted JPG with unknown intrinsic dimensions — next/image
           // requires either width/height or fill+sized parent, which the

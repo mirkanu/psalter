@@ -195,7 +195,7 @@ export function AbcAudioControls({ abc, label, isPlaying, onPlayingChange }: Pro
 
   return (
     <div
-      className="flex flex-wrap items-center gap-2"
+      className="flex items-center flex-nowrap gap-1.5"
       data-abc-audio-controls
       aria-label={label ?? 'Audio controls'}
     >
@@ -207,18 +207,18 @@ export function AbcAudioControls({ abc, label, isPlaying, onPlayingChange }: Pro
       <Button
         variant="default"
         size="sm"
+        className="h-9 px-2.5 shrink-0"
         onClick={() => (effectiveIsPlaying ? onPause() : onPlay())}
         aria-label={effectiveIsPlaying ? 'Pause' : 'Play'}
         data-testid="audio-play-button"
       >
         {effectiveIsPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-        <span className="ml-1">{effectiveIsPlaying ? 'Pause' : 'Play'}</span>
       </Button>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 shrink-0">
         <span className="text-xs text-muted-foreground">Key</span>
         <Select value={String(transpose)} onValueChange={(v) => setTranspose(Number(v))}>
-          <SelectTrigger className="h-8 w-20">
+          <SelectTrigger className="h-9 px-2 gap-1 min-w-0 w-auto" data-key-trigger>
             <SelectValue>{NOTE_NAMES[(baseKeySemitone + transpose + 12) % 12]}</SelectValue>
           </SelectTrigger>
           <SelectContent>
@@ -231,12 +231,12 @@ export function AbcAudioControls({ abc, label, isPlaying, onPlayingChange }: Pro
         </Select>
       </div>
 
-      <div className="flex items-center gap-1">
-        <span className="text-xs text-muted-foreground">BPM</span>
-        <Button variant="outline" size="sm" className="h-8 w-8 px-0"
+      <div className="flex items-center gap-0.5 shrink-0">
+        <span className="text-xs text-muted-foreground mr-1">BPM</span>
+        <Button variant="outline" size="sm" className="h-9 w-8 px-0"
           onClick={() => setBpm((b) => Math.max(40, b - 5))} aria-label="Decrease tempo">−</Button>
         <span className="text-sm tabular-nums w-8 text-center">{bpm}</span>
-        <Button variant="outline" size="sm" className="h-8 w-8 px-0"
+        <Button variant="outline" size="sm" className="h-9 w-8 px-0"
           onClick={() => setBpm((b) => Math.min(200, b + 5))} aria-label="Increase tempo">+</Button>
       </div>
 
@@ -244,7 +244,7 @@ export function AbcAudioControls({ abc, label, isPlaying, onPlayingChange }: Pro
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 px-2"
+          className="h-9 w-9 px-0 shrink-0"
           onClick={() => {
             setTranspose(0)
             setBpm(defaultBpm)

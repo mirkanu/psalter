@@ -53,7 +53,7 @@ export function PlayMiniBar({
       aria-hidden={!visible}
       onTransitionEnd={handleEnd}
       className={cn(
-        'fixed inset-x-0 bottom-[56px] md:bottom-[60px] z-40 h-[52px] flex items-center gap-2 px-3',
+        'fixed inset-x-0 bottom-[56px] md:bottom-[60px] z-40 h-[52px] flex items-center gap-1 px-1.5',
         'bg-background/90 backdrop-blur-sm border-t border-border/40',
         'transition-all duration-200 ease-out',
         'motion-reduce:translate-y-0 motion-reduce:!transition-opacity motion-reduce:duration-100',
@@ -65,7 +65,7 @@ export function PlayMiniBar({
         type="button"
         aria-label="Collapse player"
         onClick={onCollapse}
-        className="min-h-11 min-w-11 inline-flex items-center justify-center"
+        className="h-9 w-8 inline-flex items-center justify-center shrink-0"
       >
         <ChevronDown className="h-5 w-5" />
       </button>
