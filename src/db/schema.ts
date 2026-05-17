@@ -67,6 +67,7 @@ export const tunes = pgTable('tunes', {
   famousHymn: text('famous_hymn'),
   numberIn1979RpPsalter: integer('number_in_1979_rp_psalter'),
   numInPrcaPsalter: integer('num_in_prca_psalter'),
+  doubleLength: boolean('double_length').default(false).notNull(),  // DCM marker — manually curated in Airtable, see .planning/research/scottish-psalter-structure.md §2
 })
 
 /**
