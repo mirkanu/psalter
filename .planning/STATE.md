@@ -151,6 +151,7 @@ None yet.
 | q06 | Fix OCR pipeline bugs: Old 124th page order swap + Glasgow dotted-comma octave parser fix | 2026-05-12 | 7c03c35 | [260512-qmy-fix-ocr-pipeline-bugs-old-124th-page-order-swap-plus-glasgow](./quick/260512-qmy-fix-ocr-pipeline-bugs-old-124th-page-order-swap-plus-glasgow/) |
 | 260512-ssp | Phase 4.9 OCR pipeline completion — add solfege_ocr_text + abc_satb columns; 75/144 tunes populated (partial — PSALTER_ANTHROPIC_API_KEY exhausted) | 2026-05-12 | 661b65b | [260512-ssp-phase-4-9-ocr-pipeline-completion](./quick/260512-ssp-phase-4-9-ocr-pipeline-completion/) |
 | 260516-vi4 | Fix 04.9.4 chrome dedup: remove duplicate A+/A- and stanza nav still rendered by NotationRenderer chromeless mode; add stanza prev/next to GlassBottomBar; harden UATs to assert absence of legacy chrome | 2026-05-16 | e47aae5 | [260516-vi4-04.9.4-chrome-dedup](./quick/260516-vi4-04.9.4-chrome-dedup/) |
+| 260517-bmz | 04.9.4 singing chrome polish: drop view buttons from glass bar (now in GearDrawer only), move gear far-right, icon-only Play; fit PlayMiniBar on one row at 375; add Restart-tour to GearDrawer; hide Solfège back-button in chromeless view | 2026-05-17 | 078480c | [260517-bmz-04.9.4-singing-chrome-polish](./quick/260517-bmz-04.9.4-singing-chrome-polish/) |
 
 ### Blockers/Concerns
 
