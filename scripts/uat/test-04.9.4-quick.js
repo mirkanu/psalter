@@ -131,6 +131,33 @@ async function run() {
     if (dedup.stanzaPrevInGlass !== 1) fail(`SC4b: expected 1 [data-stanza-prev] in glass bar, got ${dedup.stanzaPrevInGlass}`)
     if (dedup.stanzaNextInGlass !== 1) fail(`SC4b: expected 1 [data-stanza-next] in glass bar, got ${dedup.stanzaNextInGlass}`)
 
+    // ---- SC7 (260517-bmz polish): glass bar layout ----
+    const polish = await page.evaluate(() => {
+      const bar = document.querySelector('[data-glass-bottom-bar]')
+      const order = bar ? Array.from(bar.children) : []
+      const last = order[order.length - 1]
+      const lastButOne = order[order.length - 2]
+      const playText = (document.querySelector('[data-singing-play]')?.textContent || '').trim()
+      return {
+        viewOptionsInBar: document.querySelectorAll('[data-glass-bottom-bar] [data-view-option]').length,
+        gearIsLast: !!(last && last.matches('[data-singing-gear]')),
+        playIsSecondToLast: !!(lastButOne && lastButOne.matches('[data-singing-play]')),
+        playLabel: playText,
+      }
+    })
+    if (polish.viewOptionsInBar !== 0) fail(`SC7: glass bar still contains ${polish.viewOptionsInBar} [data-view-option] elements`)
+    if (!polish.gearIsLast) fail('SC7: [data-singing-gear] is not the last child of [data-glass-bottom-bar]')
+    if (!polish.playIsSecondToLast) fail('SC7: [data-singing-play] is not the 2nd-to-last child of [data-glass-bottom-bar]')
+    if (polish.playLabel !== '') fail(`SC7: Play/Pause button has visible text "${polish.playLabel}" — expected icon-only`)
+
+    // ---- SC8: GearDrawer has Restart tour button ----
+    await page.locator('[data-singing-gear]').click()
+    await page.waitForTimeout(300)
+    const restartCount = await page.evaluate(() => document.querySelectorAll('[data-restart-tour]').length)
+    if (restartCount !== 1) fail(`SC8: expected exactly 1 [data-restart-tour] in GearDrawer, got ${restartCount}`)
+    await page.keyboard.press('Escape').catch(() => {})
+    await page.waitForTimeout(150)
+
     // ---- SC6: no horizontal overflow ----
     const overflow = await page.evaluate(() => ({
       doc: document.documentElement.scrollWidth > document.documentElement.clientWidth,
