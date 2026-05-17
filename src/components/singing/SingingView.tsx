@@ -271,6 +271,8 @@ export function SingingView({
   const scoreJpgUrl = activeTune?.scoreJpgUrl ?? null
   const solfegeJpgUrl = activeTune?.solfegeJpgUrl ?? null
   const tuneName = activeTune?.name ?? ''
+  const youtubeUrl = activeTune?.youtubeUrl ?? null
+  const soundcloudUrl = activeTune?.soundcloudUrl ?? null
 
   return (
     <div data-singing-view className="relative">
@@ -318,6 +320,8 @@ export function SingingView({
             onStanzaChange={handleStanzaChange}
             stanzaPage={stanzaPage}
             onStanzaPageChange={setStanzaPage}
+            youtubeUrl={youtubeUrl}
+            soundcloudUrl={soundcloudUrl}
           />
         ) : (
           <div className="p-6 text-sm text-muted-foreground italic">
@@ -343,8 +347,8 @@ export function SingingView({
         onViewModeChange={setViewMode}
         baseSize={baseSize}
         onBaseSizeChange={handleBaseSizeChange}
-        currentStanza={currentStanza}
-        totalStanzas={totalStanzas}
+        currentStanza={viewMode === 'staff' ? currentStanza : null}
+        totalStanzas={viewMode === 'staff' ? totalStanzas : null}
         onStanzaPrev={handleStanzaPrev}
         onStanzaNext={handleStanzaNext}
         isPlaying={isPlaying}
