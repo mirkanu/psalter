@@ -68,6 +68,21 @@ The Scottish Metrical Psalter (1650) renders all 150 psalms into a fixed set of 
 
 **Re-query and refresh §1b on any major data refresh.**
 
+### 1c. Alternate-meter assignments per the printed psalter
+
+The Brown 1991 reprint of the 1775 edition (Internet Archive) carries a **Metrical Index** that lists every selection departing from CM [Brown-1991]:
+
+| Meter | Psalms (printed-psalter assignments) |
+|---|---|
+| SM | 25(1st), 45(2nd), 50(1st), 67(1st), 70(1st) |
+| LM | 6(1st), 100(1st), 102(2nd), 145(2nd) |
+| 6.6.6.6.D | 143(2nd) |
+| 6.6.6.6.8.8 (HM) | 136(2nd), 148(2nd) |
+| 87.8.7 | 136(1st) |
+| 10.10.10.10.10 | 124(2nd) |
+
+That's 14 alternate-meter selections — closely matching [1650psalter]'s informal "thirteen Psalms put to alternate meters" claim, with the slight discrepancy attributable to whether 1st-vs-2nd versions are counted separately. This printed-psalter index is the **primary source** for §5's Psalm 124 + Old 124th worked example.
+
 ---
 
 ## 2. Tune Anatomy
@@ -102,9 +117,11 @@ Two distinct phenomena should not be conflated:
 
 The canonical DCM use case: an 8-phrase tune (CMD = 8.6.8.6.8.6.8.6) is sung against two CM stanzas of the lyrics (4 phrases × 2 = 8 phrases total). The lyric stanzas remain as-printed; only the tune doubles.
 
-**Worked example:** *Petersham* (currently mislabelled `meter='CM'` in our DB, but the tune name explicitly says *"Petersham (CMD, EPC tune)"* — see `data-snapshot.md` §4) paired with any CM psalm. Sing through Petersham once; the singers cover two consecutive CM stanzas of the psalm during that single pass.
+**Worked example:** *Old 44th* (currently `meter='CM'` in our DB but historically a DCM tune in Scottish Psalter tradition — confirmed by the CPRC precentor [user-briefing]). ABC length 247 chars places it in the CM-tagged top quartile (see `data-snapshot.md` §4); the authoritative DCM signal is the Airtable `Double length` boolean. Sing through Old 44th once; the singers cover two consecutive CM stanzas of the psalm during that single pass.
 
-Because DCM-ness is encoded in Airtable's `Double length` column and not yet migrated, the rendering engine cannot currently detect that Petersham requires two stanzas of lyrics per tune-pass. **This is the root cause of the DCM mis-render bug** that the downstream alignment-implementation phase must fix. See §7 Open items.
+Because DCM-ness is encoded in Airtable's `Double length` column and not yet migrated, the rendering engine cannot currently detect that Old 44th requires two stanzas of lyrics per tune-pass. **This is the root cause of the DCM mis-render bug** that the downstream alignment-implementation phase must fix. See §7 Open items.
+
+A second name-evidence DCM candidate in the data is *Petersham* (`name='Petersham (CMD, EPC tune)'`, `meter='CM'`). Use Old 44th as the primary teaching example; Petersham as the secondary.
 
 ### Anti-example: meter mismatch is a data error, not a structural pattern
 
@@ -145,7 +162,7 @@ the quiet waters by.
 - Stanza 1 contains **two verses**: verse 1 is just line 1 (*"The Lord's my shepherd, I'll not want."*), verse 2 starts at line 2 (*"He makes me down to lie..."*) and runs through line 4.
 - Stanzas are separated by blank lines (`\n\n`).
 
-**Rendering rule:** Parse verse-number tokens as `^(\d+)` at the start of any word; do not insert visible whitespace around them in the lyric flow, but the rendering layer should mark them up (superscript, or small leading number) so the verse boundary is visible to the reader without disrupting the metrical line.
+**Parsing rule:** Verse-number tokens are `^(\d+)` at the start of any word, with no whitespace between the number and the following word. The parser must extract these without modifying the underlying lyric flow. **How the parsed verse boundaries are surfaced visually (superscript, inline number, side gutter, hover, etc.) is a rendering-layer decision deferred to the alignment-implementation phase** — out of scope for this doc.
 
 The full Psalm 23 lyric (verses 1–6 in 6 stanzas, with similar mid-stanza splits in other stanzas) is the canonical test case for the alignment engine.
 
@@ -163,7 +180,7 @@ Per-line syllable counts are fixed by meter:
 | CMD | 8 | 6 | 8 | 6 | 8 | 6 | 8 | 6 |
 | 76 76 D | 7 | 6 | 7 | 6 | 7 | 6 | 7 | 6 |
 
-**Elisions** reduce the naive syllable count. Common in the 1650 text:
+**Elisions** reduce the naive syllable count. The 1650 metrical text relies on these to fit Hebrew/English content into fixed syllable counts [CPRC-1650]; standard CM counting [1650psalter] applies *after* elision. Common forms in the 1650 text:
 
 | Elision | Counted as | Example |
 |---|---|---|
@@ -208,7 +225,7 @@ Staff line-breaks in the printed tune correspond to phrase boundaries in the met
 
 **Worked example — Psalm 124 Second Version (alternate meter 10 10 10 10 10) + Old 124th tune:**
 
-The `10 10 10 10 10` meter has **5 phrases of 10 syllables each** — an asymmetric (odd) phrase count that breaks the usual CM-family symmetry. Wikipedia's hymn-metre taxonomy explicitly enumerates this as *"124th: 10.10.10.10.10"* [Wiki-Metre], named after its association with this very psalm. Our DB has exactly one tune (Old 124th, id varies) and one psalm version at this meter — they pair canonically.
+The `10 10 10 10 10` meter has **5 phrases of 10 syllables each** — an asymmetric (odd) phrase count that breaks the usual CM-family symmetry. Wikipedia's hymn-metre taxonomy explicitly enumerates this as *"124th: 10.10.10.10.10"* [Wiki-Metre], and the Brown 1991 reprint's Metrical Index confirms the pairing as a primary printed-psalter source: *"10.10.10.10.10 — 124 (2ND VERSION)"* [Brown-1991]. Our DB has exactly one tune (Old 124th) and one psalm version at this meter — they pair canonically.
 
 The rendering engine must handle **odd-phrase-count meters**: the half-stanza boundary doesn't fall cleanly between phrases 2 and 3 (it lies *across* phrase 3). Line-break placement for such meters must defer to the printed JPG, not infer symmetry.
 
@@ -221,7 +238,7 @@ The rendering engine must handle **odd-phrase-count meters**: the half-stanza bo
 Per D-01 in CONTEXT.md, worked examples are embedded inline at the point of explanation rather than collected in a separate section. This index points to each one:
 
 - **CM canonical (Psalm 23 stanza 1 + Crimond, syllable-by-syllable mapping)** → §4
-- **DCM ↔ two CM stanzas (Petersham + any CM psalm)** → §2
+- **DCM ↔ two CM stanzas (Old 44th + any CM psalm; Petersham as secondary)** → §2
 - **Mid-line verse split (Psalm 23 stanza 1 contains verses 1 and 2)** → §3
 - **Alternate meter (Psalm 124 Second Version + Old 124th, 10 10 10 10 10)** → §5
 - **Amen-skip (CPRC convention: not sung, not rendered)** → §2
@@ -237,7 +254,8 @@ Inline citations use `[tag]` shorthand; the full source list is below.
 1. **[CPRC-1650]** *The Scottish Metrical Version of the Psalms (1650)*. CPRC, https://cprc.co.uk/articles/scottishmetricalpsalter/ (retrieved 2026-05-17).
 2. **[WestminsterStd-1650]** *1650 Scottish Metrical Psalter*. The Westminster Standard, https://thewestminsterstandard.org/1650-scottish-metrical-psalter/ (retrieved 2026-05-17).
 3. **[1650psalter]** *Introduction*. 1650psalter.com, https://1650psalter.com/introduction/ (retrieved 2026-05-17).
-4. **[IA-facsimile]** *Scottish Psalter (1650) — facsimile*. Internet Archive, https://archive.org/details/scotishpsalter (retrieved 2026-05-17; **Rules-for-Singing transcription still pending — see Risk R3 in `04.9.5-RESEARCH.md`**).
+4. **[IA-facsimile]** *Scottish Psalter (1650) — facsimile*. Internet Archive, https://archive.org/details/scotishpsalter (retrieved 2026-05-17; no "Rules for Singing" section located in the three editions hosted there — Risk R3 closed as "not present in surveyed editions; deferred until a different facsimile surfaces").
+11. **[Brown-1991]** *The Psalms of David in Metre, with Notes by John Brown of Haddington* (1991 reprint of the 1775 Edinburgh edition by Presbyterian Heritage Publications). Internet Archive, https://archive.org/download/scotishpsalter/1650_brown_psalms-in-meter_djvu.txt (retrieved 2026-05-17). The Metrical Index at p. 497 is the primary printed-psalter source for §1c's alternate-meter assignments and §5's Psalm 124 worked example.
 5. **[Wiki-CM]** *Common metre*. Wikipedia, https://en.wikipedia.org/wiki/Common_metre (retrieved 2026-05-17).
 6. **[Wiki-Metre]** *Metre (hymn)*. Wikipedia, https://en.wikipedia.org/wiki/Metre_(hymn) (retrieved 2026-05-17).
 7. **[Hymnary]** Hymnary.org — per-tune entries. https://hymnary.org (retrieved 2026-05-17; specific tune URLs cited inline as needed).

@@ -4,6 +4,8 @@ Researched 2026-05-12 from: Wikipedia, Curwen Standard Course, A Dictionary of M
 and direct inspection of 6 Scottish Psalter JPEG images (Abbeyville, Ballerma, Bangor, Boston,
 Carlisle, Aspurg, Aurelia).
 
+> **See also:** [Scottish Psalter Metrical Structure](./scottish-psalter-structure.md) — sibling reference covering meter taxonomy, tune anatomy, stanza-vs-verse model, syllabification, and line-break principles.
+
 ---
 
 ## Page Structure
