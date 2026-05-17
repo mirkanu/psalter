@@ -139,6 +139,22 @@ export function SingingView({
     baseSizeRef.current = baseSize
   }, [baseSize])
 
+  // 260517-ht8 #4: when switching away from Staff, auto-close the mini-bar and
+  // reset to paused state. Audio belongs to the Staff context — once the user
+  // is reading Lyrics or Solfège the abcjs synth is no longer the active player
+  // (TuneAudioPlayer handles the recording there).
+  const prevViewModeRef = useRef<ViewMode>(viewMode)
+  useEffect(() => {
+    const prev = prevViewModeRef.current
+    prevViewModeRef.current = viewMode
+    if (prev === viewMode) return
+    if (viewMode !== 'staff') {
+      // Reset playback + collapse mini-bar
+      setIsPlaying(false)
+      setMiniBarVisible(false)
+    }
+  }, [viewMode])
+
   // 04.9.4-03: Proportional zoom heuristic.
   // On viewport width change (resize / orientation flip / visualViewport),
   // recompute baseSize as clamp(current * newWidth / refWidth, 8, 40).
@@ -304,7 +320,7 @@ export function SingingView({
       */}
       <main
         data-notation-region
-        className="overflow-x-hidden flex flex-col h-[calc(100dvh-104px)] md:h-[calc(100dvh-116px)] pb-12 md:pb-13"
+        className="overflow-x-hidden flex flex-col h-[calc(100dvh-104px)] md:h-[calc(100dvh-116px)] pb-11 md:pb-13"
       >
         {abc ? (
           <NotationRendererClient

@@ -10,10 +10,11 @@ interface Step {
   copy: string
 }
 
-// 260517-cm0 #2C/2D/2E/2F — three steps, focusing on what's not visually obvious.
+// 260517-ht8 #1a — re-insert "tap to change tune" as step 3; gear becomes step 4.
 const STEPS: Step[] = [
   { target: 'prev-next', copy: 'Navigate to next/previous psalm' },
   { target: 'psalm-label', copy: 'Tap to quickly switch to any psalm' },
+  { target: 'tune-name', copy: 'Tap to switch to a different tune' },
   { target: 'view-controls', copy: 'Open settings to change views (e.g. lyrics only) and access the study guide' },
 ]
 
@@ -24,32 +25,33 @@ interface Rect {
   height: number
 }
 
-function measure(target: string): Rect | null {
+function measure(target: string): Rect[] | null {
   if (typeof document === 'undefined') return null
   const els = Array.from(
     document.querySelectorAll(`[data-tour-target="${target}"]`),
   ) as HTMLElement[]
   if (els.length === 0) return null
-  // 260517-cm0 #2C — when multiple elements share a target (e.g. prev/next
-  // arrows both tagged prev-next), the spotlight covers the union bbox so
-  // both are highlighted in a single step.
+  // 260517-ht8 #1b — when multiple elements share a target (e.g. prev/next
+  // arrows both tagged prev-next), each element gets its OWN spotlight rect
+  // so they're highlighted individually rather than as one wide region.
+  return els.map((el) => {
+    const r = el.getBoundingClientRect()
+    return { top: r.top, left: r.left, width: r.width, height: r.height }
+  })
+}
+
+function unionBbox(rects: Rect[]): Rect {
   let minTop = Infinity
   let minLeft = Infinity
   let maxRight = -Infinity
   let maxBottom = -Infinity
-  for (const el of els) {
-    const r = el.getBoundingClientRect()
+  for (const r of rects) {
     if (r.top < minTop) minTop = r.top
     if (r.left < minLeft) minLeft = r.left
-    if (r.right > maxRight) maxRight = r.right
-    if (r.bottom > maxBottom) maxBottom = r.bottom
+    if (r.left + r.width > maxRight) maxRight = r.left + r.width
+    if (r.top + r.height > maxBottom) maxBottom = r.top + r.height
   }
-  return {
-    top: minTop,
-    left: minLeft,
-    width: maxRight - minLeft,
-    height: maxBottom - minTop,
-  }
+  return { top: minTop, left: minLeft, width: maxRight - minLeft, height: maxBottom - minTop }
 }
 
 export function OnboardingTour() {
@@ -58,7 +60,7 @@ export function OnboardingTour() {
   const [mounted, setMounted] = useState(false)
   const [tourSeen, setTourSeen] = useState(true)
   const [step, setStep] = useState(0)
-  const [rect, setRect] = useState<Rect | null>(null)
+  const [rects, setRects] = useState<Rect[] | null>(null)
 
   // Hydrate from localStorage AFTER mount
   useEffect(() => {
@@ -86,13 +88,13 @@ export function OnboardingTour() {
   useEffect(() => {
     if (!mounted || tourSeen) return
     const update = () => {
-      const r = measure(STEPS[step].target)
-      if (!r) {
+      const rs = measure(STEPS[step].target)
+      if (!rs || rs.length === 0) {
         // Target missing — dismiss gracefully (mitigates T-04.9.4.04-03 DoS).
         dismiss()
         return
       }
-      setRect(r)
+      setRects(rs)
     }
     update()
     window.addEventListener('resize', update)
@@ -113,36 +115,52 @@ export function OnboardingTour() {
     return () => window.removeEventListener('keydown', onKey)
   }, [mounted, tourSeen, dismiss])
 
-  if (!mounted || tourSeen || !rect) return null
+  if (!mounted || tourSeen || !rects || rects.length === 0) return null
 
   const isLast = step === STEPS.length - 1
   const padding = 8
 
+  // Bubble placement is based on the union bbox so it never overlaps any spotlight.
+  const bbox = unionBbox(rects)
+
   // Bubble below spotlight when target sits in top half; above otherwise.
   const viewportH = typeof window !== 'undefined' ? window.innerHeight : 800
-  const placeBelow = rect.top + rect.height / 2 < viewportH / 2
+  const viewportW = typeof window !== 'undefined' ? window.innerWidth : 375
+  const placeBelow = bbox.top + bbox.height / 2 < viewportH / 2
   const bubbleStyle: React.CSSProperties = placeBelow
-    ? { top: rect.top + rect.height + padding + 8, left: '50%', transform: 'translateX(-50%)' }
-    : { top: rect.top - padding - 8, left: '50%', transform: 'translate(-50%, -100%)' }
+    ? { top: bbox.top + bbox.height + padding + 8, left: '50%', transform: 'translateX(-50%)' }
+    : { top: bbox.top - padding - 8, left: '50%', transform: 'translate(-50%, -100%)' }
 
   const overlay = (
     <div data-onboarding-tour className="fixed inset-0 z-[200] pointer-events-auto">
-      {/* 260517-cm0 #2A/#2B — spotlight cutout is the SOLE dimming layer.
-         The earlier full-overlay bg-black/60 layer is removed so the spotlight
-         area is identical to its un-toured state (#2B). Backdrop alpha reduced
-         to 0.30 (#2A — was 0.60). */}
-      <div
+      {/* 260517-ht8 #1b — SVG-mask spotlight supports MULTIPLE simultaneous cutouts
+         so e.g. the back and forward arrows are individually highlighted (instead
+         of one wide region covering the whole top bar). Backdrop alpha = 0.30. */}
+      <svg
         data-tour-spotlight
-        className="absolute rounded-lg pointer-events-none"
-        style={{
-          top: rect.top - padding,
-          left: rect.left - padding,
-          width: rect.width + padding * 2,
-          height: rect.height + padding * 2,
-          boxShadow: '0 0 0 9999px rgba(0,0,0,0.30)',
-          zIndex: 201,
-        }}
-      />
+        width={viewportW}
+        height={viewportH}
+        className="absolute inset-0 pointer-events-none"
+        style={{ zIndex: 201 }}
+      >
+        <defs>
+          <mask id="tour-mask">
+            <rect width="100%" height="100%" fill="white" />
+            {rects.map((r, i) => (
+              <rect
+                key={i}
+                x={r.left - padding}
+                y={r.top - padding}
+                width={r.width + padding * 2}
+                height={r.height + padding * 2}
+                rx={8}
+                fill="black"
+              />
+            ))}
+          </mask>
+        </defs>
+        <rect width="100%" height="100%" fill="rgba(0,0,0,0.30)" mask="url(#tour-mask)" />
+      </svg>
       {/* Tip bubble */}
       <div
         role="dialog"

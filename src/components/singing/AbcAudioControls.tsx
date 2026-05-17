@@ -215,7 +215,14 @@ export function AbcAudioControls({ abc, label, isPlaying, onPlayingChange }: Pro
   // until `visualObjReady` is true ensures `onPlay()` has a valid visualObj
   // to drive synth.init() — otherwise the first tap silently sets audioError
   // and the user has to pause/play to recover.
-  const prevControlledRef = useRef<boolean | undefined>(isPlaying)
+  //
+  // 260517-ht8 #2 (sticky fix): prevControlledRef MUST start as undefined, not
+  // as the current `isPlaying` value. When the parent mounts this component
+  // after a Play tap, `isPlaying` is already true on first render — initialising
+  // the ref with `isPlaying` means the first effect run sees `prev===isPlaying`
+  // and short-circuits, so `onPlay()` is never called and the tune doesn't
+  // actually play even though both buttons show the Pause icon.
+  const prevControlledRef = useRef<boolean | undefined>(undefined)
   const pendingPlayRef = useRef(false)
   useEffect(() => {
     if (isPlaying === undefined) return
