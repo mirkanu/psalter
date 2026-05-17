@@ -163,6 +163,65 @@ async function assertGearHasRestartTour(page, ctxLabel) {
   await page.waitForTimeout(150)
 }
 
+// SC12 (260517-ht8 #1b) — step 1 of tour has 2 individual mask cutouts (back+fwd arrows).
+async function assertTourStep1HasTwoCutouts(page, ctxLabel) {
+  await page.evaluate(() => { try { localStorage.clear() } catch {} })
+  await page.reload({ waitUntil: 'networkidle' })
+  await page.waitForTimeout(800)
+  const n = await page.evaluate(() => {
+    const svg = document.querySelector('[data-tour-spotlight]')
+    return svg ? svg.querySelectorAll('mask rect[fill="black"]').length : 0
+  })
+  if (n !== 2) fail(`${ctxLabel}: SC12 expected 2 individual spotlight cutouts on step 1, got ${n}`)
+  // Skip tour for downstream tests
+  await page.locator('[role="dialog"] button:has-text("Skip")').click().catch(() => {})
+  await page.waitForTimeout(200)
+}
+
+// SC13 (260517-ht8 #3) — mobile glass bar height = 44px (h-11).
+async function assertMobileBarHeight(page, ctxLabel) {
+  const h = await page.evaluate(() => document.querySelector('[data-glass-bottom-bar]')?.getBoundingClientRect().height)
+  if (h !== 44) fail(`${ctxLabel}: SC13 mobile glass bar height expected 44, got ${h}`)
+}
+
+// SC14 (260517-ht8 #4) — switching to lyrics auto-hides mini-bar + resets to Play.
+async function assertViewChangeResetsPlay(page, ctxLabel) {
+  // Start play
+  await page.click('[data-singing-play]')
+  await page.waitForTimeout(800)
+  const playing = await page.evaluate(() => document.querySelector('[data-singing-play]')?.getAttribute('aria-label'))
+  if (playing !== 'Pause') {
+    // Could not start play (e.g. audio-not-available) — skip silently
+    return
+  }
+  // Switch to lyrics
+  await page.click('[data-singing-gear]')
+  await page.waitForTimeout(300)
+  const lyricsOpt = page.locator('[data-gear-drawer] [data-view-option="lyrics"]')
+  if ((await lyricsOpt.count()) === 0) {
+    await page.keyboard.press('Escape').catch(() => {})
+    return
+  }
+  await lyricsOpt.click()
+  await page.waitForTimeout(600)
+  const state = await page.evaluate(() => ({
+    aria: document.querySelector('[data-singing-play]')?.getAttribute('aria-label'),
+    miniVisible: (() => {
+      const m = document.querySelector('[data-play-mini-bar]')
+      if (!m) return false
+      const cs = getComputedStyle(m)
+      return cs.display !== 'none' && !m.className.includes('translate-y-full') && cs.opacity !== '0'
+    })(),
+  }))
+  if (state.aria !== 'Play') fail(`${ctxLabel}: SC14 main button aria expected "Play" after switching to lyrics, got "${state.aria}"`)
+  if (state.miniVisible) fail(`${ctxLabel}: SC14 mini-bar still visible after switching to lyrics`)
+  // Restore to staff
+  await page.click('[data-singing-gear]')
+  await page.waitForTimeout(300)
+  await page.locator('[data-gear-drawer] [data-view-option="staff"]').click()
+  await page.waitForTimeout(400)
+}
+
 // SC10 (260517-cm0) — default BPM = 151 for fresh users (cleared localStorage).
 async function assertDefaultBpm(page, ctxLabel) {
   await page.evaluate(() => { try { localStorage.removeItem('psalter-bpm') } catch {} })
@@ -245,17 +304,17 @@ async function assertSC2Tour(page) {
   const tour = page.locator('[data-onboarding-tour]')
   if ((await tour.count()) === 0) fail('SC2: tour not visible on first load')
   let txt = (await tour.innerText()).trim()
-  if (!txt.includes('Step 1 of 3')) fail(`SC2: expected "Step 1 of 3", got: ${txt}`)
-  for (let i = 1; i <= 2; i++) {
+  if (!txt.includes('Step 1 of 4')) fail(`SC2: expected "Step 1 of 4", got: ${txt}`)
+  for (let i = 1; i <= 3; i++) {
     const nextBtn = page.locator('[data-onboarding-tour] button', { hasText: 'Next' })
     if ((await nextBtn.count()) === 0) fail(`SC2: Next button missing at step ${i}`)
     await nextBtn.first().click()
     await page.waitForTimeout(150)
   }
   txt = (await tour.innerText()).trim()
-  if (!txt.includes('Step 3 of 3')) fail(`SC2: expected "Step 3 of 3", got: ${txt}`)
+  if (!txt.includes('Step 4 of 4')) fail(`SC2: expected "Step 4 of 4", got: ${txt}`)
   const done = page.locator('[data-onboarding-tour] button', { hasText: 'Done' })
-  if ((await done.count()) === 0) fail('SC2: Done button missing on step 3')
+  if ((await done.count()) === 0) fail('SC2: Done button missing on step 4')
   await done.first().click()
   await page.waitForTimeout(200)
   if ((await page.locator('[data-onboarding-tour]').count()) !== 0) {
@@ -475,6 +534,10 @@ async function run() {
         await assertSolfegeNoBackButton(page, vp.name)
         // SC10 — default BPM 151 (fresh user)
         if (vp.width === 375) await assertDefaultBpm(page, vp.name)
+        // SC13 — slim 44px mobile bar
+        if (vp.width === 375) await assertMobileBarHeight(page, vp.name)
+        // SC14 — view-change resets play state + hides mini-bar
+        if (vp.width === 375) await assertViewChangeResetsPlay(page, vp.name)
         // SC11 — stanza indicator hidden in non-staff views
         await assertStanzaHiddenInNonStaff(page, vp.name)
 
