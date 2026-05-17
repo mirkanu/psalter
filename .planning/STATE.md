@@ -152,6 +152,7 @@ None yet.
 | 260512-ssp | Phase 4.9 OCR pipeline completion — add solfege_ocr_text + abc_satb columns; 75/144 tunes populated (partial — PSALTER_ANTHROPIC_API_KEY exhausted) | 2026-05-12 | 661b65b | [260512-ssp-phase-4-9-ocr-pipeline-completion](./quick/260512-ssp-phase-4-9-ocr-pipeline-completion/) |
 | 260516-vi4 | Fix 04.9.4 chrome dedup: remove duplicate A+/A- and stanza nav still rendered by NotationRenderer chromeless mode; add stanza prev/next to GlassBottomBar; harden UATs to assert absence of legacy chrome | 2026-05-16 | e47aae5 | [260516-vi4-04.9.4-chrome-dedup](./quick/260516-vi4-04.9.4-chrome-dedup/) |
 | 260517-bmz | 04.9.4 singing chrome polish: drop view buttons from glass bar (now in GearDrawer only), move gear far-right, icon-only Play; fit PlayMiniBar on one row at 375; add Restart-tour to GearDrawer; hide Solfège back-button in chromeless view | 2026-05-17 | 078480c | [260517-bmz-04.9.4-singing-chrome-polish](./quick/260517-bmz-04.9.4-singing-chrome-polish/) |
+| 260517-cm0 | 04.9.4 singing r3: audio fixes (1a double-play, 1b first-press, 1d BPM 151), bottom padding, lyrics/solfège font+padding, hide stanza nav off-staff, solfège JPG sizing, inline YouTube embed via TuneAudioPlayer, tour redesign (3 focused steps, lighter backdrop, both arrows on step 1, new psalm-label step), "Ps 119:N-M" titles. Deferred: 1c highlight (refactor) + 1f SoundCloud half (no real DB data) | 2026-05-17 | 8491c92 | [260517-cm0-04.9.4-singing-r3](./quick/260517-cm0-04.9.4-singing-r3/) |
 
 ### Blockers/Concerns
 
