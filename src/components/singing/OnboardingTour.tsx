@@ -10,11 +10,11 @@ interface Step {
   copy: string
 }
 
+// 260517-cm0 #2C/2D/2E/2F — three steps, focusing on what's not visually obvious.
 const STEPS: Step[] = [
-  { target: 'prev-next', copy: 'Swipe through all 150 psalms' },
-  { target: 'tune-name', copy: 'Tap to switch to a different tune' },
-  { target: 'view-controls', copy: 'Open settings to switch between notation, lyrics, or solfège' },
-  { target: 'play-button', copy: 'Tap to hear the tune played' },
+  { target: 'prev-next', copy: 'Navigate to next/previous psalm' },
+  { target: 'psalm-label', copy: 'Tap to quickly switch to any psalm' },
+  { target: 'view-controls', copy: 'Open settings to change views (e.g. lyrics only) and access the study guide' },
 ]
 
 interface Rect {
@@ -26,10 +26,30 @@ interface Rect {
 
 function measure(target: string): Rect | null {
   if (typeof document === 'undefined') return null
-  const el = document.querySelector(`[data-tour-target="${target}"]`) as HTMLElement | null
-  if (!el) return null
-  const r = el.getBoundingClientRect()
-  return { top: r.top, left: r.left, width: r.width, height: r.height }
+  const els = Array.from(
+    document.querySelectorAll(`[data-tour-target="${target}"]`),
+  ) as HTMLElement[]
+  if (els.length === 0) return null
+  // 260517-cm0 #2C — when multiple elements share a target (e.g. prev/next
+  // arrows both tagged prev-next), the spotlight covers the union bbox so
+  // both are highlighted in a single step.
+  let minTop = Infinity
+  let minLeft = Infinity
+  let maxRight = -Infinity
+  let maxBottom = -Infinity
+  for (const el of els) {
+    const r = el.getBoundingClientRect()
+    if (r.top < minTop) minTop = r.top
+    if (r.left < minLeft) minLeft = r.left
+    if (r.right > maxRight) maxRight = r.right
+    if (r.bottom > maxBottom) maxBottom = r.bottom
+  }
+  return {
+    top: minTop,
+    left: minLeft,
+    width: maxRight - minLeft,
+    height: maxBottom - minTop,
+  }
 }
 
 export function OnboardingTour() {
@@ -107,9 +127,10 @@ export function OnboardingTour() {
 
   const overlay = (
     <div data-onboarding-tour className="fixed inset-0 z-[200] pointer-events-auto">
-      {/* Background overlay (fade only respects reduced motion) */}
-      <div className="absolute inset-0 bg-black/60 transition-opacity duration-150 motion-reduce:transition-none" />
-      {/* Spotlight cutout — box-shadow trick clips outside the rect */}
+      {/* 260517-cm0 #2A/#2B — spotlight cutout is the SOLE dimming layer.
+         The earlier full-overlay bg-black/60 layer is removed so the spotlight
+         area is identical to its un-toured state (#2B). Backdrop alpha reduced
+         to 0.30 (#2A — was 0.60). */}
       <div
         data-tour-spotlight
         className="absolute rounded-lg pointer-events-none"
@@ -118,7 +139,7 @@ export function OnboardingTour() {
           left: rect.left - padding,
           width: rect.width + padding * 2,
           height: rect.height + padding * 2,
-          boxShadow: '0 0 0 9999px rgba(0,0,0,0.60)',
+          boxShadow: '0 0 0 9999px rgba(0,0,0,0.30)',
           zIndex: 201,
         }}
       />

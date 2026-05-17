@@ -137,6 +137,7 @@ export function PsalmTopBar({
             href={`/psalms/${next}`}
             rel="next"
             aria-label="Next psalm"
+            data-tour-target="prev-next"
             onClick={(e) => {
               // Preserve modifier-key / middle-click "open in new tab" behavior.
               if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
@@ -148,7 +149,12 @@ export function PsalmTopBar({
             <ChevronRight className="h-5 w-5" />
           </Link>
         ) : (
-          <span aria-disabled="true" aria-label="Already at Psalm 150" className={cn(ICON_BTN, DISABLED)}>
+          <span
+            aria-disabled="true"
+            aria-label="Already at Psalm 150"
+            data-tour-target="prev-next"
+            className={cn(ICON_BTN, DISABLED)}
+          >
             <ChevronRight className="h-5 w-5" />
           </span>
         )}
