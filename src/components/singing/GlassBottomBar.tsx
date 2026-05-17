@@ -49,7 +49,7 @@ export function GlassBottomBar({
   return (
     <nav
       data-glass-bottom-bar
-      className="fixed bottom-0 inset-x-0 z-40 flex items-center gap-1 px-2 h-12 md:h-13 bg-background/70 backdrop-blur-md border-t border-border/50 pb-[max(env(safe-area-inset-bottom)-8px,0px)]"
+      className="fixed bottom-0 inset-x-0 z-40 flex items-center gap-1 px-2 h-11 md:h-13 bg-background/70 backdrop-blur-md border-t border-border/50 pb-[max(env(safe-area-inset-bottom)-12px,0px)]"
       aria-label="Psalm view controls"
     >
       {/* Left: A-/A+ */}
@@ -58,7 +58,7 @@ export function GlassBottomBar({
           type="button"
           aria-label="Decrease size"
           onClick={() => onBaseSizeChange(Math.max(8, baseSize - 1))}
-          className="min-h-11 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75"
+          className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75"
         >
           A−
         </button>
@@ -66,7 +66,7 @@ export function GlassBottomBar({
           type="button"
           aria-label="Increase size"
           onClick={() => onBaseSizeChange(Math.min(40, baseSize + 1))}
-          className="min-h-11 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75"
+          className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75"
         >
           A+
         </button>
@@ -81,7 +81,7 @@ export function GlassBottomBar({
             data-stanza-prev
             onClick={onStanzaPrev}
             disabled={!canPrev}
-            className="min-h-11 inline-flex items-center justify-center px-1 text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+            className="min-h-10 inline-flex items-center justify-center px-1 text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -99,7 +99,7 @@ export function GlassBottomBar({
             data-stanza-next
             onClick={onStanzaNext}
             disabled={!canNext}
-            className="min-h-11 inline-flex items-center justify-center px-1 text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+            className="min-h-10 inline-flex items-center justify-center px-1 text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
@@ -113,7 +113,7 @@ export function GlassBottomBar({
         data-tour-target="play-button"
         data-singing-play
         onClick={onPlayToggle}
-        className="min-h-11 min-w-11 inline-flex items-center justify-center text-foreground active:scale-[0.90] transition-transform duration-75 shrink-0"
+        className="min-h-10 min-w-11 inline-flex items-center justify-center text-foreground active:scale-[0.90] transition-transform duration-75 shrink-0"
       >
         {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
       </button>
@@ -125,7 +125,7 @@ export function GlassBottomBar({
         data-singing-gear
         data-tour-target="view-controls"
         onClick={onGearOpen}
-        className="min-h-11 min-w-11 inline-flex items-center justify-center text-muted-foreground active:scale-[0.90] transition-transform duration-75 shrink-0"
+        className="min-h-10 min-w-11 inline-flex items-center justify-center text-muted-foreground active:scale-[0.90] transition-transform duration-75 shrink-0"
       >
         <Settings className="h-5 w-5" />
       </button>

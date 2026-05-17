@@ -53,7 +53,7 @@ export function PlayMiniBar({
       aria-hidden={!visible}
       onTransitionEnd={handleEnd}
       className={cn(
-        'fixed inset-x-0 bottom-[48px] md:bottom-[52px] z-40 h-[48px] flex items-center gap-1 px-1.5',
+        'fixed inset-x-0 bottom-[44px] md:bottom-[52px] z-40 h-[44px] flex items-center gap-1 px-1.5',
         'bg-background/90 backdrop-blur-sm border-t border-border/40',
         'transition-all duration-200 ease-out',
         'motion-reduce:translate-y-0 motion-reduce:!transition-opacity motion-reduce:duration-100',
