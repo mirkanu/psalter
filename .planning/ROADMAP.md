@@ -336,6 +336,20 @@ Plans:
 - [x] 04.9.4-05-playwright-uat-PLAN.md — Quick + Full UAT scripts at 375/768/1024; study regression; human visual sign-off
 **UI hint**: yes — run /gsd-ui-phase before planning to produce UI-SPEC.md layout contracts
 
+### Phase 4.9.5 (INSERTED): Scottish Psalter Metrical Knowledge (Doc-only)
+**Goal**: Co-author a canonical reference document — `.planning/research/scottish-psalter-structure.md` — that captures the metrical structure of the Scottish Psalter (CM, DCM, LM, SM, alternate meters), tune anatomy (anacrusis, amen endings, repeats, DCM-to-two-CM-stanzas mapping), the formal stanza-vs-Bible-verse model, syllabification principles, and staff line-break principles, so subsequent phases can implement correct inline lyric ↔ note alignment and visual line breaks
+**Depends on**: Phase 4.9.4
+**Requirements**: TBD (to be derived during /gsd-discuss-phase — likely a single "DOC" requirement)
+**Success Criteria** (what must be TRUE):
+  1. `.planning/research/scottish-psalter-structure.md` exists as a sibling reference to `tonic-solfa-notation.md` and is the single source of truth for the metrical/structural questions enumerated in the goal
+  2. The doc enumerates every meter family actually present in this psalter's data (Airtable-validated), with syllable counts per line and rhyme pattern for each
+  3. The doc explains tune anatomy concretely: anacrusis, amen endings (and why we skip them when aligning), repeats, and how a Double-Meter tune is sung against two single-meter stanzas
+  4. The doc formally defines "stanza" vs "Bible verse" and documents the cases where they diverge (verse spanning multiple stanzas, stanza containing multiple verses, verse split across lines)
+  5. The doc states the syllabification principles and staff line-break principles needed for the follow-up implementation phase to design an alignment algorithm and data model — without itself specifying either the algorithm or the data model
+  6. The process explicitly mirrors `tonic-solfa-notation.md`: user briefing → agreed research questions → research pass → convergence; no code changes ship in this phase
+**Plans**: TBD (1–2 plans — research + write-up)
+**UI hint**: no — knowledge phase, no UI work
+
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
 **Depends on**: Phase 4.5
@@ -364,7 +378,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 5 → 6
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 4.9.5 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -381,5 +395,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 →
 | 4.9.2. Dynamic ABC Polish | 5/5 | Complete | 2026-05-14 |
 | 4.9.3. Mobile-first Psalm Display | 3/6 | In progress | - |
 | 4.9.4. Staff View Refinements & Onboarding | 0/TBD | Not started | - |
+| 4.9.5. Scottish Psalter Metrical Knowledge | 0/TBD | Not started | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
