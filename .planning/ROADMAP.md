@@ -357,7 +357,7 @@ Plans:
 ### Phase 4.9.6 (INSERTED): Psalter Alignment Implementation
 **Goal**: Fix the live DCM mis-render, mid-stanza-verse-split, alternate-meter mis-align, and amen-ending bugs by redesigning the lyrics data model into a structured `Stanza→Line→Syllable` form with `bibleVerseRef` per line, parsing all existing Airtable lyric blobs into that form, and implementing the alignment + line-break algorithm against `tune.double_length` (not against `meter='CMD'`).
 **Depends on**: Phase 4.9.5 (canonical doc), quick task 260517-u35 (`tunes.double_length` migration)
-**Requirements**: TBD — to be derived during `/gsd-discuss-phase`; likely DATA-* + RENDER-* requirements
+**Requirements**: DATA-01, DATA-02, DATA-03, DATA-04, DATA-05, RENDER-01, RENDER-02, RENDER-03, RENDER-04, RENDER-05, RENDER-06
 **Success Criteria** (what must be TRUE):
   1. New structured lyrics representation lives in the DB (or is computed deterministically from the existing blob via a parser), preserving 1-stanza:N-verses and 1-verse:N-stanzas relationships per `.planning/research/scottish-psalter-structure.md` §3
   2. Parser handles every existing psalm version's lyric blob without data loss; round-trip test passes (parsed → re-serialized matches input modulo whitespace)
@@ -366,8 +366,24 @@ Plans:
   5. Alternate-meter psalms (Ps 124 Second Version + Old 124th `10.10.10.10.10`, etc.) align syllable-to-note correctly with the printed-psalter's line-break placement
   6. No regression on Psalm 23 + Crimond canonical case (syllable-by-syllable mapping per doc §4)
   7. Amens are not present in the digitised ABCs and the renderer does not synthesise them (CPRC convention per doc §2)
-**Plans**: TBD (likely 3 plans: data model + parser, alignment algorithm, regression UAT)
+**Plans**: 7 plans
 **UI hint**: yes — staff/lyrics rendering changes; run /gsd-ui-phase before planning
+
+Plans:
+**Wave 1**
+- [ ] 04.9.6-01-PLAN.md — Schema (lyrics_imported_raw + lyrics_structured jsonb), StructuredLyrics types, register DATA-*/RENDER-* requirements
+
+**Wave 2** *(parallel — both depend on Wave 1)*
+- [ ] 04.9.6-02-PLAN.md — TDD: parseLyrics + serialiseLyrics (F-1..F-7 handling, Psalm 23 case, round-trip)
+- [ ] 04.9.6-04-PLAN.md — TDD: stanza-cycles driven by tune.double_length boolean; delete splitStanzaIntoPhrasePortions
+
+**Wave 3** *(depends on Wave 2)*
+- [ ] 04.9.6-03-PLAN.md — [BLOCKING] drizzle-kit push + corpus snapshot + one-shot backfill + round-trip corpus test
+- [ ] 04.9.6-05-PLAN.md — NotationRenderer: branch on lyricsStructured; legacy fallback per D-15; extend fetchPsalmDetail
+- [ ] 04.9.6-06-PLAN.md — TDD: StanzaList accepts Stanza[]; inline sup.verse-number for mid-stanza bibleVerseRef
+
+**Wave 4** *(depends on Wave 3)*
+- [ ] 04.9.6-07-PLAN.md — Regression UAT: Psalm 23 + Crimond canary, DCM pairing, alternate-meter, amen-skip negative test + Playwright UAT (human checkpoint)
 
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
