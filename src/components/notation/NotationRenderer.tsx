@@ -218,15 +218,6 @@ export function NotationRenderer({
       .filter((st) => st.lines.length > 0)
   }, [lyricsStructured, lyrics])
 
-  // Legacy string-shaped stanzas — still required by `<StanzaList>` (its prop
-  // type is `string[]` until Plan 06 swaps it to `Stanza[]`). Derived from
-  // the canonical `stanzas: Stanza[]` so structured and fallback paths share
-  // one source.
-  const stanzaStrings = useMemo<string[]>(
-    () => stanzas.map((s) => s.lines.map((l) => l.text).join('\n')),
-    [stanzas],
-  )
-
   const cycles = useMemo(
     () => groupStanzasIntoCycles(stanzas, doubleLength),
     [stanzas, doubleLength],
@@ -740,9 +731,9 @@ export function NotationRenderer({
   // Item 1: pass renderLyricsBelow so Show Original mode in AbcPlayer can
   // render the same StanzaList below the JPG.
   const lyricsBelow =
-    showLyrics && stanzaStrings.length > 0 ? (
+    showLyrics && stanzas.length > 0 ? (
       <div className="mt-4 max-h-[60vh] overflow-y-auto">
-        <StanzaList stanzas={stanzaStrings} />
+        <StanzaList stanzas={stanzas} />
       </div>
     ) : null
 
@@ -810,9 +801,9 @@ export function NotationRenderer({
             Solfège not available for this tune.
           </p>
         )}
-        {showLyrics && stanzaStrings.length > 0 && (
+        {showLyrics && stanzas.length > 0 && (
           <div className={chromeless ? '' : 'max-h-[60vh] overflow-y-auto'}>
-            <StanzaList stanzas={stanzaStrings} />
+            <StanzaList stanzas={stanzas} />
           </div>
         )}
       </div>
@@ -822,7 +813,7 @@ export function NotationRenderer({
     // 260517-cm0 #4a: in chromeless (singing) view, apply generous padding +
     // larger base font so lyrics read comfortably without staff context.
     viewArea =
-      stanzaStrings.length === 0 ? (
+      stanzas.length === 0 ? (
         <p className="text-sm text-muted-foreground italic">No lyrics available.</p>
       ) : (
         <div className={chromeless ? 'px-4 pt-4 space-y-4' : ''}>
@@ -833,7 +824,7 @@ export function NotationRenderer({
               tuneName={tuneName}
             />
           )}
-          <StanzaList stanzas={stanzaStrings} />
+          <StanzaList stanzas={stanzas} />
         </div>
       )
   }
