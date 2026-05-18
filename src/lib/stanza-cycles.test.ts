@@ -1,137 +1,122 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import {
   groupStanzasIntoCycles,
   mapCycleToPhraseSyllableLines,
 } from './stanza-cycles'
+import type { Stanza } from './lyrics-structured'
 
-const SHEPHERD_S1 = `1The Lord's my Shepherd
-I'll not want
-He makes me down to lie
-In pastures green`
+function stanza(idx: number, ...lines: string[]): Stanza {
+  return { index: idx, lines: lines.map((text) => ({ text })) }
+}
 
-const SHEPHERD_S2 = `2My soul He doth restore
-And me to walk
-Within the paths of righteousness
-For his own name's sake`
+const S0 = stanza(0, 'Line 1a', 'Line 1b', 'Line 1c', 'Line 1d')
+const S1 = stanza(1, 'Line 2a', 'Line 2b', 'Line 2c', 'Line 2d')
+const S2 = stanza(2, 'Line 3a', 'Line 3b', 'Line 3c', 'Line 3d')
+const S3 = stanza(3, 'Line 4a', 'Line 4b', 'Line 4c', 'Line 4d')
 
-// Inline expected portions for clarity
-const S1_P0 = "1The Lord's my Shepherd\nI'll not want"
-const S1_P1 = 'He makes me down to lie\nIn pastures green'
-const S2_P0 = '2My soul He doth restore\nAnd me to walk'
-const S2_P1 = "Within the paths of righteousness\nFor his own name's sake"
-
-afterEach(() => {
-  vi.restoreAllMocks()
-})
-
-describe('groupStanzasIntoCycles', () => {
-  it('CM × CM with 6 stanzas → 6 cycles of length 1', () => {
-    const stanzas = ['s1', 's2', 's3', 's4', 's5', 's6']
-    const cycles = groupStanzasIntoCycles(stanzas, 'CM', 'CM')
-    expect(cycles).toEqual([['s1'], ['s2'], ['s3'], ['s4'], ['s5'], ['s6']])
-  })
-
-  it('DCM × CM with 6 stanzas → 3 cycles of length 2 (paired)', () => {
-    const stanzas = ['s1', 's2', 's3', 's4', 's5', 's6']
-    const cycles = groupStanzasIntoCycles(stanzas, 'DCM', 'CM')
-    expect(cycles).toEqual([
-      ['s1', 's2'],
-      ['s3', 's4'],
-      ['s5', 's6'],
+describe('groupStanzasIntoCycles — RENDER-01 doubleLength gating', () => {
+  it('pairs two stanzas per cycle when doubleLength=true (DCM × CM stanzas)', () => {
+    expect(groupStanzasIntoCycles([S0, S1, S2, S3], true)).toEqual([
+      [S0, S1],
+      [S2, S3],
     ])
   })
 
-  it('DCM × CM with 5 stanzas → 3 cycles, final cycle length 1', () => {
-    const stanzas = ['s1', 's2', 's3', 's4', 's5']
-    const cycles = groupStanzasIntoCycles(stanzas, 'DCM', 'CM')
-    expect(cycles).toEqual([['s1', 's2'], ['s3', 's4'], ['s5']])
-  })
-
-  it('empty stanzas array returns []', () => {
-    expect(groupStanzasIntoCycles([], 'DCM', 'CM')).toEqual([])
-  })
-
-  it('reverse meter mismatch (CM × DCM) emits console.warn and falls back to 1-stanza cycles', () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const stanzas = ['s1', 's2', 's3', 's4']
-    const cycles = groupStanzasIntoCycles(stanzas, 'CM', 'DCM')
-    expect(warnSpy).toHaveBeenCalledTimes(1)
-    expect(warnSpy.mock.calls[0]?.[0]).toContain('reverse meter mismatch')
-    expect(cycles).toEqual([['s1'], ['s2'], ['s3'], ['s4']])
-  })
-
-  it('null/undefined meter args degrade to 1-stanza cycles', () => {
-    expect(groupStanzasIntoCycles(['s1', 's2'], null, null)).toEqual([
-      ['s1'],
-      ['s2'],
-    ])
-    expect(groupStanzasIntoCycles(['s1', 's2'], undefined, undefined)).toEqual([
-      ['s1'],
-      ['s2'],
+  it('produces one stanza per cycle when doubleLength=false', () => {
+    expect(groupStanzasIntoCycles([S0, S1, S2, S3], false)).toEqual([
+      [S0],
+      [S1],
+      [S2],
+      [S3],
     ])
   })
 
-  it('parenthesised meter strings normalise correctly', () => {
-    const stanzas = ['s1', 's2', 's3', 's4']
-    const cycles = groupStanzasIntoCycles(
-      stanzas,
-      'DCM (double common meter)',
-      'CM (common meter, 8.6.8.6)',
-    )
-    expect(cycles).toEqual([['s1', 's2'], ['s3', 's4']])
+  it('handles odd stanza count under doubleLength (under-fill — D-12; does NOT repeat content)', () => {
+    expect(groupStanzasIntoCycles([S0, S1, S2], true)).toEqual([
+      [S0, S1],
+      [S2],
+    ])
+  })
+
+  it('returns empty array on empty input', () => {
+    expect(groupStanzasIntoCycles([], true)).toEqual([])
+    expect(groupStanzasIntoCycles([], false)).toEqual([])
+  })
+
+  it('single-stanza doubleLength input yields one 1-stanza cycle (under-fill at index 0)', () => {
+    expect(groupStanzasIntoCycles([S0], true)).toEqual([[S0]])
+  })
+
+  it('does not import or compare meter strings (B3 audit)', async () => {
+    // Static guard: source file must NOT contain 'CMD'/'DCM'/'DLM'/'DSM' literals
+    // and must NOT call phrasesForMeter in the cycle-grouping path.
+    const fs = await import('fs')
+    const src = fs.readFileSync('src/lib/stanza-cycles.ts', 'utf8')
+    expect(src).not.toMatch(/['"](CMD|DCM|DLM|DSM)['"]/)
+    expect(src).not.toMatch(/phrasesForMeter\s*\(/)
   })
 })
 
-describe('mapCycleToPhraseSyllableLines', () => {
-  it('CM × CM, cycle=[s1] → 2 elements, each a 1-element array of the matching portion', () => {
-    const result = mapCycleToPhraseSyllableLines([SHEPHERD_S1], 'CM', 'CM')
-    expect(result).toEqual([[S1_P0], [S1_P1]])
+describe('mapCycleToPhraseSyllableLines — RENDER-02 structured line read + B1 shape preservation', () => {
+  it('returns string[][] of length phrasesPerCycle (preserves T-element grid contract)', () => {
+    const result = mapCycleToPhraseSyllableLines([S0], 4 /* phrasesPerCycle */)
+    expect(Array.isArray(result)).toBe(true)
+    expect(result).toHaveLength(4)
+    // Each slot is itself a string[] — the single-string-array contract the
+    // renderer relies on at NotationRenderer.tsx:451 (grid[i] ?? ['']).
+    result.forEach((slot) => {
+      expect(Array.isArray(slot)).toBe(true)
+      slot.forEach((s) => expect(typeof s).toBe('string'))
+    })
   })
 
-  it('DCM × CM, cycle=[s1, s2] → 4 elements distributing portions across phrase rows', () => {
-    const result = mapCycleToPhraseSyllableLines(
-      [SHEPHERD_S1, SHEPHERD_S2],
-      'DCM',
-      'CM',
-    )
-    expect(result).toEqual([[S1_P0], [S1_P1], [S2_P0], [S2_P1]])
+  it('pairs cycle stanzas into consecutive phrase slots (DCM × CM: T=4, two stanzas → 4 phrases)', () => {
+    const result = mapCycleToPhraseSyllableLines([S0, S1], 4)
+    expect(result).toHaveLength(4)
+    // First two phrases derive from S0; last two from S1 — no empty slots in a full cycle.
+    expect(result[0]![0]!.length).toBeGreaterThan(0)
+    expect(result[1]![0]!.length).toBeGreaterThan(0)
+    expect(result[2]![0]!.length).toBeGreaterThan(0)
+    expect(result[3]![0]!.length).toBeGreaterThan(0)
   })
 
-  it('DCM × CM, cycle=[s1] (under-filled) → s1 fills phrases 0+1, phrases 2+3 are [""]', () => {
-    const result = mapCycleToPhraseSyllableLines([SHEPHERD_S1], 'DCM', 'CM')
-    expect(result).toEqual([[S1_P0], [S1_P1], [''], ['']])
+  it('under-filled cycle pads with empty-string slots (preserves T length)', () => {
+    // DCM under-fill: only one stanza but T=4 phrases — slots 2 and 3 are [''] not absent.
+    // S0 has 4 lines, so all 4 slots get filled. Use a 2-line stanza to test the under-fill.
+    const shortStanza = stanza(0, 'Only line A', 'Only line B')
+    const result = mapCycleToPhraseSyllableLines([shortStanza], 4)
+    expect(result).toHaveLength(4)
+    expect(result[2]).toEqual([''])
+    expect(result[3]).toEqual([''])
   })
 
-  it('empty cycle returns T elements each [""]', () => {
-    const resultCm = mapCycleToPhraseSyllableLines([], 'CM', 'CM')
-    expect(resultCm).toEqual([[''], ['']])
-    const resultDcm = mapCycleToPhraseSyllableLines([], 'DCM', 'CM')
-    expect(resultDcm).toEqual([[''], [''], [''], ['']])
+  it('CM single-stanza cycle: T=2, S=2 → both slots filled, single-string-array shape', () => {
+    const result = mapCycleToPhraseSyllableLines([S0], 2)
+    expect(result).toHaveLength(2)
+    expect(result[0]).toHaveLength(1)
+    expect(result[1]).toHaveLength(1)
+    expect(typeof result[0]![0]).toBe('string')
+    expect(typeof result[1]![0]).toBe('string')
   })
 
-  it('does NOT re-warn on reverse-mismatch fallback (only groupStanzasIntoCycles warns)', () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    // After groupStanzasIntoCycles fallback, callers pass 1-stanza cycles.
-    // Here we directly invoke mapCycle... with a 1-stanza cycle and CM/DCM
-    // meters to confirm it stays silent (groupStanzasIntoCycles is the
-    // single owner of the warning).
-    mapCycleToPhraseSyllableLines([SHEPHERD_S1], 'CM', 'DCM')
-    expect(warnSpy).not.toHaveBeenCalled()
+  it('reads stanza.lines directly (no string-blob input, no splitStanzaIntoPhrasePortions call)', async () => {
+    const fs = await import('fs')
+    const src = fs.readFileSync('src/lib/stanza-cycles.ts', 'utf8')
+    expect(src).not.toMatch(/splitStanzaIntoPhrasePortions/)
   })
 
-  it('null meter args: T defaults to 1, returns 1-element array', () => {
-    const result = mapCycleToPhraseSyllableLines([SHEPHERD_S1], null, null)
+  it('uses Line.syllables when present (hand-override per D-03 hybrid)', () => {
+    const overridden: Stanza = {
+      index: 0,
+      lines: [{ text: 'beautiful word', syllables: ['be-au', 'ti-ful', 'word'] }],
+    }
+    const result = mapCycleToPhraseSyllableLines([overridden], 1)
     expect(result).toHaveLength(1)
-    // With S=1 and tuneMeter null, splitStanzaIntoPhrasePortions returns
-    // the whole stanza unsplit, so phrase 0 gets it.
-    expect(result[0]).toEqual([SHEPHERD_S1])
+    expect(result[0]![0]).toBe('be-au ti-ful word')
   })
 
-  it('integration: chained with groupStanzasIntoCycles for DCM × CM 4-stanza psalm', () => {
-    const stanzas = [SHEPHERD_S1, SHEPHERD_S2, SHEPHERD_S1, SHEPHERD_S2]
-    const cycles = groupStanzasIntoCycles(stanzas, 'DCM', 'CM')
-    expect(cycles).toHaveLength(2)
-    const cycle1Map = mapCycleToPhraseSyllableLines(cycles[0]!, 'DCM', 'CM')
-    expect(cycle1Map).toEqual([[S1_P0], [S1_P1], [S2_P0], [S2_P1]])
+  it('empty cycle returns phrasesPerCycle elements each [""]', () => {
+    const result = mapCycleToPhraseSyllableLines([], 4)
+    expect(result).toEqual([[''], [''], [''], ['']])
   })
 })
