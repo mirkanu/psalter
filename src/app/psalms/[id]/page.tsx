@@ -123,6 +123,7 @@ export default async function PsalmPage({ params }: PageProps) {
           solfegeJpgUrl: solfegePages[0] ?? primaryTuneRow.solfegeJpgUrl ?? null,
           soundcloudUrl: primaryTuneRow.soundcloudUrl ?? null,
           youtubeUrl: primaryTuneRow.youtubeUrl ?? null,
+          doubleLength: primaryTuneRow.doubleLength ?? false,
         }
       })()
     : null

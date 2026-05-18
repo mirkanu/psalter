@@ -19,9 +19,28 @@ export const fetchPsalmDetail = cache(async function fetchPsalmDetail(id: number
     where: eq(psalms.id, id),
     with: {
       psalmVersions: {
+        // Plan 04.9.6-05: explicit column list so lyricsStructured (D-01) is
+        // hydrated for the renderer's structured alignment path, alongside the
+        // immutable lyricsImportedRaw snapshot (D-02). Per D-15, when
+        // lyricsStructured is NULL the renderer falls back to the legacy blob.
+        columns: {
+          id: true,
+          airtableId: true,
+          psalmId: true,
+          psalterNumber: true,
+          lyricsImportedRaw: true,
+          lyricsStructured: true,
+          meter: true,
+          versionLabel: true,
+          firstLine: true,
+        },
         with: {
           psalmVersionTunes: {
-            with: { tune: true },
+            with: {
+              // tune: true selects all columns including doubleLength (D-11
+              // canonical signal driving stanza-cycle pairing in Plan 04+).
+              tune: true,
+            },
           },
         },
       },
