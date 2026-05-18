@@ -28,6 +28,9 @@ interface Props {
   meter: string | null
   stanzaMeter: string | null
   lyrics: string
+  /** Plan 04.9.6-05 (D-01): canonical structured-lyrics payload for the active
+   *  psalm-version. Null for the 6 quarantined rows (D-15 legacy fallback). */
+  lyricsStructured: import('@/lib/lyrics-structured').StructuredLyrics | null
   psalmListRows: PsalmRow[]
   studyHref: string
   /** Verse range for individual Psalm 119 (etc) versifications, e.g. "45-85". */
@@ -67,6 +70,7 @@ export function SingingView({
   meter,
   stanzaMeter,
   lyrics,
+  lyricsStructured,
   psalmListRows,
   studyHref,
   versePartLabel = null,
@@ -331,6 +335,8 @@ export function SingingView({
             tuneName={tuneName}
             tuneMeter={meter}
             stanzaMeter={stanzaMeter}
+            lyricsStructured={lyricsStructured}
+            doubleLength={activeTune?.doubleLength ?? false}
             showLyrics={showLyrics}
             viewMode={viewMode}
             onViewModeChange={setViewMode}

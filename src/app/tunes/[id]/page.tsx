@@ -142,6 +142,8 @@ export default async function TunePage({ params }: PageProps) {
               tuneName={tune.name ?? `Tune ${tune.id}`}
               tuneMeter={tune.meter ?? null}
               stanzaMeter={firstLinkedPsalmVersion?.meter ?? null}
+              lyricsStructured={(firstLinkedPsalmVersion?.lyricsStructured ?? null) as import('@/lib/lyrics-structured').StructuredLyrics | null}
+              doubleLength={tune.doubleLength ?? false}
               showLyrics={false}
             />
           </section>

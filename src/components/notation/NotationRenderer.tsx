@@ -30,7 +30,7 @@ import {
   groupStanzasIntoCycles,
   mapCycleToPhraseSyllableLines,
 } from '@/lib/stanza-cycles'
-import type { Stanza } from '@/lib/lyrics-structured'
+import type { Stanza, StructuredLyrics } from '@/lib/lyrics-structured'
 import { phrasesForMeter } from '@/lib/abc-phrase-meter-map'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -88,6 +88,18 @@ export interface NotationRendererProps {
    */
   stanzaPage?: number
   onStanzaPageChange?: (page: number) => void
+  /**
+   * Plan 04.9.6-05 (D-01): canonical structured-lyrics path. When non-null,
+   * the renderer consumes this directly. When null, the legacy blob `lyrics`
+   * prop is parsed into a transient `Stanza[]` (D-15 fallback for the 6
+   * quarantined psalm-versions).
+   */
+  lyricsStructured: StructuredLyrics | null
+  /**
+   * Plan 04.9.6-05 (D-11): canonical signal driving stanza-cycle pairing.
+   * Replaces the Plan-04 transitional meter-string heuristic.
+   */
+  doubleLength: boolean
 }
 
 export type ViewMode = 'staff' | 'solfege' | 'lyrics'
@@ -175,6 +187,8 @@ export function NotationRenderer({
   onStanzaPageChange,
   youtubeUrl = null,
   soundcloudUrl = null,
+  lyricsStructured,
+  doubleLength,
 }: NotationRendererProps) {
   // chromeless mode permanently disables the FS overlay; the singing view IS the fullscreen.
   const allowFullscreen = !chromeless
@@ -182,32 +196,40 @@ export function NotationRenderer({
   const split = useMemo(() => splitOnPhraseBreaks(abc), [abc])
   const T = split.phrases.length
 
-  const stanzas = useMemo(
-    () =>
-      lyrics
-        .split(/\n\s*\n/)
-        .map((s) => s.trim())
-        .filter(Boolean),
-    [lyrics],
+  // Plan 04.9.6-05 (D-01, D-15): use the canonical structured-lyrics path
+  // when populated; otherwise parse the legacy blob into a transient
+  // `Stanza[]` so the downstream grid consumer (`mapCycleToPhraseSyllableLines`)
+  // remains uniform across both paths. The 6 quarantined psalm-versions
+  // (Plan 03 SUMMARY) flow through the fallback branch with no visual change.
+  const stanzas = useMemo<Stanza[]>(() => {
+    if (lyricsStructured && lyricsStructured.length > 0) {
+      return lyricsStructured
+    }
+    return (lyrics ?? '')
+      .split(/\n\s*\n/)
+      .map((s, idx) => ({
+        index: idx,
+        lines: s
+          .split('\n')
+          .map((t) => t.trim())
+          .filter(Boolean)
+          .map((text) => ({ text })),
+      }))
+      .filter((st) => st.lines.length > 0)
+  }, [lyricsStructured, lyrics])
+
+  // Legacy string-shaped stanzas — still required by `<StanzaList>` (its prop
+  // type is `string[]` until Plan 06 swaps it to `Stanza[]`). Derived from
+  // the canonical `stanzas: Stanza[]` so structured and fallback paths share
+  // one source.
+  const stanzaStrings = useMemo<string[]>(
+    () => stanzas.map((s) => s.lines.map((l) => l.text).join('\n')),
+    [stanzas],
   )
 
-  // INTERMEDIATE STATE (Plan 04 → Plan 05): the canonical D-11 signal is
-  // `tune.double_length` (boolean column). Until Plan 05 plumbs that prop
-  // through NotationRendererProps and parses lyrics into structured Stanza[]
-  // upstream, derive `doubleLength` heuristically from the tune-vs-stanza
-  // phrase-count ratio. This reproduces the LEGACY behaviour for wave 2
-  // only; Plan 05 replaces it with the boolean prop atomically.
-  const _doubleLengthHeuristic = useMemo(
-    () => phrasesForMeter(tuneMeter) >= 4 && phrasesForMeter(stanzaMeter) <= 2,
-    [tuneMeter, stanzaMeter],
-  )
   const cycles = useMemo(
-    () =>
-      groupStanzasIntoCycles(
-        stanzas as unknown as Stanza[],
-        _doubleLengthHeuristic,
-      ),
-    [stanzas, _doubleLengthHeuristic],
+    () => groupStanzasIntoCycles(stanzas, doubleLength),
+    [stanzas, doubleLength],
   )
 
   const totalStanzaPages = Math.max(1, Math.ceil(cycles.length / CYCLES_PER_PAGE))
@@ -460,26 +482,15 @@ export function NotationRenderer({
   const phraseSubdivisions = baseSubdivisions + extraSubdivisions
 
   // ── w: lines for one phrase ────────────────────────────────────────────────
-  // INTERMEDIATE STATE (Plan 04 → Plan 05): visibleCycles is still string[][]
-  // from the legacy stanza-cycles path; mapCycleToPhraseSyllableLines now
-  // expects Stanza[]. Plan 05 replaces visibleCycles with Stanza[][] and
-  // removes this shim atomically with the lyricsStructured / doubleLength
-  // prop wiring. Until then, fall back to an empty phrase line on shape
-  // mismatch so the build stays green and the legacy renderer path on
-  // unstructured/quarantined rows continues to function (returns ['']).
+  // Plan 04.9.6-05: visibleCycles is canonical `Stanza[][]` (see useMemo
+  // above). `mapCycleToPhraseSyllableLines` returns a T-element `string[][]`
+  // grid; the `grid[i] ?? ['']` flatMap is the B1 shape-preservation contract
+  // inherited unchanged from Plan 04.
   function wLinesForPhrase(i: number): string[] {
     return visibleCycles
       .flatMap((cycle) => {
-        try {
-          const stanzaCycle = cycle as unknown as Stanza[]
-          const grid = mapCycleToPhraseSyllableLines(
-            stanzaCycle,
-            phrasesForMeter(tuneMeter),
-          )
-          return grid[i] ?? ['']
-        } catch {
-          return ['']
-        }
+        const grid = mapCycleToPhraseSyllableLines(cycle, phrasesForMeter(tuneMeter))
+        return grid[i] ?? ['']
       })
       .filter((s) => s.length > 0)
   }
@@ -720,7 +731,7 @@ export function NotationRenderer({
     return parts.join('\n')
     // wLinesForPhrase depends on visibleCycles, captured by closure.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [split, visiblePhraseIndices, visibleCycles, tuneMeter, stanzaMeter, showLyrics, phraseSubdivisions, chromeless])
+  }, [split, visiblePhraseIndices, visibleCycles, tuneMeter, showLyrics, phraseSubdivisions, chromeless])
 
   // ── View area ─────────────────────────────────────────────────────────────
   // Item 2: Play plays once — no chain/repeat. We deliberately do NOT pass
@@ -729,9 +740,9 @@ export function NotationRenderer({
   // Item 1: pass renderLyricsBelow so Show Original mode in AbcPlayer can
   // render the same StanzaList below the JPG.
   const lyricsBelow =
-    showLyrics && stanzas.length > 0 ? (
+    showLyrics && stanzaStrings.length > 0 ? (
       <div className="mt-4 max-h-[60vh] overflow-y-auto">
-        <StanzaList stanzas={stanzas} />
+        <StanzaList stanzas={stanzaStrings} />
       </div>
     ) : null
 
@@ -799,9 +810,9 @@ export function NotationRenderer({
             Solfège not available for this tune.
           </p>
         )}
-        {showLyrics && stanzas.length > 0 && (
+        {showLyrics && stanzaStrings.length > 0 && (
           <div className={chromeless ? '' : 'max-h-[60vh] overflow-y-auto'}>
-            <StanzaList stanzas={stanzas} />
+            <StanzaList stanzas={stanzaStrings} />
           </div>
         )}
       </div>
@@ -811,7 +822,7 @@ export function NotationRenderer({
     // 260517-cm0 #4a: in chromeless (singing) view, apply generous padding +
     // larger base font so lyrics read comfortably without staff context.
     viewArea =
-      stanzas.length === 0 ? (
+      stanzaStrings.length === 0 ? (
         <p className="text-sm text-muted-foreground italic">No lyrics available.</p>
       ) : (
         <div className={chromeless ? 'px-4 pt-4 space-y-4' : ''}>
@@ -822,7 +833,7 @@ export function NotationRenderer({
               tuneName={tuneName}
             />
           )}
-          <StanzaList stanzas={stanzas} />
+          <StanzaList stanzas={stanzaStrings} />
         </div>
       )
   }
