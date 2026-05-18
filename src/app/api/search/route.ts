@@ -60,7 +60,7 @@ export async function GET(request: Request) {
       const rows = await db.query.psalmVersions.findMany({
         where: or(
           ilike(psalmVersions.firstLine, lq),
-          ilike(psalmVersions.lyrics, lq)
+          ilike(psalmVersions.lyricsImportedRaw, lq)
         ),
         with: { psalm: true },
         orderBy: [asc(psalmVersions.psalmId), asc(psalmVersions.id)],
@@ -80,7 +80,7 @@ export async function GET(request: Request) {
         const multiVersion = versions.length > 1
         versions.forEach((v, i) => {
           const suffix = multiVersion ? (i === 0 ? 'a' : 'b') : ''
-          const snippet = buildSnippet(v.lyrics, q) ?? buildSnippet(v.firstLine, q)
+          const snippet = buildSnippet(v.lyricsImportedRaw, q) ?? buildSnippet(v.firstLine, q)
           const firstLineLower = (v.firstLine ?? '').toLowerCase()
           const relevance = firstLineLower.includes(qLower) ? 2 : 3
           psalmMatches.push({

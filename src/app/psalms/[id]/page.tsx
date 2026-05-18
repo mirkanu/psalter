@@ -131,7 +131,7 @@ export default async function PsalmPage({ params }: PageProps) {
   const psalmListRows = await fetchPsalmListRows()
   const { prev, next } = await getPsalmNeighbors(slug)
 
-  const lyrics = activeVersion?.lyrics ?? ''
+  const lyrics = activeVersion?.lyricsImportedRaw ?? ''
   const stanzaMeter = activeVersion?.meter ?? null
 
   // 260517-cm0 #3 — derive "N:start-end" range from psalterNumber so the topbar

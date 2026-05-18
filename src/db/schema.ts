@@ -10,6 +10,7 @@ import {
   jsonb,
 } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
+import type { StructuredLyrics } from '@/lib/lyrics-structured'
 
 // ─── Core Content Tables ─────────────────────────────────────────────────────
 
@@ -37,7 +38,8 @@ export const psalmVersions = pgTable('psalm_versions', {
   airtableId: text('airtable_id').notNull().unique(),
   psalmId: integer('psalm_id').references(() => psalms.id),
   psalterNumber: text('psalter_number'),         // e.g. "23a", "23b"
-  lyrics: text('lyrics'),
+  lyricsImportedRaw: text('lyrics_imported_raw'),                                // D-02: immutable Airtable snapshot, never written after one-shot parse
+  lyricsStructured: jsonb('lyrics_structured').$type<StructuredLyrics | null>(), // D-01: canonical editable form (populated by Plan 03 parser)
   meter: text('meter'),                          // normalised abbreviation: CM, LM, SM, etc.
   versionLabel: text('version_label'),
   firstLine: text('first_line'),
