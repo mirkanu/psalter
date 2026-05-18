@@ -95,6 +95,20 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 - [ ] **MOBILE-02**: A single FAB (bottom-right) expands to reveal: view switcher (Staff / Lyrics-only / Solfège), tune audio player, and metadata/topics panel — these are the only secondary controls accessible from the psalm page
 - [ ] **MOBILE-03**: abc notation never overflows the right edge of the viewport at any zoom level; staffwidth is derived from the container's `offsetWidth` at render time and passed to `ABCJS.renderAbc`; the container is hard-clamped with `max-width: 100%; overflow-x: hidden`; notation re-renders on resize and orientation change
 
+### Psalter Alignment (Phase 4.9.6 — Psalter Alignment Implementation)
+
+- [ ] **DATA-01**: `psalm_versions.lyrics_structured` jsonb column exists, typed `StructuredLyrics | null`; canonical editable lyric form going forward (per Phase 4.9.6 D-01)
+- [ ] **DATA-02**: `psalm_versions.lyrics` column renamed to `lyrics_imported_raw` (immutable Airtable snapshot, never written after one-shot parse) (per D-02)
+- [ ] **DATA-03**: One-shot parser script (`scripts/parse-lyrics-structured.ts`) parses every existing `lyrics_imported_raw` blob into `lyrics_structured`; quarantines failures to `parse-failures.md` (per D-04)
+- [ ] **DATA-04**: Parser failure report emitted as `.planning/phases/04.9.6-psalter-alignment-implementation/parse-failures.md` listing each quarantined psalm-version with reason and offending line
+- [ ] **DATA-05**: Round-trip test asserts `normalise(serialise(parse(blob))) === normalise(blob)` for every non-quarantined corpus row, run against committed fixture `tests/fixtures/lyrics-corpus-snapshot.json` (per D-05)
+- [ ] **RENDER-01**: DCM stanza-cycle gating is driven by `tunes.double_length === true`, NOT by `meter === 'CMD'` or any meter-string comparison (per D-11)
+- [ ] **RENDER-02**: `groupStanzasIntoCycles` and `mapCycleToPhraseSyllableLines` consume structured `Stanza[]` and produce cycles sized 2 when `doubleLength` else 1 (per D-12)
+- [ ] **RENDER-03**: Mid-stanza Bible-verse boundaries render as inline `<sup className="verse-number">{ref}</sup>` immediately before the first syllable of the new verse; reuses existing globals.css `.verse-number` class with no new CSS (per D-07, UI-SPEC)
+- [ ] **RENDER-04**: New alignment renderer activates per-psalm-version, gated on `lyrics_structured` non-null AND psalm-version not in quarantine; quarantined rows continue through the legacy blob path (per D-15)
+- [ ] **RENDER-05**: Alternate-meter psalms (e.g. Psalm 124 Second Version + Old 124th `10.10.10.10.10`) align syllable-to-note correctly via structured `Line[]` count matching ABC phrase boundaries (per D-14)
+- [ ] **RENDER-06**: Psalm 23 + Crimond regression canary: automated test asserts the `w:` syllable lines match a recorded golden, and no synthesised Amen tail appears (per D-13, D-16)
+
 ---
 
 ## v2 Requirements (Deferred)
@@ -167,3 +181,14 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 | MOBILE-01 | Phase 4.9.3: Mobile-first Psalm Display | Pending |
 | MOBILE-02 | Phase 4.9.3: Mobile-first Psalm Display | Pending |
 | MOBILE-03 | Phase 4.9.3: Mobile-first Psalm Display | Pending |
+| DATA-01 | Phase 4.9.6: Psalter Alignment Implementation | Pending |
+| DATA-02 | Phase 4.9.6: Psalter Alignment Implementation | Pending |
+| DATA-03 | Phase 4.9.6: Psalter Alignment Implementation | Pending |
+| DATA-04 | Phase 4.9.6: Psalter Alignment Implementation | Pending |
+| DATA-05 | Phase 4.9.6: Psalter Alignment Implementation | Pending |
+| RENDER-01 | Phase 4.9.6: Psalter Alignment Implementation | Pending |
+| RENDER-02 | Phase 4.9.6: Psalter Alignment Implementation | Pending |
+| RENDER-03 | Phase 4.9.6: Psalter Alignment Implementation | Pending |
+| RENDER-04 | Phase 4.9.6: Psalter Alignment Implementation | Pending |
+| RENDER-05 | Phase 4.9.6: Psalter Alignment Implementation | Pending |
+| RENDER-06 | Phase 4.9.6: Psalter Alignment Implementation | Pending |
