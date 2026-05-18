@@ -92,6 +92,8 @@ export interface AlternateTune {
   solfegeJpgUrl: string | null
   soundcloudUrl: string | null
   youtubeUrl: string | null
+  /** D-11 canonical signal driving stanza-cycle pairing (DCM marker). */
+  doubleLength: boolean
 }
 
 export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]> {
@@ -107,6 +109,7 @@ export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]>
       solfegeJpgUrl: true,
       soundcloudUrl: true,
       youtubeUrl: true,
+      doubleLength: true,
     },
     orderBy: (t, { asc }) => [asc(t.name)],
   })
