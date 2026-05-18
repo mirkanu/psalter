@@ -11,7 +11,7 @@ interface PsalmOption {
   id: number
   bibleTitle: string | null
   firstLine: string | null
-  lyrics: string | null
+  lyricsImportedRaw: string | null
 }
 
 interface SelectPsalmDialogProps {
@@ -41,7 +41,7 @@ export function SelectPsalmDialog({ open, onClose, psalms, meter, existingPsalmI
         String(p.id).includes(trimmed) ||
         (p.bibleTitle ?? '').toLowerCase().includes(trimmed.toLowerCase()) ||
         (p.firstLine ?? '').toLowerCase().includes(trimmed.toLowerCase()) ||
-        (p.lyrics ?? '').toLowerCase().includes(trimmed.toLowerCase())
+        (p.lyricsImportedRaw ?? '').toLowerCase().includes(trimmed.toLowerCase())
       )
     : pool
 
@@ -97,7 +97,7 @@ export function SelectPsalmDialog({ open, onClose, psalms, meter, existingPsalmI
                       {psalm.bibleTitle ?? `Psalm ${psalm.id}`}
                     </span>
                     {trimmed ? (() => {
-                      const lyricsSnippet = buildSnippet(psalm.lyrics ?? null, trimmed)
+                      const lyricsSnippet = buildSnippet(psalm.lyricsImportedRaw ?? null, trimmed)
                       const preview = lyricsSnippet ?? psalm.firstLine ?? ''
                       return preview ? (
                         <span className="text-xs text-muted-foreground block truncate">

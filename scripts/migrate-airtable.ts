@@ -240,7 +240,7 @@ async function migratePsalmVersions(psalmIdMap: Map<string, number>): Promise<{
       airtableId: r.id,
       psalmId,
       psalterNumber: str(r.get('Psalter #')),
-      lyrics: str(r.get('Lyrics')),
+      lyricsImportedRaw: str(r.get('Lyrics')),
       meter: normaliseMeter(r.get('Meter') as string | undefined),
       versionLabel: str(r.get('Version')),
       firstLine: str(r.get('First Line')),
@@ -249,7 +249,7 @@ async function migratePsalmVersions(psalmIdMap: Map<string, number>): Promise<{
       set: {
         psalmId: sql`excluded.psalm_id`,
         psalterNumber: sql`excluded.psalter_number`,
-        lyrics: sql`excluded.lyrics`,
+        lyricsImportedRaw: sql`excluded.lyrics_imported_raw`,
         meter: sql`excluded.meter`,
         versionLabel: sql`excluded.version_label`,
         firstLine: sql`excluded.first_line`,

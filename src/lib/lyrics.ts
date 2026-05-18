@@ -6,7 +6,7 @@ import { phrasesForMeter } from './abc-phrase-meter-map'
 /**
  * Extracts the first stanza from a multi-stanza psalm lyrics string.
  *
- * Verses in psalmVersions.lyrics are separated by double-newlines and each
+ * Verses in psalmVersions.lyricsImportedRaw are separated by double-newlines and each
  * verse begins with a run of digits immediately followed by the first word
  * (e.g. "1Praise ye the Lord"). This function strips that leading digit run
  * and returns the first stanza as a single space-separated string.

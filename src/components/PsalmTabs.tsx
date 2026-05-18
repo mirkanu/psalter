@@ -376,7 +376,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
   const kjvVerses = psalm.verses
     .slice()
     .sort((a, b) => (a.verseNumber ?? 0) - (b.verseNumber ?? 0))
-  const lyrics = primaryVersion?.lyrics ?? null
+  const lyrics = primaryVersion?.lyricsImportedRaw ?? null
   const stanzas = (lyrics ?? '')
     .split('\n\n')
     .map((s) => s.trim().replace(/^(\d+)([A-Za-z])/, '$1 $2'))

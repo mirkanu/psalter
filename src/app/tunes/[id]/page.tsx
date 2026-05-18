@@ -128,7 +128,7 @@ export default async function TunePage({ params }: PageProps) {
       {/* Score — ABC notation with interactive player */}
       {hasAbc && (() => {
         const firstLinkedPsalmVersion = tune.psalmVersionTunes?.[0]?.psalmVersion ?? null
-        const tunesLyrics = firstLinkedPsalmVersion?.lyrics ?? ''
+        const tunesLyrics = firstLinkedPsalmVersion?.lyricsImportedRaw ?? ''
         return (
           <section>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
