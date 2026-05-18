@@ -133,6 +133,9 @@ export default async function PsalmPage({ params }: PageProps) {
   const { prev, next } = await getPsalmNeighbors(slug)
 
   const lyrics = activeVersion?.lyricsImportedRaw ?? ''
+  const lyricsStructured = (activeVersion?.lyricsStructured ?? null) as
+    | import('@/lib/lyrics-structured').StructuredLyrics
+    | null
   const stanzaMeter = activeVersion?.meter ?? null
 
   // 260517-cm0 #3 — derive "N:start-end" range from psalterNumber so the topbar
@@ -153,6 +156,7 @@ export default async function PsalmPage({ params }: PageProps) {
       meter={primaryMeter}
       stanzaMeter={stanzaMeter}
       lyrics={lyrics}
+      lyricsStructured={lyricsStructured}
       psalmListRows={psalmListRows}
       studyHref={`/psalms/${slug}/study`}
       versePartLabel={versePartLabel}

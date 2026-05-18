@@ -394,6 +394,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
         solfegeJpgUrl: overrideTune.solfegeJpgUrl,
         soundcloudUrl: overrideTune.soundcloudUrl,
         youtubeUrl: overrideTune.youtubeUrl,
+        doubleLength: overrideTune.doubleLength ?? false,
         precentingComment: null,
       }
     : primaryTune
@@ -448,6 +449,8 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
             tuneName={activeTune.name ?? 'Tune'}
             tuneMeter={activeTune.meter ?? null}
             stanzaMeter={primaryVersion?.meter ?? null}
+            lyricsStructured={primaryVersion?.lyricsStructured ?? null}
+            doubleLength={activeTune.doubleLength ?? false}
             onViewModeChange={setNotationViewMode}
           />
           <ChangeTuneDialog
