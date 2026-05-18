@@ -9,7 +9,11 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: false,
-    include: ['tests/**/*.test.ts', 'src/**/*.test.ts', 'scripts/**/*.test.ts'],
+    include: [
+      'tests/**/*.test.{ts,tsx}',
+      'src/**/*.test.{ts,tsx}',
+      'scripts/**/*.test.{ts,tsx}',
+    ],
     testTimeout: 15000,
   },
 })
