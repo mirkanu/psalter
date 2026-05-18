@@ -1,7 +1,7 @@
 # Parse Failures — Phase 04.9.6
 
-Generated: 2026-05-18T09:56:42.657Z
-Mode: DRY-RUN (no DB writes)
+Generated: 2026-05-18T10:03:50.789Z
+Mode: LIVE
 Total rows: 184
 Parsed: 178
 Quarantined: 6
