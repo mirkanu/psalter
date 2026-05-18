@@ -1,114 +1,14 @@
 import { describe, it, expect } from 'vitest'
-import {
-  splitStanzaIntoPhrasePortions,
-  buildAbcWithSyllables,
-} from './lyrics'
+import { buildAbcWithSyllables } from './lyrics'
 
 // Note: existing extractVerse1 / syllabifyForAbc tests live at
 // tests/lib-utilities.test.ts and are NOT touched by this file.
-
-const SHEPHERD_STANZA_1 = `1The Lord's my Shepherd
-I'll not want
-He makes me down to lie
-In pastures green`
-
-const SHEPHERD_STANZA_2 = `2My soul He doth restore
-And me to walk
-Within the paths of righteousness
-For his own name's sake`
-
-describe('splitStanzaIntoPhrasePortions', () => {
-  it('CM 4-line stanza splits into 2 portions of 2 lines each (D-16 fixture)', () => {
-    expect(splitStanzaIntoPhrasePortions(SHEPHERD_STANZA_1, 'CM')).toEqual([
-      "1The Lord's my Shepherd\nI'll not want",
-      'He makes me down to lie\nIn pastures green',
-    ])
-  })
-
-  it('CM with parenthesised long form normalises correctly', () => {
-    expect(
-      splitStanzaIntoPhrasePortions(SHEPHERD_STANZA_1, 'CM (common meter, 8.6.8.6)'),
-    ).toEqual([
-      "1The Lord's my Shepherd\nI'll not want",
-      'He makes me down to lie\nIn pastures green',
-    ])
-  })
-
-  it('DCM 4-line stanza splits into 4 single-line portions', () => {
-    expect(splitStanzaIntoPhrasePortions(SHEPHERD_STANZA_1, 'DCM')).toEqual([
-      "1The Lord's my Shepherd",
-      "I'll not want",
-      'He makes me down to lie',
-      'In pastures green',
-    ])
-  })
-
-  it('DCM 8-line stanza splits into 4 two-line portions', () => {
-    const eightLine = `1Line1\nLine2\nLine3\nLine4\nLine5\nLine6\nLine7\nLine8`
-    expect(splitStanzaIntoPhrasePortions(eightLine, 'DCM')).toEqual([
-      '1Line1\nLine2',
-      'Line3\nLine4',
-      'Line5\nLine6',
-      'Line7\nLine8',
-    ])
-  })
-
-  it('null meter returns the stanza unsplit (single-element array)', () => {
-    expect(splitStanzaIntoPhrasePortions(SHEPHERD_STANZA_1, null)).toEqual([
-      SHEPHERD_STANZA_1,
-    ])
-  })
-
-  it('undefined meter returns the stanza unsplit', () => {
-    expect(splitStanzaIntoPhrasePortions(SHEPHERD_STANZA_1, undefined)).toEqual([
-      SHEPHERD_STANZA_1,
-    ])
-  })
-
-  it('unknown meter returns the stanza unsplit', () => {
-    expect(splitStanzaIntoPhrasePortions(SHEPHERD_STANZA_1, 'BOGUS')).toEqual([
-      SHEPHERD_STANZA_1,
-    ])
-  })
-
-  it('empty stanza returns N empty strings (CM → 2)', () => {
-    expect(splitStanzaIntoPhrasePortions('', 'CM')).toEqual(['', ''])
-  })
-
-  it('whitespace-only stanza returns N empty strings (DCM → 4)', () => {
-    expect(splitStanzaIntoPhrasePortions('   \n  \n\n', 'DCM')).toEqual([
-      '',
-      '',
-      '',
-      '',
-    ])
-  })
-
-  it('trims whitespace per line and filters blank lines before slicing', () => {
-    const messy = `1Alpha\n  \nBeta\n\nGamma\n   Delta   `
-    expect(splitStanzaIntoPhrasePortions(messy, 'CM')).toEqual([
-      '1Alpha\nBeta',
-      'Gamma\nDelta',
-    ])
-  })
-
-  it('preserves verse-number prefix on first portion only', () => {
-    const result = splitStanzaIntoPhrasePortions(SHEPHERD_STANZA_1, 'CM')
-    expect(result[0]).toMatch(/^1The Lord/)
-    expect(result[1]).not.toMatch(/^\d/)
-  })
-
-  it('uneven L not divisible by N: final portion shorter (DCM, 5 lines → 4 portions)', () => {
-    // ceil(5/4) = 2 lines per portion → [L1,L2],[L3,L4],[L5],[]
-    const fiveLine = `1A\nB\nC\nD\nE`
-    expect(splitStanzaIntoPhrasePortions(fiveLine, 'DCM')).toEqual([
-      '1A\nB',
-      'C\nD',
-      'E',
-      '',
-    ])
-  })
-})
+//
+// The retired splitStanzaIntoPhrasePortions heuristic was deleted in
+// Phase 04.9.6 plan 04 along with its meter-string-driven cycle logic;
+// alignment now reads structured stanza.lines directly via
+// mapCycleToPhraseSyllableLines (see src/lib/stanza-cycles.ts and its
+// dedicated test file).
 
 describe('buildAbcWithSyllables', () => {
   const PHRASE_ABC = `X:1
@@ -205,14 +105,16 @@ K:G
   })
 
   it('3-stanza phrase-1 D-16 contract: each w: line contains only that stanza\'s lines 1+2', () => {
-    // Simulate Plan output: for phrase 0 of a CM tune we pass portion-0 of each stanza
+    // Simulate Plan output: for phrase 0 of a CM tune we pass the CM-line-1+2
+    // slice of each stanza as the "portion" string. (Pre-04.9.6-04 this was
+    // computed via the retired splitStanzaIntoPhrasePortions helper; the
+    // structured-lyrics replacement lives in stanza-cycles.ts and is exercised
+    // by stanza-cycles.test.ts. This test still asserts the buildAbcWithSyllables
+    // contract by passing the equivalent portion strings inline.)
     const stanzaPortionsForPhrase0 = [
-      splitStanzaIntoPhrasePortions(SHEPHERD_STANZA_1, 'CM')[0],
-      splitStanzaIntoPhrasePortions(SHEPHERD_STANZA_2, 'CM')[0],
-      splitStanzaIntoPhrasePortions(
-        '3Yea though I walk in death\'s dark vale\nYet will I fear none ill\nFor thou art with me\nAnd thy rod and staff me comfort still',
-        'CM',
-      )[0],
+      "1The Lord's my Shepherd\nI'll not want",
+      '2My soul He doth restore\nAnd me to walk',
+      "3Yea though I walk in death's dark vale\nYet will I fear none ill",
     ]
     const out = buildAbcWithSyllables(PHRASE_ABC, stanzaPortionsForPhrase0)
     const wLines = out.split('\n').filter((l) => l.startsWith('w:'))
