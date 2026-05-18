@@ -30,6 +30,8 @@ import {
   groupStanzasIntoCycles,
   mapCycleToPhraseSyllableLines,
 } from '@/lib/stanza-cycles'
+import type { Stanza } from '@/lib/lyrics-structured'
+import { phrasesForMeter } from '@/lib/abc-phrase-meter-map'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -189,9 +191,23 @@ export function NotationRenderer({
     [lyrics],
   )
 
+  // INTERMEDIATE STATE (Plan 04 → Plan 05): the canonical D-11 signal is
+  // `tune.double_length` (boolean column). Until Plan 05 plumbs that prop
+  // through NotationRendererProps and parses lyrics into structured Stanza[]
+  // upstream, derive `doubleLength` heuristically from the tune-vs-stanza
+  // phrase-count ratio. This reproduces the LEGACY behaviour for wave 2
+  // only; Plan 05 replaces it with the boolean prop atomically.
+  const _doubleLengthHeuristic = useMemo(
+    () => phrasesForMeter(tuneMeter) >= 4 && phrasesForMeter(stanzaMeter) <= 2,
+    [tuneMeter, stanzaMeter],
+  )
   const cycles = useMemo(
-    () => groupStanzasIntoCycles(stanzas, tuneMeter, stanzaMeter),
-    [stanzas, tuneMeter, stanzaMeter],
+    () =>
+      groupStanzasIntoCycles(
+        stanzas as unknown as Stanza[],
+        _doubleLengthHeuristic,
+      ),
+    [stanzas, _doubleLengthHeuristic],
   )
 
   const totalStanzaPages = Math.max(1, Math.ceil(cycles.length / CYCLES_PER_PAGE))
@@ -444,11 +460,26 @@ export function NotationRenderer({
   const phraseSubdivisions = baseSubdivisions + extraSubdivisions
 
   // ── w: lines for one phrase ────────────────────────────────────────────────
+  // INTERMEDIATE STATE (Plan 04 → Plan 05): visibleCycles is still string[][]
+  // from the legacy stanza-cycles path; mapCycleToPhraseSyllableLines now
+  // expects Stanza[]. Plan 05 replaces visibleCycles with Stanza[][] and
+  // removes this shim atomically with the lyricsStructured / doubleLength
+  // prop wiring. Until then, fall back to an empty phrase line on shape
+  // mismatch so the build stays green and the legacy renderer path on
+  // unstructured/quarantined rows continues to function (returns ['']).
   function wLinesForPhrase(i: number): string[] {
     return visibleCycles
       .flatMap((cycle) => {
-        const grid = mapCycleToPhraseSyllableLines(cycle, tuneMeter, stanzaMeter)
-        return grid[i] ?? ['']
+        try {
+          const stanzaCycle = cycle as unknown as Stanza[]
+          const grid = mapCycleToPhraseSyllableLines(
+            stanzaCycle,
+            phrasesForMeter(tuneMeter),
+          )
+          return grid[i] ?? ['']
+        } catch {
+          return ['']
+        }
       })
       .filter((s) => s.length > 0)
   }
