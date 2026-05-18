@@ -22,7 +22,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 4.8 (INSERTED): Explore & Tunes Overhaul** - Playwright audit of psalter.cprc.co.uk/explore and /tunes; replicate both pages at psalter.gsdlabs.dev/explore and /tunes to match the reference site; remove /search route (superseded by inline search on /psalms)
 - [ ] **Phase 4.9 (INSERTED): Tune Notation Conversion** - OCR all solfège JPEGs via vision LLM, parse tonic sol-fa → ABC, store ABC strings in DB; all tunes render live in abcjs
 - [ ] **Phase 4.9.1 (INSERTED): Interactive abcjs Player** - Replace static AbcRenderer with interactive player: play/pause + note highlighting, transpose dropdown, BPM controls, show-original JPEG toggle; applied to /tunes/[id] and /psalms/[id]
-- [ ] **Phase 4.9.6 (INSERTED): Psalter Alignment Implementation** - Redesign lyrics data model (Stanza→Line→Syllable + bibleVerseRef); parse current Airtable lyric blobs into the new structured form; implement the alignment + line-break algorithm so DCM tunes render against two CM stanzas correctly, alternate meters align, and amen endings don't consume lyric syllables. Promotes seeds/psalter-alignment-implementation.md; consumes the canonical doc from Phase 4.9.5
+- [x] **Phase 4.9.6 (INSERTED): Psalter Alignment Implementation** - Redesign lyrics data model (Stanza→Line→Syllable + bibleVerseRef); parse current Airtable lyric blobs into the new structured form; implement the alignment + line-break algorithm so DCM tunes render against two CM stanzas correctly, alternate meters align, and amen endings don't consume lyric syllables. Promotes seeds/psalter-alignment-implementation.md; consumes the canonical doc from Phase 4.9.5
 - [ ] **Phase 5: Precentor Portal** - Better Auth login, service event CRUD, psalm+tune set list builder, live service view with pre-loaded notation
 - [ ] **Phase 6: Polish** - OG images, Lighthouse 90+, bundle analysis, click feedback, loading skeletons on remaining routes
 
@@ -371,19 +371,19 @@ Plans:
 
 Plans:
 **Wave 1**
-- [ ] 04.9.6-01-PLAN.md — Schema (lyrics_imported_raw + lyrics_structured jsonb), StructuredLyrics types, register DATA-*/RENDER-* requirements
+- [x] 04.9.6-01-PLAN.md — Schema (lyrics_imported_raw + lyrics_structured jsonb), StructuredLyrics types, register DATA-*/RENDER-* requirements
 
 **Wave 2** *(parallel — both depend on Wave 1)*
-- [ ] 04.9.6-02-PLAN.md — TDD: parseLyrics + serialiseLyrics (F-1..F-7 handling, Psalm 23 case, round-trip)
-- [ ] 04.9.6-04-PLAN.md — TDD: stanza-cycles driven by tune.double_length boolean; delete splitStanzaIntoPhrasePortions
+- [x] 04.9.6-02-PLAN.md — TDD: parseLyrics + serialiseLyrics (F-1..F-7 handling, Psalm 23 case, round-trip)
+- [x] 04.9.6-04-PLAN.md — TDD: stanza-cycles driven by tune.double_length boolean; delete splitStanzaIntoPhrasePortions
 
 **Wave 3** *(depends on Wave 2)*
-- [ ] 04.9.6-03-PLAN.md — [BLOCKING] drizzle-kit push + corpus snapshot + one-shot backfill + round-trip corpus test
-- [ ] 04.9.6-05-PLAN.md — NotationRenderer: branch on lyricsStructured; legacy fallback per D-15; extend fetchPsalmDetail
-- [ ] 04.9.6-06-PLAN.md — TDD: StanzaList accepts Stanza[]; inline sup.verse-number for mid-stanza bibleVerseRef
+- [x] 04.9.6-03-PLAN.md — [BLOCKING] drizzle-kit push + corpus snapshot + one-shot backfill + round-trip corpus test
+- [x] 04.9.6-05-PLAN.md — NotationRenderer: branch on lyricsStructured; legacy fallback per D-15; extend fetchPsalmDetail
+- [x] 04.9.6-06-PLAN.md — TDD: StanzaList accepts Stanza[]; inline sup.verse-number for mid-stanza bibleVerseRef
 
 **Wave 4** *(depends on Wave 3)*
-- [ ] 04.9.6-07-PLAN.md — Regression UAT: Psalm 23 + Crimond canary, DCM pairing, alternate-meter, amen-skip negative test + Playwright UAT (human checkpoint)
+- [x] 04.9.6-07-PLAN.md — Regression UAT: Psalm 23 + Crimond canary, DCM pairing, alternate-meter, amen-skip negative test + Playwright UAT (human checkpoint)
 
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
