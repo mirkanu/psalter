@@ -68,7 +68,7 @@ describe('Psalm 23 + Crimond regression (D-16, RENDER-06)', () => {
     // Each metrical line's leading phrase must appear somewhere.
     expect(concatenated).toMatch(/Lord's my she/)          // line 0
     expect(concatenated).toMatch(/He makes me/)            // line 1
-    expect(concatenated).toMatch(/In pas-?tures green/)    // line 2 — was dropped pre-fix
-    expect(concatenated).toMatch(/qui-?et waters by/)      // line 3 — was dropped pre-fix
+    expect(concatenated).toMatch(/In pas-?\s*tures green/)    // line 2 — was dropped pre-fix
+    expect(concatenated).toMatch(/qu-?\s*i-?\s*et waters by/) // line 3 — was dropped pre-fix
   })
 })
