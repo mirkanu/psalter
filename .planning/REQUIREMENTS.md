@@ -111,7 +111,7 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 
 ### Staff-View Metrical-Line Hotfix (Phase 4.9.7)
 
-- [ ] **RENDER-07**: Staff view renders ALL metrical lines of each stanza in the visible cycle, not just the first `phrasesPerCycle` lines. `mapCycleToPhraseSyllableLines` groups `linesPerStanza / phrasesPerCycle` metrical lines into each phrase slot, preserving the `string[][]` B1 contract.
+- [x] **RENDER-07**: Staff view renders ALL metrical lines of each stanza in the visible cycle, not just the first `phrasesPerCycle` lines. `mapCycleToPhraseSyllableLines` groups `linesPerStanza / phrasesPerCycle` metrical lines into each phrase slot, preserving the `string[][]` B1 contract.
 
 ---
 
@@ -196,4 +196,4 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 | RENDER-04 | Phase 4.9.6: Psalter Alignment Implementation | Pending |
 | RENDER-05 | Phase 4.9.6: Psalter Alignment Implementation | Pending |
 | RENDER-06 | Phase 4.9.6: Psalter Alignment Implementation | Pending |
-| RENDER-07 | Phase 4.9.7: Staff-View Metrical-Line Hotfix | Pending |
+| RENDER-07 | Phase 4.9.7: Staff-View Metrical-Line Hotfix | Complete |

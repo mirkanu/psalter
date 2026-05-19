@@ -403,7 +403,7 @@ Plans:
 
 Plans:
 **Wave 1**
-- [ ] 04.9.7-01-PLAN.md — TDD: strengthen CM/DCM/LM regression tests (RED), apply D-02 fix to mapCycleToPhraseSyllableLines (GREEN), register RENDER-07
+- [x] 04.9.7-01-PLAN.md — TDD: strengthen CM/DCM/LM regression tests (RED), apply D-02 fix to mapCycleToPhraseSyllableLines (GREEN), register RENDER-07
 
 **Wave 2** *(depends on Wave 1)*
 - [ ] 04.9.7-02-PLAN.md — Build + pm2 restart psalter; extended Playwright UAT against psalter.gsdlabs.dev asserting D-09 (CM "waters by", LM "rejoice", DCM last line); human visual sign-off
