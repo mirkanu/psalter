@@ -398,8 +398,15 @@ Plans:
   5. Lyrics-only view continues to render all lines (no regression)
   6. The Plan 07 Psalm 23 + Crimond regression test from Phase 4.9.6 is strengthened to assert every metrical line of the stanza appears in `mapCycleToPhraseSyllableLines` output for CM
   7. Playwright UAT diff against live psalter.gsdlabs.dev confirms staff view now shows full stanza content
-**Plans**: TBD (likely 2: function fix + strengthened tests, then UAT)
+**Plans**: 2 plans
 **UI hint**: yes — staff view rendering change; lyrics-only and UI-SPEC contracts unchanged from 4.9.6
+
+Plans:
+**Wave 1**
+- [ ] 04.9.7-01-PLAN.md — TDD: strengthen CM/DCM/LM regression tests (RED), apply D-02 fix to mapCycleToPhraseSyllableLines (GREEN), register RENDER-07
+
+**Wave 2** *(depends on Wave 1)*
+- [ ] 04.9.7-02-PLAN.md — Build + pm2 restart psalter; extended Playwright UAT against psalter.gsdlabs.dev asserting D-09 (CM "waters by", LM "rejoice", DCM last line); human visual sign-off
 
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
