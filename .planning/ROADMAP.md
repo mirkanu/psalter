@@ -23,6 +23,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 4.9 (INSERTED): Tune Notation Conversion** - OCR all solfège JPEGs via vision LLM, parse tonic sol-fa → ABC, store ABC strings in DB; all tunes render live in abcjs
 - [ ] **Phase 4.9.1 (INSERTED): Interactive abcjs Player** - Replace static AbcRenderer with interactive player: play/pause + note highlighting, transpose dropdown, BPM controls, show-original JPEG toggle; applied to /tunes/[id] and /psalms/[id]
 - [x] **Phase 4.9.6 (INSERTED): Psalter Alignment Implementation** - Redesign lyrics data model (Stanza→Line→Syllable + bibleVerseRef); parse current Airtable lyric blobs into the new structured form; implement the alignment + line-break algorithm so DCM tunes render against two CM stanzas correctly, alternate meters align, and amen endings don't consume lyric syllables. Promotes seeds/psalter-alignment-implementation.md; consumes the canonical doc from Phase 4.9.5
+- [ ] **Phase 4.9.7 (INSERTED): Staff-View Metrical-Line Hotfix** - Fix the regression introduced by Phase 4.9.6 where `mapCycleToPhraseSyllableLines` drops half (or more) of each stanza's metrical lines in the staff view. CM/LM/SM stanzas render only lines 0-1 (out of 4); DCM stanzas only render lines 0-3 (out of 8). Lyrics-only view is unaffected. Mechanical fix: group N=stanzaLines/phrasesPerCycle lines into each phrase slot. Strengthen the regression test that missed it.
 - [ ] **Phase 5: Precentor Portal** - Better Auth login, service event CRUD, psalm+tune set list builder, live service view with pre-loaded notation
 - [ ] **Phase 6: Polish** - OG images, Lighthouse 90+, bundle analysis, click feedback, loading skeletons on remaining routes
 
@@ -384,6 +385,21 @@ Plans:
 
 **Wave 4** *(depends on Wave 3)*
 - [x] 04.9.6-07-PLAN.md — Regression UAT: Psalm 23 + Crimond canary, DCM pairing, alternate-meter, amen-skip negative test + Playwright UAT (human checkpoint)
+
+### Phase 4.9.7 (INSERTED): Staff-View Metrical-Line Hotfix
+**Goal**: Fix the regression introduced by Phase 4.9.6 where `mapCycleToPhraseSyllableLines` drops metrical lines beyond `phrasesPerCycle`. CM/LM/SM stanzas (4 metrical lines, T=2 phrases) currently render only lines 0–1 in the staff view; DCM stanzas (8 metrical lines, T=4 phrases) only render lines 0–3. The lyrics-only view is unaffected because `StanzaList` renders `Stanza[]` directly without going through the buggy mapper. Restore the pre-Phase-4.9.6 behaviour: each staff phrase carries `linesPerStanza / phrasesPerCycle` metrical lines, joined and syllabified together (CM 8.6.8.6 → 2 lines per phrase; DCM → 2 lines per phrase; alternate meters → 1 line per phrase when stanza lines == T).
+**Depends on**: Phase 4.9.6 (the function being fixed lives in `src/lib/stanza-cycles.ts`)
+**Requirements**: RENDER-07 (new — staff view shows ALL metrical lines of each stanza)
+**Success Criteria** (what must be TRUE):
+  1. Psalm 23 + Crimond staff view shows all 4 metrical lines of each stanza ("The Lord's my shepherd..." through "...the quiet waters by.") under the tune
+  2. Psalm 100 + Old 100th (LM) staff view shows all 4 metrical lines of each stanza, no overflow/garbled syllables
+  3. Any DCM psalm shows all 8 metrical lines of the 2-stanza cycle (4 lines per stanza × 2 stanzas in cycle)
+  4. Alternate-meter Psalm 124 Second Version + Old 124th (10.10.10.10.10, T=5 phrases, 5 lines per stanza) shows all 5 lines
+  5. Lyrics-only view continues to render all lines (no regression)
+  6. The Plan 07 Psalm 23 + Crimond regression test from Phase 4.9.6 is strengthened to assert every metrical line of the stanza appears in `mapCycleToPhraseSyllableLines` output for CM
+  7. Playwright UAT diff against live psalter.gsdlabs.dev confirms staff view now shows full stanza content
+**Plans**: TBD (likely 2: function fix + strengthened tests, then UAT)
+**UI hint**: yes — staff view rendering change; lyrics-only and UI-SPEC contracts unchanged from 4.9.6
 
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
