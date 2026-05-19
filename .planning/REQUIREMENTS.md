@@ -109,6 +109,10 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 - [ ] **RENDER-05**: Alternate-meter psalms (e.g. Psalm 124 Second Version + Old 124th `10.10.10.10.10`) align syllable-to-note correctly via structured `Line[]` count matching ABC phrase boundaries (per D-14)
 - [ ] **RENDER-06**: Psalm 23 + Crimond regression canary: automated test asserts the `w:` syllable lines match a recorded golden, and no synthesised Amen tail appears (per D-13, D-16)
 
+### Staff-View Metrical-Line Hotfix (Phase 4.9.7)
+
+- [ ] **RENDER-07**: Staff view renders ALL metrical lines of each stanza in the visible cycle, not just the first `phrasesPerCycle` lines. `mapCycleToPhraseSyllableLines` groups `linesPerStanza / phrasesPerCycle` metrical lines into each phrase slot, preserving the `string[][]` B1 contract.
+
 ---
 
 ## v2 Requirements (Deferred)
@@ -192,3 +196,4 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 | RENDER-04 | Phase 4.9.6: Psalter Alignment Implementation | Pending |
 | RENDER-05 | Phase 4.9.6: Psalter Alignment Implementation | Pending |
 | RENDER-06 | Phase 4.9.6: Psalter Alignment Implementation | Pending |
+| RENDER-07 | Phase 4.9.7: Staff-View Metrical-Line Hotfix | Pending |

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { groupStanzasIntoCycles } from '../src/lib/stanza-cycles'
+import { groupStanzasIntoCycles, mapCycleToPhraseSyllableLines } from '../src/lib/stanza-cycles'
 import type { Stanza } from '../src/lib/lyrics-structured'
 
 function stz(idx: number, ...txt: string[]): Stanza {
@@ -24,5 +24,20 @@ describe('DCM pairing (RENDER-01, D-11) — live bug fix', () => {
     const cycles = groupStanzasIntoCycles(stanzas, true)
     expect(cycles).toEqual([[stanzas[0], stanzas[1]], [stanzas[2]]])
     expect(cycles[1].length).toBe(1)
+  })
+})
+
+describe('DCM mapCycleToPhraseSyllableLines — all 8 metrical lines render (RENDER-07, D-07)', () => {
+  it('packs 2 stanzas × 4 lines into 4 phrase slots without dropping any line', () => {
+    const s0 = stz(0, 'L1a alpha', 'L1b beta', 'L1c gamma', 'L1d delta')
+    const s1 = stz(1, 'L2a epsilon', 'L2b zeta', 'L2c eta', 'L2d theta')
+    // DCM tune T=4 phrases per cycle.
+    const grid = mapCycleToPhraseSyllableLines([s0, s1], 4)
+    expect(grid).toHaveLength(4)
+    const concatenated = grid.map((slot) => slot[0]).join(' ')
+    // All 8 stanza-line markers must be present.
+    for (const marker of ['L1a', 'L1b', 'L1c', 'L1d', 'L2a', 'L2b', 'L2c', 'L2d']) {
+      expect(concatenated).toContain(marker)
+    }
   })
 })

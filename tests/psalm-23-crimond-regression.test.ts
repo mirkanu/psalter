@@ -56,4 +56,19 @@ describe('Psalm 23 + Crimond regression (D-16, RENDER-06)', () => {
     expect(grid[0][0].length).toBeGreaterThan(0)
     expect(grid[1][0].length).toBeGreaterThan(0)
   })
+
+  it('all 4 CM metrical lines of stanza 0 appear in mapCycleToPhraseSyllableLines output (RENDER-07, D-06)', () => {
+    if (!psalm23Row) return
+    const r = parseLyrics(psalm23Row.lyrics, psalm23Row.meter)
+    if (!r.ok) throw new Error('parse failed')
+    // CM tune: T=2 phrases per cycle, but stanza has 4 metrical lines.
+    // The fix must pack 2 lines into each phrase slot — none may be dropped.
+    const grid = mapCycleToPhraseSyllableLines([r.stanzas[0]], 2)
+    const concatenated = grid.map((slot) => slot[0]).join(' ')
+    // Each metrical line's leading phrase must appear somewhere.
+    expect(concatenated).toMatch(/Lord's my she/)          // line 0
+    expect(concatenated).toMatch(/He makes me/)            // line 1
+    expect(concatenated).toMatch(/In pas-?tures green/)    // line 2 — was dropped pre-fix
+    expect(concatenated).toMatch(/qui-?et waters by/)      // line 3 — was dropped pre-fix
+  })
 })
