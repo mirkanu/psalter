@@ -120,3 +120,46 @@ describe('mapCycleToPhraseSyllableLines — RENDER-02 structured line read + B1 
     expect(result).toEqual([[''], [''], [''], ['']])
   })
 })
+
+describe('mapCycleToPhraseSyllableLines — RENDER-07 all metrical lines render (D-06/07/08)', () => {
+  it('LM 8.8.8.8 (T=2, 4 lines) — all 4 lines appear in the 2-phrase grid', () => {
+    const lm = stanza(0, 'LMa rejoice one', 'LMb rejoice two', 'LMc rejoice three', 'LMd rejoice four')
+    const grid = mapCycleToPhraseSyllableLines([lm], 2)
+    expect(grid).toHaveLength(2)
+    const concatenated = grid.map((slot) => slot[0]).join(' ')
+    for (const m of ['LMa', 'LMb', 'LMc', 'LMd']) {
+      expect(concatenated).toContain(m)
+    }
+  })
+
+  it('CM 8.6.8.6 (T=2, 4 lines) — all 4 lines appear in the 2-phrase grid', () => {
+    const grid = mapCycleToPhraseSyllableLines([S0], 2)
+    expect(grid).toHaveLength(2)
+    const concatenated = grid.map((slot) => slot[0]).join(' ')
+    for (const m of ['Line 1a', 'Line 1b', 'Line 1c', 'Line 1d']) {
+      expect(concatenated).toContain(m)
+    }
+  })
+
+  it('DCM-like 2-stanza cycle (T=4, 8 lines) — all 8 lines appear', () => {
+    const grid = mapCycleToPhraseSyllableLines([S0, S1], 4)
+    expect(grid).toHaveLength(4)
+    const concatenated = grid.map((slot) => slot[0]).join(' ')
+    for (const m of [
+      'Line 1a','Line 1b','Line 1c','Line 1d',
+      'Line 2a','Line 2b','Line 2c','Line 2d',
+    ]) {
+      expect(concatenated).toContain(m)
+    }
+  })
+
+  it('alternate-meter 10.10.10.10.10 (T=5, 5 lines) — exactly one line per slot, no dropping', () => {
+    const alt = stanza(0, 'X1', 'X2', 'X3', 'X4', 'X5')
+    const grid = mapCycleToPhraseSyllableLines([alt], 5)
+    expect(grid).toHaveLength(5)
+    const concatenated = grid.map((slot) => slot[0]).join(' ')
+    for (const m of ['X1', 'X2', 'X3', 'X4', 'X5']) {
+      expect(concatenated).toContain(m)
+    }
+  })
+})
