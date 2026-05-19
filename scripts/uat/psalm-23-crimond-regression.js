@@ -44,6 +44,18 @@ async function main() {
     process.exit(1)
   }
 
+  // ── Stage 1b: D-09 CM assertion — staff view contains the last metrical line of stanza 0 ("...waters by").
+  const staffBody = (await page.locator('body').textContent()) || ''
+  if (!/waters by/i.test(staffBody)) {
+    console.error('FAIL (RENDER-07 D-09 CM): Psalm 23 staff view does not contain "waters by" — line 3 is being dropped.')
+    process.exit(1)
+  }
+  if (!/In pas(-)?tures green/i.test(staffBody)) {
+    console.error('FAIL (RENDER-07 D-09 CM): Psalm 23 staff view does not contain "In pastures green" — line 2 is being dropped.')
+    process.exit(1)
+  }
+  console.log('PASS — Psalm 23 staff view contains all 4 CM metrical lines')
+
   // ── Stage 2: navigate to lyrics-only view (B6 — make the sup assertion unambiguous)
   // The view-mode controls live in GearDrawer (mobile-first chromeless layout).
   // Path: localStorage write + reload — predictable across mobile/desktop without
@@ -87,6 +99,66 @@ async function main() {
   if (/\bAmen\b/i.test(lyricsBodyText || '')) {
     console.error('FAIL: detected "Amen" token in lyrics view (D-13 violation)')
     process.exit(1)
+  }
+
+  // ── Stage 5: LM coverage — Psalm 100 + Old 100th. D-09 asserts "rejoice" appears in staff view.
+  {
+    const page100 = await ctx.newPage()
+    // Stage 2 wrote `psalter-score-mode=lyrics` to localStorage; ensure staff view here.
+    await page100.addInitScript(() => {
+      try {
+        localStorage.removeItem('psalter-score-mode')
+        localStorage.setItem('psalter-onboarding-completed', 'true')
+        localStorage.setItem('psalter-onboarding-dismissed', 'true')
+      } catch {}
+    })
+    await page100.goto('https://psalter.gsdlabs.dev/psalms/100', { waitUntil: 'networkidle' })
+    await page100.waitForSelector('.abcjs-container svg', { timeout: 15_000 })
+    await page100.screenshot({
+      path: path.join(__dirname, 'screenshots', 'psalm-100-old-100th-staff-1024.png'),
+      fullPage: false,
+    })
+    const body100 = (await page100.locator('body').textContent()) || ''
+    if (!/rejoice/i.test(body100)) {
+      console.error('FAIL (RENDER-07 D-09 LM): Psalm 100 staff view does not contain "rejoice" — LM line 3 is being dropped.')
+      process.exit(1)
+    }
+    console.log('PASS — Psalm 100 (LM) staff view contains "rejoice"')
+    await page100.close()
+  }
+
+  // ── Stage 6: DCM coverage — chosen psalm from DB query (see Task 1 Step 1).
+  // The substring `DCM_LAST_LINE_SUBSTR` is the last metrical line of the
+  // second stanza in the doubleLength cycle. Replace both placeholders with
+  // the values from Step 1.
+  {
+    const DCM_PSALTER = process.env.UAT_DCM_PSALTER /* e.g. '24' */
+    const DCM_LAST_LINE_SUBSTR = process.env.UAT_DCM_LAST_LINE /* e.g. 'and He shall come in' */
+    if (!DCM_PSALTER || !DCM_LAST_LINE_SUBSTR) {
+      console.error('FAIL (RENDER-07 D-09 DCM): UAT_DCM_PSALTER / UAT_DCM_LAST_LINE env vars required.')
+      process.exit(1)
+    }
+    const pageDcm = await ctx.newPage()
+    await pageDcm.addInitScript(() => {
+      try {
+        localStorage.removeItem('psalter-score-mode')
+        localStorage.setItem('psalter-onboarding-completed', 'true')
+        localStorage.setItem('psalter-onboarding-dismissed', 'true')
+      } catch {}
+    })
+    await pageDcm.goto(`https://psalter.gsdlabs.dev/psalms/${DCM_PSALTER}`, { waitUntil: 'networkidle' })
+    await pageDcm.waitForSelector('.abcjs-container svg', { timeout: 15_000 })
+    await pageDcm.screenshot({
+      path: path.join(__dirname, 'screenshots', 'psalm-dcm-staff-1024.png'),
+      fullPage: false,
+    })
+    const bodyDcm = (await pageDcm.locator('body').textContent()) || ''
+    if (!bodyDcm.toLowerCase().includes(DCM_LAST_LINE_SUBSTR.toLowerCase())) {
+      console.error(`FAIL (RENDER-07 D-09 DCM): Psalm ${DCM_PSALTER} staff view does not contain "${DCM_LAST_LINE_SUBSTR}".`)
+      process.exit(1)
+    }
+    console.log(`PASS — Psalm ${DCM_PSALTER} (DCM) staff view contains "${DCM_LAST_LINE_SUBSTR}"`)
+    await pageDcm.close()
   }
 
   console.log('PASS — Psalm 23 + Crimond regression UAT (staff + lyrics views)')
