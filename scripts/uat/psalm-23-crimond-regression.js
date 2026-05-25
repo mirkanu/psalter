@@ -20,6 +20,7 @@ async function main() {
     try {
       localStorage.setItem('psalter-onboarding-completed', 'true')
       localStorage.setItem('psalter-onboarding-dismissed', 'true')
+      localStorage.setItem('psalter_tour_v1', 'done')
     } catch {}
   })
 
@@ -55,6 +56,76 @@ async function main() {
     process.exit(1)
   }
   console.log('PASS — Psalm 23 staff view contains all 4 CM metrical lines')
+
+  // ── Stage 1c (Phase 4.9.7 Plan 03 RENDER-07b): per-row alignment.
+  // abcjs renders each w: line's i-th syllable as a single <text> node whose
+  // textContent CONCATENATES that syllable across ALL stanzas, in order:
+  // "[s1-syl][s2-syl][s3-syl]". The class `abcjs-l0` denotes the first
+  // sub-staff w: line. The LAST `abcjs-l0` text node in DOM order is the
+  // last syllable of the first metrical line — its text begins with
+  // stanza-1's contribution.
+  //
+  // On the broken Plan-01+02 build, the cross-stanza proportional token
+  // split caused stanza-1's last-syllable bucket on the first sub-staff to
+  // receive content from a NEIGHBOURING line (e.g. "vale,") instead of
+  // "want.". After Plan 03 (one metrical line per sub-staff), the
+  // last `abcjs-l0` node's leading text MUST start with "want."
+  const lineLayout = await page.evaluate(() => {
+    const svg = document.querySelector('.abcjs-container svg')
+    if (!svg) return { ok: false, reason: 'no svg' }
+    const all = Array.from(svg.querySelectorAll('text.abcjs-lyric'))
+    const byLine = new Map()
+    for (const t of all) {
+      const cls = t.getAttribute('class') || ''
+      const m = cls.match(/abcjs-l(\d+)/)
+      if (!m) continue
+      const li = Number(m[1])
+      const arr = byLine.get(li) ?? []
+      arr.push((t.textContent || '').trim())
+      byLine.set(li, arr)
+    }
+    const result = {}
+    for (const [li, arr] of byLine.entries()) result[li] = arr
+    return { ok: true, byLine: result, lineCount: byLine.size }
+  })
+  if (!lineLayout.ok) {
+    console.error('FAIL (RENDER-07b): could not locate abcjs-lyric text nodes')
+    process.exit(1)
+  }
+  // Expect 4 sub-staff lyric lines on Psalm 23 (CM × 4 metrical lines).
+  if (lineLayout.lineCount < 4) {
+    console.error(`FAIL (RENDER-07b): expected >= 4 abcjs-l* sub-staff lyric lines, got ${lineLayout.lineCount}. byLine=${JSON.stringify(lineLayout.byLine)}`)
+    process.exit(1)
+  }
+  // Sub-staff line 0 = metrical line 0 ("...I'll not want."). Last syllable's
+  // text-node textContent starts with stanza-1's "want." Same line MUST NOT
+  // start with a token from a different metrical line.
+  const line0 = lineLayout.byLine[0] || []
+  const last0 = line0[line0.length - 1] || ''
+  if (!/^want/i.test(last0)) {
+    console.error(`FAIL (RENDER-07b): sub-staff line 0 last syllable does not START with "want" — got: "${last0}". Full line 0: ${JSON.stringify(line0)}`)
+    process.exit(1)
+  }
+  if (/^vale/i.test(last0)) {
+    console.error(`FAIL (RENDER-07b): sub-staff line 0 last syllable starts with "vale" — cross-stanza spill present. Got: "${last0}"`)
+    process.exit(1)
+  }
+  // Cross-check: sub-staff line 1 (metrical line 1 "He makes me down to lie")
+  // joined textContent must contain stanza-1 line-1 tokens ("makes"/"down")
+  // — this asserts line 1 lyrics are present (not dropped or merged with line 0).
+  const line1 = lineLayout.byLine[1] || []
+  const line1Joined = line1.join(' ')
+  if (!/makes/i.test(line1Joined) || !/down/i.test(line1Joined)) {
+    console.error(`FAIL (RENDER-07b): sub-staff line 1 missing stanza-1 line-1 tokens. Got: ${JSON.stringify(line1)}`)
+    process.exit(1)
+  }
+  console.log(`PASS — Psalm 23 RENDER-07b cross-stanza alignment: line-0 last="${last0}" (starts "want"); line-1 contains "makes" + "down"`)
+
+  // Fresh alignment screenshot for the human checkpoint.
+  await page.screenshot({
+    path: path.join(__dirname, 'screenshots', 'psalm-23-alignment-1024.png'),
+    fullPage: false,
+  })
 
   // ── Stage 2: navigate to lyrics-only view (B6 — make the sup assertion unambiguous)
   // The view-mode controls live in GearDrawer (mobile-first chromeless layout).
@@ -110,6 +181,7 @@ async function main() {
         localStorage.removeItem('psalter-score-mode')
         localStorage.setItem('psalter-onboarding-completed', 'true')
         localStorage.setItem('psalter-onboarding-dismissed', 'true')
+        localStorage.setItem('psalter_tour_v1', 'done')
       } catch {}
     })
     await page100.goto('https://psalter.gsdlabs.dev/psalms/100', { waitUntil: 'networkidle' })
@@ -144,6 +216,7 @@ async function main() {
         localStorage.removeItem('psalter-score-mode')
         localStorage.setItem('psalter-onboarding-completed', 'true')
         localStorage.setItem('psalter-onboarding-dismissed', 'true')
+        localStorage.setItem('psalter_tour_v1', 'done')
       } catch {}
     })
     await pageDcm.goto(`https://psalter.gsdlabs.dev/psalms/${DCM_PSALTER}`, { waitUntil: 'networkidle' })
