@@ -62,8 +62,7 @@ describe('mapCycleToPhraseSyllableLines — RENDER-02 structured line read + B1 
     const result = mapCycleToPhraseSyllableLines([S0], 4 /* phrasesPerCycle */)
     expect(Array.isArray(result)).toBe(true)
     expect(result).toHaveLength(4)
-    // Each slot is itself a string[] — the single-string-array contract the
-    // renderer relies on at NotationRenderer.tsx:451 (grid[i] ?? ['']).
+    // Each slot is itself a string[] (post-RENDER-07b: length === linesPerPhrase for filled slots).
     result.forEach((slot) => {
       expect(Array.isArray(slot)).toBe(true)
       slot.forEach((s) => expect(typeof s).toBe('string'))
@@ -74,27 +73,26 @@ describe('mapCycleToPhraseSyllableLines — RENDER-02 structured line read + B1 
     const result = mapCycleToPhraseSyllableLines([S0, S1], 4)
     expect(result).toHaveLength(4)
     // First two phrases derive from S0; last two from S1 — no empty slots in a full cycle.
-    expect(result[0]![0]!.length).toBeGreaterThan(0)
-    expect(result[1]![0]!.length).toBeGreaterThan(0)
-    expect(result[2]![0]!.length).toBeGreaterThan(0)
-    expect(result[3]![0]!.length).toBeGreaterThan(0)
+    expect(result[0]!.join(' ').length).toBeGreaterThan(0)
+    expect(result[1]!.join(' ').length).toBeGreaterThan(0)
+    expect(result[2]!.join(' ').length).toBeGreaterThan(0)
+    expect(result[3]!.join(' ').length).toBeGreaterThan(0)
   })
 
-  it('under-filled cycle pads with empty-string slots (preserves T length)', () => {
-    // DCM under-fill: only one stanza but T=4 phrases — slots 2 and 3 are [''] not absent.
-    // S0 has 4 lines, so all 4 slots get filled. Use a 2-line stanza to test the under-fill.
+  it('under-filled cycle pads with empty slots (preserves T length)', () => {
+    // 2-line stanza at T=4 → linesPerPhrase=1; first 2 slots filled, last 2 are [].
     const shortStanza = stanza(0, 'Only line A', 'Only line B')
     const result = mapCycleToPhraseSyllableLines([shortStanza], 4)
     expect(result).toHaveLength(4)
-    expect(result[2]).toEqual([''])
-    expect(result[3]).toEqual([''])
+    expect(result[2]).toEqual([])
+    expect(result[3]).toEqual([])
   })
 
-  it('CM single-stanza cycle: T=2, S=2 → both slots filled, single-string-array shape', () => {
+  it('CM single-stanza cycle: T=2, S=4 lines → both slots filled (RENDER-07b: 2 entries each)', () => {
     const result = mapCycleToPhraseSyllableLines([S0], 2)
     expect(result).toHaveLength(2)
-    expect(result[0]).toHaveLength(1)
-    expect(result[1]).toHaveLength(1)
+    expect(result[0]).toHaveLength(2)
+    expect(result[1]).toHaveLength(2)
     expect(typeof result[0]![0]).toBe('string')
     expect(typeof result[1]![0]).toBe('string')
   })
@@ -115,9 +113,9 @@ describe('mapCycleToPhraseSyllableLines — RENDER-02 structured line read + B1 
     expect(result[0]![0]).toBe('be-au ti-ful word')
   })
 
-  it('empty cycle returns phrasesPerCycle elements each [""]', () => {
+  it('empty cycle returns phrasesPerCycle elements each [] (RENDER-07b)', () => {
     const result = mapCycleToPhraseSyllableLines([], 4)
-    expect(result).toEqual([[''], [''], [''], ['']])
+    expect(result).toEqual([[], [], [], []])
   })
 })
 
@@ -126,7 +124,7 @@ describe('mapCycleToPhraseSyllableLines — RENDER-07 all metrical lines render 
     const lm = stanza(0, 'LMa rejoice one', 'LMb rejoice two', 'LMc rejoice three', 'LMd rejoice four')
     const grid = mapCycleToPhraseSyllableLines([lm], 2)
     expect(grid).toHaveLength(2)
-    const concatenated = grid.map((slot) => slot[0]).join(' ')
+    const concatenated = grid.flat().join(' ')
     for (const m of ['LMa', 'LMb', 'LMc', 'LMd']) {
       expect(concatenated).toContain(m)
     }
@@ -135,7 +133,7 @@ describe('mapCycleToPhraseSyllableLines — RENDER-07 all metrical lines render 
   it('CM 8.6.8.6 (T=2, 4 lines) — all 4 lines appear in the 2-phrase grid', () => {
     const grid = mapCycleToPhraseSyllableLines([S0], 2)
     expect(grid).toHaveLength(2)
-    const concatenated = grid.map((slot) => slot[0]).join(' ')
+    const concatenated = grid.flat().join(' ')
     for (const m of ['Line 1a', 'Line 1b', 'Line 1c', 'Line 1d']) {
       expect(concatenated).toContain(m)
     }
@@ -144,7 +142,7 @@ describe('mapCycleToPhraseSyllableLines — RENDER-07 all metrical lines render 
   it('DCM-like 2-stanza cycle (T=4, 8 lines) — all 8 lines appear', () => {
     const grid = mapCycleToPhraseSyllableLines([S0, S1], 4)
     expect(grid).toHaveLength(4)
-    const concatenated = grid.map((slot) => slot[0]).join(' ')
+    const concatenated = grid.flat().join(' ')
     for (const m of [
       'Line 1a','Line 1b','Line 1c','Line 1d',
       'Line 2a','Line 2b','Line 2c','Line 2d',
@@ -157,9 +155,60 @@ describe('mapCycleToPhraseSyllableLines — RENDER-07 all metrical lines render 
     const alt = stanza(0, 'X1', 'X2', 'X3', 'X4', 'X5')
     const grid = mapCycleToPhraseSyllableLines([alt], 5)
     expect(grid).toHaveLength(5)
-    const concatenated = grid.map((slot) => slot[0]).join(' ')
+    const concatenated = grid.flat().join(' ')
     for (const m of ['X1', 'X2', 'X3', 'X4', 'X5']) {
       expect(concatenated).toContain(m)
     }
+  })
+})
+
+describe('mapCycleToPhraseSyllableLines — RENDER-07b per-line inner array (Phase 4.9.7 Plan 03)', () => {
+  it('CM (T=2, 4 lines): inner length === 2, one metrical line per inner entry', () => {
+    const grid = mapCycleToPhraseSyllableLines([S0], 2)
+    expect(grid).toHaveLength(2)
+    expect(grid[0]).toHaveLength(2)
+    expect(grid[1]).toHaveLength(2)
+    expect(grid[0]![0]).toContain('Line 1a')
+    expect(grid[0]![1]).toContain('Line 1b')
+    expect(grid[1]![0]).toContain('Line 1c')
+    expect(grid[1]![1]).toContain('Line 1d')
+    // The "joined-string" Plan 01 shape would have had grid[0]![0] containing BOTH 'Line 1a' and 'Line 1b'.
+    expect(grid[0]![0]).not.toContain('Line 1b')
+  })
+
+  it('DCM (T=4, 8 lines across 2 stanzas): inner length === 2 for each slot', () => {
+    const grid = mapCycleToPhraseSyllableLines([S0, S1], 4)
+    expect(grid).toHaveLength(4)
+    for (const slot of grid) expect(slot).toHaveLength(2)
+    // Stanza boundary lands cleanly between slots 1 and 2.
+    expect(grid[1]![1]).toContain('Line 1d')
+    expect(grid[2]![0]).toContain('Line 2a')
+  })
+
+  it('alternate meter 10.10.10.10.10 (T=5, 5 lines): inner length === 1', () => {
+    const alt = stanza(0, 'X1', 'X2', 'X3', 'X4', 'X5')
+    const grid = mapCycleToPhraseSyllableLines([alt], 5)
+    expect(grid).toHaveLength(5)
+    for (let i = 0; i < 5; i++) {
+      expect(grid[i]).toHaveLength(1)
+      expect(grid[i]![0]).toContain(`X${i + 1}`)
+    }
+  })
+
+  it('under-fill (empty cycle): outer length === phrasesPerCycle, every inner === []', () => {
+    const grid = mapCycleToPhraseSyllableLines([], 2)
+    expect(grid).toHaveLength(2)
+    for (const slot of grid) expect(slot).toEqual([])
+  })
+
+  it('under-fill (partial last cycle): trailing slots are []', () => {
+    // 2-line stanza at T=4 → linesPerPhrase = max(1, floor(2/4)) = 1; first 2 slots filled, last 2 empty.
+    const short = stanza(0, 'short-A', 'short-B')
+    const grid = mapCycleToPhraseSyllableLines([short], 4)
+    expect(grid).toHaveLength(4)
+    expect(grid[0]).toHaveLength(1)
+    expect(grid[1]).toHaveLength(1)
+    expect(grid[2]).toEqual([])
+    expect(grid[3]).toEqual([])
   })
 })

@@ -34,10 +34,25 @@ describe('DCM mapCycleToPhraseSyllableLines — all 8 metrical lines render (REN
     // DCM tune T=4 phrases per cycle.
     const grid = mapCycleToPhraseSyllableLines([s0, s1], 4)
     expect(grid).toHaveLength(4)
-    const concatenated = grid.map((slot) => slot[0]).join(' ')
+    const concatenated = grid.flat().join(' ')
     // All 8 stanza-line markers must be present.
     for (const marker of ['L1a', 'L1b', 'L1c', 'L1d', 'L2a', 'L2b', 'L2c', 'L2d']) {
       expect(concatenated).toContain(marker)
     }
+  })
+
+  it('Phase 4.9.7 Plan 03 — per-line inner-array shape (RENDER-07b)', () => {
+    const s0 = stz(0, 'L1a alpha', 'L1b beta', 'L1c gamma', 'L1d delta')
+    const s1 = stz(1, 'L2a epsilon', 'L2b zeta', 'L2c eta', 'L2d theta')
+    const grid = mapCycleToPhraseSyllableLines([s0, s1], 4)
+    expect(grid).toHaveLength(4)
+    for (const slot of grid) expect(slot).toHaveLength(2)
+    // Stanza-1 lines occupy slots 0-1; stanza-2 lines occupy slots 2-3.
+    expect(grid[0]![0]).toContain('L1a')
+    expect(grid[0]![1]).toContain('L1b')
+    expect(grid[1]![0]).toContain('L1c')
+    expect(grid[1]![1]).toContain('L1d')
+    expect(grid[2]![0]).toContain('L2a')
+    expect(grid[3]![1]).toContain('L2d')
   })
 })
