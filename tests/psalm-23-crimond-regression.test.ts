@@ -45,16 +45,16 @@ describe('Psalm 23 + Crimond regression (D-16, RENDER-06)', () => {
     if (!psalm23Row) return
     const r = parseLyrics(psalm23Row.lyrics, psalm23Row.meter)
     if (!r.ok) throw new Error('parse failed')
-    // CM tune T=2 phrases per cycle
+    // CM tune T=2 phrases per cycle; RENDER-07b: inner length = linesPerPhrase = 2.
     const grid = mapCycleToPhraseSyllableLines([r.stanzas[0]], 2)
     expect(grid).toHaveLength(2)
     grid.forEach((slot) => {
       expect(Array.isArray(slot)).toBe(true)
-      expect(slot.length).toBe(1)
-      expect(typeof slot[0]).toBe('string')
+      expect(slot.length).toBe(2)
+      slot.forEach((s) => expect(typeof s).toBe('string'))
     })
-    expect(grid[0][0].length).toBeGreaterThan(0)
-    expect(grid[1][0].length).toBeGreaterThan(0)
+    expect(grid[0].join(' ').length).toBeGreaterThan(0)
+    expect(grid[1].join(' ').length).toBeGreaterThan(0)
   })
 
   it('all 4 CM metrical lines of stanza 0 appear in mapCycleToPhraseSyllableLines output (RENDER-07, D-06)', () => {
@@ -81,9 +81,14 @@ describe('Psalm 23 + Crimond regression (D-16, RENDER-06)', () => {
     expect(grid[0]).toHaveLength(2)
     expect(grid[1]).toHaveLength(2)
     // Line 0 ends with "shepherd, I'll not want." — and that string is ALONE in grid[0][0]
-    // (not bleeding into "In pastures green" which lives at grid[0][1]).
+    // (not bleeding into the next line which lives at grid[0][1]).
     expect(grid[0]![0]).toMatch(/want\.?$/i)
-    expect(grid[0]![1]).toMatch(/^In pas/i)
+    expect(grid[0]![1]).toMatch(/^He makes/i)
+    // grid[1] is the second phrase: lines 2-3 of the stanza ("In pastures green..." / "the quiet waters by.").
+    expect(grid[1]![0]).toMatch(/^In pas/i)
+    expect(grid[1]![1]).toMatch(/waters by/i)
+    // Cross-stanza spill guard: grid[0][0] must not contain line-1 tokens.
+    expect(grid[0]![0]).not.toMatch(/He makes/i)
     // Cross-stanza alignment guarantee: stanza 1 and stanza 3 have the SAME per-line entry
     // count, so the renderer's per-line sub-staff distribution cannot drift between them.
     const grid3 = mapCycleToPhraseSyllableLines([r.stanzas[2]], 2)

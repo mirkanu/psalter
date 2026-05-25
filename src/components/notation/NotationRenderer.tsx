@@ -477,13 +477,17 @@ export function NotationRenderer({
   // above). `mapCycleToPhraseSyllableLines` returns a T-element `string[][]`
   // grid; the `grid[i] ?? ['']` flatMap is the B1 shape-preservation contract
   // inherited unchanged from Plan 04.
-  function wLinesForPhrase(i: number): string[] {
-    return visibleCycles
-      .flatMap((cycle) => {
-        const grid = mapCycleToPhraseSyllableLines(cycle, phrasesForMeter(tuneMeter))
-        return grid[i] ?? ['']
-      })
-      .filter((s) => s.length > 0)
+  // RENDER-07b (Phase 4.9.7 Plan 03): returns one `string[]` per visible
+  // cycle. Inner array length === linesPerPhrase — each entry is one
+  // metrical line's syllabified text. The sub-staff loop below indexes
+  // `sub` into each cycle's inner array, emitting exactly one w: line per
+  // metrical line per stanza per sub-staff. Cross-stanza alignment is
+  // structural: same meter → identical inner length across all cycles.
+  function wLinesForPhrase(i: number): string[][] {
+    return visibleCycles.map((cycle) => {
+      const grid = mapCycleToPhraseSyllableLines(cycle, phrasesForMeter(tuneMeter))
+      return grid[i] ?? []
+    })
   }
 
   // ── Pagination indicator ───────────────────────────────────────────────────
@@ -677,6 +681,9 @@ export function NotationRenderer({
       return lines
     }
 
+    // TODO(RENDER-07b): proportional w: split retired by Phase 4.9.7 Plan 03;
+    // remove once no other callers added. (Sub-staff loop now indexes per-line
+    // entries directly from mapCycleToPhraseSyllableLines' inner array.)
     // Helper: split a syllabified w: payload into N sub-lines for the music
     // sub-lines above. Splits by whitespace-separated tokens proportionally.
     function splitWLineIntoChunks(payload: string, n: number): string[] {
@@ -701,21 +708,31 @@ export function NotationRenderer({
         .join('\n')
         .trim()
 
-      const musicSubLines = splitMusicIntoSubLines(cleanedBody, phraseSubdivisions)
+      // RENDER-07b (Phase 4.9.7 Plan 03): wLines is one string[] per visible
+      // cycle. Inner array length = linesPerPhrase. Cross-stanza alignment
+      // guarantee: same meter → identical inner length across all cycles.
+      const wLines: string[][] = showLyrics ? wLinesForPhrase(i) : []
+      const linesPerPhrase = wLines[0]?.length ?? 0
+
+      // Each metrical line gets its own sub-staff. Bump subdivisions when
+      // the metrical-line count exceeds the music's natural subdivision
+      // count so every w: line lands under its OWN music slice — no
+      // proportional splitting.
+      const naturalSubdivisions = phraseSubdivisions
+      const targetSubdivisions = Math.max(naturalSubdivisions, linesPerPhrase || 1)
+      const musicSubLines = splitMusicIntoSubLines(cleanedBody, targetSubdivisions)
       const actualSubdivisions = musicSubLines.length
 
-      const wLines = showLyrics ? wLinesForPhrase(i) : []
-
-      // For each music sub-line, emit the music followed by its share of
-      // each stanza's w: payload (one w: line per stanza per sub-line).
       for (let sub = 0; sub < actualSubdivisions; sub++) {
         parts.push(musicSubLines[sub])
-        for (const portion of wLines) {
-          if (!portion || !portion.trim()) continue
-          const syllabified = syllabifyForAbc(portion.replace(/\n/g, ' '))
-          const chunks = splitWLineIntoChunks(syllabified, actualSubdivisions)
-          const piece = chunks[sub] ?? ''
-          if (piece) parts.push(`w: ${piece}`)
+        if (!showLyrics) continue
+        // Index `sub` into each cycle's metrical-line array. When `sub` is
+        // beyond linesPerPhrase the music has extended past the lyric;
+        // emit no w: line for that sub-staff.
+        for (const cycleLines of wLines) {
+          const text = cycleLines[sub]
+          if (!text || !text.trim()) continue
+          parts.push(`w: ${syllabifyForAbc(text.replace(/\n/g, ' '))}`)
         }
       }
     }
