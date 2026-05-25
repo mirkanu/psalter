@@ -42,35 +42,44 @@ export function groupStanzasIntoCycles(
 
 /**
  * For ONE stanza-cycle, returns a T-element array (T = phrasesPerCycle)
- * where element i is a single-string array `[phraseText]` (or `['']` when
- * this cycle does not fill phrase slot i — under-fill case).
+ * where element i is a `string[]` of length === linesPerPhrase, one
+ * entry PER METRICAL LINE (no inter-line joining). Under-fill: trailing
+ * unfilled slots return `[]`.
  *
- * RETURN-SHAPE CONTRACT (B1): outer dim is phrasesPerCycle; each inner
- * element is exactly `string[]` of length 1. NotationRenderer.tsx:447-454
- * relies on this: `visibleCycles.flatMap(cycle => { const grid = ...; return grid[i] ?? [''] })`.
+ * RETURN-SHAPE CONTRACT (B1, revised for RENDER-07b — Phase 4.9.7 Plan 03):
+ * outer dim is phrasesPerCycle; each inner element is `string[]` of
+ * length === linesPerPhrase for filled slots and `[]` for under-filled
+ * tail slots. NotationRenderer.tsx consumes this directly — one w: line
+ * per metrical line per stanza per sub-staff, eliminating the proportional
+ * token-split heuristic that was the root cause of cross-stanza
+ * alignment drift surfaced at Phase 4.9.7 Plan 02's checkpoint.
  *
  * Line grouping (RENDER-07, Phase 4.9.7 D-02): metrical lines are
  * distributed across phrase slots by integer division —
- * `linesPerPhrase = floor(flatLines.length / phrasesPerCycle)`. For CM
- * 8.6.8.6 a single-stanza cycle has 4 lines and T=2, so each phrase slot
- * receives 2 metrical lines joined by a space. For DCM (2 stanzas × 4 lines
- * = 8) at T=4, 2 lines per phrase. For alternate meters where
- * `flatLines.length === phrasesPerCycle` (e.g. 10.10.10.10.10 at T=5), one
- * line per phrase. This replaces the pre-fix 1:1 truncating loop that
- * silently dropped lines past `phrasesPerCycle`.
+ * `linesPerPhrase = max(1, floor(flatLines.length / phrasesPerCycle))`.
+ * For CM 8.6.8.6 a single-stanza cycle has 4 lines and T=2, so each
+ * phrase slot receives 2 metrical lines as 2 separate entries. For DCM
+ * (2 stanzas × 4 lines = 8) at T=4, 2 lines per phrase. For alternate
+ * meters where `flatLines.length === phrasesPerCycle` (e.g.
+ * 10.10.10.10.10 at T=5), one line per phrase.
  *
  * Examples (CM tune T=2, 4-line stanza):
- *   cycle=[s1]                   → [['<s1.line0> <s1.line1>'], ['<s1.line2> <s1.line3>']]
+ *   cycle=[s1]    → [['<s1.line0>', '<s1.line1>'], ['<s1.line2>', '<s1.line3>']]
  * (DCM tune T=4, two 4-line stanzas):
- *   cycle=[s1, s2]               → [['<s1.l0> <s1.l1>'], ['<s1.l2> <s1.l3>'], ['<s2.l0> <s2.l1>'], ['<s2.l2> <s2.l3>']]
+ *   cycle=[s1, s2]
+ *     → [['<s1.l0>', '<s1.l1>'], ['<s1.l2>', '<s1.l3>'],
+ *        ['<s2.l0>', '<s2.l1>'], ['<s2.l2>', '<s2.l3>']]
  *
  * Under-fill (D-04): when `flatLines.length < phrasesPerCycle`, trailing
- * unfilled slots stay as the initial `['']` sentinel — never repeat
- * content.
+ * unfilled slots are `[]` — never repeat content.
  *
  * Line.syllables hand-override (D-03 hybrid): if a line carries an
  * explicit `syllables: string[]`, its joined form replaces the
  * auto-syllabified text for that line only.
+ *
+ * NO meter-string gating — this function NEVER reads CMD/DCM/DLM/DSM
+ * literals or calls phrasesForMeter. Cycle grouping is driven entirely
+ * by tune.double_length upstream (D-11, B3 invariant).
  */
 export function mapCycleToPhraseSyllableLines(
   cycle: Stanza[],
@@ -78,33 +87,30 @@ export function mapCycleToPhraseSyllableLines(
 ): string[][] {
   const result: string[][] = Array.from(
     { length: Math.max(0, phrasesPerCycle) },
-    () => [''],
+    () => [] as string[],
   )
   if (cycle.length === 0 || phrasesPerCycle <= 0) return result
 
-  // Flatten all metrical Line[] across the cycle's stanzas, preserving order.
   const flatLines = cycle.flatMap((s) => s.lines)
   if (flatLines.length === 0) return result
 
-  // RENDER-07 fix (Phase 4.9.7, D-02): group `linesPerPhrase` metrical
-  // lines into each phrase slot. CM 8.6.8.6 → 4 lines / T=2 = 2 lines per
-  // phrase. DCM → 8 lines / T=4 = 2 lines per phrase. Alternate meter
-  // (e.g. 10.10.10.10.10 T=5, S=5) → 5/5 = 1 line per phrase. Restores
-  // the pre-Phase-4.9.6 behaviour without re-introducing the
-  // meter-string DCM heuristic (RENDER-01 invariant preserved).
+  // RENDER-07b (Phase 4.9.7 Plan 03): one metrical line === one inner entry.
+  // Outer = phrasesPerCycle. Inner = linesPerPhrase per filled slot ([] for
+  // under-filled tail slots). Eliminates joined-string output that forced
+  // the renderer to proportionally split w: payloads by token count — the
+  // root cause of cross-stanza alignment drift surfaced at Plan 02's
+  // human-verify checkpoint.
   const linesPerPhrase = Math.max(1, Math.floor(flatLines.length / phrasesPerCycle))
   for (let p = 0; p < phrasesPerCycle; p++) {
     const start = p * linesPerPhrase
     const slice = flatLines.slice(start, start + linesPerPhrase)
-    if (slice.length === 0) continue
-    const text = slice
-      .map((l) =>
+    for (const l of slice) {
+      const text =
         l.syllables && l.syllables.length > 0
           ? l.syllables.join(' ')
-          : syllabifyForAbc(l.text),
-      )
-      .join(' ')
-    result[p] = [text]
+          : syllabifyForAbc(l.text)
+      result[p]!.push(text)
+    }
   }
   return result
 }
