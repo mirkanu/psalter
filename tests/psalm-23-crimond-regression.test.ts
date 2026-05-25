@@ -64,11 +64,30 @@ describe('Psalm 23 + Crimond regression (D-16, RENDER-06)', () => {
     // CM tune: T=2 phrases per cycle, but stanza has 4 metrical lines.
     // The fix must pack 2 lines into each phrase slot — none may be dropped.
     const grid = mapCycleToPhraseSyllableLines([r.stanzas[0]], 2)
-    const concatenated = grid.map((slot) => slot[0]).join(' ')
+    const concatenated = grid.flat().join(' ')
     // Each metrical line's leading phrase must appear somewhere.
     expect(concatenated).toMatch(/Lord's my she/)          // line 0
     expect(concatenated).toMatch(/He makes me/)            // line 1
     expect(concatenated).toMatch(/In pas-?\s*tures green/)    // line 2 — was dropped pre-fix
     expect(concatenated).toMatch(/qu-?\s*i-?\s*et waters by/) // line 3 — was dropped pre-fix
+  })
+
+  it('Phase 4.9.7 Plan 03 — per-line inner-array shape AND cross-stanza alignment (RENDER-07b)', () => {
+    if (!psalm23Row) return
+    const r = parseLyrics(psalm23Row.lyrics, psalm23Row.meter)
+    if (!r.ok) throw new Error('parse failed')
+    const grid = mapCycleToPhraseSyllableLines([r.stanzas[0]], 2)
+    // The new shape: each phrase slot carries 2 metrical lines as SEPARATE strings.
+    expect(grid[0]).toHaveLength(2)
+    expect(grid[1]).toHaveLength(2)
+    // Line 0 ends with "shepherd, I'll not want." — and that string is ALONE in grid[0][0]
+    // (not bleeding into "In pastures green" which lives at grid[0][1]).
+    expect(grid[0]![0]).toMatch(/want\.?$/i)
+    expect(grid[0]![1]).toMatch(/^In pas/i)
+    // Cross-stanza alignment guarantee: stanza 1 and stanza 3 have the SAME per-line entry
+    // count, so the renderer's per-line sub-staff distribution cannot drift between them.
+    const grid3 = mapCycleToPhraseSyllableLines([r.stanzas[2]], 2)
+    expect(grid3[0]).toHaveLength(grid[0]!.length)
+    expect(grid3[1]).toHaveLength(grid[1]!.length)
   })
 })
