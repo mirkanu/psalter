@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { fetchAllDailyReadings } from "@/db/queries/daily"
 import { TodayCard } from "@/components/TodayCard"
 import { PsalmSearchWidget } from "@/components/PsalmSearchWidget"

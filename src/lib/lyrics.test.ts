@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildAbcWithSyllables } from './lyrics'
+import { buildAbcWithSyllables, syllabifyForAbc } from './lyrics'
 
 // Note: existing extractVerse1 / syllabifyForAbc tests live at
 // tests/lib-utilities.test.ts and are NOT touched by this file.
@@ -126,5 +126,102 @@ K:G
     expect(wLines[1]).toContain('2My')
     expect(wLines[1]).toContain('walk') // line 2 of stanza 2 lyrics
     expect(wLines[2]).toContain('3Yea')
+  })
+})
+
+// ── PSALM_SYLLABLE_OVERRIDES — psalm vocabulary syllabification fixes ─────────
+// These tests guard PSALM_SYLLABLE_OVERRIDES in lyrics.ts, which corrects
+// systematic errors in the nlp-syllables library for archaic Psalter vocabulary.
+// Each override ensures stanzas have matching syllable counts per metrical line,
+// which is required for correct cross-stanza alignment in the staff view.
+describe('syllabifyForAbc — PSALM_SYLLABLE_OVERRIDES (psalm vocabulary)', () => {
+  // helper: count space-separated tokens in syllabifyForAbc output
+  const tokenCount = (s: string) => s.trim().split(/\s+/).filter(Boolean).length
+
+  it('prayer → 2 syllables: pray- er', () => {
+    expect(syllabifyForAbc('prayer')).toBe('pray- er')
+  })
+
+  it('prayers → 2 syllables: pray- ers', () => {
+    expect(syllabifyForAbc('prayers')).toBe('pray- ers')
+  })
+
+  it('prayer with trailing punctuation → pray- er,', () => {
+    expect(syllabifyForAbc('prayer,')).toBe('pray- er,')
+  })
+
+  it('Prayer (capitalised) → pray- er (multi-syllable overrides are lowercase, same as NLP)', () => {
+    // Override syllables are lowercase strings. Multi-syllable words do NOT
+    // preserve capitalisation — consistent with NLP behaviour ("Praise" → "prai- se").
+    // Single-syllable overrides (e.g. "Tongues") DO preserve case via the stripped path.
+    expect(syllabifyForAbc('Prayer')).toBe('pray- er')
+  })
+
+  it('tongues → 1 syllable (no split)', () => {
+    expect(syllabifyForAbc('tongues')).toBe('tongues')
+  })
+
+  it('Tongues (capitalised) → 1 syllable', () => {
+    expect(syllabifyForAbc('Tongues')).toBe('Tongues')
+  })
+
+  it('enemy → 3 syllables: en- e- my', () => {
+    expect(syllabifyForAbc('enemy')).toBe('en- e- my')
+  })
+
+  it('enemies → 3 syllables: en- e- mies', () => {
+    expect(syllabifyForAbc('enemies')).toBe('en- e- mies')
+  })
+
+  it('iniquity → 4 syllables: in- iq- ui- ty', () => {
+    expect(syllabifyForAbc('iniquity')).toBe('in- iq- ui- ty')
+  })
+
+  it('iniquity with trailing punctuation → in- iq- ui- ty:', () => {
+    expect(syllabifyForAbc('iniquity:')).toBe('in- iq- ui- ty:')
+  })
+
+  it('iniquities → 4 syllables: in- iq- ui- ties', () => {
+    expect(syllabifyForAbc('iniquities')).toBe('in- iq- ui- ties')
+  })
+
+  it('righteous → 2 syllables: righ- teous', () => {
+    expect(syllabifyForAbc('righteous')).toBe('righ- teous')
+  })
+
+  it('Righteous (capitalised) → righ- teous (multi-syllable overrides are lowercase)', () => {
+    expect(syllabifyForAbc('Righteous')).toBe('righ- teous')
+  })
+
+  it('righteousness → 3 syllables: righ- teous- ness', () => {
+    expect(syllabifyForAbc('righteousness')).toBe('righ- teous- ness')
+  })
+
+  it('unrighteous → 3 syllables: un- righ- teous', () => {
+    expect(syllabifyForAbc('unrighteous')).toBe('un- righ- teous')
+  })
+
+  it('unrighteousness → 4 syllables: un- righ- teous- ness', () => {
+    expect(syllabifyForAbc('unrighteousness')).toBe('un- righ- teous- ness')
+  })
+
+  it('majesty → 3 syllables: maj- es- ty', () => {
+    expect(syllabifyForAbc('majesty')).toBe('maj- es- ty')
+  })
+
+  // ── Full-line token-count regression tests (Psalm 64 alignment) ───────────
+  it('Psalm 64 S1 L1: "When I to thee my prayer make," → 8 tokens (not 7)', () => {
+    // Before fix: "prayer" counted as 1 → 7 tokens; after: "pray- er" = 2 → 8
+    expect(tokenCount(syllabifyForAbc('When I to thee my prayer make,'))).toBe(8)
+  })
+
+  it('Psalm 64 S3 L1: "Who do their tongues with malice whet," → 8 tokens (not 9)', () => {
+    // Before fix: "tongues" split as "ton- gues" (2) → 9 tokens; after: 1 → 8
+    expect(tokenCount(syllabifyForAbc('Who do their tongues with malice whet,'))).toBe(8)
+  })
+
+  it('Psalm 64 S2 L1: "Me from their secret counsel hide" → 8 tokens (unchanged)', () => {
+    // This stanza was already correct; must stay 8 after the fix
+    expect(tokenCount(syllabifyForAbc('Me from their secret counsel hide'))).toBe(8)
   })
 })

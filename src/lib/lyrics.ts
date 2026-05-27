@@ -2,6 +2,39 @@
 const syllabize = require('nlp-syllables/src/syllables') as (word: string) => string[]
 
 /**
+ * Manual syllable overrides for archaic Scottish Psalter vocabulary that the
+ * `nlp-syllables` library gets wrong. Keyed by lowercase word (no punctuation).
+ *
+ * Each value is an array of syllable strings. The `syllabifyForAbc` function
+ * checks this map before invoking the NLP library, applying the correct count
+ * for words the automatic segmenter mis-handles (e.g. "tongues" → 2,
+ * "righteous" → 4, "prayer" → 1 — all wrong).
+ *
+ * Add entries here whenever a visual alignment bug is traced to a syllable
+ * count mismatch on a specific word.
+ */
+const PSALM_SYLLABLE_OVERRIDES: Record<string, string[]> = {
+  // prayer: NLP gives 1 syllable; traditional singing = 2 (pray-er)
+  prayer: ['pray', 'er'],
+  prayers: ['pray', 'ers'],
+  // tongues: NLP splits as ton-gues (2); correct = 1
+  tongues: ['tongues'],
+  // enemy / enemies: NLP gives ene-my (2); correct = 3 (en-e-my)
+  enemy: ['en', 'e', 'my'],
+  enemies: ['en', 'e', 'mies'],
+  // iniquity: NLP gives i-ni-qu-i-ty (5); correct = 4 (in-iq-ui-ty)
+  iniquity: ['in', 'iq', 'ui', 'ty'],
+  iniquities: ['in', 'iq', 'ui', 'ties'],
+  // righteous: NLP gives rig-hte-o-us (4); correct = 2 (righ-teous)
+  righteous: ['righ', 'teous'],
+  righteousness: ['righ', 'teous', 'ness'],
+  unrighteous: ['un', 'righ', 'teous'],
+  unrighteousness: ['un', 'righ', 'teous', 'ness'],
+  // majesty: NLP gives majes-ty (2); correct = 3 (maj-es-ty)
+  majesty: ['maj', 'es', 'ty'],
+}
+
+/**
  * Extracts the first stanza from a multi-stanza psalm lyrics string.
  *
  * Verses in psalmVersions.lyricsImportedRaw are separated by double-newlines and each
@@ -52,8 +85,10 @@ export function syllabifyForAbc(text: string): string {
 
     if (!stripped) return word
 
-    // syllabize lowercases internally; we pass lowercase for consistent results
-    const syllables: string[] = syllabize(stripped.toLowerCase())
+    // Check manual override dictionary before invoking NLP library
+    const lowerStripped = stripped.toLowerCase()
+    const syllables: string[] =
+      PSALM_SYLLABLE_OVERRIDES[lowerStripped] ?? syllabize(lowerStripped)
 
     if (syllables.length <= 1) {
       // Single syllable — preserve original capitalisation of stripped word
@@ -113,7 +148,7 @@ export function buildAbcWithSyllables(
     .trim()
   if (stanzaPortionsForThisPhrase.length === 0) return cleaned
   const wLines = stanzaPortionsForThisPhrase
-    .filter((p) => !!p && p.length > 0)
+    .filter((p) => !!p && p.trim().length > 0)
     .map((p) => `w: ${syllabifyForAbc(p.replace(/\n/g, ' '))}`)
     .join('\n')
   if (!wLines) return cleaned

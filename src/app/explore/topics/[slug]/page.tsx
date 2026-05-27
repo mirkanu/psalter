@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import type { Metadata } from "next"
@@ -35,6 +36,7 @@ function buildTopicSlugMap(
 }
 
 export async function generateStaticParams() {
+  try {
   const topics = await fetchTopicsWithCounts()
   const slugMap = buildTopicSlugMap(
     topics.filter((t): t is typeof t & { name: string } => t.name !== null)
@@ -43,6 +45,7 @@ export async function generateStaticParams() {
     .filter((t) => t.name)
     .map((t) => ({ slug: slugMap.get(t.id) ?? '' }))
     .filter((p) => p.slug !== '')
+  } catch { return [] }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

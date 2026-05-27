@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { fetchTuneDetail, fetchTuneIds } from "@/db/queries/tunes"
@@ -14,8 +15,10 @@ interface PageProps {
 }
 
 export async function generateStaticParams() {
+  try {
   const ids = await fetchTuneIds()
   return ids.map((id) => ({ id: String(id) }))
+  } catch { return [] }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
