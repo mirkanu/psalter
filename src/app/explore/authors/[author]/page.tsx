@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import type { Metadata } from "next"
@@ -9,8 +10,10 @@ interface PageProps {
 }
 
 export async function generateStaticParams() {
-  const authors = await fetchDistinctAuthors()
-  return authors.map((a) => ({ author: encodeURIComponent(a) }))
+  try {
+    const authors = await fetchDistinctAuthors()
+    return authors.map((a) => ({ author: encodeURIComponent(a) }))
+  } catch { return [] }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

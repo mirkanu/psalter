@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import type { Metadata } from "next"
@@ -38,9 +39,11 @@ function buildNavesSlugMap(
 }
 
 export async function generateStaticParams() {
-  const topics = await fetchNavesTopicsWithCounts()
-  const navesSlugMap = buildNavesSlugMap(topics)
-  return topics.map((t) => ({ slug: navesSlugMap.get(t.id) ?? slugify(t.name) }))
+  try {
+    const topics = await fetchNavesTopicsWithCounts()
+    const navesSlugMap = buildNavesSlugMap(topics)
+    return topics.map((t) => ({ slug: navesSlugMap.get(t.id) ?? slugify(t.name) }))
+  } catch { return [] }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

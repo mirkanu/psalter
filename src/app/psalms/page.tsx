@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { PsalmListingGrid } from "@/components/PsalmListingGrid"
 import { fetchPsalmListRows } from "@/db/queries/psalms"
 import type { Metadata } from "next"

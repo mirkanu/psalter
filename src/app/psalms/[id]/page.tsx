@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { db } from '@/db'
@@ -19,6 +20,7 @@ interface PageProps {
 }
 
 export async function generateStaticParams() {
+  try {
   const rows = await db
     .select({ psalmId: psalms.id, psalterNumber: psalmVersions.psalterNumber })
     .from(psalms)
@@ -41,6 +43,7 @@ export async function generateStaticParams() {
   }
 
   return Array.from(slugs).map((slug) => ({ id: slug }))
+  } catch { return [] }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

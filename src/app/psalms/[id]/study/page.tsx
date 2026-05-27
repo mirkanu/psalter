@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
@@ -18,6 +19,7 @@ interface PageProps {
 }
 
 export async function generateStaticParams() {
+  try {
   // Same enumeration as /psalms/[id]/page.tsx — verbatim duplication is
   // intentional so /study has its own static-param surface.
   const rows = await db
@@ -40,6 +42,7 @@ export async function generateStaticParams() {
     if (isMulti) slugs.add(String(row.psalmId))
   }
   return Array.from(slugs).map((slug) => ({ id: slug }))
+  } catch { return [] }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
