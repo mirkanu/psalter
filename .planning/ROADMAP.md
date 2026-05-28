@@ -455,7 +455,7 @@ Plans:
 - [x] 04.9.9-03-PLAN.md — Wire solfegeOcrText through DB query → PsalmTabs → NotationRenderer; human verify checkpoint
 
 **Wave 4** *(depends on Wave 3)*
-- [ ] 04.9.9-04-PLAN.md — Full 150-psalm Playwright sweep + VERIFICATION.md + phase close
+- [x] 04.9.9-04-PLAN.md — Full 150-psalm Playwright sweep + VERIFICATION.md + phase close
 
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
