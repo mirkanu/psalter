@@ -671,7 +671,9 @@ export function NotationRenderer({
         }
       }
       if (acc.trim()) measures.push(acc.trim())
-      const realMeasures = measures.filter((m) => m && m !== '|')
+      const realMeasures = measures
+        .filter((m) => m && m !== '|')
+        .filter((m) => !/^\s*[zxZ]\d*\s*$/.test(m)) // exclude bare rest pseudo-bars (z2 trailing rest bug)
       if (realMeasures.length < 2) return [body]
       const per = Math.max(1, Math.ceil(realMeasures.length / n))
       const lines: string[] = []
