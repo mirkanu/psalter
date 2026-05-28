@@ -225,3 +225,66 @@ describe('syllabifyForAbc — PSALM_SYLLABLE_OVERRIDES (psalm vocabulary)', () =
     expect(tokenCount(syllabifyForAbc('Me from their secret counsel hide'))).toBe(8)
   })
 })
+
+// ── PSALM_SYLLABLE_OVERRIDES — archaic -eth verb forms ───────────────────────
+// 25 archaic -eth verb forms that nlp-syllables counts as 1 syllable but
+// require 2 note positions in sung performance (e.g. "leadeth" → "lead-eth").
+// Each wrong count shifts all following syllables left, dropping the last
+// syllable off the right edge of the staff. These overrides fix Root Cause 3
+// of the staff alignment bug (Phase 04.9.8).
+describe('PSALM_SYLLABLE_OVERRIDES — archaic -eth verbs', () => {
+  const ARCHAIC_ETH: Array<[string, string]> = [
+    ['beareth', 'bear- eth'],
+    ['causeth', 'cause- eth'],
+    ['cometh', 'come- eth'],
+    ['doeth', 'do- eth'],
+    ['fadeth', 'fade- eth'],
+    ['faileth', 'fail- eth'],
+    ['giveth', 'give- eth'],
+    ['goeth', 'go- eth'],
+    ['hateth', 'hate- eth'],
+    ['healeth', 'heal- eth'],
+    ['heareth', 'hear- eth'],
+    ['hideth', 'hide- eth'],
+    ['keepeth', 'keep- eth'],
+    ['layeth', 'lay- eth'],
+    ['leadeth', 'lead- eth'],
+    ['liveth', 'live- eth'],
+    ['looketh', 'look- eth'],
+    ['maketh', 'make- eth'],
+    ['raiseth', 'raise- eth'],
+    ['ruleth', 'rule- eth'],
+    ['seeketh', 'seek- eth'],
+    ['shineth', 'shine- eth'],
+    ['taketh', 'take- eth'],
+    ['useth', 'use- eth'],
+    ['waxeth', 'wax- eth'],
+  ]
+
+  for (const [word, expected] of ARCHAIC_ETH) {
+    it(`${word} → 2 syllables: ${expected}`, () => {
+      expect(syllabifyForAbc(word)).toBe(expected)
+    })
+  }
+
+  it('uppercase LEADETH is normalised to lowercase before lookup', () => {
+    expect(syllabifyForAbc('LEADETH')).toBe(syllabifyForAbc('leadeth'))
+  })
+
+  it('leadeth. with trailing punctuation → lead- eth.', () => {
+    expect(syllabifyForAbc('leadeth.')).toBe('lead- eth.')
+  })
+
+  // Regression: existing overrides must remain unchanged
+  it('prayer still → pray- er (no regression)', () => {
+    expect(syllabifyForAbc('prayer')).toBe('pray- er')
+  })
+
+  it('enemy still → en- e- my (no regression)', () => {
+    expect(syllabifyForAbc('enemy')).toBe('en- e- my')
+  })
+
+  it('righteousness still → righ- teous- ness (no regression)', () => {
+    expect(syllabifyForAbc('righteousness')).toBe('righ- teous- ness')
+  })
+})

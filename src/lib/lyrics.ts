@@ -32,6 +32,32 @@ const PSALM_SYLLABLE_OVERRIDES: Record<string, string[]> = {
   unrighteousness: ['un', 'righ', 'teous', 'ness'],
   // majesty: NLP gives majes-ty (2); correct = 3 (maj-es-ty)
   majesty: ['maj', 'es', 'ty'],
+  // Archaic -eth verb forms: NLP gives 1 syllable; correct singing = 2 (verb-eth)
+  beareth: ['bear', 'eth'],
+  causeth: ['cause', 'eth'],
+  cometh: ['come', 'eth'],
+  doeth: ['do', 'eth'],
+  fadeth: ['fade', 'eth'],
+  faileth: ['fail', 'eth'],
+  giveth: ['give', 'eth'],
+  goeth: ['go', 'eth'],
+  hateth: ['hate', 'eth'],
+  healeth: ['heal', 'eth'],
+  heareth: ['hear', 'eth'],
+  hideth: ['hide', 'eth'],
+  keepeth: ['keep', 'eth'],
+  layeth: ['lay', 'eth'],
+  leadeth: ['lead', 'eth'],
+  liveth: ['live', 'eth'],
+  looketh: ['look', 'eth'],
+  maketh: ['make', 'eth'],
+  raiseth: ['raise', 'eth'],
+  ruleth: ['rule', 'eth'],
+  seeketh: ['seek', 'eth'],
+  shineth: ['shine', 'eth'],
+  taketh: ['take', 'eth'],
+  useth: ['use', 'eth'],
+  waxeth: ['wax', 'eth'],
 }
 
 /**
