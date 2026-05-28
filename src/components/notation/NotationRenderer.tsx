@@ -26,6 +26,7 @@ import { BackToNotationButton } from './BackToNotationButton'
 import { TuneAudioPlayer } from '@/components/TuneAudioPlayer'
 import { splitOnPhraseBreaks } from '@/lib/abc-phrases'
 import { syllabifyForAbc } from '@/lib/lyrics'
+import { buildWLineFromSolfa } from '@/lib/abc-melisma'
 import {
   groupStanzasIntoCycles,
   mapCycleToPhraseSyllableLines,
@@ -100,6 +101,12 @@ export interface NotationRendererProps {
    * Replaces the Plan-04 transitional meter-string heuristic.
    */
   doubleLength: boolean
+  /**
+   * Plan 04.9.9: Raw solfège OCR JSON string from DB. When non-null and containing
+   * soprano/doh/time fields, used to build melisma-aware w: lines via
+   * buildWLineFromSolfa. When null, falls back to syllabifyForAbc.
+   */
+  solfegeOcrText?: string | null
 }
 
 export type ViewMode = 'staff' | 'solfege' | 'lyrics'
@@ -189,6 +196,7 @@ export function NotationRenderer({
   soundcloudUrl = null,
   lyricsStructured,
   doubleLength,
+  solfegeOcrText = null,
 }: NotationRendererProps) {
   // chromeless mode permanently disables the FS overlay; the singing view IS the fullscreen.
   const allowFullscreen = !chromeless
@@ -222,6 +230,22 @@ export function NotationRenderer({
     () => groupStanzasIntoCycles(stanzas, doubleLength),
     [stanzas, doubleLength],
   )
+
+  // Plan 04.9.9: Parse solfège OCR JSON for melisma-aware w: generation.
+  // T-04.9.9-05: try/catch + per-field type guards — null on any failure.
+  const solfegeVoices = useMemo(() => {
+    if (!solfegeOcrText) return null
+    try {
+      const parsed = JSON.parse(solfegeOcrText) as Record<string, unknown>
+      const soprano = typeof parsed.soprano === 'string' ? parsed.soprano : null
+      const doh     = typeof parsed.doh     === 'string' ? parsed.doh     : null
+      const time    = typeof parsed.time    === 'string' ? parsed.time    : 'C'
+      if (!soprano || !doh) return null
+      return { soprano, doh, time }
+    } catch {
+      return null
+    }
+  }, [solfegeOcrText])
 
   const totalStanzaPages = Math.max(1, Math.ceil(cycles.length / CYCLES_PER_PAGE))
 
@@ -713,6 +737,26 @@ export function NotationRenderer({
       return chunks
     }
 
+    // Plan 04.9.9: per-phrase helper that uses buildWLineFromSolfa when solfège
+    // OCR data is available, falling back to syllabifyForAbc otherwise.
+    // Defined inside useMemo so it closes over solfegeVoices and tuneMeter.
+    function wLineForSyllables(rawText: string, phraseIndex: number): string {
+      const text = rawText.replace(/\n/g, ' ')
+      if (solfegeVoices && tuneMeter) {
+        const warnings: string[] = []
+        return buildWLineFromSolfa(
+          solfegeVoices.soprano,
+          solfegeVoices.doh,
+          solfegeVoices.time,
+          phraseIndex,
+          tuneMeter,
+          text,
+          warnings,
+        )
+      }
+      return syllabifyForAbc(text)
+    }
+
     for (const i of visiblePhraseIndices) {
       const phraseBody = (split.phrases[i] ?? '').trim()
       if (!phraseBody) continue
@@ -774,7 +818,7 @@ export function NotationRenderer({
             // Proportionally distribute the single lyric line across sub-staves.
             const rawText = cycleLines[0]
             if (!rawText || !rawText.trim()) continue
-            const syllabified = syllabifyForAbc(rawText.replace(/\n/g, ' '))
+            const syllabified = wLineForSyllables(rawText, i)
             const chunks = splitWLineIntoChunks(syllabified, actualSubdivisions)
             const chunk = chunks[sub]
             if (!chunk || !chunk.trim()) continue
@@ -785,7 +829,7 @@ export function NotationRenderer({
             // emit no w: line for that sub-staff.
             const text = cycleLines[sub]
             if (!text || !text.trim()) continue
-            parts.push(`w: ${syllabifyForAbc(text.replace(/\n/g, ' '))}`)
+            parts.push(`w: ${wLineForSyllables(text, i)}`)
           }
         }
       }
@@ -793,7 +837,7 @@ export function NotationRenderer({
     return parts.join('\n')
     // wLinesForPhrase depends on visibleCycles, captured by closure.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [split, visiblePhraseIndices, visibleCycles, tuneMeter, showLyrics, phraseSubdivisions, chromeless])
+  }, [split, visiblePhraseIndices, visibleCycles, tuneMeter, showLyrics, phraseSubdivisions, chromeless, solfegeVoices])
 
   // ── View area ─────────────────────────────────────────────────────────────
   // Item 2: Play plays once — no chain/repeat. We deliberately do NOT pass
