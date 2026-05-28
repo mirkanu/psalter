@@ -452,7 +452,7 @@ Plans:
 - [x] 04.9.9-02-PLAN.md — buildWLineFromSolfa pipeline: dot-pair detection + duration heuristic + unit tests
 
 **Wave 3** *(depends on Wave 2)*
-- [ ] 04.9.9-03-PLAN.md — Wire solfegeOcrText through DB query → PsalmTabs → NotationRenderer; human verify checkpoint
+- [x] 04.9.9-03-PLAN.md — Wire solfegeOcrText through DB query → PsalmTabs → NotationRenderer; human verify checkpoint
 
 **Wave 4** *(depends on Wave 3)*
 - [ ] 04.9.9-04-PLAN.md — Full 150-psalm Playwright sweep + VERIFICATION.md + phase close
