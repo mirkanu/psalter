@@ -25,6 +25,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4.9.6 (INSERTED): Psalter Alignment Implementation** - Redesign lyrics data model (Stanza→Line→Syllable + bibleVerseRef); parse current Airtable lyric blobs into the new structured form; implement the alignment + line-break algorithm so DCM tunes render against two CM stanzas correctly, alternate meters align, and amen endings don't consume lyric syllables. Promotes seeds/psalter-alignment-implementation.md; consumes the canonical doc from Phase 4.9.5
 - [x] **Phase 4.9.7 (INSERTED): Staff-View Metrical-Line Hotfix** - Fix the regression introduced by Phase 4.9.6 where `mapCycleToPhraseSyllableLines` drops half (or more) of each stanza's metrical lines in the staff view. CM/LM/SM stanzas render only lines 0-1 (out of 4); DCM stanzas only render lines 0-3 (out of 8). Lyrics-only view is unaffected. Mechanical fix: group N=stanzaLines/phrasesPerCycle lines into each phrase slot. Strengthen the regression test that missed it. (completed 2026-05-25)
 - [ ] **Phase 4.9.8 (INSERTED): Staff Display Word Alignment Fix** - Fix staff view word alignment: words cut off at end of staff lines, notes with no words underneath. Change CM/LM/SM tunes from 1 PHRASE_BREAK (2 phrases) to 3 PHRASE_BREAKs (4 phrases, one per metrical line) using note-head counting to find the 8/6 split. Fix trailing z2 rest phantom-bar bug. Add archaic word overrides. All 150 psalms render with zero empty note positions at row ends.
+- [ ] **Phase 4.9.9 (INSERTED): Staff Alignment — Melisma Support** - Fix the remaining 84 failing psalms in staff view by implementing `_` hold tokens for passing notes. Use solfège OCR text already in DB to detect dot-pair passing notes; apply duration heuristic for residual mismatches.
 - [ ] **Phase 5: Precentor Portal** - Better Auth login, service event CRUD, psalm+tune set list builder, live service view with pre-loaded notation
 - [ ] **Phase 6: Polish** - OG images, Lighthouse 90+, bundle analysis, click feedback, loading skeletons on remaining routes
 
@@ -429,6 +430,32 @@ Plans:
 - [x] 04.9.8-02-PLAN.md — Migrate ABCs to 3 PHRASE_BREAKs (note-head counting) + phrasesForMeter 4/8 + z2 fix
 - [x] 04.9.8-03-PLAN.md — Add 25 archaic -eth syllable overrides + unit tests
 - [x] 04.9.8-04-PLAN.md — Playwright E2E across all 150 psalms in staff view (RENDER-08 phase gate)
+
+### Phase 4.9.9 (INSERTED): Staff Alignment — Melisma Support
+**Goal**: Fix the remaining 84 failing psalms in staff view by implementing `_` (hold/melisma) tokens for passing notes. Use solfège OCR text already in the DB to detect dot-pair passing notes; apply a duration heuristic for residual mismatches. All 150 psalms should render with correct syllable-to-note alignment.
+**Depends on**: Phase 4.9.8
+**Requirements**: RENDER-08
+**Success Criteria** (what must be TRUE):
+  1. `parseVoiceLine` in `solfege-parser.ts` tags dot-pair second tokens as `passing: true` (e.g. `f.,r` → `r` is passing)
+  2. New `buildWLineFromSolfa()` function generates `w:` lines with `_` for passing positions and correct syllables for syllabic positions
+  3. `NotationRenderer` uses solfège-derived `w:` when `solfege_ocr_text` is available; falls back to current `syllabifyForAbc` path when not
+  4. Crimond phrase 4 renders with all 12 notes having lyric tokens (6 syllabic + underscores for passing notes) — no trailing empty note heads
+  5. Playwright E2E asserts 150/150 psalms pass (or all residual failures are flagged for manual review, not silently mis-aligned)
+**Plans**: 4 plans
+
+Plans:
+
+**Wave 1**
+- [ ] 04.9.9-01-PLAN.md — Instrument sol-fa parser: NoteEvent.passing field + getPassingPositions export + unit tests
+
+**Wave 2** *(depends on Wave 1)*
+- [ ] 04.9.9-02-PLAN.md — buildWLineFromSolfa pipeline: dot-pair detection + duration heuristic + unit tests
+
+**Wave 3** *(depends on Wave 2)*
+- [ ] 04.9.9-03-PLAN.md — Wire solfegeOcrText through DB query → PsalmTabs → NotationRenderer; human verify checkpoint
+
+**Wave 4** *(depends on Wave 3)*
+- [ ] 04.9.9-04-PLAN.md — Full 150-psalm Playwright sweep + VERIFICATION.md + phase close
 
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
