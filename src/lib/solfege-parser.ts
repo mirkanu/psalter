@@ -213,7 +213,7 @@ export function parseSyllable(token: string): SolFaNote | null {
 //   dotted minim (3/4 bar)= 6
 //   semibreve             = 8
 
-interface NoteEvent { note: string; duration: number }
+export interface NoteEvent { note: string; duration: number; passing?: boolean }
 
 function isHold(token: string): boolean {
   return token === '—' || token === '-'
@@ -236,8 +236,8 @@ function parseVoiceLine(
     }
   }
 
-  function addNote(note: string, dur: number) {
-    events.push({ note, duration: dur })
+  function addNote(note: string, dur: number, passing?: boolean) {
+    events.push({ note, duration: dur, ...(passing ? { passing: true } : {}) })
   }
 
   // Strip Amen (anything after the last ||), then treat remaining || as single bars
@@ -269,7 +269,9 @@ function parseVoiceLine(
       const halfBeat = subTokens.length > 1
       const unitDur = halfBeat ? 1 : 2 // L:1/8: full beat=2, half beat=1
 
-      for (const token of subTokens) {
+      for (let si = 0; si < subTokens.length; si++) {
+        const token = subTokens[si]
+        const isPassing = halfBeat && si > 0  // second+ token of a dot-pair
         if (isHold(token)) {
           extendLast(unitDur)
         } else {
@@ -280,7 +282,7 @@ function parseVoiceLine(
             continue
           }
           const semitone = tonic + (DEGREE[parsed.syllable] ?? 0) + parsed.octaveShift * 12
-          addNote(semitoneToAbcNote(semitone, sharps, flats), unitDur)
+          addNote(semitoneToAbcNote(semitone, sharps, flats), unitDur, isPassing || undefined)
         }
       }
     }
@@ -424,6 +426,30 @@ export function solFaToAbcMultiVoice(
   ].join('\n')
 
   return { abc, warnings }
+}
+
+/**
+ * Returns a boolean[] — one entry per NoteEvent produced from the soprano
+ * solfège string. true = the note is a passing (melismatic) note from the
+ * second token of a dot-pair slot; false = the note carries a syllable.
+ *
+ * Used by buildWLineFromSolfa (src/lib/abc-melisma.ts) to decide whether to
+ * emit `_` or a syllable token for each note position.
+ *
+ * @param soprano  Raw solfège voice line (e.g. "s|m.r|d:t_1|l_1:—|s||")
+ * @param doh      Key letter (e.g. "G", "Bb")
+ * @param time     Time signature string (e.g. "C", "3/4", "6/8")
+ */
+export function getPassingPositions(
+  soprano: string,
+  doh: string,
+  _time: string,
+): boolean[] {
+  const warnings: string[] = []
+  const tonic = DOH_SEMITONES[doh] ?? 0
+  const { sharps, flats } = keyAccidentalsForDoh(doh)
+  const events = parseVoiceLine(soprano, tonic, warnings, sharps, flats)
+  return events.map((e) => e.passing === true)
 }
 
 /** Convert a single solfège voice line to ABC. Used by the editable OCR text panel. */
