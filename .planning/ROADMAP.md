@@ -449,7 +449,7 @@ Plans:
 - [x] 04.9.9-01-PLAN.md — Instrument sol-fa parser: NoteEvent.passing field + getPassingPositions export + unit tests
 
 **Wave 2** *(depends on Wave 1)*
-- [ ] 04.9.9-02-PLAN.md — buildWLineFromSolfa pipeline: dot-pair detection + duration heuristic + unit tests
+- [x] 04.9.9-02-PLAN.md — buildWLineFromSolfa pipeline: dot-pair detection + duration heuristic + unit tests
 
 **Wave 3** *(depends on Wave 2)*
 - [ ] 04.9.9-03-PLAN.md — Wire solfegeOcrText through DB query → PsalmTabs → NotationRenderer; human verify checkpoint
