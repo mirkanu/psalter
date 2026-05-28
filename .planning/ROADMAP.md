@@ -441,7 +441,7 @@ Plans:
   3. `NotationRenderer` uses solfège-derived `w:` when `solfege_ocr_text` is available; falls back to current `syllabifyForAbc` path when not
   4. Crimond phrase 4 renders with all 12 notes having lyric tokens (6 syllabic + underscores for passing notes) — no trailing empty note heads
   5. Playwright E2E asserts 150/150 psalms pass (or all residual failures are flagged for manual review, not silently mis-aligned)
-**Plans**: 4 plans
+**Plans**: 7 plans
 
 Plans:
 
@@ -456,6 +456,11 @@ Plans:
 
 **Wave 4** *(depends on Wave 3)*
 - [x] 04.9.9-04-PLAN.md — Full 150-psalm Playwright sweep + VERIFICATION.md + phase close
+
+**Wave 5 — Gap Closure** *(addresses VERIFICATION.md gaps for truths #4 and #5)*
+- [ ] 04.9.9-05-PLAN.md — Fix Root Causes A+B: buildWLineFromSolfa syllabic-event boundary + countNoteHeads export + NotationRenderer note-count padding
+- [ ] 04.9.9-06-PLAN.md — Fix Root Cause C: re-annotate 7 tunes with wrong PHRASE_BREAK count (--tunes filter)
+- [ ] 04.9.9-07-PLAN.md — Re-run 150-psalm sweep + update VERIFICATION.md with per-tune residual enumeration
 
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
