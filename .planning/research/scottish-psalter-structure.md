@@ -123,6 +123,27 @@ Because DCM-ness is encoded in Airtable's `Double length` column and not yet mig
 
 A second name-evidence DCM candidate in the data is *Petersham* (`name='Petersham (CMD, EPC tune)'`, `meter='CM'`). Use Old 44th as the primary teaching example; Petersham as the secondary.
 
+### Extended final phrases
+
+Some tunes in the corpus have **more note heads in their final phrase than the metrical syllable count requires**. Concretely confirmed in the ABC data (2026-05-28 Playwright sweep, 84/150 psalms affected):
+
+| Tune | Meter | Expected notes in phrase 4 | Actual notes in phrase 4 |
+|---|---|---|---|
+| Crimond | CM | 6 | 12 |
+| Old 100th | LM | 8 | 24 |
+| Crediton | CM | 6 | 12 |
+
+These extra notes appear at the end of the tune's final phrase, beyond the last metrical syllable. Two interpretations are possible:
+
+1. **Intentional cadential figure** — the extra notes are a musical postlude or cadential decoration that the tune tradition includes after the final syllable. Notes beyond the last syllable play instrumentally (or are sung on a held vowel) and carry no new lyric content. This is consistent with CPRC practice for certain tunes.
+2. **ABC encoding sloppiness** — the digitisation captured more bar content than intended (e.g. a trailing ornamental bar not present in the original print), and the ABC should be trimmed.
+
+**⚠ Open question (requires precentor confirmation):** For each affected tune, are the extra final notes intentional (cadential figure) or an encoding error? The answer determines the fix:
+- If intentional → pad the `w:` line with `*` tokens for the extra notes (explicit "no syllable" instruction to abcjs); update the Playwright assertion to allow trailing `*`-marked positions on the last phrase.
+- If encoding error → trim the ABC source in the DB for each affected tune and re-run the alignment sweep.
+
+**Rendering engine rule (provisional, pending confirmation):** When `noteCount(phrase_n) > syllableCount(phrase_n)`, emit `*` for each excess note rather than leaving the `w:` line short. This prevents abcjs from producing layout artefacts from unsyllabified trailing notes, and makes the "no syllable" intent explicit regardless of whether the notes are intentional or not.
+
 ### Anti-example: meter mismatch is a data error, not a structural pattern
 
 The pairing **Aurelia (76 76 D) ↔ Psalm 119:153–160 (CM)** exists in the DB (`psalm_version_tunes` row 184) but is a **CPRC curation mistake**, not an intentional "long tune covers two CM stanzas" practice [user briefing §Q2]. The lyric (8 lines × CM = 8-6-8-6-8-6-8-6 syllables) and tune (76 76 D = 7-6-7-6-7-6-7-6 syllables) differ on every odd phrase (8 vs 7).

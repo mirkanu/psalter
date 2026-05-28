@@ -10,11 +10,14 @@ context: Phase 4.9.2 exploration
 
 abcjs (and the ABC notation standard) handles syllable-to-note alignment declaratively via the `w:` (lyric) field. The library automatically parses and aligns syllables during client-side rendering — no manual computation needed.
 
+**Alignment is purely positional (ordinal), not proportional or duration-based.** The Nth syllable token in the `w:` field lands under the Nth singable note, regardless of that note's duration (minim, crotchet, quaver — all consume exactly one syllable slot). This is why CM tunes are interchangeable: the 8.6.8.6 *note-count* invariant holds across all of them even though no two share the same rhythm.
+
 Control symbols in `w:` field:
-- `-` (word break)
-- `_` (syllable hold)
-- `*` (skip note)
-- `~` (word join)
+- `-` (hyphen — splits a word across consecutive notes: `shep-herd`)
+- `_` (underscore — melisma: hold previous syllable across one more note)
+- `*` (asterisk — skip note: note gets no syllable, rendered silently)
+- `~` (tilde — word join: connect two tokens as one word)
+- `|` (pipe — barline resync: advance the lyric pointer to the next barline, correcting any off-by-one drift within the preceding measure)
 
 ## Decision
 
