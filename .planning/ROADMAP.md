@@ -168,11 +168,11 @@ Plans:
 
 Plans:
 **Wave 1**
-- [ ] 04.6-01-PLAN.md — Layout restructure (notation first, tabs below), remove static stanzas, stanza number fix, space-y-6 standardisation
+- [x] 04.6-01-PLAN.md — Layout restructure (notation first, tabs below), remove static stanzas, stanza number fix, space-y-6 standardisation
 
 **Wave 2** *(parallel — both depend on Wave 1)*
-- [ ] 04.6-02-PLAN.md — A−/A+ font size toggle in notation player, AbcRenderer error boundary, psalm detail error.tsx
-- [ ] 04.6-03-PLAN.md — shadcn Sheet install, SiteHeader hamburger menu (mobile), sticky bottom tab bar, Study tab link colors, Playwright UAT
+- [x] 04.6-02-PLAN.md — A−/A+ font size toggle in notation player, AbcRenderer error boundary, psalm detail error.tsx
+- [x] 04.6-03-PLAN.md — shadcn Sheet install, SiteHeader hamburger menu (mobile), sticky bottom tab bar, Study tab link colors, Playwright UAT
 **UI hint**: yes
 
 ### Phase 4.7 (INSERTED): Psalm Listing Overhaul
@@ -257,7 +257,7 @@ Plans:
 
 Plans:
 **Wave 1**
-- [ ] 04.9.1-01-PLAN.md — Build AbcPlayer + AbcPlayerSection components; wire into /tunes/[id] and PsalmNotationPlayer; Playwright UAT (5 tests) + human visual verify checkpoint
+- [x] 04.9.1-01-PLAN.md — Build AbcPlayer + AbcPlayerSection components; wire into /tunes/[id] and PsalmNotationPlayer; Playwright UAT (5 tests) + human visual verify checkpoint
 **UI hint**: yes
 
 ### Phase 4.9.2 (INSERTED): Dynamic ABC Polish — COMPLETE (2026-05-14)
@@ -398,7 +398,7 @@ Plans:
   5. Lyrics-only view continues to render all lines (no regression)
   6. The Plan 07 Psalm 23 + Crimond regression test from Phase 4.9.6 is strengthened to assert every metrical line of the stanza appears in `mapCycleToPhraseSyllableLines` output for CM
   7. Playwright UAT diff against live psalter.gsdlabs.dev confirms staff view now shows full stanza content
-**Plans**: 2 plans
+**Plans**: 3 plans
 **UI hint**: yes — staff view rendering change; lyrics-only and UI-SPEC contracts unchanged from 4.9.6
 
 Plans:
@@ -406,7 +406,10 @@ Plans:
 - [x] 04.9.7-01-PLAN.md — TDD: strengthen CM/DCM/LM regression tests (RED), apply D-02 fix to mapCycleToPhraseSyllableLines (GREEN), register RENDER-07
 
 **Wave 2** *(depends on Wave 1)*
-- [ ] 04.9.7-02-PLAN.md — Build + pm2 restart psalter; extended Playwright UAT against psalter.gsdlabs.dev asserting D-09 (CM "waters by", LM "rejoice", DCM last line); human visual sign-off
+- [x] 04.9.7-02-PLAN.md — Build + pm2 restart psalter; extended Playwright UAT against psalter.gsdlabs.dev asserting D-09 (CM "waters by", LM "rejoice", DCM last line); human visual sign-off
+
+**Wave 3** *(depends on Wave 2)*
+- [x] 04.9.7-03-PLAN.md — Per-line inner-array contract (RENDER-07b): fix cross-stanza spill; one metrical line = one sub-staff entry; Playwright per-syllable-node SVG assertion; human sign-off
 
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
@@ -436,7 +439,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 4.9.5 → 5 → 6
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 4.9.5 → 4.9.6 → 4.9.7 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -445,15 +448,16 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 →
 | 3. Search | 6/6 | Complete | 2026-05-08 |
 | 4. Notation | 4/4 | Complete | 2026-05-08 |
 | 4.5. Psalm Detail Overhaul | 4/4 | Complete | 2026-05-09 |
-| 4.6. Psalm Detail UI Polish | 0/3 | Not started | - |
+| 4.6. Psalm Detail UI Polish | 3/3 | Complete | 2026-05-09 |
 | 4.7. Psalm Listing Overhaul | 3/3 | Complete | 2026-05-09 |
 | 4.8. Explore & Tunes Overhaul | 3/3 | Complete | 2026-05-10 |
 | 4.9. Tune Notation Conversion | 0/3 | Not started | - |
 | 4.9.1. Interactive abcjs Player | 1/1 | Complete | 2026-05-13 |
 | 4.9.2. Dynamic ABC Polish | 5/5 | Complete | 2026-05-14 |
-| 4.9.3. Mobile-first Psalm Display | 3/6 | In progress | - |
-| 4.9.4. Staff View Refinements & Onboarding | 0/TBD | Not started | - |
-| 4.9.5. Scottish Psalter Metrical Knowledge | 0/TBD | Not started | - |
-
+| 4.9.3. Mobile-first Psalm Display | 6/6 | Complete | 2026-05-25 |
+| 4.9.4. Staff View Refinements & Onboarding | 5/5 | Complete | 2026-05-16 |
+| 4.9.5. Scottish Psalter Metrical Knowledge | 2/2 | Complete | 2026-05-17 |
+| 4.9.6. Psalter Alignment Implementation | 7/7 | Complete | 2026-05-19 |
+| 4.9.7. Staff-View Metrical-Line Hotfix | 3/3 | Complete | 2026-05-25 |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
