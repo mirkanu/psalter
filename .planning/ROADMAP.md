@@ -428,7 +428,7 @@ Plans:
 - [x] 04.9.8-01-PLAN.md — Audit current PHRASE_BREAK state across all 144 tunes; produce JSON for migration
 - [x] 04.9.8-02-PLAN.md — Migrate ABCs to 3 PHRASE_BREAKs (note-head counting) + phrasesForMeter 4/8 + z2 fix
 - [x] 04.9.8-03-PLAN.md — Add 25 archaic -eth syllable overrides + unit tests
-- [ ] 04.9.8-04-PLAN.md — Playwright E2E across all 150 psalms in staff view (RENDER-08 phase gate)
+- [x] 04.9.8-04-PLAN.md — Playwright E2E across all 150 psalms in staff view (RENDER-08 phase gate)
 
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
