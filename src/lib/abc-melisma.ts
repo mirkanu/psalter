@@ -181,7 +181,7 @@ export function buildWLineFromSolfa(
     if (adjustedPassings[ni]) {
       tokens.push('_')
     } else {
-      tokens.push(sylTokens[sylIdx] ?? '*')
+      tokens.push(sylTokens[sylIdx] ?? '_')
       sylIdx++
     }
   }
