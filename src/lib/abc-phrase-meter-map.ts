@@ -14,14 +14,14 @@
  * taking the first whitespace-delimited token before lookup.
  */
 export const PHRASES_PER_STANZA: Record<string, number> = {
-  CM: 2, // 8.6.8.6 — two halves
-  LM: 2, // 8.8.8.8 — two halves
-  SM: 2, // 6.6.8.6 — two halves
-  DCM: 4, // 8.6.8.6.8.6.8.6 — four halves
-  DLM: 4,
-  DSM: 4,
-  '8.7.8.7': 2,
-  '7.6.7.6': 2,
+  CM: 4, // 8.6.8.6 — four metrical lines, one phrase each
+  LM: 4, // 8.8.8.8 — four metrical lines, one phrase each
+  SM: 4, // 6.6.8.6 — four metrical lines, one phrase each
+  DCM: 8, // 8.6.8.6.8.6.8.6 — eight metrical lines
+  DLM: 8,
+  DSM: 8,
+  '8.7.8.7': 4,
+  '7.6.7.6': 4,
 }
 
 /**
@@ -36,10 +36,10 @@ export const PHRASES_PER_STANZA: Record<string, number> = {
  *   - Anything still unknown → 1.
  *
  * @example
- *   phrasesForMeter("CM")                            // => 2
- *   phrasesForMeter("CM (common meter, 8.6.8.6)")    // => 2
- *   phrasesForMeter("DCM")                           // => 4
- *   phrasesForMeter("8.7.8.7")                       // => 2
+ *   phrasesForMeter("CM")                            // => 4
+ *   phrasesForMeter("CM (common meter, 8.6.8.6)")    // => 4
+ *   phrasesForMeter("DCM")                           // => 8
+ *   phrasesForMeter("8.7.8.7")                       // => 4
  *   phrasesForMeter(null)                            // => 1
  *   phrasesForMeter("UNKNOWN")                       // => 1
  */
