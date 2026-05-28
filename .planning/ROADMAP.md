@@ -446,7 +446,7 @@ Plans:
 Plans:
 
 **Wave 1**
-- [ ] 04.9.9-01-PLAN.md — Instrument sol-fa parser: NoteEvent.passing field + getPassingPositions export + unit tests
+- [x] 04.9.9-01-PLAN.md — Instrument sol-fa parser: NoteEvent.passing field + getPassingPositions export + unit tests
 
 **Wave 2** *(depends on Wave 1)*
 - [ ] 04.9.9-02-PLAN.md — buildWLineFromSolfa pipeline: dot-pair detection + duration heuristic + unit tests
