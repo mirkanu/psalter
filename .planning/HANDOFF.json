@@ -1,55 +1,45 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-13T16:33:49Z",
-  "context": "sketch",
-  "phase": "4.9.2",
-  "phase_name": "Tune Notation UI Design — Dynamic ABC Polish",
+  "timestamp": "2026-05-28T15:27:15Z",
+  "phase": "04.9.8",
+  "phase_name": "staff-display-word-alignment-fix",
+  "phase_dir": ".planning/phases/04.9.8-staff-display-word-alignment-fix",
+  "plan": 5,
+  "task": "verification",
+  "total_tasks": 5,
   "status": "paused",
-  "completed_work": [
-    "Created Sketch 004: Realistic Tune with Inline Lyrics (2-line ABC + 3 stanzas, 3 variants: basic/compact/large typography)",
-    "Created Sketch 005: Desktop Fullscreen Layout (3 variants: two-column/stacked/score-focused)",
-    "Created Sketch 006: Mobile Fullscreen Layout (3 variants: tabbed/stacked/lyrics-focus, notch-safe)",
-    "All three sketches have functional Score+Lyrics / Lyrics Only toggle",
-    "Deployed sketches to /public/sketches/ for static serving",
-    "Updated sketch viewer (/src/app/dev/sketch-viewer.tsx) with new sketches 004-006",
-    "Verified all sketches load and toggle works via Playwright"
+  "completed_tasks": [
+    {"id": 1, "name": "Phase setup, research, tooling", "status": "done"},
+    {"id": 2, "name": "insertPhraseBreaks + DB annotation", "status": "done"},
+    {"id": 3, "name": "Playwright UAT sweep", "status": "done"},
+    {"id": 4, "name": "z2 filter + archaic -eth overrides", "status": "done"},
+    {"id": 5, "name": "Character-level tokenizer rewrite + re-migration + mobile fix", "status": "done", "commit": "67e741d"}
   ],
-  "remaining_work": [
-    "Generate UI-SPEC.md via /gsd-ui-phase to formalize design contract",
-    "Create formal PLAN.md for Phase 4.9.2 (break work into executable tasks)",
-    "Execute plan and generate SUMMARY.md files"
+  "remaining_tasks": [
+    {"id": 6, "name": "Gap planning (user to choose scope)", "status": "not_started"},
+    {"id": 7, "name": "Execute gap plans", "status": "not_started"},
+    {"id": 8, "name": "Re-verification", "status": "not_started"}
   ],
-  "decisions": [
+  "blockers": [
     {
-      "decision": "Sketch before plan: validate layout patterns first",
-      "rationale": "User feedback on variants before formal commitment",
-      "status": "confirmed"
-    },
-    {
-      "decision": "Inline lyrics, no sidebar",
-      "rationale": "Matches hymnal conventions + simplifies responsive",
-      "status": "confirmed"
-    },
-    {
-      "decision": "Functional toggle in mockups",
-      "rationale": "Test interaction, not just show button",
-      "status": "confirmed"
+      "description": "User has not yet chosen gap closure scope",
+      "type": "human_action",
+      "workaround": "Re-ask: (1) fix syllabification 'quiet'/'waters' overrides, (2) fix phrase 4 extended note count, (3) relax Playwright test"
     }
   ],
-  "blockers": [],
   "human_actions_pending": [
     {
-      "action": "Review three sketches and select winning variants",
-      "context": "Optional—user can eyeball sketches before running /gsd-ui-phase",
-      "blocking": false
+      "action": "Choose gap scope for /gsd-plan-phase 04.9.8 --gaps",
+      "context": "Two bugs diagnosed: syllabification errors (quiet/waters) + Crimond phrase 4 has 12 notes for 6 CM syllables. User interrupted AskUserQuestion before selecting.",
+      "blocking": true
     }
   ],
-  "uncommitted_files": [
-    "public/dev/",
-    "public/sketches/ (copied from .planning/)",
-    "src/app/dev/page.tsx",
-    "src/app/api/dev/ (auto-generated)"
+  "decisions": [
+    {"decision": "Plan 05 tokenizer rewrite is correct — PHRASE_BREAKs at right note positions", "rationale": "Audit + Playwright confirm markers at note 8/14/22 correctly", "phase": "04.9.8"},
+    {"decision": "Trailing notes are a DATA issue not algorithm issue", "rationale": "Crimond ABC has 34 note heads vs expected 28 for CM", "phase": "04.9.8"},
+    {"decision": "syllabifyForAbc splits 'quiet' as 3 syllables (qu-i-et)", "rationale": "Confirmed via direct test; fix = add to PSALM_SYLLABLE_OVERRIDES", "phase": "04.9.8"}
   ],
-  "next_action": "Run /gsd-resume-work, then /gsd-ui-phase to generate 4.9.2-UI-SPEC.md design contract",
-  "context_notes": "All three sketch mockups are complete, deployed, and working. User ready to move to formal UI-SPEC phase. Sketches provide solid baseline for design contract generation."
+  "uncommitted_files": [],
+  "next_action": "Re-ask user gap scope question, then run /gsd-plan-phase 04.9.8 --gaps",
+  "context_notes": "Verification.md is stale (pre-Plan-05, shows 4/10 score). True state after Plan 05: ~66/150 passing. Two distinct root causes identified: NLP syllabification bug + extended ABC notation in final phrase of some CM/LM tunes."
 }
