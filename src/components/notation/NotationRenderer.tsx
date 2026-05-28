@@ -462,7 +462,20 @@ export function NotationRenderer({
   // note, and the resulting viewBox grows taller relative to its width,
   // making the SVG visibly TALLER on the canvas. Threshold-based to avoid
   // re-flow on every single press: divisions step at baseSize 18 and 28.
-  const baseSubdivisions = chromeless && viewportW < 1280 ? 2 : 1
+  //
+  // MOBILE-LYRIC-FIX: On narrow non-chromeless screens (< 480px), abcjs
+  // internally wraps long phrases (e.g. 8-note CM lines across 2 bars)
+  // when the staffwidth doesn't fit all notes in one row. When abcjs wraps
+  // internally, w: lyrics only land on the FIRST wrapped segment — the second
+  // segment renders notes with no lyrics underneath. Fix: force
+  // baseSubdivisions=2 on narrow screens so music is EXPLICITLY split at
+  // barlines, then proportionally distribute the w: line across sub-staves.
+  const baseSubdivisions =
+    !chromeless && viewportW < 480
+      ? 2
+      : chromeless && viewportW < 1280
+      ? 2
+      : 1
   const extraSubdivisions = chromeless
     ? baseSize >= 28
       ? 2
@@ -745,16 +758,35 @@ export function NotationRenderer({
       const musicSubLines = splitMusicIntoSubLines(cleanedBody, targetSubdivisions)
       const actualSubdivisions = musicSubLines.length
 
+      // When mobile subdivision splits music into more sub-staves than there
+      // are lyric lines (linesPerPhrase=1, actualSubdivisions=2), use
+      // proportional word-count splitting so each sub-staff gets its share
+      // of the lyric. This only applies when linesPerPhrase===1 (single
+      // metrical line per phrase) — multi-line phrases keep structured layout.
+      const needsProportionalSplit =
+        linesPerPhrase === 1 && actualSubdivisions > 1
+
       for (let sub = 0; sub < actualSubdivisions; sub++) {
         parts.push(musicSubLines[sub])
         if (!showLyrics) continue
-        // Index `sub` into each cycle's metrical-line array. When `sub` is
-        // beyond linesPerPhrase the music has extended past the lyric;
-        // emit no w: line for that sub-staff.
         for (const cycleLines of wLines) {
-          const text = cycleLines[sub]
-          if (!text || !text.trim()) continue
-          parts.push(`w: ${syllabifyForAbc(text.replace(/\n/g, ' '))}`)
+          if (needsProportionalSplit) {
+            // Proportionally distribute the single lyric line across sub-staves.
+            const rawText = cycleLines[0]
+            if (!rawText || !rawText.trim()) continue
+            const syllabified = syllabifyForAbc(rawText.replace(/\n/g, ' '))
+            const chunks = splitWLineIntoChunks(syllabified, actualSubdivisions)
+            const chunk = chunks[sub]
+            if (!chunk || !chunk.trim()) continue
+            parts.push(`w: ${chunk}`)
+          } else {
+            // Normal case: one lyric line per sub-staff (structured metrical layout).
+            // When sub >= linesPerPhrase the music has extended past the lyric;
+            // emit no w: line for that sub-staff.
+            const text = cycleLines[sub]
+            if (!text || !text.trim()) continue
+            parts.push(`w: ${syllabifyForAbc(text.replace(/\n/g, ' '))}`)
+          }
         }
       }
     }
