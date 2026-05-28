@@ -94,6 +94,12 @@ export interface AlternateTune {
   youtubeUrl: string | null
   /** D-11 canonical signal driving stanza-cycle pairing (DCM marker). */
   doubleLength: boolean
+  /**
+   * Plan 04.9.9: Raw solfège OCR JSON string from DB. When non-null and containing
+   * soprano/doh/time fields, used by NotationRenderer to build melisma-aware w: lines
+   * via buildWLineFromSolfa. When null, falls back to syllabifyForAbc.
+   */
+  solfegeOcrText: string | null
 }
 
 export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]> {
@@ -110,6 +116,7 @@ export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]>
       soundcloudUrl: true,
       youtubeUrl: true,
       doubleLength: true,
+      solfegeOcrText: true,
     },
     orderBy: (t, { asc }) => [asc(t.name)],
   })
