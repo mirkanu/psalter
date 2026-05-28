@@ -68,6 +68,37 @@ export function countNoteHeads(abc: string): number {
 }
 
 /**
+ * Returns the cumulative note-head split points for a given meter and phrase count.
+ *
+ * These are the note-head counts at which PHRASE_BREAK markers should be inserted.
+ * For example, CM (8.6.8.6) with n=4 needs splits after 8, 14, and 22 note heads.
+ *
+ * Returns undefined if the meter is not recognised, in which case the caller
+ * should fall back to equal-line-count splitting.
+ *
+ * @param meter  Tune meter string (e.g. "CM", "LM (long meter, 88 88)").
+ * @param n      Number of phrases (i.e. one more than the number of markers).
+ */
+export function getSplitPointsForMeter(
+  meter: string | null | undefined,
+  n: number,
+): number[] | undefined {
+  const firstToken = (meter?.trim().split(/\s+/)[0] ?? '').toUpperCase()
+  if (n === 4) {
+    if (firstToken === 'CM' || firstToken === '8.7.8.7') return [8, 14, 22] // 8+6+8+6
+    if (firstToken === 'LM') return [8, 16, 24] // 8+8+8+8
+    if (firstToken === 'SM') return [6, 12, 20] // 6+6+8+6
+    if (firstToken === '7.6.7.6') return [7, 13, 20] // 7+6+7+6
+  }
+  if (n === 8) {
+    if (firstToken === 'DCM') return [8, 14, 22, 30, 36, 44, 52]
+    if (firstToken === 'DLM') return [8, 16, 24, 32, 40, 48, 56]
+    if (firstToken === 'DSM') return [6, 12, 20, 26, 32, 40, 46]
+  }
+  return undefined
+}
+
+/**
  * Insert (n-1) `% PHRASE_BREAK` markers into the music body of an ABC string,
  * dividing the music into n roughly-equal phrases.
  *
@@ -79,12 +110,15 @@ export function countNoteHeads(abc: string): number {
  *   3. Locate K: line. If absent → return unchanged (cannot annotate safely).
  *   4. Body = lines after K:. Music lines = lines containing '|' that are NOT
  *      ABC info fields (`w:` lyrics, `V:` voice, etc.).
- *   5. If we have >= n music lines: distribute music lines into n chunks
+ *   5. If `noteHeadSplitPoints` provided: walk music lines accumulating note
+ *      heads, insert PHRASE_BREAK after the line where cumulative count reaches
+ *      each split point (note-head-count-based split — precise for CM/LM/SM).
+ *   6. Else if we have >= n music lines: distribute music lines into n chunks
  *      (line-based split — preferred, keeps stave boundaries intact).
- *   6. Else if exactly one music line with enough internal barlines: distribute
+ *   7. Else if exactly one music line with enough internal barlines: distribute
  *      barline-delimited measure tokens into n chunks and splice markers
  *      mid-line (single-line-body fallback for compact ABC sources).
- *   7. Else return unchanged (cannot split cleanly).
+ *   8. Else return unchanged (cannot split cleanly).
  *
  * For Scottish Psalter tunes, music lines roughly correspond to staff lines /
  * lyrical lines (D-04). Splitting on music-line boundaries is the simplest
@@ -92,7 +126,7 @@ export function countNoteHeads(abc: string): number {
  * applies the same idea (equal measure groups) to tunes whose entire body has
  * been collapsed onto one physical line.
  */
-export function insertPhraseBreaks(abc: string, n: number): string {
+export function insertPhraseBreaks(abc: string, n: number, noteHeadSplitPoints?: number[]): string {
   if (n <= 1) return abc
   if (abc.includes('% PHRASE_BREAK')) return abc
 
@@ -108,6 +142,28 @@ export function insertPhraseBreaks(abc: string, n: number): string {
   const musicLineIndices = body
     .map((l, i) => (l.includes('|') && !isInfoFieldLine(l) ? i : -1))
     .filter((i) => i !== -1)
+
+  // ─── Path NH: note-head split points provided — precise boundary insertion ──
+  if (noteHeadSplitPoints && noteHeadSplitPoints.length > 0) {
+    const out: string[] = []
+    let cum = 0
+    let nextSplitIdx = 0
+    for (let i = 0; i < body.length; i++) {
+      const line = body[i]
+      out.push(line)
+      if (!isInfoFieldLine(line) && line.includes('|')) {
+        cum += countNoteHeads(line)
+        while (
+          nextSplitIdx < noteHeadSplitPoints.length &&
+          cum >= noteHeadSplitPoints[nextSplitIdx]
+        ) {
+          out.push('% PHRASE_BREAK')
+          nextSplitIdx++
+        }
+      }
+    }
+    return [...header, ...out].join('\n')
+  }
 
   // ─── Path A: multi-music-line body — split on music-line boundaries ────────
   if (musicLineIndices.length >= n) {
@@ -234,12 +290,17 @@ async function main() {
 
     let source = t.abcNotation!
     if (OVERWRITE) {
-      // Strip any existing markers + collapse the resulting blank lines so the
-      // pure helper re-annotates from a clean slate.
-      source = source.replace(/^\s*%\s*PHRASE_BREAK\s*$/gm, '').replace(/\n\n+/g, '\n')
+      // Strip any existing markers, pre-existing w: lines (Old 100th), and
+      // collapse the resulting blank lines so the pure helper re-annotates
+      // from a clean slate.
+      source = source
+        .replace(/^\s*%\s*PHRASE_BREAK\s*$/gm, '')
+        .replace(/^w:.*$/gm, '')
+        .replace(/\n\n+/g, '\n')
     }
 
-    const updatedAbc = insertPhraseBreaks(source, n)
+    const splitPoints = getSplitPointsForMeter(t.meter, n)
+    const updatedAbc = insertPhraseBreaks(source, n, splitPoints)
     if (updatedAbc === source) {
       console.log(`  - skip ${t.name} (${t.meter}): annotation unsafe (no K:, too few measures, or already marked)`)
       skipped++
