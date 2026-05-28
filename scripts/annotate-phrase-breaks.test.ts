@@ -1,13 +1,15 @@
 /**
  * Unit tests for the PURE portion of scripts/annotate-phrase-breaks.ts:
  *   insertPhraseBreaks(abc, n)
+ *   getSplitPointsForMeter(meter, n)
+ *   countNoteHeads(abc)
  *
  * No DB, no fs — just string in / string out. Round-trip test verifies that
  * splitOnPhraseBreaks (Plan 01) parses the script's output back to the
  * expected phrase count.
  */
 import { describe, it, expect } from 'vitest'
-import { insertPhraseBreaks } from './annotate-phrase-breaks'
+import { insertPhraseBreaks, getSplitPointsForMeter, countNoteHeads } from './annotate-phrase-breaks'
 import { splitOnPhraseBreaks } from '../src/lib/abc-phrases'
 
 // Realistic Old-Hundredth-style fixture: 8 single-bar music lines after K:G.
@@ -235,5 +237,146 @@ describe('insertPhraseBreaks', () => {
     ].join('\n')
     // Only one barline, none internal — cannot split for n=2.
     expect(insertPhraseBreaks(tiny, 2)).toBe(tiny)
+  })
+})
+
+// ─── CM fixture for note-head split tests ────────────────────────────────────
+// CM tune fixture with exactly 4 music lines after K:
+// Line 1: 8 note heads — c,a,a,b,g,c,a,f = 8
+// Line 2: 6 note heads — e,f,a,g,f,f = 6
+// Line 3: 8 note heads — f,g,a,b,c,a,b,f = 8
+// Line 4: 6 note heads — e,f,g,a,f,f = 6
+const CM_FOUR_LINES = [
+  'X:1',
+  'T:CM Fixture',
+  'M:C',
+  'L:1/8',
+  'K:F',
+  // Line 1 — 8 note heads: c,a,a,b,g,c,a,f
+  'c2 a2 a2 bg | c2 a2 f4 |',
+  // Line 2 — 6 note heads: e,f,a,g,f,f
+  'e2 f2 a2 g2 | f4 f4 |',
+  // Line 3 — 8 note heads: f,g,a,b,c,a,b,f
+  'f2 g2 a2 b2 | c2 a2 b2 f2 |',
+  // Line 4 — 6 note heads: e,f,g,a,f,f
+  'e2 f2 g2 a2 | f4 f4 |',
+].join('\n')
+
+// The CM_FOUR_LINES fixture has 4 lines with 8, 6, 8, 6 note heads respectively.
+// Expected split points [8, 14, 22]:
+// After line 1: cumulative = 8 → insert PHRASE_BREAK
+// After line 2: cumulative = 14 → insert PHRASE_BREAK
+// After line 3: cumulative = 22 → insert PHRASE_BREAK
+
+describe('getSplitPointsForMeter', () => {
+  it('returns [8, 14, 22] for CM with n=4', () => {
+    expect(getSplitPointsForMeter('CM', 4)).toEqual([8, 14, 22])
+  })
+
+  it('returns [8, 14, 22] for "CM (common meter, 8.6.8.6)" with n=4', () => {
+    expect(getSplitPointsForMeter('CM (common meter, 8.6.8.6)', 4)).toEqual([8, 14, 22])
+  })
+
+  it('returns [8, 16, 24] for LM with n=4', () => {
+    expect(getSplitPointsForMeter('LM', 4)).toEqual([8, 16, 24])
+  })
+
+  it('returns [6, 12, 20] for SM with n=4', () => {
+    expect(getSplitPointsForMeter('SM', 4)).toEqual([6, 12, 20])
+  })
+
+  it('returns [8, 14, 22] for 8.7.8.7 with n=4', () => {
+    expect(getSplitPointsForMeter('8.7.8.7', 4)).toEqual([8, 14, 22])
+  })
+
+  it('returns [7, 13, 20] for 7.6.7.6 with n=4', () => {
+    expect(getSplitPointsForMeter('7.6.7.6', 4)).toEqual([7, 13, 20])
+  })
+
+  it('returns [8, 14, 22, 30, 36, 44, 52] for DCM with n=8', () => {
+    expect(getSplitPointsForMeter('DCM', 8)).toEqual([8, 14, 22, 30, 36, 44, 52])
+  })
+
+  it('returns [8, 16, 24, 32, 40, 48, 56] for DLM with n=8', () => {
+    expect(getSplitPointsForMeter('DLM', 8)).toEqual([8, 16, 24, 32, 40, 48, 56])
+  })
+
+  it('returns [6, 12, 20, 26, 32, 40, 46] for DSM with n=8', () => {
+    expect(getSplitPointsForMeter('DSM', 8)).toEqual([6, 12, 20, 26, 32, 40, 46])
+  })
+
+  it('returns undefined for unknown meter', () => {
+    expect(getSplitPointsForMeter('foo', 2)).toBeUndefined()
+  })
+
+  it('returns undefined for null meter', () => {
+    expect(getSplitPointsForMeter(null, 4)).toBeUndefined()
+  })
+
+  it('returns undefined for undefined meter', () => {
+    expect(getSplitPointsForMeter(undefined, 4)).toBeUndefined()
+  })
+})
+
+describe('insertPhraseBreaks — note-head split points', () => {
+  it('inserts 3 PHRASE_BREAKs at note-head boundaries for a CM-like 4-line ABC', () => {
+    const out = insertPhraseBreaks(CM_FOUR_LINES, 4, [8, 14, 22])
+    const markerCount = (out.match(/^\s*%\s*PHRASE_BREAK\s*$/gm) ?? []).length
+    expect(markerCount).toBe(3)
+  })
+
+  it('places splits so each resulting phrase has correct note-head count', () => {
+    const out = insertPhraseBreaks(CM_FOUR_LINES, 4, [8, 14, 22])
+    const { phrases } = splitOnPhraseBreaks(out)
+    expect(phrases.length).toBe(4)
+    // Each phrase should have the correct note heads
+    const counts = phrases.map((p) => countNoteHeads(p))
+    expect(counts[0]).toBe(8)
+    expect(counts[1]).toBe(6)
+    expect(counts[2]).toBe(8)
+    expect(counts[3]).toBe(6)
+  })
+
+  it('is idempotent: stripping markers and re-inserting produces identical output', () => {
+    const once = insertPhraseBreaks(CM_FOUR_LINES, 4, [8, 14, 22])
+    // Strip markers (simulating --overwrite)
+    const stripped = once.replace(/^\s*%\s*PHRASE_BREAK\s*$/gm, '').replace(/\n\n+/g, '\n')
+    const again = insertPhraseBreaks(stripped, 4, [8, 14, 22])
+    expect(again).toBe(once)
+  })
+
+  it('falls back to equal-line behavior when noteHeadSplitPoints is undefined', () => {
+    // Without split points, insertPhraseBreaks should use equal-line logic
+    const out = insertPhraseBreaks(CM_FOUR_LINES, 4, undefined)
+    const markerCount = (out.match(/^\s*%\s*PHRASE_BREAK\s*$/gm) ?? []).length
+    expect(markerCount).toBe(3)
+  })
+
+  it('strips pre-existing w: lines (Old 100th w: strip)', () => {
+    const withWLines = [
+      'X:1',
+      'T:Old 100th style',
+      'M:C',
+      'L:1/4',
+      'K:G',
+      '% PHRASE_BREAK',
+      '| G2 G G |',
+      'w: The Lord my|shep- herd|is',
+      '| G F E D |',
+      '% PHRASE_BREAK',
+      '| E G F E |',
+      'w: He makes me|down to|lie',
+      '| D2 D2 |',
+    ].join('\n')
+    // After stripping PHRASE_BREAKs and w: lines, should re-annotate cleanly
+    let source = withWLines
+      .replace(/^\s*%\s*PHRASE_BREAK\s*$/gm, '')
+      .replace(/^w:.*$/gm, '')
+      .replace(/\n\n+/g, '\n')
+    const out = insertPhraseBreaks(source, 2)
+    // The w: lines should be gone, PHRASE_BREAK should be inserted
+    expect(out).not.toContain('w:')
+    const markerCount = (out.match(/^\s*%\s*PHRASE_BREAK\s*$/gm) ?? []).length
+    expect(markerCount).toBe(1)
   })
 })
