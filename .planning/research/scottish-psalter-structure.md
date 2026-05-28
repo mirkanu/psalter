@@ -133,16 +133,20 @@ Some tunes in the corpus have **more note heads in their final phrase than the m
 | Old 100th | LM | 8 | 24 |
 | Crediton | CM | 6 | 12 |
 
-These extra notes appear at the end of the tune's final phrase, beyond the last metrical syllable. Two interpretations are possible:
+These extra notes are **melismas** — passing notes / runs where one syllable is held across multiple notes. **Confirmed by CPRC precentor (2026-05-28): all displayed notes are part of the main phrase and are sung to words.** They are not cadential figures or encoding errors.
 
-1. **Intentional cadential figure** — the extra notes are a musical postlude or cadential decoration that the tune tradition includes after the final syllable. Notes beyond the last syllable play instrumentally (or are sung on a held vowel) and carry no new lyric content. This is consistent with CPRC practice for certain tunes.
-2. **ABC encoding sloppiness** — the digitisation captured more bar content than intended (e.g. a trailing ornamental bar not present in the original print), and the ABC should be trimmed.
+Crimond phrase 4 analysis (Playwright sweep + parser inspection, 2026-05-28):
+- 2 extra notes are **dot-pair passing notes** (`f.,r` → the `r` after the dot is passing) — detectable directly from `solfege_ocr_text` in the DB
+- 4 extra notes come from **3-slot cells** (`m:r:r`, `m:f:m` etc.) — not explicitly marked as passing in the sol-fa text; require a duration heuristic
 
-**⚠ Open question (requires precentor confirmation):** For each affected tune, are the extra final notes intentional (cadential figure) or an encoding error? The answer determines the fix:
-- If intentional → pad the `w:` line with `*` tokens for the extra notes (explicit "no syllable" instruction to abcjs); update the Playwright assertion to allow trailing `*`-marked positions on the last phrase.
-- If encoding error → trim the ABC source in the DB for each affected tune and re-run the alignment sweep.
+**`w:` token is `_` (hold/melisma), not `*` (skip).** `_` instructs abcjs to hold the previous syllable over an additional note — the correct semantic for a melismatic note that is sung to the preceding syllable's vowel. `*` would skip the note (render it with no lyric), which is wrong.
 
-**Rendering engine rule (provisional, pending confirmation):** When `noteCount(phrase_n) > syllableCount(phrase_n)`, emit `*` for each excess note rather than leaving the `w:` line short. This prevents abcjs from producing layout artefacts from unsyllabified trailing notes, and makes the "no syllable" intent explicit regardless of whether the notes are intentional or not.
+**Fix strategy (zero new AI cost — 2026-05-28):**
+1. **Dot-pair detection** — modify `parseVoiceLine` in `solfege-parser.ts` to tag second token of every dot-pair as `passing: true`. Emit `_` in `w:` lines for those positions.
+2. **Duration heuristic fallback** — where `noteCount > syllableCount` after step 1, assign `_` to shortest-duration notes until balanced.
+3. **Assert & flag** — tunes still mismatched after step 2 are flagged for manual review rather than silently mis-aligning.
+
+**Coverage:** 144/172 tunes have `solfege_ocr_text` in DB. The 28 tunes without solfege data fall back to step 2 (duration heuristic only) or get flagged. See Phase 04.9.9 for implementation.
 
 ### Anti-example: meter mismatch is a data error, not a structural pattern
 
