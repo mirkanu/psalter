@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Session resumed — DB restored, Phase 04.9.7 SUMMARY files written, ready for next phase
-last_updated: "2026-05-28T12:21:53.692Z"
-last_activity: 2026-05-28 -- Phase 04.9.8 planning complete
+last_updated: "2026-05-28T13:28:51.263Z"
+last_activity: 2026-05-28
 progress:
   total_phases: 6
   completed_phases: 4
@@ -26,10 +26,10 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 ## Current Position
 
 Phase: 04.9.8 (staff-display-word-alignment-fix) — EXECUTING
-Plan: 1 of 4
+Plan: 2 of 5
 UI-SPEC: Phase 04.9.4 closed out. Singing-view chrome refined across 4 polish rounds (chrome-dedup, singing-chrome-polish, r3, r4); audio first-press bug fixed; tour redesigned (4 steps, per-element spotlights); mobile bar h-11 (44px); lyrics/solfège views get bigger font + padding + inline YouTube embed; "Ps 119:N-M" range titles.
 Status: Ready to execute
-Last activity: 2026-05-28 -- Phase 04.9.8 planning complete
+Last activity: 2026-05-28
 
 Progress: [██████████] 100%
 
@@ -71,6 +71,7 @@ Progress: [██████████] 100%
 | Phase 04.7 P02 | 25 | 3 tasks | 4 files |
 | Phase 04.9.3 P05 | 12 | 3 tasks | 5 files |
 | Phase 04.9.7 P01 | 10min | 2 tasks | 5 files |
+| Phase 04.9.8 P05 | 41 | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -159,6 +160,10 @@ None yet.
 | 260517-ht8 | 04.9.4 singing r4: STICKY-fix first-press play (prevControlledRef init bug — first effect short-circuited and synth never started); tour reorder to 4 steps (tune-name re-inserted); per-arrow individual spotlights via SVG mask; mobile bar h-11 (44px) — substantially slimmer; view-change auto-hides mini-bar + resets play state | 2026-05-17 | 28f0936 | [260517-ht8-04.9.4-singing-r4](./quick/260517-ht8-04.9.4-singing-r4/) |
 | 260517-u35 | Migrate Airtable Tunes "Double length" boolean → tunes.double_length column. 26/172 tunes flagged DCM. Key prereq for alignment-implementation seed; double_length is broader than CMD — covers all doubled-stanza tunes across all meter families (Aurelia 76 76 D, Old 124th 10 10 10 10 10, four 66 66 88, etc.) | 2026-05-17 | c4b3be7 | [20260517-migrate-tunes-double-length](./quick/20260517-migrate-tunes-double-length/) |
 
+- [04.9.8-05]: Character-level tokenizer for insertPhraseBreaks replaces text-line-granular Path NH — emits PHRASE_BREAK at exact note-head offsets independent of ABC text-line boundaries
+- [04.9.8-05]: NotationRenderer cleanedBody merges multi-text-line phrase bodies into single line to prevent phantom extra sub-staves from internal newlines
+- [04.9.8-05]: 66/150 psalms now pass sweep (up from 14); 84 remaining failures are extended-final-phrase structural variance (Crimond/Old100th/Crediton have 12-24 notes in phrase 4 vs expected 6-8) — awaiting human triage at checkpoint
+
 ### Blockers/Concerns
 
 - ABC notation source: No existing ABC files for Scottish Psalter tunes. Phase 4 requires sourcing public-domain ABC or encoding from printed editions. The Session API lookup spike is the first plan in Phase 4.
@@ -176,7 +181,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-27 (resumed)
+Last session: 2026-05-28T13:28:37.100Z
 Stopped at: Session resumed — DB restored, Phase 04.9.7 SUMMARY files written, ready for next phase
 Resume file: None
 
