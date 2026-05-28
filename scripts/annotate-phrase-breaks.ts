@@ -143,26 +143,161 @@ export function insertPhraseBreaks(abc: string, n: number, noteHeadSplitPoints?:
     .map((l, i) => (l.includes('|') && !isInfoFieldLine(l) ? i : -1))
     .filter((i) => i !== -1)
 
-  // ─── Path NH: note-head split points provided — precise boundary insertion ──
+  // ─── Path NH: note-head split points provided — character/token-level tokenizer ──
+  // We walk the body character-by-character. We track:
+  //   - cumulative note-head count
+  //   - whether we are currently inside an info-field line (w:, V:, K:, M: etc.)
+  //   - position at which to splice in `\n% PHRASE_BREAK\n`
+  //
+  // After walking, we splice all collected splice positions into the joined
+  // body string and re-emit lines.
   if (noteHeadSplitPoints && noteHeadSplitPoints.length > 0) {
-    const out: string[] = []
+    const joined = body.join('\n')
+    const splicePositions: number[] = [] // character offsets in `joined`
     let cum = 0
     let nextSplitIdx = 0
-    for (let i = 0; i < body.length; i++) {
-      const line = body[i]
-      out.push(line)
-      if (!isInfoFieldLine(line) && line.includes('|')) {
-        cum += countNoteHeads(line)
-        while (
-          nextSplitIdx < noteHeadSplitPoints.length &&
-          cum >= noteHeadSplitPoints[nextSplitIdx]
+    let i = 0
+    let atLineStart = true
+
+    while (i < joined.length && nextSplitIdx < noteHeadSplitPoints.length) {
+      const ch = joined[i]
+
+      // Track line starts so we can detect info-field lines.
+      if (ch === '\n') {
+        atLineStart = true
+        i++
+        continue
+      }
+
+      // At a line start, check whether this is an info-field line (e.g. `w:`).
+      // If so, skip to the next newline without counting.
+      if (atLineStart) {
+        atLineStart = false
+        // Peek ahead to detect /^\s*[A-Za-z]:/ at start of this logical line
+        let j = i
+        while (j < joined.length && (joined[j] === ' ' || joined[j] === '\t')) j++
+        if (
+          j + 1 < joined.length &&
+          /[A-Za-z]/.test(joined[j]) &&
+          joined[j + 1] === ':'
         ) {
-          out.push('% PHRASE_BREAK')
-          nextSplitIdx++
+          // Skip to end of this line
+          while (i < joined.length && joined[i] !== '\n') i++
+          continue
         }
       }
+
+      // Skip grace-note groups {..}
+      if (ch === '{') {
+        while (i < joined.length && joined[i] !== '}') i++
+        if (i < joined.length) i++ // consume }
+        continue
+      }
+      // Skip text annotations "..."
+      if (ch === '"') {
+        i++
+        while (i < joined.length && joined[i] !== '"') i++
+        if (i < joined.length) i++ // consume "
+        continue
+      }
+      // Skip decorations !...!
+      if (ch === '!') {
+        i++
+        while (i < joined.length && joined[i] !== '!') i++
+        if (i < joined.length) i++ // consume !
+        continue
+      }
+
+      // Chord [ABC] counts as 1 note head
+      if (ch === '[') {
+        // Make sure this is not an inline header like [K:G] — peek for letter+colon
+        if (
+          i + 2 < joined.length &&
+          /[A-Za-z]/.test(joined[i + 1]) &&
+          joined[i + 2] === ':'
+        ) {
+          // Inline header — skip to ]
+          while (i < joined.length && joined[i] !== ']') i++
+          if (i < joined.length) i++
+          continue
+        }
+        // Real chord: skip past the contents (including any inner duration after ])
+        while (i < joined.length && joined[i] !== ']') i++
+        if (i < joined.length) i++ // consume ]
+        // Skip duration digits after the closing ]
+        while (i < joined.length && /[0-9/]/.test(joined[i])) i++
+        cum += 1
+        if (cum >= noteHeadSplitPoints[nextSplitIdx]) {
+          splicePositions.push(i)
+          nextSplitIdx++
+          if (nextSplitIdx >= noteHeadSplitPoints.length) break
+        }
+        continue
+      }
+
+      // Tie '-' — the NEXT note head should not count. Mark and continue.
+      if (ch === '-') {
+        i++
+        // Skip whitespace / barlines until next note or end
+        let k = i
+        while (k < joined.length && /[\s|:]/.test(joined[k])) k++
+        // If the next non-whitespace is a note letter (incl. optional accidental),
+        // consume that note WITHOUT incrementing cum.
+        let m = k
+        if (m < joined.length && /[=^_]/.test(joined[m])) m++
+        if (m < joined.length && /[A-Ga-g]/.test(joined[m])) {
+          m++
+          while (m < joined.length && /[',]/.test(joined[m])) m++
+          while (m < joined.length && /[0-9/]/.test(joined[m])) m++
+          i = m
+        }
+        continue
+      }
+
+      // Bare note head: optional accidental, note letter (NOT z/x/Z), octave, duration
+      let p = i
+      if (/[=^_]/.test(joined[p])) p++
+      if (p < joined.length && /[A-Ga-g]/.test(joined[p])) {
+        p++
+        while (p < joined.length && /[',]/.test(joined[p])) p++
+        while (p < joined.length && /[0-9/]/.test(joined[p])) p++
+        // We consumed a note. Advance and count.
+        i = p
+        cum += 1
+        if (cum >= noteHeadSplitPoints[nextSplitIdx]) {
+          splicePositions.push(i)
+          nextSplitIdx++
+          if (nextSplitIdx >= noteHeadSplitPoints.length) break
+        }
+        continue
+      }
+
+      // Rest z/x/Z (and uppercase Z multi-measure): consume identifier + optional duration; do not count.
+      if (/[zxZ]/.test(joined[p])) {
+        p++
+        while (p < joined.length && /[0-9/]/.test(joined[p])) p++
+        i = p
+        continue
+      }
+
+      // Anything else (barlines, whitespace, etc.): advance one char.
+      i++
     }
-    return [...header, ...out].join('\n')
+
+    // Now splice `\n% PHRASE_BREAK\n` into `joined` at each position (descending so
+    // earlier positions remain valid as we mutate).
+    let spliced = joined
+    for (let s = splicePositions.length - 1; s >= 0; s--) {
+      const pos = splicePositions[s]
+      spliced = spliced.slice(0, pos) + '\n% PHRASE_BREAK\n' + spliced.slice(pos)
+    }
+    // Collapse any double/triple-newlines produced by inserting at a line end.
+    // We never want blank lines in the body — each line (including % PHRASE_BREAK)
+    // should be separated by exactly one newline so round-trip idempotency holds.
+    spliced = spliced.replace(/\n{2,}/g, '\n')
+
+    const newBody = spliced.split('\n')
+    return [...header, ...newBody].join('\n')
   }
 
   // ─── Path A: multi-music-line body — split on music-line boundaries ────────

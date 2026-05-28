@@ -380,3 +380,65 @@ describe('insertPhraseBreaks — note-head split points', () => {
     expect(markerCount).toBe(1)
   })
 })
+
+// ─── Crimond-like fixture: multi-metrical-lines-per-ABC-text-line ─────────────
+// Crimond-like fixture: 4 CM metrical lines, but lines 1+2 share one ABC text
+// line and lines 3+4 share another. Total note heads = 8+6+8+6 = 28.
+// This is the exact failure mode from VERIFICATION.md.
+const CRIMOND_LIKE = [
+  'X:1',
+  'T:Crimond-like',
+  'M:C',
+  'L:1/4',
+  'K:G',
+  // First ABC text line holds metrical lines 1 (8 notes) and 2 (6 notes).
+  '| G A B c d e f g | a b c d e f |',
+  // Second ABC text line holds metrical lines 3 (8 notes) and 4 (6 notes).
+  '| g f e d c B A G | F E D C B A |',
+].join('\n')
+
+describe('insertPhraseBreaks — Crimond-like mid-line insertion', () => {
+  it('inserts THREE PHRASE_BREAKs at correct note-head offsets when 2 metrical lines share one ABC text line', () => {
+    const out = insertPhraseBreaks(CRIMOND_LIKE, 4, [8, 14, 22])
+    const markerCount = (out.match(/^\s*%\s*PHRASE_BREAK\s*$/gm) ?? []).length
+    expect(markerCount).toBe(3)
+  })
+
+  it('produces 4 non-empty phrases via splitOnPhraseBreaks round-trip on Crimond-like fixture', () => {
+    const out = insertPhraseBreaks(CRIMOND_LIKE, 4, [8, 14, 22])
+    const { phrases } = splitOnPhraseBreaks(out)
+    expect(phrases).toHaveLength(4)
+    expect(countNoteHeads(phrases[0])).toBe(8)
+    expect(countNoteHeads(phrases[1])).toBe(6)
+    expect(countNoteHeads(phrases[2])).toBe(8)
+    expect(countNoteHeads(phrases[3])).toBe(6)
+  })
+
+  it('never emits two adjacent PHRASE_BREAK markers (no empty phrases)', () => {
+    const out = insertPhraseBreaks(CRIMOND_LIKE, 4, [8, 14, 22])
+    expect(out).not.toMatch(/%\s*PHRASE_BREAK\s*\n\s*%\s*PHRASE_BREAK/)
+  })
+
+  it('handles chords as 1 note head when computing split offsets', () => {
+    const fixture = [
+      'X:1', 'T:Chord', 'M:C', 'L:1/4', 'K:G',
+      '| [GBd] A B c | d e f g | a b c d | e f g a |',
+    ].join('\n')
+    // 16 note heads (chord counts as 1). With splitPoints=[4,8,12] expect 3 markers.
+    const out = insertPhraseBreaks(fixture, 4, [4, 8, 12])
+    const markerCount = (out.match(/^\s*%\s*PHRASE_BREAK\s*$/gm) ?? []).length
+    expect(markerCount).toBe(3)
+  })
+
+  it('does not count tied continuation notes towards split offset', () => {
+    const fixture = [
+      'X:1', 'T:Tie', 'M:C', 'L:1/4', 'K:G',
+      '| G-G A B | c d e f | g a b c | d e f g |',
+    ].join('\n')
+    // Heads: G(1) tied-G(0) A(1) B(1) | c d e f | g a b c | d e f g = 15 heads
+    // With splitPoints=[3,7,11] expect 3 markers placed before tied-G is excluded.
+    const out = insertPhraseBreaks(fixture, 4, [3, 7, 11])
+    const markerCount = (out.match(/^\s*%\s*PHRASE_BREAK\s*$/gm) ?? []).length
+    expect(markerCount).toBe(3)
+  })
+})
