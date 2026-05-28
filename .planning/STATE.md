@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready
-stopped_at: session resumed — DB restored, Phase 04.9.7 closed (2026-05-27)
-last_updated: "2026-05-27T00:00:00.000Z"
-last_activity: 2026-05-27
+status: executing
+stopped_at: Session resumed — DB restored, Phase 04.9.7 SUMMARY files written, ready for next phase
+last_updated: "2026-05-28T08:44:05.003Z"
+last_activity: 2026-05-19
 progress:
   total_phases: 6
   completed_phases: 4
@@ -78,6 +78,7 @@ Progress: [██████████] 100%
 
 - Phase 4.9.4 inserted after Phase 4.9.3: Staff View Refinements & Onboarding — header cleanup, first-run tour, dynamic zoom, glass bottom bar, A+/A- relocation, Play/Gear split (URGENT)
 - Phase 4.9.6 inserted after Phase 4.9.5: Psalter Alignment Implementation — promotes seeds/psalter-alignment-implementation.md; consumes Phase 4.9.5 doc; fixes DCM/alternate-meter/amen alignment bugs (URGENT)
+- Phase 04.9.8 inserted after Phase 04.9.7: Staff Display Word Alignment Fix — 4 PHRASE_BREAKs per CM tune, z2 phantom-bar fix, archaic word overrides (URGENT)
 
 ### Decisions
 

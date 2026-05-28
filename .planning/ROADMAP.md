@@ -24,6 +24,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 4.9.1 (INSERTED): Interactive abcjs Player** - Replace static AbcRenderer with interactive player: play/pause + note highlighting, transpose dropdown, BPM controls, show-original JPEG toggle; applied to /tunes/[id] and /psalms/[id]
 - [x] **Phase 4.9.6 (INSERTED): Psalter Alignment Implementation** - Redesign lyrics data model (Stanza→Line→Syllable + bibleVerseRef); parse current Airtable lyric blobs into the new structured form; implement the alignment + line-break algorithm so DCM tunes render against two CM stanzas correctly, alternate meters align, and amen endings don't consume lyric syllables. Promotes seeds/psalter-alignment-implementation.md; consumes the canonical doc from Phase 4.9.5
 - [x] **Phase 4.9.7 (INSERTED): Staff-View Metrical-Line Hotfix** - Fix the regression introduced by Phase 4.9.6 where `mapCycleToPhraseSyllableLines` drops half (or more) of each stanza's metrical lines in the staff view. CM/LM/SM stanzas render only lines 0-1 (out of 4); DCM stanzas only render lines 0-3 (out of 8). Lyrics-only view is unaffected. Mechanical fix: group N=stanzaLines/phrasesPerCycle lines into each phrase slot. Strengthen the regression test that missed it. (completed 2026-05-25)
+- [ ] **Phase 4.9.8 (INSERTED): Staff Display Word Alignment Fix** - Fix staff view word alignment: words cut off at end of staff lines, notes with no words underneath. Change CM/LM/SM tunes from 1 PHRASE_BREAK (2 phrases) to 3 PHRASE_BREAKs (4 phrases, one per metrical line) using note-head counting to find the 8/6 split. Fix trailing z2 rest phantom-bar bug. Add archaic word overrides. All 150 psalms render with zero empty note positions at row ends.
 - [ ] **Phase 5: Precentor Portal** - Better Auth login, service event CRUD, psalm+tune set list builder, live service view with pre-loaded notation
 - [ ] **Phase 6: Polish** - OG images, Lighthouse 90+, bundle analysis, click feedback, loading skeletons on remaining routes
 
@@ -411,6 +412,20 @@ Plans:
 **Wave 3** *(depends on Wave 2)*
 - [x] 04.9.7-03-PLAN.md — Per-line inner-array contract (RENDER-07b): fix cross-stanza spill; one metrical line = one sub-staff entry; Playwright per-syllable-node SVG assertion; human sign-off
 
+### Phase 4.9.8 (INSERTED): Staff Display Word Alignment Fix
+**Goal**: Fix staff view word alignment: words cut off at end of staff lines, notes with no words underneath. Change CM/LM/SM tunes from 1 PHRASE_BREAK (2 phrases) to 3 PHRASE_BREAKs (4 phrases, one per metrical line) using note-head counting to find the 8/6 split. Fix trailing z2 rest phantom-bar bug in splitMusicIntoSubLines. Add archaic word syllable overrides. All 150 psalms render with zero empty note positions at row ends.
+**Depends on**: Phase 4.9.7
+**Requirements**: RENDER-08 (staff view: no empty note positions at line ends for any of 150 psalms)
+**Success Criteria** (what must be TRUE):
+  1. Psalm 23 + Crimond (CM): all 4 staff rows show correct words, zero trailing empty note heads
+  2. Psalm 119 + Crediton (CM, severe z2 bug): last row shows 6 words, not 3 words + blank
+  3. Psalm 100 + Old 100th (LM): clean alignment on all 4 rows
+  4. Archaic words (leadeth, maketh, cometh, dwelleth etc.) split to correct syllable count
+  5. Playwright E2E asserts zero empty note positions across all 150 psalms in staff view
+**Plans**: TBD (4 plans)
+
+Plans:
+
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
 **Depends on**: Phase 4.5
@@ -439,7 +454,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 4.9.5 → 4.9.6 → 4.9.7 → 5 → 6
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 4.9.5 → 4.9.6 → 4.9.7 → 4.9.8 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -459,5 +474,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 →
 | 4.9.5. Scottish Psalter Metrical Knowledge | 2/2 | Complete | 2026-05-17 |
 | 4.9.6. Psalter Alignment Implementation | 7/7 | Complete | 2026-05-19 |
 | 4.9.7. Staff-View Metrical-Line Hotfix | 3/3 | Complete | 2026-05-25 |
+| 4.9.8. Staff Display Word Alignment Fix | 0/TBD | Not started | - |
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
