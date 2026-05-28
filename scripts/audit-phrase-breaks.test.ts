@@ -6,7 +6,8 @@
 import { describe, it, expect } from 'vitest'
 import { auditTune } from './audit-phrase-breaks'
 
-// Realistic CM tune fixture with 1 PHRASE_BREAK — should be OK with current phrasesForMeter (returns 2 → expected=1)
+// Realistic CM tune fixture with 1 PHRASE_BREAK — MISMATCH after Phase 04.9.8 migration
+// phrasesForMeter("CM") now returns 4 → expected phrase breaks = 4 - 1 = 3
 const CM_WITH_ONE_BREAK = [
   'X:1',
   'T:Crimond-like',
@@ -20,7 +21,23 @@ const CM_WITH_ONE_BREAK = [
   '| g2 fe dc | d4 d2 |',
 ].join('\n')
 
-// CM tune fixture with 0 PHRASE_BREAKs — should be MISMATCH (expected=1, actual=0)
+// CM tune fixture with 3 PHRASE_BREAKs — fully migrated state, expected=3, status=OK
+const CM_WITH_THREE_BREAKS = [
+  'X:1',
+  'T:Crimond-migrated',
+  'M:3/4',
+  'L:1/8',
+  'K:D',
+  '| d2 fe dc | BA |',
+  '% PHRASE_BREAK',
+  '| GF ED F2 |',
+  '% PHRASE_BREAK',
+  '| AB c2 d4 |',
+  '% PHRASE_BREAK',
+  '| d2 g2 fe dc |',
+].join('\n')
+
+// CM tune fixture with 0 PHRASE_BREAKs — should be MISMATCH (expected=3, actual=0)
 const CM_WITHOUT_BREAK = [
   'X:1',
   'T:No-break CM',
@@ -48,18 +65,26 @@ const CM_WITH_Z2_TRAILING = [
 ].join('\n')
 
 describe('auditTune', () => {
-  it('CM tune with 1 PHRASE_BREAK: expected=1, actual=1, status=OK', () => {
-    const result = auditTune({ name: 'Crimond', meter: 'CM', abcNotation: CM_WITH_ONE_BREAK })
-    expect(result.expected).toBe(1)
-    expect(result.actual).toBe(1)
+  // After Phase 04.9.8: phrasesForMeter("CM") = 4, so expected breaks = 3
+  it('CM tune with 3 PHRASE_BREAKs (fully migrated): expected=3, actual=3, status=OK', () => {
+    const result = auditTune({ name: 'Crimond', meter: 'CM', abcNotation: CM_WITH_THREE_BREAKS })
+    expect(result.expected).toBe(3)
+    expect(result.actual).toBe(3)
     expect(result.status).toBe('OK')
     expect(result.name).toBe('Crimond')
     expect(result.meter).toBe('CM')
   })
 
-  it('CM tune with 0 PHRASE_BREAKs: status=MISMATCH (expected=1, actual=0)', () => {
+  it('CM tune with 1 PHRASE_BREAK (pre-migration): expected=3, actual=1, status=MISMATCH', () => {
+    const result = auditTune({ name: 'OldCrimond', meter: 'CM', abcNotation: CM_WITH_ONE_BREAK })
+    expect(result.expected).toBe(3)
+    expect(result.actual).toBe(1)
+    expect(result.status).toBe('MISMATCH')
+  })
+
+  it('CM tune with 0 PHRASE_BREAKs: status=MISMATCH (expected=3, actual=0)', () => {
     const result = auditTune({ name: 'NoneBreak', meter: 'CM', abcNotation: CM_WITHOUT_BREAK })
-    expect(result.expected).toBe(1)
+    expect(result.expected).toBe(3)
     expect(result.actual).toBe(0)
     expect(result.status).toBe('MISMATCH')
   })

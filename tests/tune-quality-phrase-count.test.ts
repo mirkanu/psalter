@@ -24,9 +24,10 @@ import { splitOnPhraseBreaks } from '../src/lib/abc-phrases'
  * Both outcomes are intentional surfacing per the plan's "surfaces them in
  * parse-failures.md" acceptance alternative.
  */
+// 142 (Leominster, SM doubleLength) was fixed by the Phase 04.9.8 migration — removed from baseline.
 const EXPECTED_OFFENDER_IDS: ReadonlySet<number> = new Set([
   5, 26, 28, 38, 41, 56, 57, 62, 71, 83, 86, 109, 111, 118, 119,
-  122, 132, 136, 139, 142, 149, 158, 163, 164, 172,
+  122, 132, 136, 139, 149, 158, 163, 164, 172,
 ])
 
 describe('Tune-quality phrase-count (B5 / Open-Question-3 RESOLVED — option (b))', () => {
@@ -63,8 +64,8 @@ describe('Tune-quality phrase-count (B5 / Open-Question-3 RESOLVED — option (b
   })
 
   it('documents the live offender count for cross-reference with parse-failures.md', async () => {
-    // Sanity: the documented baseline contains 25 tunes (matches parse-failures.md §"Tune-quality issues").
-    expect(EXPECTED_OFFENDER_IDS.size).toBe(25)
+    // Sanity: the documented baseline contains 24 tunes (142/Leominster fixed by Phase 04.9.8 migration).
+    expect(EXPECTED_OFFENDER_IDS.size).toBe(24)
   })
 
   it('every offender ID corresponds to a real double_length=true tune in the DB', async () => {
