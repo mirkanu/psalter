@@ -36,6 +36,38 @@ function isInfoFieldLine(line: string): boolean {
 }
 
 /**
+ * Count note heads in an ABC music fragment.
+ * Excludes rests (z, x, Z), chord brackets (counts each [..] as 1),
+ * grace notes {..}, text annotations "...", decorations !...!,
+ * and tied continuations (note after '-').
+ *
+ * Exported so `scripts/audit-phrase-breaks.ts` and Plan 02 migration can re-use it.
+ */
+export function countNoteHeads(abc: string): number {
+  // Strip info fields (w:, V:, K:, etc.)
+  const musicOnly = abc
+    .split('\n')
+    .filter((l) => !isInfoFieldLine(l))
+    .join(' ')
+  // Strip grace note groups {..}, text annotations "..", decorations !..!
+  const stripped = musicOnly
+    .replace(/\{[^}]*\}/g, '')
+    .replace(/"[^"]*"/g, '')
+    .replace(/![^!]*!/g, '')
+  // Count chord brackets as 1 note head each, then remove them
+  // (so letters inside don't double-count)
+  const chordCount = (stripped.match(/\[[^\]]+\]/g) ?? []).length
+  const noChords = stripped.replace(/\[[^\]]+\]/g, '')
+  // Match bare note heads: optional accidentals (=^_), note letter (not z/x/Z),
+  // optional octave (',), optional duration
+  const notePattern = /[=^_]?[A-Ga-g][',]*\d*/g
+  const noteCount = (noChords.match(notePattern) ?? []).length
+  // Subtract tied continuation notes: any note immediately following '-'
+  const tieCount = (noChords.match(/-(?=[=^_]?[A-Ga-g])/g) ?? []).length
+  return chordCount + noteCount - tieCount
+}
+
+/**
  * Insert (n-1) `% PHRASE_BREAK` markers into the music body of an ABC string,
  * dividing the music into n roughly-equal phrases.
  *
