@@ -704,9 +704,29 @@ export function NotationRenderer({
       const phraseBody = (split.phrases[i] ?? '').trim()
       if (!phraseBody) continue
       // Strip any pre-existing w: lines from the phrase body (defensive).
-      const cleanedBody = phraseBody
-        .split('\n')
+      // Also join music lines that span multiple ABC text lines into a single
+      // text line so abcjs renders exactly one staff system per phrase when
+      // targetSubdivisions=1. Phrases from insertPhraseBreaks may span multiple
+      // ABC text lines when the source tune encodes multiple metrical lines on
+      // one text line but the PHRASE_BREAK splits mid-line — leaving a leading
+      // fragment on the next text line inside the same phrase. Joining with a
+      // space is safe: abcjs ignores whitespace between ABC tokens. Info-field
+      // lines (V:, K:, M:, w:) are kept on their own lines.
+      const phraseLines = phraseBody.split('\n')
+      const cleanedBody = phraseLines
         .filter((l) => !/^w:/.test(l.trim()))
+        .reduce<string[]>((acc, line) => {
+          if (/^\s*[A-Za-z]:/.test(line)) {
+            // Info-field line: keep on its own line
+            acc.push(line)
+          } else if (acc.length > 0 && !/^\s*[A-Za-z]:/.test(acc[acc.length - 1])) {
+            // Previous entry is also a music line: merge with space
+            acc[acc.length - 1] += ' ' + line.trim()
+          } else {
+            acc.push(line)
+          }
+          return acc
+        }, [])
         .join('\n')
         .trim()
 
