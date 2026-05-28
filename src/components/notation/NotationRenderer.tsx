@@ -100,6 +100,12 @@ export interface NotationRendererProps {
    * Replaces the Plan-04 transitional meter-string heuristic.
    */
   doubleLength: boolean
+  /**
+   * Plan 04.9.9: Raw solfège OCR JSON string from DB. When non-null and containing
+   * soprano/doh/time fields, used to build melisma-aware w: lines via
+   * buildWLineFromSolfa. When null, falls back to syllabifyForAbc.
+   */
+  solfegeOcrText?: string | null
 }
 
 export type ViewMode = 'staff' | 'solfege' | 'lyrics'
