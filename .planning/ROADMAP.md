@@ -425,7 +425,7 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 04.9.8-01-PLAN.md — Audit current PHRASE_BREAK state across all 144 tunes; produce JSON for migration
+- [x] 04.9.8-01-PLAN.md — Audit current PHRASE_BREAK state across all 144 tunes; produce JSON for migration
 - [ ] 04.9.8-02-PLAN.md — Migrate ABCs to 3 PHRASE_BREAKs (note-head counting) + phrasesForMeter 4/8 + z2 fix
 - [ ] 04.9.8-03-PLAN.md — Add 25 archaic -eth syllable overrides + unit tests
 - [ ] 04.9.8-04-PLAN.md — Playwright E2E across all 150 psalms in staff view (RENDER-08 phase gate)
