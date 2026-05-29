@@ -63,3 +63,33 @@ export function buildPhraseAbc(split: SplitAbc, phraseIndex: number): string {
   const body = split.phrases[phraseIndex] ?? split.phrases[0]
   return `${split.header}\n${body}`
 }
+
+function isInfoFieldLine(line: string): boolean {
+  return /^\s*[A-Za-z]:/.test(line)
+}
+
+/**
+ * Count note heads in an ABC music fragment.
+ * Pure function. Excludes rests, grace notes, annotations, decorations, and
+ * tied continuations. Counts each chord [..] as 1.
+ *
+ * Copied verbatim from scripts/annotate-phrase-breaks.ts (which has Node-only
+ * top-level imports — dotenv, postgres, node:fs — so cannot be imported by
+ * browser-bundled modules). Keep the two copies in sync.
+ */
+export function countNoteHeads(abc: string): number {
+  const musicOnly = abc
+    .split('\n')
+    .filter((l) => !isInfoFieldLine(l))
+    .join(' ')
+  const stripped = musicOnly
+    .replace(/\{[^}]*\}/g, '')
+    .replace(/"[^"]*"/g, '')
+    .replace(/![^!]*!/g, '')
+  const chordCount = (stripped.match(/\[[^\]]+\]/g) ?? []).length
+  const noChords = stripped.replace(/\[[^\]]+\]/g, '')
+  const notePattern = /[=^_]?[A-Ga-g][',]*\d*/g
+  const noteCount = (noChords.match(notePattern) ?? []).length
+  const tieCount = (noChords.match(/-(?=[=^_]?[A-Ga-g])/g) ?? []).length
+  return chordCount + noteCount - tieCount
+}
