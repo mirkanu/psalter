@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { splitOnPhraseBreaks, buildPhraseAbc, type SplitAbc } from './abc-phrases'
+import { splitOnPhraseBreaks, buildPhraseAbc, countNoteHeads, type SplitAbc } from './abc-phrases'
 
 const OLD_HUNDREDTH_TWO_PHRASES = `X:1
 T:Old Hundredth
@@ -105,5 +105,44 @@ describe('buildPhraseAbc', () => {
     expect(phrase0).not.toContain('PHRASE_BREAK')
     const phrase1 = buildPhraseAbc(split, 1)
     expect(phrase1).toContain('| D2 D D | E G F E | D F E D | G2 G2 |')
+  })
+})
+
+describe('countNoteHeads', () => {
+  it('counts 8 bare notes in a two-bar fragment', () => {
+    // 8 note heads: G A B c d c B A
+    expect(countNoteHeads('| G2 A B c | d c B A |')).toBe(8)
+  })
+
+  it('counts chord as 1 and adds bare notes', () => {
+    // [GBd]=1, then G G G=3 → total 4
+    expect(countNoteHeads('| [GBd]2 G G G |')).toBe(4)
+  })
+
+  it('subtracts tied continuation', () => {
+    // G-G2: '-' immediately precedes note letter, tie regex matches → subtracts 1 → result = 1
+    expect(countNoteHeads('| G-G2 |')).toBe(1)
+  })
+
+  it('ignores w: lines', () => {
+    // w: line stripped (isInfoFieldLine matches "w:..."); only | G2 G G | counts = 3
+    expect(countNoteHeads('w: The Lord my shep- herd\n| G2 G G |')).toBe(3)
+  })
+
+  it('ignores grace notes', () => {
+    // {ag} is a grace group (ignored), f e d c remain = 4
+    expect(countNoteHeads('| {ag}f e d c |')).toBe(4)
+  })
+
+  it('excludes rests from count', () => {
+    // z2 is a rest (ignored), G A B c = 4
+    expect(countNoteHeads('| z2 G A B c |')).toBe(4)
+  })
+
+  it('Crimond-style phrase 4 returns >= 10', () => {
+    // "| f e d c | B A G2- G2 | F G A B | c2 z2 |"
+    // notes: f e d c B A G G F G A B c = 13 minus tied G (G2- G2 → 1 tie) = 12 >= 10
+    const result = countNoteHeads('| f e d c | B A G2- G2 | F G A B | c2 z2 |')
+    expect(result).toBeGreaterThanOrEqual(10)
   })
 })
