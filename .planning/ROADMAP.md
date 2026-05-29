@@ -485,6 +485,18 @@ Plans:
 - [x] 04.9.10-01-PLAN.md — Dry-run + live --overwrite on all 150 tunes + SQL spot-check + commit DB state
 - [x] 04.9.10-02-PLAN.md — 150-psalm Playwright sweep + triage residuals + VERIFICATION.md + close RENDER-08
 
+### Phase 4.9.11 (INSERTED): Staff Alignment — Lyric-Count False Positive Fix
+**Goal**: Fix the Playwright UAT checker (which counts empty abcjs lyric tspans as passing) and fix the 72/144 tunes where phrase 4 has more note heads than syllable slots. Confirm 135+/139 tunes (excluding 11 data-gap/meter-n1 tunes) pass an accurate alignment check with zero false positives.
+**Depends on**: Phase 4.9.10
+**Success Criteria** (what must be TRUE):
+  1. Playwright checker uses `tspan.textContent.trim() !== ''` to detect populated lyric slots (not bare querySelector presence)
+  2. Re-run against all 150 psalms with the fixed checker reveals the true pass/fail count
+  3. Root cause of phrase-4 note excess is identified and confirmed across all 72 failing tunes
+  4. Fix is applied (annotation script, NotationRenderer, or DB migration as needed) and 135+/139 tunes pass the fixed checker
+  5. VERIFICATION.md updated with authoritative post-fix results
+**Plans**: TBD
+Plans:
+
 ---
 
 ## Milestone 2 — Precentor Portal & Polish
@@ -517,7 +529,7 @@ Plans:
 ## Progress
 
 **Milestone 1 Execution Order:**
-1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 4.9.5 → 4.9.6 → 4.9.7 → 4.9.8 → 4.9.9 → 4.9.10
+1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 4.9.5 → 4.9.6 → 4.9.7 → 4.9.8 → 4.9.9 → 4.9.10 → 4.9.11
 
 **Milestone 2 Execution Order:**
 5 → 6
@@ -545,6 +557,7 @@ Plans:
 | 4.9.8. Staff Display Word Alignment Fix | 0/TBD | Not started | - |
 | 4.9.9. Staff Alignment — Melisma Support | 0/TBD | Not started | - |
 | 4.9.10. PHRASE_BREAK Re-annotation | 2/2 | Complete | 2026-05-29 |
+| 4.9.11. Lyric-Count False Positive Fix | 0/TBD | Not started | - |
 
 ### Milestone 2 — Precentor Portal & Polish
 
