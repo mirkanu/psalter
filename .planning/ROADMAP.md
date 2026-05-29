@@ -459,8 +459,19 @@ Plans:
 
 **Wave 5 — Gap Closure** *(addresses VERIFICATION.md gaps for truths #4 and #5)*
 - [x] 04.9.9-05-PLAN.md — Fix Root Causes A+B: buildWLineFromSolfa syllabic-event boundary + countNoteHeads export + NotationRenderer note-count padding
-- [ ] 04.9.9-06-PLAN.md — Fix Root Cause C: re-annotate 7 tunes with wrong PHRASE_BREAK count (--tunes filter)
-- [ ] 04.9.9-07-PLAN.md — Re-run 150-psalm sweep + update VERIFICATION.md with per-tune residual enumeration
+- [x] 04.9.9-06-PLAN.md — Fix Root Cause C: re-annotate 7 tunes with wrong PHRASE_BREAK count (--tunes filter)
+- [x] 04.9.9-07-PLAN.md — Re-run 150-psalm sweep + update VERIFICATION.md with per-tune residual enumeration
+
+### Phase 4.9.10 (INSERTED): Staff Alignment — PHRASE_BREAK Re-annotation
+**Goal**: Run `annotate-phrase-breaks.ts --overwrite` with the existing character-level tokenizer (Path NH, already implemented in 04.9.8-05) to fix the 102 failing psalms whose PHRASE_BREAK positions were never re-migrated after Path NH was written. Confirm 148+/150 psalms pass the staff alignment sweep (5 data-gap tunes and Psalm 45 redirect are documented exceptions). Closes RENDER-08.
+**Depends on**: Phase 4.9.9
+**Requirements**: RENDER-08
+**Success Criteria** (what must be TRUE):
+  1. `annotate-phrase-breaks.ts --overwrite` runs cleanly against all tunes; no errors
+  2. Psalm 23 (Crimond) passes with trailingEmpty=0 on abcjs-l3
+  3. Playwright sweep shows 148+/150 psalms pass (accepted exceptions: 5 data-gap tunes with truncated ABC; Psalm 45 navigation redirect to production)
+  4. VERIFICATION.md lists all residual failures by psalm/tune with root-cause label (data-gap, redirect, or meter-gap)
+**Plans**: TBD (2 plans)
 
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
