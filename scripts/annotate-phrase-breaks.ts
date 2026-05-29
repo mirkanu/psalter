@@ -358,7 +358,7 @@ export function insertPhraseBreaks(abc: string, n: number, noteHeadSplitPoints?:
   // floor(internalBars.length * k / n) for k = 1..n-1.
   const splicePositions: number[] = []
   for (let k = 1; k < n; k++) {
-    const idx = Math.floor((internalBars.length * k) / n) - 1
+    const idx = Math.floor((internalBars.length * k) / n)
     const clamped = Math.max(0, Math.min(internalBars.length - 1, idx))
     // Splice AFTER the chosen barline character (so the bar belongs to the
     // preceding phrase). Position is `internalBars[clamped] + 1`.
