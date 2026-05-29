@@ -447,12 +447,11 @@ async function main() {
 
     let source = t.abcNotation!
     if (OVERWRITE) {
-      // Strip any existing markers, pre-existing w: lines (Old 100th), and
-      // collapse the resulting blank lines so the pure helper re-annotates
-      // from a clean slate.
+      // Strip any existing PHRASE_BREAK markers and collapse blank lines so
+      // the pure helper re-annotates from a clean slate.  w: lyric lines are
+      // intentionally preserved — stripping them would discard legitimate data.
       source = source
         .replace(/^\s*%\s*PHRASE_BREAK\s*$/gm, '')
-        .replace(/^w:.*$/gm, '')
         .replace(/\n\n+/g, '\n')
     }
 
