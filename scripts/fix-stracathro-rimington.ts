@@ -55,8 +55,10 @@ async function main() {
     console.log(`  New ABC (${abc.length} chars):`)
     console.log(abc)
 
-    // Count note heads roughly
-    const musicLines = abc.split('\n').slice(6).join(' ')
+    // Count note heads roughly — find K: line dynamically rather than assuming 6 header lines
+    const abcLines = abc.split('\n')
+    const kIdx = abcLines.findIndex((l) => /^K:/.test(l.trim()))
+    const musicLines = kIdx >= 0 ? abcLines.slice(kIdx + 1).join(' ') : ''
     const noteCount = (musicLines.match(/[A-Ga-g]/g) ?? []).length
     console.log(`  Approx note heads: ~${noteCount}`)
 
