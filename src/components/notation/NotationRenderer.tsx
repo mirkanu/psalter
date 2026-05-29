@@ -24,7 +24,7 @@ import { FullscreenOverlay } from './FullscreenOverlay'
 import { StanzaList } from './StanzaList'
 import { BackToNotationButton } from './BackToNotationButton'
 import { TuneAudioPlayer } from '@/components/TuneAudioPlayer'
-import { splitOnPhraseBreaks } from '@/lib/abc-phrases'
+import { splitOnPhraseBreaks, countNoteHeads } from '@/lib/abc-phrases'
 import { syllabifyForAbc } from '@/lib/lyrics'
 import { buildWLineFromSolfa } from '@/lib/abc-melisma'
 import {
@@ -757,6 +757,21 @@ export function NotationRenderer({
       return syllabifyForAbc(text)
     }
 
+    // Plan 04.9.9-05 gap closure: note-count safety net. Pads short w: outputs
+    // with `_` tokens so abcjs never leaves trailing note heads unaligned. NEVER
+    // truncates — if tokens already match or exceed note count, returns unchanged.
+    function padWLineToNoteCount(wLine: string, musicSubLine: string): string {
+      try {
+        const tokens = wLine.split(/\s+/).filter(Boolean)
+        const noteCount = countNoteHeads(musicSubLine)
+        if (noteCount <= 0 || tokens.length >= noteCount) return wLine
+        const padding = Array(noteCount - tokens.length).fill('_').join(' ')
+        return wLine + ' ' + padding
+      } catch {
+        return wLine
+      }
+    }
+
     for (const i of visiblePhraseIndices) {
       const phraseBody = (split.phrases[i] ?? '').trim()
       if (!phraseBody) continue
@@ -822,14 +837,16 @@ export function NotationRenderer({
             const chunks = splitWLineIntoChunks(syllabified, actualSubdivisions)
             const chunk = chunks[sub]
             if (!chunk || !chunk.trim()) continue
-            parts.push(`w: ${chunk}`)
+            const padded = padWLineToNoteCount(chunk, musicSubLines[sub])
+            parts.push(`w: ${padded}`)
           } else {
             // Normal case: one lyric line per sub-staff (structured metrical layout).
             // When sub >= linesPerPhrase the music has extended past the lyric;
             // emit no w: line for that sub-staff.
             const text = cycleLines[sub]
             if (!text || !text.trim()) continue
-            parts.push(`w: ${wLineForSyllables(text, i)}`)
+            const wRaw = wLineForSyllables(text, i)
+            parts.push(`w: ${padWLineToNoteCount(wRaw, musicSubLines[sub])}`)
           }
         }
       }
