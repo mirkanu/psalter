@@ -1,0 +1,156 @@
+Verifying staff alignment for 150 psalm(s) against http://localhost:3005
+Tolerance: 1 (notes may exceed lyrics by up to 1)
+PASS psalm 1: 4 sub-stave(s) aligned
+PASS psalm 2: 4 sub-stave(s) aligned
+PASS psalm 3: 4 sub-stave(s) aligned
+PASS psalm 4: 4 sub-stave(s) aligned
+PASS psalm 5: 4 sub-stave(s) aligned
+PASS psalm 6: 8 sub-stave(s) aligned
+PASS psalm 7: 4 sub-stave(s) aligned
+PASS psalm 8: 4 sub-stave(s) aligned
+PASS psalm 9: 4 sub-stave(s) aligned
+PASS psalm 10: 8 sub-stave(s) aligned
+PASS psalm 11: 4 sub-stave(s) aligned
+PASS psalm 12: 3 sub-stave(s) aligned
+PASS psalm 13: 4 sub-stave(s) aligned
+PASS psalm 14: 4 sub-stave(s) aligned
+PASS psalm 15: 4 sub-stave(s) aligned
+PASS psalm 16: 4 sub-stave(s) aligned
+PASS psalm 17: 4 sub-stave(s) aligned
+PASS psalm 18: 4 sub-stave(s) aligned
+PASS psalm 19: 4 sub-stave(s) aligned
+PASS psalm 20: 4 sub-stave(s) aligned
+PASS psalm 21: 4 sub-stave(s) aligned
+PASS psalm 22: 4 sub-stave(s) aligned
+PASS psalm 23: 4 sub-stave(s) aligned
+PASS psalm 24: 4 sub-stave(s) aligned
+WARN psalm 25: no abcjs sub-staves found (image fallback or no notation data)
+PASS psalm 26: 4 sub-stave(s) aligned
+PASS psalm 27: 4 sub-stave(s) aligned
+PASS psalm 28: 4 sub-stave(s) aligned
+PASS psalm 29: 4 sub-stave(s) aligned
+PASS psalm 30: 4 sub-stave(s) aligned
+PASS psalm 31: 4 sub-stave(s) aligned
+PASS psalm 32: 4 sub-stave(s) aligned
+PASS psalm 33: 4 sub-stave(s) aligned
+PASS psalm 34: 4 sub-stave(s) aligned
+PASS psalm 35: 4 sub-stave(s) aligned
+PASS psalm 36: 4 sub-stave(s) aligned
+PASS psalm 37: 4 sub-stave(s) aligned
+PASS psalm 38: 4 sub-stave(s) aligned
+PASS psalm 39: 4 sub-stave(s) aligned
+PASS psalm 40: 4 sub-stave(s) aligned
+PASS psalm 41: 4 sub-stave(s) aligned
+PASS psalm 42: 8 sub-stave(s) aligned
+PASS psalm 43: 4 sub-stave(s) aligned
+PASS psalm 44: 4 sub-stave(s) aligned
+WARN psalm 45: no abcjs sub-staves found (image fallback or no notation data)
+PASS psalm 46: 4 sub-stave(s) aligned
+PASS psalm 47: 4 sub-stave(s) aligned
+PASS psalm 48: 4 sub-stave(s) aligned
+PASS psalm 49: 4 sub-stave(s) aligned
+PASS psalm 50: 4 sub-stave(s) aligned
+PASS psalm 51: 4 sub-stave(s) aligned
+PASS psalm 52: 4 sub-stave(s) aligned
+PASS psalm 53: 4 sub-stave(s) aligned
+PASS psalm 54: 4 sub-stave(s) aligned
+PASS psalm 55: 4 sub-stave(s) aligned
+PASS psalm 56: 4 sub-stave(s) aligned
+PASS psalm 57: 4 sub-stave(s) aligned
+PASS psalm 58: 4 sub-stave(s) aligned
+PASS psalm 59: 4 sub-stave(s) aligned
+PASS psalm 60: 4 sub-stave(s) aligned
+PASS psalm 61: 4 sub-stave(s) aligned
+PASS psalm 62: 4 sub-stave(s) aligned
+PASS psalm 63: 4 sub-stave(s) aligned
+PASS psalm 64: 4 sub-stave(s) aligned
+PASS psalm 65: 4 sub-stave(s) aligned
+PASS psalm 66: 4 sub-stave(s) aligned
+WARN psalm 67: no abcjs sub-staves found (image fallback or no notation data)
+PASS psalm 68: 4 sub-stave(s) aligned
+PASS psalm 69: 4 sub-stave(s) aligned
+WARN psalm 70: no abcjs sub-staves found (image fallback or no notation data)
+WARN psalm 71: no abcjs sub-staves found (image fallback or no notation data)
+PASS psalm 72: 3 sub-stave(s) aligned
+PASS psalm 73: 4 sub-stave(s) aligned
+PASS psalm 74: 2 sub-stave(s) aligned
+PASS psalm 75: 4 sub-stave(s) aligned
+PASS psalm 76: 4 sub-stave(s) aligned
+PASS psalm 77: 4 sub-stave(s) aligned
+PASS psalm 78: 4 sub-stave(s) aligned
+PASS psalm 79: 4 sub-stave(s) aligned
+PASS psalm 80: 4 sub-stave(s) aligned
+PASS psalm 81: 4 sub-stave(s) aligned
+PASS psalm 82: 4 sub-stave(s) aligned
+PASS psalm 83: 6 sub-stave(s) aligned
+PASS psalm 84: 4 sub-stave(s) aligned
+PASS psalm 85: 4 sub-stave(s) aligned
+PASS psalm 86: 3 sub-stave(s) aligned
+PASS psalm 87: 4 sub-stave(s) aligned
+PASS psalm 88: 4 sub-stave(s) aligned
+PASS psalm 89: 4 sub-stave(s) aligned
+PASS psalm 90: 4 sub-stave(s) aligned
+PASS psalm 91: 4 sub-stave(s) aligned
+PASS psalm 92: 8 sub-stave(s) aligned
+PASS psalm 93: 4 sub-stave(s) aligned
+PASS psalm 94: 4 sub-stave(s) aligned
+PASS psalm 95: 4 sub-stave(s) aligned
+PASS psalm 96: 4 sub-stave(s) aligned
+PASS psalm 97: 4 sub-stave(s) aligned
+PASS psalm 98: 4 sub-stave(s) aligned
+WARN psalm 99: no abcjs sub-staves found (image fallback or no notation data)
+PASS psalm 100: 4 sub-stave(s) aligned
+PASS psalm 101: 4 sub-stave(s) aligned
+PASS psalm 102: 4 sub-stave(s) aligned
+WARN psalm 103: no abcjs sub-staves found (image fallback or no notation data)
+WARN psalm 104: no abcjs sub-staves found (image fallback or no notation data)
+PASS psalm 105: 4 sub-stave(s) aligned
+PASS psalm 106: 4 sub-stave(s) aligned
+PASS psalm 107: 4 sub-stave(s) aligned
+PASS psalm 108: 4 sub-stave(s) aligned
+PASS psalm 109: 4 sub-stave(s) aligned
+PASS psalm 110: 4 sub-stave(s) aligned
+PASS psalm 111: 4 sub-stave(s) aligned
+PASS psalm 112: 4 sub-stave(s) aligned
+PASS psalm 113: 4 sub-stave(s) aligned
+PASS psalm 114: 4 sub-stave(s) aligned
+PASS psalm 115: 4 sub-stave(s) aligned
+PASS psalm 116: 4 sub-stave(s) aligned
+PASS psalm 117: 8 sub-stave(s) aligned
+PASS psalm 118: 4 sub-stave(s) aligned
+PASS psalm 119: 4 sub-stave(s) aligned
+PASS psalm 120: 4 sub-stave(s) aligned
+PASS psalm 121: 4 sub-stave(s) aligned
+PASS psalm 122: 8 sub-stave(s) aligned
+PASS psalm 123: 4 sub-stave(s) aligned
+WARN psalm 124: no abcjs sub-staves found (image fallback or no notation data)
+PASS psalm 125: 4 sub-stave(s) aligned
+PASS psalm 126: 4 sub-stave(s) aligned
+PASS psalm 127: 4 sub-stave(s) aligned
+PASS psalm 128: 4 sub-stave(s) aligned
+PASS psalm 129: 4 sub-stave(s) aligned
+PASS psalm 130: 4 sub-stave(s) aligned
+PASS psalm 131: 4 sub-stave(s) aligned
+PASS psalm 132: 4 sub-stave(s) aligned
+PASS psalm 133: 8 sub-stave(s) aligned
+PASS psalm 134: 4 sub-stave(s) aligned
+PASS psalm 135: 4 sub-stave(s) aligned
+WARN psalm 136: no abcjs sub-staves found (image fallback or no notation data)
+PASS psalm 137: 4 sub-stave(s) aligned
+PASS psalm 138: 4 sub-stave(s) aligned
+PASS psalm 139: 4 sub-stave(s) aligned
+PASS psalm 140: 4 sub-stave(s) aligned
+PASS psalm 141: 3 sub-stave(s) aligned
+PASS psalm 142: 4 sub-stave(s) aligned
+WARN psalm 143: no abcjs sub-staves found (image fallback or no notation data)
+PASS psalm 144: 4 sub-stave(s) aligned
+PASS psalm 145: 3 sub-stave(s) aligned
+PASS psalm 146: 4 sub-stave(s) aligned
+PASS psalm 147: 4 sub-stave(s) aligned
+PASS psalm 148: 7 sub-stave(s) aligned
+PASS psalm 149: 4 sub-stave(s) aligned
+PASS psalm 150: 4 sub-stave(s) aligned
+
+Results: 150 passed, 0 failed
+Report: /data/home/psalter/scripts/output/staff-alignment-report.json
+Failure screenshots (if any): /data/home/psalter/scripts/uat/screenshots/staff-alignment-failures

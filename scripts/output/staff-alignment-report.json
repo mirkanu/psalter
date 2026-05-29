@@ -1,20 +1,9 @@
 {
-  "generatedAt": "2026-05-29T17:24:33.028Z",
+  "generatedAt": "2026-05-29T17:41:03.779Z",
   "base": "http://localhost:3005",
   "tolerance": 1,
   "psalmsChecked": 150,
-  "passed": 148,
-  "failed": 2,
-  "failures": [
-    {
-      "psalm": 13,
-      "reason": "exception",
-      "error": "browser.newPage: Target page, context or browser has been closed"
-    },
-    {
-      "psalm": 30,
-      "reason": "exception",
-      "error": "browser.newPage: Target page, context or browser has been closed"
-    }
-  ]
+  "passed": 150,
+  "failed": 0,
+  "failures": []
 }
