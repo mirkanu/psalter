@@ -494,8 +494,14 @@ Plans:
   3. Root cause of phrase-4 note excess is identified and confirmed across all 72 failing tunes
   4. Fix is applied (annotation script, NotationRenderer, or DB migration as needed) and 135+/139 tunes pass the fixed checker
   5. VERIFICATION.md updated with authoritative post-fix results
-**Plans**: TBD
+**Plans**: 2 plans
+
 Plans:
+**Wave 1**
+- [ ] 04.9.11-01-PLAN.md — Fix verify-staff-alignment.js textContent check + build investigate-phrase4-alignment.ts + run full sweep + INVESTIGATION.md (human decision checkpoint on fix path)
+
+**Wave 2** *(depends on Wave 1)*
+- [ ] 04.9.11-02-PLAN.md — Apply selected fix path (A/B/C/D) + re-run sweep + VERIFICATION.md + human visual verify (checkpoint)
 
 ---
 
