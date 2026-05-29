@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-05-28T13:21:05.633Z",
-  "base": "http://localhost:3005",
-  "tolerance": 1,
+  "generatedAt": "2026-05-28T18:38:17.959Z",
+  "base": "https://psalter.gsdlabs.dev",
+  "tolerance": 0,
   "psalmsChecked": 150,
-  "passed": 66,
-  "failed": 84,
+  "passed": 48,
+  "failed": 102,
   "failures": [
     {
       "psalm": 3,
@@ -371,6 +371,135 @@
       ]
     },
     {
+      "psalm": 14,
+      "reason": "empty-notes",
+      "failures": [
+        {
+          "line": "abcjs-l3",
+          "noteCount": 7,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ],
+      "allStaves": [
+        {
+          "line": "abcjs-l0",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l1",
+          "noteCount": 6,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l2",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l3",
+          "noteCount": 7,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ]
+    },
+    {
+      "psalm": 15,
+      "reason": "empty-notes",
+      "failures": [
+        {
+          "line": "abcjs-l3",
+          "noteCount": 7,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ],
+      "allStaves": [
+        {
+          "line": "abcjs-l0",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l1",
+          "noteCount": 6,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l2",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l3",
+          "noteCount": 7,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ]
+    },
+    {
+      "psalm": 16,
+      "reason": "empty-notes",
+      "failures": [
+        {
+          "line": "abcjs-l3",
+          "noteCount": 8,
+          "notesWithLyric": 7,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ],
+      "allStaves": [
+        {
+          "line": "abcjs-l0",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l1",
+          "noteCount": 6,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l2",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l3",
+          "noteCount": 8,
+          "notesWithLyric": 7,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ]
+    },
+    {
       "psalm": 17,
       "reason": "empty-notes",
       "failures": [
@@ -414,6 +543,49 @@
       ]
     },
     {
+      "psalm": 18,
+      "reason": "empty-notes",
+      "failures": [
+        {
+          "line": "abcjs-l3",
+          "noteCount": 8,
+          "notesWithLyric": 7,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ],
+      "allStaves": [
+        {
+          "line": "abcjs-l0",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l1",
+          "noteCount": 6,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l2",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l3",
+          "noteCount": 8,
+          "notesWithLyric": 7,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ]
+    },
+    {
       "psalm": 21,
       "reason": "empty-notes",
       "failures": [
@@ -453,6 +625,49 @@
           "notesWithLyric": 6,
           "notesWithoutLyric": 9,
           "trailingEmpty": 9
+        }
+      ]
+    },
+    {
+      "psalm": 22,
+      "reason": "empty-notes",
+      "failures": [
+        {
+          "line": "abcjs-l3",
+          "noteCount": 8,
+          "notesWithLyric": 7,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ],
+      "allStaves": [
+        {
+          "line": "abcjs-l0",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l1",
+          "noteCount": 6,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l2",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l3",
+          "noteCount": 8,
+          "notesWithLyric": 7,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
         }
       ]
     },
@@ -758,6 +973,49 @@
       ]
     },
     {
+      "psalm": 34,
+      "reason": "empty-notes",
+      "failures": [
+        {
+          "line": "abcjs-l3",
+          "noteCount": 8,
+          "notesWithLyric": 7,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ],
+      "allStaves": [
+        {
+          "line": "abcjs-l0",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l1",
+          "noteCount": 6,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l2",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l3",
+          "noteCount": 8,
+          "notesWithLyric": 7,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ]
+    },
+    {
       "psalm": 35,
       "reason": "empty-notes",
       "failures": [
@@ -801,6 +1059,49 @@
       ]
     },
     {
+      "psalm": 36,
+      "reason": "empty-notes",
+      "failures": [
+        {
+          "line": "abcjs-l3",
+          "noteCount": 8,
+          "notesWithLyric": 7,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ],
+      "allStaves": [
+        {
+          "line": "abcjs-l0",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l1",
+          "noteCount": 6,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l2",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l3",
+          "noteCount": 8,
+          "notesWithLyric": 7,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ]
+    },
+    {
       "psalm": 37,
       "reason": "empty-notes",
       "failures": [
@@ -840,6 +1141,49 @@
           "notesWithLyric": 7,
           "notesWithoutLyric": 2,
           "trailingEmpty": 2
+        }
+      ]
+    },
+    {
+      "psalm": 38,
+      "reason": "empty-notes",
+      "failures": [
+        {
+          "line": "abcjs-l3",
+          "noteCount": 7,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ],
+      "allStaves": [
+        {
+          "line": "abcjs-l0",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l1",
+          "noteCount": 6,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l2",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l3",
+          "noteCount": 7,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
         }
       ]
     },
@@ -1094,6 +1438,11 @@
       ]
     },
     {
+      "psalm": 45,
+      "reason": "navigation-error",
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"https://psalter.gsdlabs.dev/psalms/45?view=staff\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    {
       "psalm": 46,
       "reason": "empty-notes",
       "failures": [
@@ -1309,6 +1658,49 @@
       ]
     },
     {
+      "psalm": 51,
+      "reason": "empty-notes",
+      "failures": [
+        {
+          "line": "abcjs-l3",
+          "noteCount": 8,
+          "notesWithLyric": 7,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ],
+      "allStaves": [
+        {
+          "line": "abcjs-l0",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l1",
+          "noteCount": 6,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l2",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l3",
+          "noteCount": 8,
+          "notesWithLyric": 7,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ]
+    },
+    {
       "psalm": 52,
       "reason": "empty-notes",
       "failures": [
@@ -1348,6 +1740,135 @@
           "notesWithLyric": 7,
           "notesWithoutLyric": 8,
           "trailingEmpty": 8
+        }
+      ]
+    },
+    {
+      "psalm": 53,
+      "reason": "empty-notes",
+      "failures": [
+        {
+          "line": "abcjs-l3",
+          "noteCount": 7,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ],
+      "allStaves": [
+        {
+          "line": "abcjs-l0",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l1",
+          "noteCount": 6,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l2",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l3",
+          "noteCount": 7,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ]
+    },
+    {
+      "psalm": 54,
+      "reason": "empty-notes",
+      "failures": [
+        {
+          "line": "abcjs-l3",
+          "noteCount": 7,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ],
+      "allStaves": [
+        {
+          "line": "abcjs-l0",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l1",
+          "noteCount": 6,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l2",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l3",
+          "noteCount": 7,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ]
+    },
+    {
+      "psalm": 55,
+      "reason": "empty-notes",
+      "failures": [
+        {
+          "line": "abcjs-l3",
+          "noteCount": 7,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ],
+      "allStaves": [
+        {
+          "line": "abcjs-l0",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l1",
+          "noteCount": 6,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l2",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l3",
+          "noteCount": 7,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
         }
       ]
     },
@@ -1606,6 +2127,49 @@
           "notesWithLyric": 7,
           "notesWithoutLyric": 6,
           "trailingEmpty": 6
+        }
+      ]
+    },
+    {
+      "psalm": 64,
+      "reason": "empty-notes",
+      "failures": [
+        {
+          "line": "abcjs-l3",
+          "noteCount": 8,
+          "notesWithLyric": 7,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ],
+      "allStaves": [
+        {
+          "line": "abcjs-l0",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l1",
+          "noteCount": 6,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l2",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l3",
+          "noteCount": 8,
+          "notesWithLyric": 7,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
         }
       ]
     },
@@ -1907,6 +2471,92 @@
           "notesWithLyric": 6,
           "notesWithoutLyric": 15,
           "trailingEmpty": 15
+        }
+      ]
+    },
+    {
+      "psalm": 85,
+      "reason": "empty-notes",
+      "failures": [
+        {
+          "line": "abcjs-l3",
+          "noteCount": 7,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ],
+      "allStaves": [
+        {
+          "line": "abcjs-l0",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l1",
+          "noteCount": 6,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l2",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l3",
+          "noteCount": 7,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ]
+    },
+    {
+      "psalm": 87,
+      "reason": "empty-notes",
+      "failures": [
+        {
+          "line": "abcjs-l3",
+          "noteCount": 7,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ],
+      "allStaves": [
+        {
+          "line": "abcjs-l0",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l1",
+          "noteCount": 6,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l2",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l3",
+          "noteCount": 7,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
         }
       ]
     },
@@ -2806,6 +3456,49 @@
       ]
     },
     {
+      "psalm": 113,
+      "reason": "empty-notes",
+      "failures": [
+        {
+          "line": "abcjs-l3",
+          "noteCount": 8,
+          "notesWithLyric": 7,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ],
+      "allStaves": [
+        {
+          "line": "abcjs-l0",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l1",
+          "noteCount": 6,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l2",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l3",
+          "noteCount": 8,
+          "notesWithLyric": 7,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ]
+    },
+    {
       "psalm": 116,
       "reason": "empty-notes",
       "failures": [
@@ -3349,6 +4042,49 @@
       ]
     },
     {
+      "psalm": 131,
+      "reason": "empty-notes",
+      "failures": [
+        {
+          "line": "abcjs-l3",
+          "noteCount": 7,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ],
+      "allStaves": [
+        {
+          "line": "abcjs-l0",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l1",
+          "noteCount": 6,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l2",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l3",
+          "noteCount": 7,
+          "notesWithLyric": 6,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        }
+      ]
+    },
+    {
       "psalm": 133,
       "reason": "empty-notes",
       "failures": [
@@ -3423,6 +4159,13 @@
       "psalm": 134,
       "reason": "empty-notes",
       "failures": [
+        {
+          "line": "abcjs-l2",
+          "noteCount": 8,
+          "notesWithLyric": 7,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        },
         {
           "line": "abcjs-l3",
           "noteCount": 20,
@@ -3724,6 +4467,13 @@
       "psalm": 148,
       "reason": "empty-notes",
       "failures": [
+        {
+          "line": "abcjs-l2",
+          "noteCount": 8,
+          "notesWithLyric": 7,
+          "notesWithoutLyric": 1,
+          "trailingEmpty": 1
+        },
         {
           "line": "abcjs-l5",
           "noteCount": 8,

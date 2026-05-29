@@ -26,11 +26,11 @@ if (!fs.existsSync(SS_DIR)) fs.mkdirSync(SS_DIR, { recursive: true })
 const REPORT_PATH = path.join(__dirname, '..', 'output', 'staff-alignment-report.json')
 fs.mkdirSync(path.dirname(REPORT_PATH), { recursive: true })
 
-// Hard timeout — abort with exit 2 if total run exceeds 20 minutes
+// Hard timeout — abort with exit 2 if total run exceeds 50 minutes
 setTimeout(() => {
-  console.error('TIMEOUT: verify-staff-alignment exceeded 20 min')
+  console.error('TIMEOUT: verify-staff-alignment exceeded 50 min')
   process.exit(2)
-}, 20 * 60 * 1000).unref()
+}, 50 * 60 * 1000).unref()
 
 async function waitForNotation(page) {
   await page
@@ -197,7 +197,7 @@ async function main() {
   console.log(`Tolerance: ${TOLERANCE} (notes may exceed lyrics by up to ${TOLERANCE})`)
   const browser = await chromium.launch({
     executablePath: '/tmp/pw-browsers/chromium-1217/chrome-linux/chrome',
-    args: ['--no-sandbox'],
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
   })
   try {
     for (const num of PSALM_LIST) {
