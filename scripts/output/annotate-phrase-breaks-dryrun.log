@@ -1,0 +1,148 @@
+Running [DRY RUN] [OVERWRITE]
+Found 144 candidate row(s)
+  ✓ [dry] Kingsfold (CM) -> 4 phrases
+  ✓ [dry] Edinburgh (CM) -> 4 phrases
+  - skip Stuttgart (87 87): n=1
+  ✓ [dry] Farrant (CM) -> 4 phrases
+  ✓ [dry] New 136th (CM) -> 4 phrases
+  - skip I Need Thee (66 66): n=1
+  - skip Webb (76 76 D): n=1
+  ✓ [dry] Agawam (CM) -> 4 phrases
+  ✓ [dry] Praetorius (CM) -> 4 phrases
+  - skip Lennox (66 66 88): n=1
+  ✓ [dry] Lancaster (CM) -> 4 phrases
+  ✓ [dry] Scarborough (CM) -> 4 phrases
+  ✓ [dry] Woodworth (LM (long meter, 88 88)) -> 4 phrases
+  ✓ [dry] Main (CM) -> 4 phrases
+  ✓ [dry] St. Magnus (CM) -> 4 phrases
+  ✓ [dry] Moravia (CM) -> 4 phrases
+  ✓ [dry] Arnold (CM) -> 4 phrases
+  ✓ [dry] Southwark (CM) -> 4 phrases
+  - skip Aurelia (76 76 D): n=1
+  ✓ [dry] Newington (CM) -> 4 phrases
+  ✓ [dry] Belgrave (CM) -> 4 phrases
+  ✓ [dry] Ravensburg (CM) -> 4 phrases
+  ✓ [dry] Crimond (CM) -> 4 phrases
+  ✓ [dry] Huddersfield (CM) -> 4 phrases
+  - skip Old 124th (10 10 10 10 10): n=1
+  ✓ [dry] Coleshill (CM) -> 4 phrases
+  ✓ [dry] Old 100th (LM (long meter, 88 88)) -> 4 phrases
+  ✓ [dry] Tiverton (CM) -> 4 phrases
+  ✓ [dry] Humility (CM) -> 4 phrases
+  ✓ [dry] Culross (CM) -> 4 phrases
+  ✓ [dry] St. Bernard (CM) -> 4 phrases
+  ✓ [dry] St. Leonard (CM) -> 4 phrases
+  ✓ [dry] Wetherby (CM) -> 4 phrases
+  ✓ [dry] Jackson (CM) -> 4 phrases
+  ✓ [dry] Kilmarnock (CM) -> 4 phrases
+  ✓ [dry] Leuchars (CM) -> 4 phrases
+  - skip Darwall (66 66 88): n=1
+  - skip St. John (66 66 88): n=1
+  ✓ [dry] Trentham (SM) -> 4 phrases
+  ✓ [dry] Kredron (EPC chant?) (CM) -> 4 phrases
+  ✓ [dry] Abbeyville (CM) -> 4 phrases
+  ✓ [dry] Wallace (CM) -> 4 phrases
+  ✓ [dry] Corona (CM) -> 4 phrases
+  ✓ [dry] Old 29th (CM) -> 4 phrases
+  ✓ [dry] Eastgate (last line repeat for Ps 133) (CM) -> 4 phrases
+  ✓ [dry] Elijah (CM) -> 4 phrases
+  ✓ [dry] Richmond (CM) -> 4 phrases
+  ✓ [dry] Artaxerxes (EPC tune) (CM) -> 4 phrases
+  ✓ [dry] Gabriel (CM) -> 4 phrases
+  ✓ [dry] Evan (CM) -> 4 phrases
+  ✓ [dry] Bishopthorpe (CM) -> 4 phrases
+  ✓ [dry] St. Ethelreda (CM) -> 4 phrases
+  ✓ [dry] Carlisle (SM) -> 4 phrases
+  ✓ [dry] St. James (CM) -> 4 phrases
+  ✓ [dry] Duke Street (LM (long meter, 88 88)) -> 4 phrases
+  ✓ [dry] Erin (CM) -> 4 phrases
+  ✓ [dry] Petersham (CMD, EPC tune) (CM) -> 4 phrases
+  ✓ [dry] Westminster (CM) -> 4 phrases
+  ✓ [dry] Salzburg (CM) -> 4 phrases
+  ✓ [dry] Ostend (CM) -> 4 phrases
+  ✓ [dry] Warwick (CM) -> 4 phrases
+  ✓ [dry] Howard (CM) -> 4 phrases
+  ✓ [dry] Comfort (CM) -> 4 phrases
+  ✓ [dry] Dunfermline (CM) -> 4 phrases
+  ✓ [dry] Dennis (SM) -> 4 phrases
+  ✓ [dry] Boston (CM) -> 4 phrases
+  - skip Shepherd (87 87): n=1
+  ✓ [dry] Consolation (CM) -> 4 phrases
+  ✓ [dry] Azmon/Denfield (CM) -> 4 phrases
+  ✓ [dry] University (CM) -> 4 phrases
+  ✓ [dry] French (CM) -> 4 phrases
+  ✓ [dry] Kathrine (CM) -> 4 phrases
+  - skip Clarkeville (66 66 88): n=1
+  ✓ [dry] Perfect Way (CM) -> 4 phrases
+  ✓ [dry] Rest (CM) -> 4 phrases
+  ✓ [dry] New Britain (CM) -> 4 phrases
+  ✓ [dry] Soldau (LM (long meter, 88 88)) -> 4 phrases
+  ✓ [dry] Dunlapscreek (CM) -> 4 phrases
+  ✓ [dry] Argyle (CM) -> 4 phrases
+  ✓ [dry] St. Lawrence (CM) -> 4 phrases
+  ✓ [dry] Rimington (LM (long meter, 88 88)) -> 4 phrases
+  ✓ [dry] Winchester (CM) -> 4 phrases
+  ✓ [dry] Saxony (CM) -> 4 phrases
+  ✓ [dry] Crediton (CM) -> 4 phrases
+  ✓ [dry] St. Asaph (CM) -> 4 phrases
+  ✓ [dry] Effingham (CM) -> 4 phrases
+  ✓ [dry] Spohr (CM) -> 4 phrases
+  ✓ [dry] Ericstane (CM) -> 4 phrases
+  ✓ [dry] St. Anne (CM) -> 4 phrases
+  ✓ [dry] Bays of Harris (CM) -> 4 phrases
+  ✓ [dry] Beatitudo (CM) -> 4 phrases
+  ✓ [dry] Stracathro (CM) -> 4 phrases
+  ✓ [dry] Selma (SM) -> 4 phrases
+  ✓ [dry] Aspurg (CM) -> 4 phrases
+  ✓ [dry] Silchester (SM) -> 4 phrases
+  ✓ [dry] Stroudwater (CM) -> 4 phrases
+  ✓ [dry] Bangor (CM) -> 4 phrases
+  ✓ [dry] St. Peter (CM) -> 4 phrases
+  ✓ [dry] St. Mary (CM) -> 4 phrases
+  ✓ [dry] St. Andrew (CM) -> 4 phrases
+  ✓ [dry] Peterborough (CM) -> 4 phrases
+  ✓ [dry] London New (CM) -> 4 phrases
+  ✓ [dry] St. Kilda (CM) -> 4 phrases
+  ✓ [dry] Sheffield (CM) -> 4 phrases
+  ✓ [dry] Cheshire (LRF??) (CM) -> 4 phrases
+  ✓ [dry] Orton (CM) -> 4 phrases
+  ✓ [dry] Norwich (CM) -> 4 phrases
+  ✓ [dry] St. Paul (CM) -> 4 phrases
+  ✓ [dry] Gainsborough (CM) -> 4 phrases
+  ✓ [dry] Wiltshire (CM) -> 4 phrases
+  ✓ [dry] Old 44th (CM) -> 4 phrases
+  ✓ [dry] Southwold (CM) -> 4 phrases
+  ✓ [dry] Gräfenberg (CM) -> 4 phrases
+  ✓ [dry] Lloyd (CM) -> 4 phrases
+  ✓ [dry] St. Flavian (CM) -> 4 phrases
+  ✓ [dry] Ballerma (start high) (CM) -> 4 phrases
+  ✓ [dry] Tallis (CM) -> 4 phrases
+  ✓ [dry] Evangel (CM) -> 4 phrases
+  ✓ [dry] New Lydia (CM) -> 4 phrases
+  ✓ [dry] Boswell (CM) -> 4 phrases
+  ✓ [dry] Martyrdom (CM) -> 4 phrases
+  ✓ [dry] Palestrina (Mr Calendar tune) (CM) -> 4 phrases
+  ✓ [dry] Dundee (CM) -> 4 phrases
+  ✓ [dry] Eden (NB 1st note 2nd line!) (CM) -> 4 phrases
+  ✓ [dry] Forest Green (CM) -> 4 phrases
+  ✓ [dry] Contemplation (CM) -> 4 phrases
+  ✓ [dry] Naomi (CM) -> 4 phrases
+  ✓ [dry] Elgin (CM) -> 4 phrases
+  ✓ [dry] St. Stephen (CM) -> 4 phrases
+  ✓ [dry] Martyrs (CM) -> 4 phrases
+  ✓ [dry] Irish (CM) -> 4 phrases
+  ✓ [dry] Belmont (CM) -> 4 phrases
+  ✓ [dry] Franconia (SM) -> 4 phrases
+  ✓ [dry] Desert DONT SING (CM) -> 4 phrases
+  ✓ [dry] St Agnes, Durham (start high) (CM) -> 4 phrases
+  ✓ [dry] Old 134th (SM) -> 4 phrases
+  ✓ [dry] Lynton (CM) -> 4 phrases
+  ✓ [dry] Sawley (start high) (CM) -> 4 phrases
+  ✓ [dry] Orlington (CM) -> 4 phrases
+  ✓ [dry] Communion (LM (long meter, 88 88)) -> 4 phrases
+  ✓ [dry] Walton (LM (long meter, 88 88)) -> 4 phrases
+  ✓ [dry] Glasgow (CM) -> 4 phrases
+  ✓ [dry] Harington (CM) -> 4 phrases
+  ✓ [dry] Pembroke (CM) -> 4 phrases
+
+Summary: 134 annotated, 10 skipped, 144 total candidates

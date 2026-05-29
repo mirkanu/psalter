@@ -1,0 +1,148 @@
+Running [LIVE] [OVERWRITE]
+Found 144 candidate row(s)
+  ✓ Kingsfold (CM) -> 4 phrases
+  ✓ Edinburgh (CM) -> 4 phrases
+  - skip Stuttgart (87 87): n=1
+  ✓ Farrant (CM) -> 4 phrases
+  ✓ New 136th (CM) -> 4 phrases
+  - skip I Need Thee (66 66): n=1
+  - skip Webb (76 76 D): n=1
+  ✓ Agawam (CM) -> 4 phrases
+  ✓ Praetorius (CM) -> 4 phrases
+  - skip Lennox (66 66 88): n=1
+  ✓ Lancaster (CM) -> 4 phrases
+  ✓ Scarborough (CM) -> 4 phrases
+  ✓ Woodworth (LM (long meter, 88 88)) -> 4 phrases
+  ✓ Main (CM) -> 4 phrases
+  ✓ St. Magnus (CM) -> 4 phrases
+  ✓ Moravia (CM) -> 4 phrases
+  ✓ Arnold (CM) -> 4 phrases
+  ✓ Southwark (CM) -> 4 phrases
+  - skip Aurelia (76 76 D): n=1
+  ✓ Newington (CM) -> 4 phrases
+  ✓ Belgrave (CM) -> 4 phrases
+  ✓ Ravensburg (CM) -> 4 phrases
+  ✓ Crimond (CM) -> 4 phrases
+  ✓ Huddersfield (CM) -> 4 phrases
+  - skip Old 124th (10 10 10 10 10): n=1
+  ✓ Coleshill (CM) -> 4 phrases
+  ✓ Old 100th (LM (long meter, 88 88)) -> 4 phrases
+  ✓ Tiverton (CM) -> 4 phrases
+  ✓ Humility (CM) -> 4 phrases
+  ✓ Culross (CM) -> 4 phrases
+  ✓ St. Bernard (CM) -> 4 phrases
+  ✓ St. Leonard (CM) -> 4 phrases
+  ✓ Wetherby (CM) -> 4 phrases
+  ✓ Jackson (CM) -> 4 phrases
+  ✓ Kilmarnock (CM) -> 4 phrases
+  ✓ Leuchars (CM) -> 4 phrases
+  - skip Darwall (66 66 88): n=1
+  - skip St. John (66 66 88): n=1
+  ✓ Trentham (SM) -> 4 phrases
+  ✓ Kredron (EPC chant?) (CM) -> 4 phrases
+  ✓ Abbeyville (CM) -> 4 phrases
+  ✓ Wallace (CM) -> 4 phrases
+  ✓ Corona (CM) -> 4 phrases
+  ✓ Old 29th (CM) -> 4 phrases
+  ✓ Eastgate (last line repeat for Ps 133) (CM) -> 4 phrases
+  ✓ Elijah (CM) -> 4 phrases
+  ✓ Richmond (CM) -> 4 phrases
+  ✓ Artaxerxes (EPC tune) (CM) -> 4 phrases
+  ✓ Gabriel (CM) -> 4 phrases
+  ✓ Evan (CM) -> 4 phrases
+  ✓ Bishopthorpe (CM) -> 4 phrases
+  ✓ St. Ethelreda (CM) -> 4 phrases
+  ✓ Carlisle (SM) -> 4 phrases
+  ✓ St. James (CM) -> 4 phrases
+  ✓ Duke Street (LM (long meter, 88 88)) -> 4 phrases
+  ✓ Erin (CM) -> 4 phrases
+  ✓ Petersham (CMD, EPC tune) (CM) -> 4 phrases
+  ✓ Westminster (CM) -> 4 phrases
+  ✓ Salzburg (CM) -> 4 phrases
+  ✓ Ostend (CM) -> 4 phrases
+  ✓ Warwick (CM) -> 4 phrases
+  ✓ Howard (CM) -> 4 phrases
+  ✓ Comfort (CM) -> 4 phrases
+  ✓ Dunfermline (CM) -> 4 phrases
+  ✓ Dennis (SM) -> 4 phrases
+  ✓ Boston (CM) -> 4 phrases
+  - skip Shepherd (87 87): n=1
+  ✓ Consolation (CM) -> 4 phrases
+  ✓ Azmon/Denfield (CM) -> 4 phrases
+  ✓ University (CM) -> 4 phrases
+  ✓ French (CM) -> 4 phrases
+  ✓ Kathrine (CM) -> 4 phrases
+  - skip Clarkeville (66 66 88): n=1
+  ✓ Perfect Way (CM) -> 4 phrases
+  ✓ Rest (CM) -> 4 phrases
+  ✓ New Britain (CM) -> 4 phrases
+  ✓ Soldau (LM (long meter, 88 88)) -> 4 phrases
+  ✓ Dunlapscreek (CM) -> 4 phrases
+  ✓ Argyle (CM) -> 4 phrases
+  ✓ St. Lawrence (CM) -> 4 phrases
+  ✓ Rimington (LM (long meter, 88 88)) -> 4 phrases
+  ✓ Winchester (CM) -> 4 phrases
+  ✓ Saxony (CM) -> 4 phrases
+  ✓ Crediton (CM) -> 4 phrases
+  ✓ St. Asaph (CM) -> 4 phrases
+  ✓ Effingham (CM) -> 4 phrases
+  ✓ Spohr (CM) -> 4 phrases
+  ✓ Ericstane (CM) -> 4 phrases
+  ✓ St. Anne (CM) -> 4 phrases
+  ✓ Bays of Harris (CM) -> 4 phrases
+  ✓ Beatitudo (CM) -> 4 phrases
+  ✓ Stracathro (CM) -> 4 phrases
+  ✓ Selma (SM) -> 4 phrases
+  ✓ Aspurg (CM) -> 4 phrases
+  ✓ Silchester (SM) -> 4 phrases
+  ✓ Stroudwater (CM) -> 4 phrases
+  ✓ Bangor (CM) -> 4 phrases
+  ✓ St. Peter (CM) -> 4 phrases
+  ✓ St. Mary (CM) -> 4 phrases
+  ✓ St. Andrew (CM) -> 4 phrases
+  ✓ Peterborough (CM) -> 4 phrases
+  ✓ London New (CM) -> 4 phrases
+  ✓ St. Kilda (CM) -> 4 phrases
+  ✓ Sheffield (CM) -> 4 phrases
+  ✓ Cheshire (LRF??) (CM) -> 4 phrases
+  ✓ Orton (CM) -> 4 phrases
+  ✓ Norwich (CM) -> 4 phrases
+  ✓ St. Paul (CM) -> 4 phrases
+  ✓ Gainsborough (CM) -> 4 phrases
+  ✓ Wiltshire (CM) -> 4 phrases
+  ✓ Old 44th (CM) -> 4 phrases
+  ✓ Southwold (CM) -> 4 phrases
+  ✓ Gräfenberg (CM) -> 4 phrases
+  ✓ Lloyd (CM) -> 4 phrases
+  ✓ St. Flavian (CM) -> 4 phrases
+  ✓ Ballerma (start high) (CM) -> 4 phrases
+  ✓ Tallis (CM) -> 4 phrases
+  ✓ Evangel (CM) -> 4 phrases
+  ✓ New Lydia (CM) -> 4 phrases
+  ✓ Boswell (CM) -> 4 phrases
+  ✓ Martyrdom (CM) -> 4 phrases
+  ✓ Palestrina (Mr Calendar tune) (CM) -> 4 phrases
+  ✓ Dundee (CM) -> 4 phrases
+  ✓ Eden (NB 1st note 2nd line!) (CM) -> 4 phrases
+  ✓ Forest Green (CM) -> 4 phrases
+  ✓ Contemplation (CM) -> 4 phrases
+  ✓ Naomi (CM) -> 4 phrases
+  ✓ Elgin (CM) -> 4 phrases
+  ✓ St. Stephen (CM) -> 4 phrases
+  ✓ Martyrs (CM) -> 4 phrases
+  ✓ Irish (CM) -> 4 phrases
+  ✓ Belmont (CM) -> 4 phrases
+  ✓ Franconia (SM) -> 4 phrases
+  ✓ Desert DONT SING (CM) -> 4 phrases
+  ✓ St Agnes, Durham (start high) (CM) -> 4 phrases
+  ✓ Old 134th (SM) -> 4 phrases
+  ✓ Lynton (CM) -> 4 phrases
+  ✓ Sawley (start high) (CM) -> 4 phrases
+  ✓ Orlington (CM) -> 4 phrases
+  ✓ Communion (LM (long meter, 88 88)) -> 4 phrases
+  ✓ Walton (LM (long meter, 88 88)) -> 4 phrases
+  ✓ Glasgow (CM) -> 4 phrases
+  ✓ Harington (CM) -> 4 phrases
+  ✓ Pembroke (CM) -> 4 phrases
+
+Summary: 134 annotated, 10 skipped, 144 total candidates

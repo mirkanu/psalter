@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url'
 import { realpathSync } from 'node:fs'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
-import { eq, and, isNotNull, not, like } from 'drizzle-orm'
+import { eq, and, isNotNull, not, like, inArray, sql } from 'drizzle-orm'
 import * as schema from '../src/db/schema'
 import { phrasesForMeter } from '../src/lib/abc-phrase-meter-map'
 
@@ -393,6 +393,19 @@ const args = process.argv.slice(2)
 const DRY_RUN = args.includes('--dry-run')
 const OVERWRITE = args.includes('--overwrite')
 
+function parseTunesFilter(argv: string[]): string[] {
+  const eqArg = argv.find((a) => a.startsWith('--tunes='))
+  if (eqArg) {
+    return eqArg.slice('--tunes='.length).split(',').map((s) => s.trim()).filter(Boolean)
+  }
+  const idx = argv.indexOf('--tunes')
+  if (idx >= 0 && idx + 1 < argv.length) {
+    return argv[idx + 1].split(',').map((s) => s.trim()).filter(Boolean)
+  }
+  return []
+}
+const TUNES_FILTER = parseTunesFilter(args)
+
 async function main() {
   if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL not set')
   const pgClient = postgres(process.env.DATABASE_URL!)
@@ -402,12 +415,21 @@ async function main() {
 
   // Build query: always require abc_notation; default mode also excludes rows
   // that already contain the marker (idempotency).
-  const whereClause = OVERWRITE
+  let whereClause = OVERWRITE
     ? isNotNull(schema.tunes.abcNotation)
     : and(
         isNotNull(schema.tunes.abcNotation),
         not(like(schema.tunes.abcNotation, '%% PHRASE_BREAK%')),
       )
+
+  if (TUNES_FILTER.length > 0) {
+    const lowered = TUNES_FILTER.map((n) => n.toLowerCase())
+    whereClause = and(
+      whereClause,
+      inArray(sql`lower(${schema.tunes.name})`, lowered),
+    )
+    console.log(`Filter --tunes: ${TUNES_FILTER.join(', ')} (${lowered.length} names)`)
+  }
 
   const rows = await db.select().from(schema.tunes).where(whereClause)
   console.log(`Found ${rows.length} candidate row(s)`)
