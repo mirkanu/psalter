@@ -190,23 +190,36 @@ async function runPsalmCheck(browser, num) {
   }
 }
 
+async function launchBrowser() {
+  return chromium.launch({
+    executablePath: '/tmp/pw-browsers/chromium-1217/chrome-linux/chrome',
+    // Note: no --single-process (causes browser crash after every page close)
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+  })
+}
+
 async function main() {
   console.log(
     `Verifying staff alignment for ${PSALM_LIST.length} psalm(s) against ${BASE}`,
   )
   console.log(`Tolerance: ${TOLERANCE} (notes may exceed lyrics by up to ${TOLERANCE})`)
-  const browser = await chromium.launch({
-    executablePath: '/tmp/pw-browsers/chromium-1217/chrome-linux/chrome',
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-  })
-  try {
-    for (const num of PSALM_LIST) {
+
+  // Use a fresh browser per psalm to avoid memory accumulation on memory-constrained VPS.
+  // Each browser is launched, used for one psalm check, then closed and GC'd.
+  for (const num of PSALM_LIST) {
+    const browser = await launchBrowser()
+    try {
       await runPsalmCheck(browser, num)
+    } catch (e) {
+      console.log(`FAIL psalm ${num}: exception — ${e.message}`)
+      failed++
+      failureDetails.push({ psalm: num, reason: 'exception', error: e.message })
+    } finally {
+      await browser.close().catch(() => null)
     }
-  } finally {
-    await browser.close()
   }
 
+  // Write report — always runs
   const summary = {
     generatedAt: new Date().toISOString(),
     base: BASE,

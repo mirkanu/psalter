@@ -68,7 +68,7 @@ async function main() {
       // Update solfège OCR text with fixed soprano + new ABC
       const updatedOcr = { ...ocr, soprano: fixedSoprano }
       await db.update(schema.tunes).set({
-        solfegeOcrText: updatedOcr,
+        solfegeOcrText: JSON.stringify(updatedOcr),
         abcNotation: abc,
       }).where(eq(schema.tunes.id, t.id))
       console.log(`  ✓ Updated DB`)
