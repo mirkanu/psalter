@@ -45,11 +45,14 @@ async function waitForNotation(page) {
  * abcjs 6.6.3 DOM structure (verified against live psalter):
  *   g.abcjs-staff-wrapper.abcjs-l<N>   — one per staff row (rendered line)
  *     g.abcjs-note.abcjs-n<N>…         — one per note position (syllable slot)
- *       text.abcjs-lyric                — present if note has lyrics; absent = empty note position
+ *       text.abcjs-lyric                — ALWAYS present per note in abcjs 6.6.3
+ *                                         tspan textContent is "" when no token assigned;
+ *                                         "_" / "-" / "–" are legitimate continuation/melisma markers
  *
  * The lyric text may contain multiple stanzas stacked ("TheMyYea," = all stanzas for this slot).
- * The correct alignment check is: every g.abcjs-note should have at least one .abcjs-lyric child.
- * Notes without lyrics at the END of a row are the "trailing empty note" bug.
+ * The correct alignment check: every g.abcjs-note must have a .abcjs-lyric with non-empty
+ * textContent.trim(). Empty tspans (abcjs placeholder) are uncovered note positions.
+ * Notes without real text at the END of a row are the "trailing empty note" bug.
  */
 async function inspectStaff(page, psalmNum) {
   return page.evaluate(
@@ -82,13 +85,18 @@ async function inspectStaff(page, psalmNum) {
         // Count consecutive trailing notes without lyrics
         let trailingEmpty = 0
         for (let i = noteGroups.length - 1; i >= 0; i--) {
-          if (noteGroups[i].querySelector('.abcjs-lyric')) {
-            break // stop at the last note that has a lyric
+          const lyricEl = noteGroups[i].querySelector('.abcjs-lyric')
+          const text = lyricEl ? (lyricEl.textContent || '').trim() : ''
+          if (text !== '') {
+            break // stop at the last note that has a real lyric token (incl. '_' melisma)
           }
           trailingEmpty++
         }
         for (const ng of noteGroups) {
-          if (ng.querySelector('.abcjs-lyric')) {
+          const lyricEl = ng.querySelector('.abcjs-lyric')
+          const text = lyricEl ? (lyricEl.textContent || '').trim() : ''
+          if (text !== '') {
+            // '_' (ABC melisma extender) and '-'/'–' (continuation dash) all count as covered
             notesWithLyric++
           } else {
             notesWithoutLyric++
