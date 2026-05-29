@@ -26,9 +26,8 @@ import { splitOnPhraseBreaks } from '../src/lib/abc-phrases'
  */
 // 142 (Leominster, SM doubleLength) was fixed by the Phase 04.9.8 migration — removed from baseline.
 // 28,56,83,86,111,118,119,122,132,139,149,158,163,164,172 fixed by Phase 04.9.10 Path NH re-annotation.
-// 41 (Kingsfold, CM) fixed by Phase 04.9.11 Plan 02 — line-count splitting re-annotation.
 const EXPECTED_OFFENDER_IDS: ReadonlySet<number> = new Set([
-  5, 26, 38, 57, 62, 71, 109, 136,
+  5, 26, 38, 41, 57, 62, 71, 109, 136,
 ])
 
 describe('Tune-quality phrase-count (B5 / Open-Question-3 RESOLVED — option (b))', () => {
@@ -65,8 +64,8 @@ describe('Tune-quality phrase-count (B5 / Open-Question-3 RESOLVED — option (b
   })
 
   it('documents the live offender count for cross-reference with parse-failures.md', async () => {
-    // Sanity: baseline contains 8 tunes (142 fixed by 04.9.8; 15 fixed by 04.9.10 Path NH re-annotation; 41 fixed by 04.9.11 Plan 02).
-    expect(EXPECTED_OFFENDER_IDS.size).toBe(8)
+    // Sanity: baseline contains 9 tunes (142 fixed by 04.9.8; 15 fixed by 04.9.10 Path NH re-annotation).
+    expect(EXPECTED_OFFENDER_IDS.size).toBe(9)
   })
 
   it('every offender ID corresponds to a real double_length=true tune in the DB', async () => {
