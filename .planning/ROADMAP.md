@@ -458,7 +458,7 @@ Plans:
 - [x] 04.9.9-04-PLAN.md — Full 150-psalm Playwright sweep + VERIFICATION.md + phase close
 
 **Wave 5 — Gap Closure** *(addresses VERIFICATION.md gaps for truths #4 and #5)*
-- [ ] 04.9.9-05-PLAN.md — Fix Root Causes A+B: buildWLineFromSolfa syllabic-event boundary + countNoteHeads export + NotationRenderer note-count padding
+- [x] 04.9.9-05-PLAN.md — Fix Root Causes A+B: buildWLineFromSolfa syllabic-event boundary + countNoteHeads export + NotationRenderer note-count padding
 - [ ] 04.9.9-06-PLAN.md — Fix Root Cause C: re-annotate 7 tunes with wrong PHRASE_BREAK count (--tunes filter)
 - [ ] 04.9.9-07-PLAN.md — Re-run 150-psalm sweep + update VERIFICATION.md with per-tune residual enumeration
 
