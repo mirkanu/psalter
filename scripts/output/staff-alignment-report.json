@@ -1,9 +1,10 @@
 {
-  "generatedAt": "2026-05-29T17:41:03.779Z",
+  "generatedAt": "2026-05-29T23:50:45.338Z",
   "base": "http://localhost:3005",
   "tolerance": 1,
   "psalmsChecked": 150,
-  "passed": 150,
+  "passed": 139,
+  "skipped": 11,
   "failed": 0,
   "failures": []
 }
