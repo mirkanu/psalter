@@ -2,7 +2,10 @@
 
 ## Overview
 
-Rebuild of psalter.cprc.co.uk from Airtable + Softr to a self-hosted Next.js 15 application. Six phases move from data migration through public browsing, search, live notation rendering, and precentor portal — culminating in a performance pass that satisfies the perceived-performance mandate. Every phase delivers a coherent, independently verifiable capability.
+Rebuild of psalter.cprc.co.uk from Airtable + Softr to a self-hosted Next.js 15 application.
+
+- **Milestone 1 — Public Psalter:** Data migration through full public-facing site with live notation, syllable-aligned staff view, and mobile-optimised psalm display.
+- **Milestone 2 — Precentor Portal & Polish:** Authenticated precentor portal, service set lists, and performance/polish pass.
 
 ## Phases
 
@@ -11,6 +14,8 @@ Rebuild of psalter.cprc.co.uk from Airtable + Softr to a self-hosted Next.js 15 
 - Decimal phases (2.1, 2.2, 4.5): Urgent insertions (marked with INSERTED)
 
 Decimal phases appear between their surrounding integers in numeric order.
+
+### Milestone 1 — Public Psalter
 
 - [x] **Phase 1: Foundation** - Drizzle schema, Airtable→PostgreSQL migration, R2 JPG storage
 - [x] **Phase 2: Public Browse** - Psalm list/detail (3 tabs), tune pages, daily reading plan, static rendering
@@ -26,6 +31,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4.9.7 (INSERTED): Staff-View Metrical-Line Hotfix** - Fix the regression introduced by Phase 4.9.6 where `mapCycleToPhraseSyllableLines` drops half (or more) of each stanza's metrical lines in the staff view. CM/LM/SM stanzas render only lines 0-1 (out of 4); DCM stanzas only render lines 0-3 (out of 8). Lyrics-only view is unaffected. Mechanical fix: group N=stanzaLines/phrasesPerCycle lines into each phrase slot. Strengthen the regression test that missed it. (completed 2026-05-25)
 - [ ] **Phase 4.9.8 (INSERTED): Staff Display Word Alignment Fix** - Fix staff view word alignment: words cut off at end of staff lines, notes with no words underneath. Change CM/LM/SM tunes from 1 PHRASE_BREAK (2 phrases) to 3 PHRASE_BREAKs (4 phrases, one per metrical line) using note-head counting to find the 8/6 split. Fix trailing z2 rest phantom-bar bug. Add archaic word overrides. All 150 psalms render with zero empty note positions at row ends.
 - [ ] **Phase 4.9.9 (INSERTED): Staff Alignment — Melisma Support** - Fix the remaining 84 failing psalms in staff view by implementing `_` hold tokens for passing notes. Use solfège OCR text already in DB to detect dot-pair passing notes; apply duration heuristic for residual mismatches.
+- [x] **Phase 4.9.10 (INSERTED): Staff Alignment — PHRASE_BREAK Re-annotation** - Re-run annotate-phrase-breaks.ts with Path NH tokenizer; 150/150 psalms pass staff alignment sweep; RENDER-08 closed. (completed 2026-05-29)
+
+### Milestone 2 — Precentor Portal & Polish
+
 - [ ] **Phase 5: Precentor Portal** - Better Auth login, service event CRUD, psalm+tune set list builder, live service view with pre-loaded notation
 - [ ] **Phase 6: Polish** - OG images, Lighthouse 90+, bundle analysis, click feedback, loading skeletons on remaining routes
 
@@ -476,6 +485,10 @@ Plans:
 - [x] 04.9.10-01-PLAN.md — Dry-run + live --overwrite on all 150 tunes + SQL spot-check + commit DB state
 - [x] 04.9.10-02-PLAN.md — 150-psalm Playwright sweep + triage residuals + VERIFICATION.md + close RENDER-08
 
+---
+
+## Milestone 2 — Precentor Portal & Polish
+
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
 **Depends on**: Phase 4.5
@@ -503,8 +516,13 @@ Plans:
 
 ## Progress
 
-**Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 4.9.5 → 4.9.6 → 4.9.7 → 4.9.8 → 5 → 6
+**Milestone 1 Execution Order:**
+1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 4.9.5 → 4.9.6 → 4.9.7 → 4.9.8 → 4.9.9 → 4.9.10
+
+**Milestone 2 Execution Order:**
+5 → 6
+
+### Milestone 1 — Public Psalter
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -525,5 +543,12 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 →
 | 4.9.6. Psalter Alignment Implementation | 7/7 | Complete | 2026-05-19 |
 | 4.9.7. Staff-View Metrical-Line Hotfix | 3/3 | Complete | 2026-05-25 |
 | 4.9.8. Staff Display Word Alignment Fix | 0/TBD | Not started | - |
+| 4.9.9. Staff Alignment — Melisma Support | 0/TBD | Not started | - |
+| 4.9.10. PHRASE_BREAK Re-annotation | 2/2 | Complete | 2026-05-29 |
+
+### Milestone 2 — Precentor Portal & Polish
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
 | 5. Precentor Portal | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
