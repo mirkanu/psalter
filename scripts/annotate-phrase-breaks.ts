@@ -291,10 +291,10 @@ export function insertPhraseBreaks(abc: string, n: number, noteHeadSplitPoints?:
       const pos = splicePositions[s]
       spliced = spliced.slice(0, pos) + '\n% PHRASE_BREAK\n' + spliced.slice(pos)
     }
-    // Collapse any double/triple-newlines produced by inserting at a line end.
-    // We never want blank lines in the body — each line (including % PHRASE_BREAK)
-    // should be separated by exactly one newline so round-trip idempotency holds.
-    spliced = spliced.replace(/\n{2,}/g, '\n')
+    // Collapse double-newlines only adjacent to the newly inserted markers so we
+    // don't accidentally strip blank lines that belong to w: or other directives.
+    spliced = spliced.replace(/\n% PHRASE_BREAK\n\n/g, '\n% PHRASE_BREAK\n')
+    spliced = spliced.replace(/\n\n% PHRASE_BREAK\n/g, '\n% PHRASE_BREAK\n')
 
     const newBody = spliced.split('\n')
     return [...header, ...newBody].join('\n')
