@@ -100,6 +100,33 @@ function getDurationEvents(
 }
 
 /**
+ * Translate a syllabic-note-count split point into a raw event index into the
+ * allPassings[] array. splitPoints like [8, 14, 22] for CM mean "after the
+ * 8th syllabic (non-passing) note", not "after raw index 8". Passing notes in
+ * earlier phrases shift the raw index higher. Walks allPassings and returns
+ * the raw index one past the Nth non-passing event (including any trailing
+ * passing notes that decorate the preceding syllabic note).
+ *
+ * Returns passings.length if the target count exceeds total syllabic events.
+ */
+function syllabicCountToRawIndex(
+  passings: boolean[],
+  targetSyllabicCount: number,
+): number {
+  if (targetSyllabicCount <= 0) return 0
+  let syllabic = 0
+  for (let i = 0; i < passings.length; i++) {
+    if (!passings[i]) syllabic++
+    if (syllabic === targetSyllabicCount) {
+      let j = i + 1
+      while (j < passings.length && passings[j]) j++
+      return j
+    }
+  }
+  return passings.length
+}
+
+/**
  * Generate an abcjs w:-field string for one phrase of a melismatic tune.
  *
  * @param soprano       Raw solfège soprano line from DB (solfege_ocr_text soprano field)
@@ -131,9 +158,13 @@ export function buildWLineFromSolfa(
   let phraseEnd = totalEvents
 
   if (splitPoints) {
-    const boundaries = [0, ...splitPoints, totalEvents]
-    phraseStart = boundaries[phraseIndex] ?? 0
-    phraseEnd = boundaries[phraseIndex + 1] ?? totalEvents
+    const rawBoundaries = [
+      0,
+      ...splitPoints.map((sp) => syllabicCountToRawIndex(allPassings, sp)),
+      totalEvents,
+    ]
+    phraseStart = rawBoundaries[phraseIndex] ?? 0
+    phraseEnd = rawBoundaries[phraseIndex + 1] ?? totalEvents
   }
 
   const phrasePassings = allPassings.slice(phraseStart, phraseEnd)

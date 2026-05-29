@@ -119,4 +119,36 @@ describe('buildWLineFromSolfa', () => {
     const result = buildWLineFromSolfa(soprano, 'C', 'C', 3, 'CM', 'some text', warnings)
     expect(result).toBe('')
   })
+
+  it('phrase 4 boundary survives passing notes in earlier phrases', () => {
+    // Proper CM soprano: 30 syllabic + 6 passing = 36 raw events.
+    // Phrases 0-2 each have 2 dot-pair passing notes; phrase 3 has none.
+    // Old raw-index code: splitPoints[2]=22 → phrase 3 starts at raw 22, giving 14 tokens
+    //   (bleeds phrase-2 passing notes into phrase 3).
+    // New syllabic-counting code: 22nd syllabic event → raw index 28, giving 8 tokens (correct).
+    const soprano =
+      's:m|r:d|t_1:l_1|s.f:m.r|' + // phrase 0: 8 syl, 2 passing, 10 raw
+      'd:t_1|l_1:s|f.m:r.d|' +       // phrase 1: 6 syl, 2 passing, 8 raw
+      't:l|s:f|m:r|d.t_1:l_1.s|' +   // phrase 2: 8 syl, 2 passing, 10 raw
+      's:l|t:d|r:m|f:s||'             // phrase 3: 8 syl, 0 passing, 8 raw
+    const warnings: string[] = []
+    const result = buildWLineFromSolfa(soprano, 'G', 'C', 3, 'CM', 'still wa- ters by', warnings)
+    const tokens = result.split(/\s+/).filter(Boolean)
+    // New code: phrase 3 = 8 notes exactly (8 syllabic, 0 passing)
+    expect(tokens.length).toBe(8)
+  })
+
+  it('Crimond phrase 4 emits at least 8 tokens with underscores', () => {
+    // CRIMOND_LIKE_SOPRANO (same as existing tests): 31 events, phrase 3 has
+    // 9 events (events[22..30]) including 2 dot-pair passings. With syllabic
+    // counting the raw boundary resolves correctly: phrase 4 gets 9 tokens.
+    // (Plan-suggested soprano was too short for CM — this uses the established fixture.)
+    const warnings: string[] = []
+    const result = buildWLineFromSolfa(
+      CRIMOND_LIKE_SOPRANO, 'G', 'C', 3, 'CM', 'still wa- ters by', warnings,
+    )
+    const tokens = result.split(/\s+/).filter(Boolean)
+    expect(tokens.length).toBeGreaterThanOrEqual(8)
+    expect(tokens.filter((t) => t === '_').length).toBeGreaterThanOrEqual(2)
+  })
 })
