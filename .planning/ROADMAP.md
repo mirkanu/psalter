@@ -473,8 +473,8 @@ Plans:
   4. VERIFICATION.md lists all residual failures by psalm/tune with root-cause label (data-gap, redirect, or meter-gap)
 **Plans**: 2 plans
 Plans:
-- [ ] 04.9.10-01-PLAN.md — Dry-run + live --overwrite on all 150 tunes + SQL spot-check + commit DB state
-- [ ] 04.9.10-02-PLAN.md — 150-psalm Playwright sweep + triage residuals + VERIFICATION.md + close RENDER-08
+- [x] 04.9.10-01-PLAN.md — Dry-run + live --overwrite on all 150 tunes + SQL spot-check + commit DB state
+- [x] 04.9.10-02-PLAN.md — 150-psalm Playwright sweep + triage residuals + VERIFICATION.md + close RENDER-08
 
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
