@@ -455,15 +455,8 @@ async function main() {
         .replace(/\n\n+/g, '\n')
     }
 
-    // Path A fix (Phase 04.9.11): Use line-count-based splitting rather than
-    // note-head-count-based splitting. The note-head split points (e.g. [8,14,22]
-    // for CM) assume exactly 28 note heads total, but many tunes have ornaments,
-    // passing notes, or repeats that add extra note heads. Using fixed note-head
-    // offsets places PHRASE_BREAK too early, causing notes 23+ to fall into the
-    // last phrase without any lyric tokens (split-mismatch bug, 105/129 tunes).
-    // Line-count splitting (the existing fallback path) respects the actual staff
-    // structure and handles variable note counts correctly.
-    const updatedAbc = insertPhraseBreaks(source, n, undefined)
+    const splitPoints = getSplitPointsForMeter(t.meter, n)
+    const updatedAbc = insertPhraseBreaks(source, n, splitPoints)
     if (updatedAbc === source) {
       console.log(`  - skip ${t.name} (${t.meter}): annotation unsafe (no K:, too few measures, or already marked)`)
       skipped++
