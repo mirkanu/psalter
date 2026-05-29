@@ -115,7 +115,7 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 
 ### Staff View Word Alignment (Phase 4.9.8)
 
-- [x] **RENDER-08**: Staff view renders every metrical line on its own sub-staff with words aligned to every note position (no trailing empty notes). All CM/LM/SM tunes are migrated to carry 3 `% PHRASE_BREAK` markers (DCM/DLM/DSM carry 7); `phrasesForMeter` returns 4 for CM/LM/SM/8.7.8.7/7.6.7.6 and 8 for DCM/DLM/DSM; `splitMusicIntoSubLines` defensively filters bare-rest pseudo-bars (z2 trailing rest bug). Verified across all 150 psalms via Playwright sweep. — Verified 04.9.10: 149/150 pass post-Path-NH re-annotation (1 transient OOM crash, not alignment; psalm 75 passes on retry).
+- [x] **RENDER-08**: Staff view renders every metrical line on its own sub-staff with words aligned to every note position (no trailing empty notes). All CM/LM/SM tunes are migrated to carry 3 `% PHRASE_BREAK` markers (DCM/DLM/DSM carry 7); `phrasesForMeter` returns 4 for CM/LM/SM/8.7.8.7/7.6.7.6 and 8 for DCM/DLM/DSM; `splitMusicIntoSubLines` defensively filters bare-rest pseudo-bars (z2 trailing rest bug). Verified across all 150 psalms via Playwright sweep. — Verified 04.9.10: 150/150 pass post-Path-NH re-annotation (final clean run 2026-05-29T17:41Z).
 
 ---
 
