@@ -115,6 +115,7 @@ async function inspectStaff(page, psalmNum) {
 
 let passed = 0
 let failed = 0
+let skipped = 0
 const failureDetails = []
 
 async function runPsalmCheck(browser, num) {
@@ -155,9 +156,9 @@ async function runPsalmCheck(browser, num) {
     if (result.imageFallback || result.subStaves.length === 0) {
       // Not a hard fail — psalm renders via JPG fallback or no abcjs SVG present
       console.log(
-        `WARN psalm ${num}: no abcjs sub-staves found (image fallback or no notation data)`,
+        `SKIP psalm ${num}: no abcjs sub-staves found (image fallback or no notation data)`,
       )
-      passed++ // count as pass — image fallback is a valid state
+      skipped++ // count separately — image fallback is valid but not a notation pass
       return
     }
 
@@ -226,12 +227,13 @@ async function main() {
     tolerance: TOLERANCE,
     psalmsChecked: PSALM_LIST.length,
     passed,
+    skipped,
     failed,
     failures: failureDetails,
   }
   fs.writeFileSync(REPORT_PATH, JSON.stringify(summary, null, 2))
 
-  console.log(`\nResults: ${passed} passed, ${failed} failed`)
+  console.log(`\nResults: ${passed} passed, ${skipped} skipped (image fallback), ${failed} failed`)
   console.log(`Report: ${REPORT_PATH}`)
   console.log(`Failure screenshots (if any): ${SS_DIR}`)
 
