@@ -471,7 +471,10 @@ Plans:
   2. Psalm 23 (Crimond) passes with trailingEmpty=0 on abcjs-l3
   3. Playwright sweep shows 148+/150 psalms pass (accepted exceptions: 5 data-gap tunes with truncated ABC; Psalm 45 navigation redirect to production)
   4. VERIFICATION.md lists all residual failures by psalm/tune with root-cause label (data-gap, redirect, or meter-gap)
-**Plans**: TBD (2 plans)
+**Plans**: 2 plans
+Plans:
+- [ ] 04.9.10-01-PLAN.md — Dry-run + live --overwrite on all 150 tunes + SQL spot-check + commit DB state
+- [ ] 04.9.10-02-PLAN.md — 150-psalm Playwright sweep + triage residuals + VERIFICATION.md + close RENDER-08
 
 ### Phase 5: Precentor Portal
 **Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
