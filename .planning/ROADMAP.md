@@ -160,10 +160,23 @@ Plans:
 
 **Canonical reference**: `.planning/research/lyric-to-note-alignment.md` (§6 algorithm, §8 worked example, §9 codebase implications)
 
-**Plans:** 0 plans
+**Plans:** 5 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 04.10 to break down)
+**Wave 1** *(scaffolds + pure helpers, parallel-safe)*
+- [ ] 04.10-01-PLAN.md — Commit de Boer Crimond.musicxml fixture; create abc-embedded-lyrics helper + unit tests; scaffold 3 Playwright UAT stubs (RED)
+
+**Wave 2** *(depends on Wave 1)*
+- [ ] 04.10-02-PLAN.md — TDD conversion script (slur-walk + xml2abc composition + PHRASE_BREAK + validator); writes crimond-verified.abc fixture; checkpoint: O-1 PHRASE_BREAK positions
+
+**Wave 3** *(depends on Wave 2)*
+- [ ] 04.10-03-PLAN.md — NotationRenderer embedded-w branch + /dev/musicxml-preview route; checkpoint: O-2 multi-stanza handling
+
+**Wave 4** *(depends on Wave 3)*
+- [ ] 04.10-04-PLAN.md — Capture Psalm 24 baseline; apply Crimond DB UPDATE (--apply); run production UATs; doc update (verified column + per-tune recipe)
+
+**Wave 5** *(depends on Wave 4)*
+- [ ] 04.10-05-PLAN.md — User sing-test checkpoint against iOS Scottish Psalter (phase completion predicate)
 
 ### Phase 4.5 (INSERTED): Psalm Detail Overhaul
 **Goal**: Restructure the psalm detail page from 4 tabs to 7 tabs matching psalter.cprc.co.uk exactly; move lyrics + score + audio into the Overview tab; add abcjs notation with stanza navigation and Staff/Solfège toggle; add loading.tsx skeletons to /psalms, /psalms/[id], /tunes, and /tunes/[id] routes
