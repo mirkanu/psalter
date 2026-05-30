@@ -160,7 +160,7 @@ Plans:
 
 **Canonical reference**: `.planning/research/lyric-to-note-alignment.md` (§6 algorithm, §8 worked example, §9 codebase implications)
 
-**Plans:** 3/5 plans executed
+**Plans:** 4/5 plans executed
 
 Plans:
 **Wave 1** *(scaffolds + pure helpers, parallel-safe)*
@@ -173,7 +173,7 @@ Plans:
 - [x] 04.10-03-PLAN.md — NotationRenderer embedded-w branch + /dev/musicxml-preview route; checkpoint: O-2 multi-stanza handling
 
 **Wave 4** *(depends on Wave 3)*
-- [ ] 04.10-04-PLAN.md — Capture Psalm 24 baseline; apply Crimond DB UPDATE (--apply); run production UATs; doc update (verified column + per-tune recipe)
+- [x] 04.10-04-PLAN.md — Capture Psalm 24 baseline; apply Crimond DB UPDATE (--apply); run production UATs; doc update (verified column + per-tune recipe)
 
 **Wave 5** *(depends on Wave 4)*
 - [ ] 04.10-05-PLAN.md — User sing-test checkpoint against iOS Scottish Psalter (phase completion predicate)
