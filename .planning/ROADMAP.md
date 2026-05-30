@@ -207,14 +207,14 @@ Plans:
 
 Plans:
 **Wave 1**
-- [ ] 04.11-01-PLAN.md — Rollback snapshot (all 150 tunes.abc_notation) + rollback-recipe.md + D-06 delete of 04.10 convert-crimond-musicxml artifacts
+- [x] 04.11-01-PLAN.md — Rollback snapshot (all 150 tunes.abc_notation) + rollback-recipe.md + D-06 delete of 04.10 convert-crimond-musicxml artifacts
 
 **Wave 2** *(parallel — both depend on 01)*
-- [ ] 04.11-02-PLAN.md — TDD: src/lib/build-embedded-wline.ts pure transform (Crimond §8 worked example + PHRASE_BREAK-invariance + count-equality invariants)
-- [ ] 04.11-03-PLAN.md — src/lib/ocr-melisma-v3.ts with underline-preserving Vision prompt (Claude Haiku 4.5) + export v2 retry/preprocess helpers
+- [x] 04.11-02-PLAN.md — TDD: src/lib/build-embedded-wline.ts pure transform (Crimond §8 worked example + PHRASE_BREAK-invariance + count-equality invariants)
+- [x] 04.11-03-PLAN.md — src/lib/ocr-melisma-v3.ts with underline-preserving Vision prompt (Claude Haiku 4.5) + export v2 retry/preprocess helpers
 
 **Wave 3** *(depends on 02 + 03)*
-- [ ] 04.11-04-PLAN.md — scripts/ocr-melisma-batch.ts with --wave-a-passed gate + samples.json (12 tunes, 10-12 entries) + scripts/uat/wave-a-sample-uat.js
+- [x] 04.11-04-PLAN.md — scripts/ocr-melisma-batch.ts with --wave-a-passed gate + samples.json (12 tunes, 10-12 entries) + scripts/uat/wave-a-sample-uat.js
 
 **Wave 4** *(depends on 01, 02, 03, 04)*
 - [ ] 04.11-05-PLAN.md — Wave A execution: dry-run, --apply 12 tunes, pm2 restart, Playwright UAT, **user sing-test checkpoint**, WAVE-A-SIGNOFF.md (autonomous=false)

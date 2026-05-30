@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: context exhaustion at 91% (2026-05-30)
-last_updated: "2026-05-30T13:59:38.160Z"
-last_activity: 2026-05-30 -- Phase 04.10 execution started
+last_updated: "2026-05-30T21:37:43.277Z"
+last_activity: 2026-05-30
 progress:
-  total_phases: 7
-  completed_phases: 4
-  total_plans: 25
-  completed_plans: 20
-  percent: 80
+  total_phases: 8
+  completed_phases: 5
+  total_plans: 31
+  completed_plans: 29
+  percent: 94
 ---
 
 # Project State
@@ -21,17 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-07)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 04.10 — verified-musicxml-pilot-crimond
+**Current focus:** Phase 04.11 — solfege-underline-ocr-melisma
 
 ## Current Position
 
-Phase: 04.10 (verified-musicxml-pilot-crimond) — EXECUTING
-Plan: 1 of 5
+Phase: 04.11 (solfege-underline-ocr-melisma) — EXECUTING
+Plan: 2 of 6
 UI-SPEC: Phase 04.9.4 closed out. Singing-view chrome refined across 4 polish rounds (chrome-dedup, singing-chrome-polish, r3, r4); audio first-press bug fixed; tour redesigned (4 steps, per-element spotlights); mobile bar h-11 (44px); lyrics/solfège views get bigger font + padding + inline YouTube embed; "Ps 119:N-M" range titles.
-Status: Executing Phase 04.10
-Last activity: 2026-05-30 -- Phase 04.10 execution started
+Status: Ready to execute
+Last activity: 2026-05-30
 
-Progress: [██████████] 100%
+Progress: [█████████░] 94%
 
 ## Performance Metrics
 
@@ -73,6 +73,7 @@ Progress: [██████████] 100%
 | Phase 04.9.3 P05 | 12 | 3 tasks | 5 files |
 | Phase 04.9.7 P01 | 10min | 2 tasks | 5 files |
 | Phase 04.9.8 P05 | 41 | 3 tasks | 3 files |
+| Phase 04.11 P04 | 19m | 4 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -139,6 +140,8 @@ Recent decisions affecting current work:
 - [04.9.3-02]: NotationRenderer optionally-controlled (viewMode + baseSize props) with chromeless mode that suppresses internal controlBar and disables FS overlay; chromeless mobile (<768px) default --staff-base-size lowered to 13 per UI-SPEC §3, legacy uncontrolled default (24 at <480 portrait) preserved for zero regression; STORAGE_SIZE_FS_KEY no longer WRITTEN; data-notation-body + data-view-mode root attrs added for Plan 06 UATs.
 - [04.9.3-03]: Singing-view chrome components built (PsalmTopBar, TuneSubBar, PsalmSelectorSheet, TuneSwitcherSheet) + shared types.ts. PsalmTopBar uses useTransition + ArrowLeft/ArrowRight keyboard nav (bails on editable focus). TuneSubBar inlines meter abbreviation (C.M./L.M./S.M./D.C.M.). TuneSwitcherSheet writes ?tune={id} via router.replace({scroll:false}) and auto-closes 120ms after select. PsalmListingGrid confirmed as named export; PsalmSelectorSheet imports it named. All data-singing-* / data-tune-* markers in place for Phase 06 UATs. Not yet wired into a route (Plan 05 composes).
 - [04.9.3-04]: FAB-side chrome built — AbcAudioControls (standalone Play/Key/BPM block with own off-DOM abcjs visualObj + synth, AbcPlayer.tsx untouched), MetadataPanel (About-this-psalm content with SheetClose-wrapped study link), PsalmActionsFAB (56x56 fixed FAB + bottom Sheet with View radiogroup / Audio / About sections, auto-closes 120ms after view select). shadcn Sheet is built on @base-ui/react/dialog (not Radix) — switched from `asChild` to base-ui `render={...}` slot prop on SheetClose + SheetTrigger; semantically equivalent. Audio section omitted silently when abcForAudio is null. data-singing-fab / data-singing-fab-sheet / data-view-option markers in place for Phase 06 UATs. Not yet wired into a route (Plan 05 composes).
+- [Phase 04.11]: 04.11-04: WAVE_B_THRESHOLD=20 and LOW_CONFIDENCE_THRESHOLD=0.85 (tunable constants in ocr-melisma-batch.ts)
+- [Phase 04.11]: 04.11-04: real DB lyrics_structured shape is Array<{index,lines:[{text}]}> NOT cycles/stanzas - syllabification at read-time via syllabifyForAbc
 
 ### Pending Todos
 
@@ -182,7 +185,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-30T00:32:11.803Z
+Last session: 2026-05-30T21:33:36.510Z
 Stopped at: context exhaustion at 91% (2026-05-30)
 Resume file: None
 
