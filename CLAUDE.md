@@ -20,6 +20,23 @@ Rebuild of **psalter.cprc.co.uk** — a Scottish Psalter website for CPRC congre
 | Storage | Cloudflare R2 (tune score sheet JPGs) |
 | Deployment | Docker container → Cloudflare Tunnel → psalter.gsdlabs.dev |
 
+## Critical Reference Docs — READ FIRST
+
+These docs in `.planning/research/` are the canonical record of our understanding of Scottish Psalter notation and lyric alignment. Any work touching solfège parsing, lyric-to-note alignment, melisma handling, slurs, or OCR pipelines **MUST** consult them before changing code or proposing fixes. They have been corrected through multiple painful debug cycles; treat them as binding.
+
+| Doc | Read when working on |
+|---|---|
+| [`.planning/research/lyric-to-note-alignment.md`](.planning/research/lyric-to-note-alignment.md) | **Anything about melismas, slurs, underlines, syllable-to-note mapping, `w:` lines, `getPassingPositions`, `abc-melisma.ts`, `padWLineToNoteCount`. This is the SINGLE SOURCE OF TRUTH on alignment.** |
+| [`.planning/research/tonic-solfa-notation.md`](.planning/research/tonic-solfa-notation.md) | Solfège syntax — pitch syllables, dot subdivisions, hold symbols, underlines, octave subscripts. Use when changing `solfege-parser.ts` or `ocr-solfege-v2.ts`. |
+| [`.planning/research/scottish-psalter-structure.md`](.planning/research/scottish-psalter-structure.md) | Meter taxonomy (CM/LM/SM/CMD), stanza-vs-verse model, syllabification, phrase boundaries, PHRASE_BREAK placement. Use when changing `annotate-phrase-breaks.ts` or meter-related code. |
+| [`.planning/research/tune-digitisation-research.md`](.planning/research/tune-digitisation-research.md) | Tune source catalog (Hymnary, de Boer, Sing Psalms), MusicXML→ABC conversion, per-source slur quality. Use when ingesting new tune data. |
+
+### Hard rules derived from these docs
+
+1. **Melisma = slur (staff/MusicXML) = underline (solfège) = `_` (ABC w-line).** They are the same musical concept in different formats. Never treat the solfège `.` (rhythm) as a melisma marker — it isn't.
+2. **"Passing note" has two unrelated meanings in our reference materials.** Curwen-pedagogy "passing note" = melisma continuation (text-setting). Harmonic "passing note" = chromatic auxiliary (voice-leading). Our codebase's `passing: true` flag is the former. Don't conflate.
+3. **The current solfège OCR pipeline lost underline data** (the prompt told the model to discard it). All current `*-melisma*` code is heuristic compensation, not canonical detection. Plan accordingly.
+
 ## Critical Rules
 
 ### abcjs — Never use server-side
