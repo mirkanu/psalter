@@ -765,7 +765,7 @@ export function NotationRenderer({
         const tokens = wLine.split(/\s+/).filter(Boolean)
         const noteCount = countNoteHeads(musicSubLine)
         if (noteCount <= 0 || tokens.length >= noteCount) return wLine
-        const padding = Array(noteCount - tokens.length).fill('_').join(' ')
+        const padding = Array(noteCount - tokens.length).fill('·').join(' ')
         return wLine + ' ' + padding
       } catch {
         return wLine
