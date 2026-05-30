@@ -88,7 +88,7 @@ Remember: subscript ₁ in print → _1 in your output. This is critical for bas
 
 // ─── Shared image preparation ─────────────────────────────────────────────────
 
-export async function prepareImageBuffer(imagePath: string): Promise<Buffer> {
+async function prepareImageBuffer(imagePath: string): Promise<Buffer> {
   const rawFile = fs.readFileSync(imagePath)
   // Base64 inflates by ~4/3, so raw threshold = 5MB API limit × 3/4 = 3.75MB → use 3.5MB to be safe
   return rawFile.length > 3.5 * 1024 * 1024
@@ -96,7 +96,7 @@ export async function prepareImageBuffer(imagePath: string): Promise<Buffer> {
     : Buffer.from(rawFile)
 }
 
-export async function callClaude(imageBuffers: Buffer | Buffer[], prompt: string, maxTokens = 3000): Promise<string> {
+async function callClaude(imageBuffers: Buffer | Buffer[], prompt: string, maxTokens = 3000): Promise<string> {
   const buffers = Array.isArray(imageBuffers) ? imageBuffers : [imageBuffers]
   const imageContent = buffers.map(buf => ({
     type: 'image' as const,
