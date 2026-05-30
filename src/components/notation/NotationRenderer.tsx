@@ -33,6 +33,8 @@ import {
 } from '@/lib/stanza-cycles'
 import type { Stanza, StructuredLyrics } from '@/lib/lyrics-structured'
 import { phrasesForMeter } from '@/lib/abc-phrase-meter-map'
+import { hasEmbeddedWLines } from '@/lib/abc-embedded-lyrics'
+import { renderEmbeddedWPhrase } from '@/lib/abc-embedded-w-branch'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -775,6 +777,39 @@ export function NotationRenderer({
     for (const i of visiblePhraseIndices) {
       const phraseBody = (split.phrases[i] ?? '').trim()
       if (!phraseBody) continue
+
+      // ── Phase 04.10: verified-MusicXML embedded-w branch ───────────────
+      // If the phrase body carries source-authored `w:` lines (currently
+      // only Crimond after Plan 04's DB UPDATE), emit cycle 0 VERBATIM
+      // and skip the heuristic w-line construction path entirely
+      // (no splitMusicIntoSubLines, no padWLineToNoteCount, no
+      // splitWLineIntoChunks — Pitfall 4 mitigation). abcjs renders `w:`
+      // with `_` continuations natively when given the whole phrase body.
+      //
+      // Multi-stanza handling (Open Question O-2 — option A, recorded in
+      // 04.10-03-SUMMARY.md): cycle 0 uses the embedded path; cycles 1+
+      // are NOT rendered in the embedded branch — the pilot scope is
+      // verified alignment for stanza 1. For Crimond this means stanzas
+      // 2-6 render only when (a) showLyrics=false (music-only) which
+      // falls through to the OLD path naturally, or (b) future per-stanza
+      // w-lines are added to the source ABC. The user's sing-test
+      // predicate (per ROADMAP) is stanza 1 — this is acceptable for the
+      // pilot. Pitfall 6 mitigation: only take this branch when
+      // `showLyrics` is true; lyrics-disabled mode flows through OLD path.
+      if (showLyrics && hasEmbeddedWLines(phraseBody)) {
+        const cycleCount = visibleCycles.length
+        const embedded = renderEmbeddedWPhrase(phraseBody, cycleCount)
+        // Push cycle-0 verbatim lines (music + authored w: lines) into
+        // the accumulator. abcjs handles `_` continuation natively when
+        // the whole phrase body is rendered as a single staff system.
+        for (const line of embedded.cycle0Lines) parts.push(line)
+        // Pilot scope (O-2 option A): cycles 1+ are intentionally NOT
+        // emitted here. Skipping them keeps the verified alignment intact
+        // for stanza 1 without risking misalignment on later stanzas.
+        continue
+      }
+      // ── END Phase 04.10 branch ────────────────────────────────────────
+
       // Strip any pre-existing w: lines from the phrase body (defensive).
       // Also join music lines that span multiple ABC text lines into a single
       // text line so abcjs renders exactly one staff system per phrase when
