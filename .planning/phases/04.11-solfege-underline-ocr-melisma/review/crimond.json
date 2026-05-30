@@ -1,0 +1,113 @@
+{
+  "id": 30,
+  "name": "Crimond",
+  "slug": "crimond",
+  "status": "validation_failure",
+  "preWlineAbc": "X:1\nT:Crimond\nM:C\nL:1/8\nQ:1/4=76\nK:F\nc2a4bg | c'4bgf4\n% PHRASE_BREAK\n | e2f4a2 | a2g2g2\n% PHRASE_BREAK\n=b4 |\n=b2c'4a2 | a2b2a2g4\n% PHRASE_BREAK\n | a2b2c'2b2 | a4a2g2 | b2d'2f4 | e2f4",
+  "newAbc": "X:1\nT:Crimond\nM:C\nL:1/8\nQ:1/4=76\nK:F\nc2a4bg | c'4bgf4\nw: The _ Lord's _ _ my _ she-\n% PHRASE_BREAK\n| e2f4a2 | a2g2g2\nw: pherd, I'll _ not want. _\n% PHRASE_BREAK\n=b4 |\n=b2c'4a2 | a2b2a2g4\nw: * *\n% PHRASE_BREAK\n| a2b2c'2b2 | a4a2g2 | b2d'2f4 | e2f4\nw: ",
+  "perPhraseDiagnostics": [
+    {
+      "phraseIdx": 0,
+      "noteHeadCount": 8,
+      "wTokenCount": 8,
+      "syllables": [
+        "The",
+        "Lord's",
+        "my",
+        "she-",
+        "pherd,",
+        "I'll",
+        "not",
+        "want."
+      ],
+      "underlinedTokenIndices": [
+        1,
+        3,
+        4,
+        6,
+        10,
+        13
+      ],
+      "minConfidence": 0.9
+    },
+    {
+      "phraseIdx": 1,
+      "noteHeadCount": 6,
+      "wTokenCount": 6,
+      "syllables": [
+        "The",
+        "Lord's",
+        "my",
+        "she-",
+        "pherd,",
+        "I'll",
+        "not",
+        "want."
+      ],
+      "underlinedTokenIndices": [
+        1,
+        3,
+        4,
+        6,
+        10,
+        13
+      ],
+      "minConfidence": 0.9
+    },
+    {
+      "phraseIdx": 2,
+      "noteHeadCount": 8,
+      "wTokenCount": 2,
+      "syllables": [
+        "The",
+        "Lord's",
+        "my",
+        "she-",
+        "pherd,",
+        "I'll",
+        "not",
+        "want."
+      ],
+      "underlinedTokenIndices": [
+        1,
+        3,
+        4,
+        6,
+        10,
+        13
+      ],
+      "minConfidence": 0.9
+    },
+    {
+      "phraseIdx": 3,
+      "noteHeadCount": 12,
+      "wTokenCount": 0,
+      "syllables": [
+        "The",
+        "Lord's",
+        "my",
+        "she-",
+        "pherd,",
+        "I'll",
+        "not",
+        "want."
+      ],
+      "underlinedTokenIndices": [
+        1,
+        3,
+        4,
+        6,
+        10,
+        13
+      ],
+      "minConfidence": 0.9
+    }
+  ],
+  "warnings": [
+    "syllable count mismatch: non-underlined tokens=10 vs syllables.length=8",
+    "token 14 (d) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 15 (d) has no syllable: syllable stream exhausted at syllIdx=8",
+    "phrase 2: w-stream exhausted (need 8 tokens, got 2)",
+    "phrase 3: w-stream exhausted (need 12 tokens, got 0)"
+  ]
+}

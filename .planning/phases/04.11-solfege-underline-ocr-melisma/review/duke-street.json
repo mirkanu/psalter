@@ -1,0 +1,105 @@
+{
+  "id": 103,
+  "name": "Duke Street",
+  "slug": "duke-street",
+  "status": "validation_failure",
+  "preWlineAbc": "X:1\nT:Duke Street\nM:C\nL:1/8\nQ:1/4=76\nK:F\nf2abc'2d'e' | f'2e'\n% PHRASE_BREAK\nd'c'4 | c'2c'c'd'2c'2 | b2\n% PHRASE_BREAK\na2g4 |\na2agfac'\n% PHRASE_BREAK\nf' | d'c'bag4 | c'2d'e'f'3b | a2g2f4 | f2f2\n",
+  "newAbc": "X:1\nT:Duke Street\nM:C\nL:1/8\nQ:1/4=76\nK:F\nf2abc'2d'e' | f'2e'\nw: O Lord, _ thou art my God and\n% PHRASE_BREAK\nd'c'4 | c'2c'c'd'2c'2 | b2\nw: King; * * * * * * *\n% PHRASE_BREAK\na2g4 |\na2agfac'\nw: * * * * * * * *\n% PHRASE_BREAK\nf' | d'c'bag4 | c'2d'e'f'3b | a2g2f4 | f2f2\nw: ",
+  "perPhraseDiagnostics": [
+    {
+      "phraseIdx": 0,
+      "noteHeadCount": 8,
+      "wTokenCount": 8,
+      "syllables": [
+        "O",
+        "Lord,",
+        "thou",
+        "art",
+        "my",
+        "God",
+        "and",
+        "King;"
+      ],
+      "underlinedTokenIndices": [
+        2
+      ],
+      "minConfidence": 0.9
+    },
+    {
+      "phraseIdx": 1,
+      "noteHeadCount": 8,
+      "wTokenCount": 8,
+      "syllables": [
+        "O",
+        "Lord,",
+        "thou",
+        "art",
+        "my",
+        "God",
+        "and",
+        "King;"
+      ],
+      "underlinedTokenIndices": [
+        2
+      ],
+      "minConfidence": 0.9
+    },
+    {
+      "phraseIdx": 2,
+      "noteHeadCount": 8,
+      "wTokenCount": 8,
+      "syllables": [
+        "O",
+        "Lord,",
+        "thou",
+        "art",
+        "my",
+        "God",
+        "and",
+        "King;"
+      ],
+      "underlinedTokenIndices": [
+        2
+      ],
+      "minConfidence": 0.9
+    },
+    {
+      "phraseIdx": 3,
+      "noteHeadCount": 16,
+      "wTokenCount": 0,
+      "syllables": [
+        "O",
+        "Lord,",
+        "thou",
+        "art",
+        "my",
+        "God",
+        "and",
+        "King;"
+      ],
+      "underlinedTokenIndices": [
+        2
+      ],
+      "minConfidence": 0.9
+    }
+  ],
+  "warnings": [
+    "syllable count mismatch: non-underlined tokens=23 vs syllables.length=8",
+    "token 9 (s) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 10 (f) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 11 (m) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 12 (r) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 13 (m) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 14 (r) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 15 (s) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 16 (l) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 17 (t) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 18 (d') has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 19 (f) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 20 (m) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 21 (r) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 22 (d) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 23 (d) has no syllable: syllable stream exhausted at syllIdx=8",
+    "phrase 3: w-stream exhausted (need 16 tokens, got 0)"
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "id": 113,
+  "name": "Dennis",
+  "slug": "dennis",
+  "status": "validation_failure",
+  "preWlineAbc": "X:1\nT:Dennis\nM:C\nL:1/8\nQ:1/4=76\nK:G\nb2b2g2b2 | a2f2\n% PHRASE_BREAK\na2g4 | g2g2e2g2\n% PHRASE_BREAK\n | g2d2g2f4 |\na2a2f2a2\n% PHRASE_BREAK\n | g2b2d'2d'2 | a2c'2b2d'2 | e'2d'2b2c'2 | b2g2a2g4\n",
+  "newAbc": "X:1\nT:Dennis\nM:C\nL:1/8\nQ:1/4=76\nK:G\nb2b2g2b2 | a2f2\nw: To thee I lift my soul:\n% PHRASE_BREAK\na2g4 | g2g2e2g2\nw: * * * * * *\n% PHRASE_BREAK\n| g2d2g2f4 |\na2a2f2a2\nw: * * * * * * * *\n% PHRASE_BREAK\n| g2b2d'2d'2 | a2c'2b2d'2 | e'2d'2b2c'2 | b2g2a2g4\nw: * * * * * * * * * * * *",
+  "perPhraseDiagnostics": [
+    {
+      "phraseIdx": 0,
+      "noteHeadCount": 6,
+      "wTokenCount": 6,
+      "syllables": [
+        "To",
+        "thee",
+        "I",
+        "lift",
+        "my",
+        "soul:"
+      ],
+      "underlinedTokenIndices": [],
+      "minConfidence": 0.95
+    },
+    {
+      "phraseIdx": 1,
+      "noteHeadCount": 6,
+      "wTokenCount": 6,
+      "syllables": [
+        "To",
+        "thee",
+        "I",
+        "lift",
+        "my",
+        "soul:"
+      ],
+      "underlinedTokenIndices": [],
+      "minConfidence": 0.95
+    },
+    {
+      "phraseIdx": 2,
+      "noteHeadCount": 8,
+      "wTokenCount": 8,
+      "syllables": [
+        "To",
+        "thee",
+        "I",
+        "lift",
+        "my",
+        "soul:"
+      ],
+      "underlinedTokenIndices": [],
+      "minConfidence": 0.95
+    },
+    {
+      "phraseIdx": 3,
+      "noteHeadCount": 16,
+      "wTokenCount": 12,
+      "syllables": [
+        "To",
+        "thee",
+        "I",
+        "lift",
+        "my",
+        "soul:"
+      ],
+      "underlinedTokenIndices": [],
+      "minConfidence": 0.95
+    }
+  ],
+  "warnings": [
+    "syllable count mismatch: non-underlined tokens=32 vs syllables.length=6",
+    "token 6 (d) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 7 (d) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 8 (l) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 9 (d) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 10 (s) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 11 (d) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 12 (t) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 13 (r) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 14 (t) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 15 (r) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 16 (d) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 17 (m) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 18 (s) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 19 (s) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 20 (r) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 21 (f) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 22 (m) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 23 (s) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 24 (l) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 25 (s) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 26 (m) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 27 (f) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 28 (m) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 29 (d) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 30 (r) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 31 (d) has no syllable: syllable stream exhausted at syllIdx=6",
+    "phrase 3: w-stream exhausted (need 16 tokens, got 12)"
+  ]
+}

@@ -1,0 +1,23 @@
+DRY RUN — review JSONs only, no DB writes
+Processing 12 tune(s)...
+  [validation_failure] Crimond
+  [low_confidence] Martyrdom
+  [validation_failure] Old 100th
+  [validation_failure] Crediton
+  [validation_failure] Stracathro
+  [validation_failure] Carlisle
+  [validation_failure] Dennis
+  [validation_failure] Franconia
+  [error] Old 124th: Expected ',' or ']' after array element in JSON at position 8577
+  [validation_failure] Duke Street
+  [validation_failure] Eastgate (last line repeat for Ps 133)
+  [validation_failure] Woodworth
+
+── Summary ─────────────────────────────────────────────────
+  success              0
+  no_db_row            0
+  no_image             0
+  no_syllables         0
+  low_confidence       1
+  validation_failure   10
+────────────────────────────────────────────────────────────

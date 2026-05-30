@@ -1,0 +1,110 @@
+{
+  "id": 29,
+  "name": "Old 100th",
+  "slug": "old-100th",
+  "status": "validation_failure",
+  "preWlineAbc": "X:1\nT:Old 100th\nC:Genevan Psalter 1551\nM:C\nL:1/4\nQ:1/4=80\nK:G\nG G A G | F E D2 | E\n% PHRASE_BREAK\n F G A | G3 z |\nG A B c\n% PHRASE_BREAK\n | d c B2 | c d e d | c3\n% PHRASE_BREAK\n z |\nd d c B | A G A2 | B c d B | G3 z |\nG A B G | c B A2 | G F E G | D3 z |\n",
+  "newAbc": "X:1\nT:Old 100th\nC:Genevan Psalter 1551\nM:C\nL:1/4\nQ:1/4=80\nK:G\nG G A G | F E D2 | E\nw: All pe- o- ple that on earth do\n% PHRASE_BREAK\nF G A | G3 z |\nG A B c\nw: dwell, * * * * * * *\n% PHRASE_BREAK\n| d c B2 | c d e d | c3\nw: * * * * * * * *\n% PHRASE_BREAK\nz |\nd d c B | A G A2 | B c d B | G3 z |\nG A B G | c B A2 | G F E G | D3 z |\nw: * * * * * * * * *",
+  "perPhraseDiagnostics": [
+    {
+      "phraseIdx": 0,
+      "noteHeadCount": 8,
+      "wTokenCount": 8,
+      "syllables": [
+        "All",
+        "pe-",
+        "o-",
+        "ple",
+        "that",
+        "on",
+        "earth",
+        "do",
+        "dwell,"
+      ],
+      "underlinedTokenIndices": [],
+      "minConfidence": 0.85
+    },
+    {
+      "phraseIdx": 1,
+      "noteHeadCount": 8,
+      "wTokenCount": 8,
+      "syllables": [
+        "All",
+        "pe-",
+        "o-",
+        "ple",
+        "that",
+        "on",
+        "earth",
+        "do",
+        "dwell,"
+      ],
+      "underlinedTokenIndices": [],
+      "minConfidence": 0.85
+    },
+    {
+      "phraseIdx": 2,
+      "noteHeadCount": 8,
+      "wTokenCount": 8,
+      "syllables": [
+        "All",
+        "pe-",
+        "o-",
+        "ple",
+        "that",
+        "on",
+        "earth",
+        "do",
+        "dwell,"
+      ],
+      "underlinedTokenIndices": [],
+      "minConfidence": 0.85
+    },
+    {
+      "phraseIdx": 3,
+      "noteHeadCount": 24,
+      "wTokenCount": 9,
+      "syllables": [
+        "All",
+        "pe-",
+        "o-",
+        "ple",
+        "that",
+        "on",
+        "earth",
+        "do",
+        "dwell,"
+      ],
+      "underlinedTokenIndices": [],
+      "minConfidence": 0.85
+    }
+  ],
+  "warnings": [
+    "syllable count mismatch: non-underlined tokens=33 vs syllables.length=9",
+    "token 9 (m) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 10 (m) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 11 (r) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 12 (d) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 13 (f) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 14 (m) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 15 (r) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 16 (r) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 17 (d) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 18 (r) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 19 (m) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 20 (r) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 21 (d) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 22 (l) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 23 (t) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 24 (d) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 25 (s) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 26 (m) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 27 (d) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 28 (r) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 29 (f) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 30 (m) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 31 (r) has no syllable: syllable stream exhausted at syllIdx=9",
+    "token 32 (d) has no syllable: syllable stream exhausted at syllIdx=9",
+    "phrase 3: w-stream exhausted (need 24 tokens, got 9)"
+  ]
+}

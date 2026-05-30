@@ -1,0 +1,115 @@
+{
+  "id": 79,
+  "name": "Stracathro",
+  "slug": "stracathro",
+  "status": "validation_failure",
+  "preWlineAbc": "X:1\nT:Stracathro\nM:C\nL:1/8\nK:Eb\n=B2e4_d2 | =B4_d2e2 | =b2_b2\n% PHRASE_BREAK\na4 | =b2_g2e2=B2 | e4\n% PHRASE_BREAK\n_d2=B4 | e2e4_d2 | =B2e2_g2\n% PHRASE_BREAK\na2 | _d'2=b2_b4 | b2=b2_g2a2 | e4_d2=B4",
+  "newAbc": "X:1\nT:Stracathro\nM:C\nL:1/8\nK:Eb\n=B2e4_d2 | =B4_d2e2 | =b2_b2\nw: je- ho- vah hear thee in the _\n% PHRASE_BREAK\na4 | =b2_g2e2=B2 | e4\nw: _ day * * * *\n% PHRASE_BREAK\n_d2=B4 | e2e4_d2 | =B2e2_g2\nw: * * * * * * * _\n% PHRASE_BREAK\na2 | _d'2=b2_b4 | b2=b2_g2a2 | e4_d2=B4\nw: _ * *",
+  "perPhraseDiagnostics": [
+    {
+      "phraseIdx": 0,
+      "noteHeadCount": 8,
+      "wTokenCount": 8,
+      "syllables": [
+        "je-",
+        "ho-",
+        "vah",
+        "hear",
+        "thee",
+        "in",
+        "the",
+        "day"
+      ],
+      "underlinedTokenIndices": [
+        7,
+        8,
+        21,
+        22
+      ],
+      "minConfidence": 0.9
+    },
+    {
+      "phraseIdx": 1,
+      "noteHeadCount": 6,
+      "wTokenCount": 6,
+      "syllables": [
+        "je-",
+        "ho-",
+        "vah",
+        "hear",
+        "thee",
+        "in",
+        "the",
+        "day"
+      ],
+      "underlinedTokenIndices": [
+        7,
+        8,
+        21,
+        22
+      ],
+      "minConfidence": 0.9
+    },
+    {
+      "phraseIdx": 2,
+      "noteHeadCount": 8,
+      "wTokenCount": 8,
+      "syllables": [
+        "je-",
+        "ho-",
+        "vah",
+        "hear",
+        "thee",
+        "in",
+        "the",
+        "day"
+      ],
+      "underlinedTokenIndices": [
+        7,
+        8,
+        21,
+        22
+      ],
+      "minConfidence": 0.9
+    },
+    {
+      "phraseIdx": 3,
+      "noteHeadCount": 11,
+      "wTokenCount": 3,
+      "syllables": [
+        "je-",
+        "ho-",
+        "vah",
+        "hear",
+        "thee",
+        "in",
+        "the",
+        "day"
+      ],
+      "underlinedTokenIndices": [
+        7,
+        8,
+        21,
+        22
+      ],
+      "minConfidence": 0.9
+    }
+  ],
+  "warnings": [
+    "syllable count mismatch: non-underlined tokens=21 vs syllables.length=8",
+    "token 10 (m) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 11 (d) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 12 (s) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 13 (d) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 14 (m) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 15 (d) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 16 (m) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 17 (d) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 18 (s) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 19 (d) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 20 (t) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 23 (m) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 24 (d) has no syllable: syllable stream exhausted at syllIdx=8",
+    "phrase 3: w-stream exhausted (need 11 tokens, got 3)"
+  ]
+}

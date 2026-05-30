@@ -1,0 +1,88 @@
+{
+  "id": 83,
+  "name": "Eastgate (last line repeat for Ps 133)",
+  "slug": "eastgate-last-line-repeat-for-ps-133",
+  "status": "validation_failure",
+  "preWlineAbc": "X:1\nT:Eastgate (last line repeat for Ps 133)\nM:C\nL:1/8\nQ:1/4=76\nK:D\na2d'2c'bba | a2b2\n% PHRASE_BREAK\nc'2d'2 | f2f2ga\n% PHRASE_BREAK\na2 | gff2e2a2 |\nbb\n% PHRASE_BREAK\nc'c'd'2e'2 | f'2d'c'bagf | g2baa4 | d'2d'd'd'2c'2 | d'4\n",
+  "newAbc": "X:1\nT:Eastgate (last line repeat for Ps 133)\nM:C\nL:1/8\nQ:1/4=76\nK:D\na2d'2c'bba | a2b2\nw: be- hold, how good a thing it is,\n% PHRASE_BREAK\nc'2d'2 | f2f2ga\nw: * * * *\n% PHRASE_BREAK\na2 | gff2e2a2 |\nbb\nw: \n% PHRASE_BREAK\nc'c'd'2e'2 | f'2d'c'bagf | g2baa4 | d'2d'd'd'2c'2 | d'4\nw: ",
+  "perPhraseDiagnostics": [
+    {
+      "phraseIdx": 0,
+      "noteHeadCount": 8,
+      "wTokenCount": 8,
+      "syllables": [
+        "be-",
+        "hold,",
+        "how",
+        "good",
+        "a",
+        "thing",
+        "it",
+        "is,"
+      ],
+      "underlinedTokenIndices": [],
+      "minConfidence": 0.95
+    },
+    {
+      "phraseIdx": 1,
+      "noteHeadCount": 6,
+      "wTokenCount": 4,
+      "syllables": [
+        "be-",
+        "hold,",
+        "how",
+        "good",
+        "a",
+        "thing",
+        "it",
+        "is,"
+      ],
+      "underlinedTokenIndices": [],
+      "minConfidence": 0.95
+    },
+    {
+      "phraseIdx": 2,
+      "noteHeadCount": 8,
+      "wTokenCount": 0,
+      "syllables": [
+        "be-",
+        "hold,",
+        "how",
+        "good",
+        "a",
+        "thing",
+        "it",
+        "is,"
+      ],
+      "underlinedTokenIndices": [],
+      "minConfidence": 0.95
+    },
+    {
+      "phraseIdx": 3,
+      "noteHeadCount": 21,
+      "wTokenCount": 0,
+      "syllables": [
+        "be-",
+        "hold,",
+        "how",
+        "good",
+        "a",
+        "thing",
+        "it",
+        "is,"
+      ],
+      "underlinedTokenIndices": [],
+      "minConfidence": 0.95
+    }
+  ],
+  "warnings": [
+    "syllable count mismatch: non-underlined tokens=12 vs syllables.length=8",
+    "token 8 (m) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 9 (m) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 10 (f) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 11 (s) has no syllable: syllable stream exhausted at syllIdx=8",
+    "phrase 1: w-stream exhausted (need 6 tokens, got 4)",
+    "phrase 2: w-stream exhausted (need 8 tokens, got 0)",
+    "phrase 3: w-stream exhausted (need 21 tokens, got 0)"
+  ]
+}

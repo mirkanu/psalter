@@ -1,0 +1,93 @@
+{
+  "id": 126,
+  "name": "Franconia",
+  "slug": "franconia",
+  "status": "validation_failure",
+  "preWlineAbc": "X:1\nT:Franconia\nM:C\nL:1/8\nQ:1/4=76\nK:Eb\n=B2_d2e2=e2 | _g2e6\n% PHRASE_BREAK\n | _g2a2=b2=e2 |\ne2_d6\n% PHRASE_BREAK\n | _g2=b2_b2a2 | _g2a2a2_g2\n% PHRASE_BREAK\n | _g2=B2e2_d2 | _d2=B6\n",
+  "newAbc": "X:1\nT:Franconia\nM:C\nL:1/8\nQ:1/4=76\nK:Eb\n=B2_d2e2=e2 | _g2e6\nw: Lord, bless and pi- ty us,\n% PHRASE_BREAK\n| _g2a2=b2=e2 |\ne2_d6\nw: * * * * * *\n% PHRASE_BREAK\n| _g2=b2_b2a2 | _g2a2a2_g2\nw: * * * * * * * *\n% PHRASE_BREAK\n| _g2=B2e2_d2 | _d2=B6\nw: * * * * * *",
+  "perPhraseDiagnostics": [
+    {
+      "phraseIdx": 0,
+      "noteHeadCount": 6,
+      "wTokenCount": 6,
+      "syllables": [
+        "Lord,",
+        "bless",
+        "and",
+        "pi-",
+        "ty",
+        "us,"
+      ],
+      "underlinedTokenIndices": [],
+      "minConfidence": 0.95
+    },
+    {
+      "phraseIdx": 1,
+      "noteHeadCount": 6,
+      "wTokenCount": 6,
+      "syllables": [
+        "Lord,",
+        "bless",
+        "and",
+        "pi-",
+        "ty",
+        "us,"
+      ],
+      "underlinedTokenIndices": [],
+      "minConfidence": 0.95
+    },
+    {
+      "phraseIdx": 2,
+      "noteHeadCount": 8,
+      "wTokenCount": 8,
+      "syllables": [
+        "Lord,",
+        "bless",
+        "and",
+        "pi-",
+        "ty",
+        "us,"
+      ],
+      "underlinedTokenIndices": [],
+      "minConfidence": 0.95
+    },
+    {
+      "phraseIdx": 3,
+      "noteHeadCount": 6,
+      "wTokenCount": 6,
+      "syllables": [
+        "Lord,",
+        "bless",
+        "and",
+        "pi-",
+        "ty",
+        "us,"
+      ],
+      "underlinedTokenIndices": [],
+      "minConfidence": 0.95
+    }
+  ],
+  "warnings": [
+    "syllable count mismatch: non-underlined tokens=26 vs syllables.length=6",
+    "token 6 (s) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 7 (l) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 8 (d') has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 9 (f) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 10 (m) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 11 (r) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 12 (s) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 13 (d') has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 14 (t) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 15 (l) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 16 (s) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 17 (l) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 18 (l) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 19 (s) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 20 (s) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 21 (d) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 22 (m) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 23 (r) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 24 (r) has no syllable: syllable stream exhausted at syllIdx=6",
+    "token 25 (d) has no syllable: syllable stream exhausted at syllIdx=6"
+  ]
+}

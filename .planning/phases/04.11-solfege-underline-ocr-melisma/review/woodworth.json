@@ -1,0 +1,97 @@
+{
+  "id": 3,
+  "name": "Woodworth",
+  "slug": "woodworth",
+  "status": "validation_failure",
+  "preWlineAbc": "X:1\nT:Woodworth\nM:C\nL:1/8\nQ:1/4=76\nK:Eb\n=B_de4e2 | _g3=e_e2_d3\n% PHRASE_BREAK\n | e=e2_e4_g2 | _g2_d2e2=e4\n% PHRASE_BREAK\n | a2a4_g2 |\ne4=B_de4 | e2\n% PHRASE_BREAK\n_g3=e_e2 | a4a2=b2 | z2a2_g4 | _g2_g3=e_e2 | _d6_g6 | e8\n",
+  "newAbc": "X:1\nT:Woodworth\nM:C\nL:1/8\nQ:1/4=76\nK:Eb\n=B_de4e2 | _g3=e_e2_d3\nw: Lord, hear my pray'r, and let my cry\n% PHRASE_BREAK\n| e=e2_e4_g2 | _g2_d2e2=e4\nw: * * * * * * * *\n% PHRASE_BREAK\n| a2a4_g2 |\ne4=B_de4 | e2\nw: * * * * * *\n% PHRASE_BREAK\n_g3=e_e2 | a4a2=b2 | z2a2_g4 | _g2_g3=e_e2 | _d6_g6 | e8\nw: ",
+  "perPhraseDiagnostics": [
+    {
+      "phraseIdx": 0,
+      "noteHeadCount": 8,
+      "wTokenCount": 8,
+      "syllables": [
+        "Lord,",
+        "hear",
+        "my",
+        "pray'r,",
+        "and",
+        "let",
+        "my",
+        "cry"
+      ],
+      "underlinedTokenIndices": [],
+      "minConfidence": 0.85
+    },
+    {
+      "phraseIdx": 1,
+      "noteHeadCount": 8,
+      "wTokenCount": 8,
+      "syllables": [
+        "Lord,",
+        "hear",
+        "my",
+        "pray'r,",
+        "and",
+        "let",
+        "my",
+        "cry"
+      ],
+      "underlinedTokenIndices": [],
+      "minConfidence": 0.85
+    },
+    {
+      "phraseIdx": 2,
+      "noteHeadCount": 8,
+      "wTokenCount": 6,
+      "syllables": [
+        "Lord,",
+        "hear",
+        "my",
+        "pray'r,",
+        "and",
+        "let",
+        "my",
+        "cry"
+      ],
+      "underlinedTokenIndices": [],
+      "minConfidence": 0.85
+    },
+    {
+      "phraseIdx": 3,
+      "noteHeadCount": 15,
+      "wTokenCount": 0,
+      "syllables": [
+        "Lord,",
+        "hear",
+        "my",
+        "pray'r,",
+        "and",
+        "let",
+        "my",
+        "cry"
+      ],
+      "underlinedTokenIndices": [],
+      "minConfidence": 0.85
+    }
+  ],
+  "warnings": [
+    "syllable count mismatch: non-underlined tokens=22 vs syllables.length=8",
+    "token 8 (n) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 9 (d) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 10 (m) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 11 (s) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 12 (l) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 13 (d') has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 14 (s) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 15 (s) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 16 (s) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 17 (r) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 18 (s) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 19 (s) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 20 (m) has no syllable: syllable stream exhausted at syllIdx=8",
+    "token 21 (d) has no syllable: syllable stream exhausted at syllIdx=8",
+    "phrase 2: w-stream exhausted (need 8 tokens, got 6)",
+    "phrase 3: w-stream exhausted (need 15 tokens, got 0)"
+  ]
+}
