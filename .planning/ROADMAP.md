@@ -160,14 +160,14 @@ Plans:
 
 **Canonical reference**: `.planning/research/lyric-to-note-alignment.md` (§6 algorithm, §8 worked example, §9 codebase implications)
 
-**Plans:** 1/5 plans executed
+**Plans:** 2/5 plans executed
 
 Plans:
 **Wave 1** *(scaffolds + pure helpers, parallel-safe)*
 - [x] 04.10-01-PLAN.md — Commit de Boer Crimond.musicxml fixture; create abc-embedded-lyrics helper + unit tests; scaffold 3 Playwright UAT stubs (RED)
 
 **Wave 2** *(depends on Wave 1)*
-- [ ] 04.10-02-PLAN.md — TDD conversion script (slur-walk + xml2abc composition + PHRASE_BREAK + validator); writes crimond-verified.abc fixture; checkpoint: O-1 PHRASE_BREAK positions
+- [x] 04.10-02-PLAN.md — TDD conversion script (slur-walk + xml2abc composition + PHRASE_BREAK + validator); writes crimond-verified.abc fixture; checkpoint: O-1 PHRASE_BREAK positions
 
 **Wave 3** *(depends on Wave 2)*
 - [ ] 04.10-03-PLAN.md — NotationRenderer embedded-w branch + /dev/musicxml-preview route; checkpoint: O-2 multi-stanza handling
