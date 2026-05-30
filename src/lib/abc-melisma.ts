@@ -147,11 +147,17 @@ export function buildWLineFromSolfa(
   syllables: string,
   warnings: string[],
 ): string {
-  // Step 1: Get passing positions for entire tune
-  const allPassings = getPassingPositions(soprano, doh, time)
-  const totalEvents = allPassings.length
+  // Step 1: Get total event count. Passing flags from dot-pair detection are NOT
+  // used for syllabic-slot assignment — solfège dot-pairs indicate rhythm (dotted
+  // note + short ornament) but BOTH notes typically carry syllables in Scottish
+  // Psalter tunes (e.g. Crimond f.,r → "shep-" + "-herd"). The duration heuristic
+  // in Step 4 correctly identifies genuinely melismatic notes (shorter duration
+  // notes in a surplus) without relying on solfège dot-pair flags.
+  const totalEvents = getPassingPositions(soprano, doh, time).length
 
-  // Step 2: Determine phrase note-event range
+  // Step 2: Determine phrase note-event range using direct split-point indexing.
+  // Split points (e.g. [8, 14, 22] for CM) are note-head counts, matching
+  // annotate-phrase-breaks.ts which counts all ABC note heads (syllabic + ornamental).
   const phraseCount = phrasesForMeter(meter)
   const splitPoints = getSplitPointsForMeter(meter, phraseCount)
   let phraseStart = 0
@@ -167,17 +173,18 @@ export function buildWLineFromSolfa(
     phraseEnd = rawBoundaries[phraseIndex + 1] ?? totalEvents
   }
 
-  const phrasePassings = allPassings.slice(phraseStart, phraseEnd)
-  const noteCount = phrasePassings.length
+  // Treat all events in this phrase as syllabic initially; heuristic below will
+  // mark surplus as passing based on duration.
+  const noteCount = phraseEnd - phraseStart
 
   // Step 3: Prepare syllable tokens from the syllabifyForAbc output
   const syllabified = syllabifyForAbc(syllables)
   const sylTokens = syllabified ? syllabified.split(/\s+/).filter(Boolean) : []
-  let syllabicCount = phrasePassings.filter((v) => !v).length
+  let syllabicCount = noteCount
 
   // Step 4: Duration heuristic — if syllabicCount > sylTokens.length, mark
-  // shortest non-passing notes as passing until counts balance
-  let adjustedPassings = [...phrasePassings]
+  // shortest notes as passing until counts balance
+  let adjustedPassings = new Array(noteCount).fill(false) as boolean[]
   if (syllabicCount > sylTokens.length) {
     const events = getDurationEvents(soprano, phraseStart, phraseEnd)
     // Build array of {index, duration} for non-passing positions, sort ascending duration
