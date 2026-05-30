@@ -1,0 +1,21 @@
+X:1
+T:Crimond
+T:Crimond
+L:1/4
+Q:1/4=120
+M:4/4
+K:F
+V:1 treble nm="Voice"
+V:1
+ C | A2 (B/>G/) | c2 (B/G/) | F2 E | F2
+w: The Lord's my _ shep herd, _ I'll not want;
+% PHRASE_BREAK
+ || A | (A G) G | =B2 B
+w: he makes _ me down to
+% PHRASE_BREAK
+ | .c2 ||$ A | (A B) A | G2 x A | %12
+ (B
+w: lie in pas _ tures green, he lead
+% PHRASE_BREAK
+ c) B | A2 || A | (G B) d | F2 E | !fermata!F2 |] %18
+w: _ eth me the qui _ et wa ters by.
