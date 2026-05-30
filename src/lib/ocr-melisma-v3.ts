@@ -148,6 +148,7 @@ export function extractMelismaJson(raw: string): MelismaTranscriptionResult {
  */
 export async function ocrMelismaV3(imagePaths: string[]): Promise<MelismaTranscriptionResult> {
   const buffers = await Promise.all(imagePaths.map(prepareImageBuffer))
-  const raw = await callClaude(buffers, TRANSCRIPTION_PROMPT_V3, 4000)
+  const model = process.env.OCR_MELISMA_MODEL || 'claude-sonnet-4-6'
+  const raw = await callClaude(buffers, TRANSCRIPTION_PROMPT_V3, 8000, model)
   return extractMelismaJson(raw)
 }

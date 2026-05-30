@@ -96,7 +96,7 @@ export async function prepareImageBuffer(imagePath: string): Promise<Buffer> {
     : Buffer.from(rawFile)
 }
 
-export async function callClaude(imageBuffers: Buffer | Buffer[], prompt: string, maxTokens = 3000): Promise<string> {
+export async function callClaude(imageBuffers: Buffer | Buffer[], prompt: string, maxTokens = 3000, model = 'claude-haiku-4-5-20251001'): Promise<string> {
   const buffers = Array.isArray(imageBuffers) ? imageBuffers : [imageBuffers]
   const imageContent = buffers.map(buf => ({
     type: 'image' as const,
@@ -108,7 +108,7 @@ export async function callClaude(imageBuffers: Buffer | Buffer[], prompt: string
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       const response = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model,
         max_tokens: maxTokens,
         messages: [{
           role: 'user',
