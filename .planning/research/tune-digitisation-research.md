@@ -439,13 +439,48 @@ Slurs in MusicXML are the canonical marker for melisma — one syllable held acr
 
 ### Verified sources
 
-| Source | Coverage | Melisma data | Verified by | Confidence |
-|---|---|---|---|---|
-| **Dieuwe de Boer ([scottishmetricalpsalter](https://github.com/dieuwedeboer/scottishmetricalpsalter/tree/master/docs/tunes))** | 7 tunes: Crimond, Felix, Spohr, Richmond, Tallis (CM), Old100th, TallisCanon (LM) | Explicit `<slur>` markup in MusicXML | Crimond sing-tested 2026-05-30 against Eleanor Gow → exact match | **Canonical** for Crimond; other 6 pending per-tune verification |
-| **Hymnary.org MusicXML** (fetch IDs in `src/lib/hymnary-lookup.ts`) | ~50 of our CM tunes | **VARIES per tune** — must audit each | Spot-check 2026-05-30: Crimond (132196) has slurs but no lyrics; Dundee (99321) has slurs + lyrics + `<syllabic>` markup; Bangor (98966) has slurs + lyrics. The Crimond file's missing lyrics is unusual; most Hymnary files include verse text. | **Mixed** — verify slur presence per tune before relying on it |
-| **Free Church of Scotland Sing Psalms Music PDF** ([praise-resources](https://freechurch.org/praise-resources/)) | All Sing Psalms tunes | Printed score with aligned syllables | Not yet audited | **Pending** |
-| **iOS Scottish Psalter app** | TBD | Screenshots showing lyric-to-note alignment | User to provide representative samples | **Pending** |
-| **Eleanor Gow's published Crimond arrangement** | 1 tune (Crimond, 3/4 arrangement) | Printed score | User confirmation 2026-05-30: "I have sung it and it's perfect" | **Canonical** for Crimond |
+| Source | Coverage | Melisma data | Verified by | Confidence | Pipeline status |
+|---|---|---|---|---|---|
+| **Dieuwe de Boer ([scottishmetricalpsalter](https://github.com/dieuwedeboer/scottishmetricalpsalter/tree/master/docs/tunes))** | 7 tunes: Crimond, Felix, Spohr, Richmond, Tallis (CM), Old100th, TallisCanon (LM) | Explicit `<slur>` markup in MusicXML | Crimond sing-tested 2026-05-30 against Eleanor Gow → exact match | **Canonical** for Crimond; other 6 pending per-tune verification | **Crimond: verified-in-DB (2026-05-30, Phase 04.10)**; Felix/Spohr/Richmond/Tallis/Old100th/TallisCanon: not yet ingested |
+| **Hymnary.org MusicXML** (fetch IDs in `src/lib/hymnary-lookup.ts`) | ~50 of our CM tunes | **VARIES per tune** — must audit each | Spot-check 2026-05-30: Crimond (132196) has slurs but no lyrics; Dundee (99321) has slurs + lyrics + `<syllabic>` markup; Bangor (98966) has slurs + lyrics. The Crimond file's missing lyrics is unusual; most Hymnary files include verse text. | **Mixed** — verify slur presence per tune before relying on it | None ingested via verified pipeline |
+| **Free Church of Scotland Sing Psalms Music PDF** ([praise-resources](https://freechurch.org/praise-resources/)) | All Sing Psalms tunes | Printed score with aligned syllables | Not yet audited | **Pending** | None ingested |
+| **iOS Scottish Psalter app** | TBD | Screenshots showing lyric-to-note alignment | User to provide representative samples | **Pending** | Used as visual ground-truth only |
+| **Eleanor Gow's published Crimond arrangement** | 1 tune (Crimond, 3/4 arrangement) | Printed score | User confirmation 2026-05-30: "I have sung it and it's perfect" | **Canonical** for Crimond | Reflected in Crimond DB row (via de Boer source) |
+
+### Per-tune migration recipe (added 2026-05-30, Phase 04.10)
+
+Established by the Crimond pilot. To verify-ingest a new tune from a MusicXML
+source with slur markup:
+
+1. **Commit the source file** under `.planning/research/abc-samples/{TuneName}_{source}.musicxml`
+   (e.g. `Crimond_deBoer.musicxml`). Suffix distinguishes from existing files.
+2. **Hard-code the stanza-1 syllable list** for the canonical psalm pairing in
+   a one-off conversion script `scripts/convert-{tuneslug}-musicxml.ts`.
+3. **Choose PHRASE_BREAK positions** (Phase 04.10 Open Question O-1):
+   - Default: `getSplitPointsForMeter(meter, 4)` (matches the 149 other tunes)
+   - Source-natural: pass `--phrase-breaks=N,N,N` to the conversion script
+4. **Choose multi-stanza handling** (Phase 04.10 Open Question O-2):
+   - Option A (Crimond's choice): stanza 1 verified, stanzas 2-N heuristic
+   - Option B/C: deferred
+5. **Run the script** without `--apply` first; visually inspect via
+   `/dev/musicxml-preview` (adapted per tune)
+6. **Capture rollback artifact** to `scripts/uat/baselines/{tuneslug}-abc-rollback.txt`
+   BEFORE applying
+7. **Apply** with `--apply` flag; verify exactly 1 row updated and only that
+   row has `abc_notation LIKE '%w:%'`
+8. **Build + restart**; verify deployed page contains the first-line lyric
+   via `curl ... | grep -qi`
+9. **Run per-tune Playwright UAT** mirroring `scripts/uat/psalm-23-crimond-verified.js`
+10. **Sing-test against** the iOS Scottish Psalter app — predicate for "verified"
+11. **Update this table's Pipeline status column** to mark the new tune verified
+
+Reference: `scripts/convert-crimond-musicxml.ts` and `.planning/phases/04.10-verified-musicxml-pilot-crimond/`.
+
+**Hard rules** (from Phase 04.10 RESEARCH.md):
+- Additive only — never refactor or remove `buildWLineFromSolfa`,
+  `syllabifyForAbc`, `padWLineToNoteCount`, or `splitWLineIntoChunks`.
+- One row updated per pilot.
+- String detection (`/^\s*w:/m`) in `NotationRenderer` is the opt-in mechanism.
 
 ### Our solfège OCR pipeline
 
