@@ -1,0 +1,15 @@
+X:1
+T:Crimond
+M:C
+L:1/8
+Q:1/4=76
+K:F
+c2a4bg | c'4bgf4
+% PHRASE_BREAK
+ | e2f4a2 | a2g2g2
+% PHRASE_BREAK
+=b4 |
+=b2c'4a2 | a2b2a2g4
+% PHRASE_BREAK
+ | a2b2c'2b2 | a4a2g2 | b2d'2f4 | e2f4
+
