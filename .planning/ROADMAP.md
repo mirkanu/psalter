@@ -140,6 +140,31 @@ Plans:
 - [x] 04-04-PLAN.md — Wire AbcRenderer into /tunes/[id]/page.tsx (next/dynamic ssr:false + Suspense); three-way fallback; human-verify TUNE-04 at 375/768/1200px
 **UI hint**: yes
 
+### Phase 04.10: Verified MusicXML Pilot — Crimond / Psalm 23 (INSERTED)
+
+**Goal**: Prove the MusicXML-with-slurs ingestion pipeline end-to-end on a single tune (Crimond). Convert Dieuwe de Boer's verified Crimond MusicXML into ABC with embedded `w:` lines using the slur→syllable algorithm, opt-in at render time by detecting embedded `w:` lines in the ABC string, update only the Crimond DB row, and visually verify that `/psalms/23` matches the de Boer / Eleanor Gow reference while at least one heuristic-driven psalm (e.g. Psalm 24) renders unchanged. Establishes the per-tune migration recipe for future tunes.
+
+**Requirements**:
+- One-off conversion script: de Boer `Crimond.musicxml` → ABC with embedded `w:` lines + `% PHRASE_BREAK` markers
+- Dev-only preview route to render the converted ABC in isolation before any production change
+- NotationRenderer change: if abc_notation contains `w:` lines, skip `buildWLineFromSolfa` and let abcjs render the embedded lyrics directly
+- DB update for Crimond tune row only
+- Visual regression check on `/psalms/23` (must match reference) and at least one other psalm (must be unchanged)
+- Doc update to `.planning/research/tune-digitisation-research.md` Source-of-truth section: per-tune verified status column + the migration recipe
+
+**Out of scope**: any other tune, OCR re-run, removing/refactoring heuristic code, scaling to alt meters, schema migrations.
+
+**Depends on**: Phase 4 (notation rendering infrastructure already in place)
+
+**Predicate for "complete"**: user has sing-tested `/psalms/23` against the iOS Scottish Psalter app and confirmed match.
+
+**Canonical reference**: `.planning/research/lyric-to-note-alignment.md` (§6 algorithm, §8 worked example, §9 codebase implications)
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 04.10 to break down)
+
 ### Phase 4.5 (INSERTED): Psalm Detail Overhaul
 **Goal**: Restructure the psalm detail page from 4 tabs to 7 tabs matching psalter.cprc.co.uk exactly; move lyrics + score + audio into the Overview tab; add abcjs notation with stanza navigation and Staff/Solfège toggle; add loading.tsx skeletons to /psalms, /psalms/[id], /tunes, and /tunes/[id] routes
 **Depends on**: Phase 4
