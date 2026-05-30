@@ -1,0 +1,110 @@
+[
+  {
+    "tuneName": "Crimond",
+    "psalmNumber": 23,
+    "slug": "crimond",
+    "meter": "CM",
+    "firstLineLyricPattern": "the\\s+lord'?s\\s+my\\s+shep",
+    "minPopulated": 8,
+    "reason": "Most-used CM + canonical reference (sing-tested by user 2026-05-30)"
+  },
+  {
+    "tuneName": "Martyrdom",
+    "psalmNumber": 57,
+    "slug": "martyrdom",
+    "meter": "CM",
+    "firstLineLyricPattern": "be\\s+mer-?\\s*ci-?\\s*ful\\s+to\\s+me",
+    "minPopulated": 8,
+    "reason": "Most-used CM, dotted-pair rhythm. pvts[0] pairs Martyrdom→Psalm 57 (RESEARCH suggested 25 but Crimond/25 pairing absent in this DB; using actual pvts[0] binding)"
+  },
+  {
+    "tuneName": "Old 100th",
+    "psalmNumber": 100,
+    "slug": "old-100th",
+    "meter": "LM",
+    "firstLineLyricPattern": "all\\s+pe-?\\s*o-?\\s*ple\\s+that\\s+on",
+    "minPopulated": 8,
+    "reason": "Most-used LM + phrase-4 multi-note melisma (24 notes / 8 syllables — known failure case in staff-alignment-report.json)"
+  },
+  {
+    "tuneName": "Crediton",
+    "psalmNumber": 150,
+    "slug": "crediton",
+    "meter": "CM",
+    "firstLineLyricPattern": "prai-?\\s*se\\s+ye\\s+the\\s+lord",
+    "minPopulated": 8,
+    "reason": "Hardest CM — phrase-4 12/6 extended. pvts[0] pairs Crediton→Psalm 150 (RESEARCH suggested 17 but absent in this DB)"
+  },
+  {
+    "tuneName": "Stracathro",
+    "psalmNumber": 20,
+    "slug": "stracathro",
+    "meter": "CM",
+    "firstLineLyricPattern": "je-?\\s*ho-?\\s*vah\\s+hear\\s+thee",
+    "minPopulated": 8,
+    "reason": "CM datapoint. RESEARCH classified Stracathro as SM but DB lists it as CM (meter='CM'); using DB ground truth"
+  },
+  {
+    "tuneName": "Carlisle",
+    "psalmNumber": 50,
+    "slug": "carlisle",
+    "meter": "SM",
+    "firstLineLyricPattern": "the\\s+mig-?\\s*hty\\s+god",
+    "minPopulated": 6,
+    "reason": "SM most-used. pvts[0] pairs Carlisle→Psalm 50 (RESEARCH suggested 67; Franconia covers Psalm 67 SM instead)"
+  },
+  {
+    "tuneName": "Dennis",
+    "psalmNumber": 25,
+    "slug": "dennis",
+    "meter": "SM",
+    "firstLineLyricPattern": "to\\s+thee\\s+i\\s+lift",
+    "minPopulated": 6,
+    "reason": "SM substitute. Plan's Stracathro/Carlisle/Trentham SM trio reduced to one (Carlisle) — added Dennis + Franconia for SM diversity since Trentham has no psalm_version pairing in this DB"
+  },
+  {
+    "tuneName": "Franconia",
+    "psalmNumber": 67,
+    "slug": "franconia",
+    "meter": "SM",
+    "firstLineLyricPattern": "lord,?\\s+bless\\s+and\\s+pi-?\\s*ty",
+    "minPopulated": 6,
+    "reason": "SM substitute covering RESEARCH's intended Psalm 67 SM pairing (Carlisle's actual pvts[0] is Psalm 50)"
+  },
+  {
+    "tuneName": "Old 124th",
+    "psalmNumber": 124,
+    "slug": "old-124th",
+    "meter": "10 10 10 10 10",
+    "firstLineLyricPattern": "now\\s+is-?\\s*rael",
+    "minPopulated": 3,
+    "reason": "5-phrase asymmetric structure (10 10 10 10 10). NOTE: lyrics_imported_raw is truncated to 'Now Israel' (3 syllables) — Wave A sing-test will need a verbal asterisk that minPopulated=3 reflects the truncated import, not the meter"
+  },
+  {
+    "tuneName": "Duke Street",
+    "psalmNumber": 145,
+    "slug": "duke-street",
+    "meter": "LM",
+    "firstLineLyricPattern": "o\\s+lord,?\\s+thou\\s+art",
+    "minPopulated": 8,
+    "reason": "LM substitute for missing Tallis Canon (not in DB). Duke Street is a famous LM with paired Psalm 145"
+  },
+  {
+    "tuneName": "Eastgate (last line repeat for Ps 133)",
+    "psalmNumber": 133,
+    "slug": "eastgate-last-line-repeat-for-ps-133",
+    "meter": "CM",
+    "firstLineLyricPattern": "be-?\\s*hold,?\\s+how\\s+good",
+    "minPopulated": 8,
+    "reason": "CMD substitute for missing Old 44th (no psalm_version pairing). Eastgate has double_length=true and is paired with Psalm 133 — DCM-class regression"
+  },
+  {
+    "tuneName": "Woodworth",
+    "psalmNumber": 102,
+    "slug": "woodworth",
+    "meter": "LM",
+    "firstLineLyricPattern": "lord,?\\s+hear\\s+my\\s+pray'?r",
+    "minPopulated": 8,
+    "reason": "LM datapoint substitute — Tallis Canon absent. Woodworth is paired with Psalm 102 (penitential), gives a second LM beyond Old 100th"
+  }
+]
