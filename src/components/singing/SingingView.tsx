@@ -337,6 +337,7 @@ export function SingingView({
             stanzaMeter={stanzaMeter}
             lyricsStructured={lyricsStructured}
             doubleLength={activeTune?.doubleLength ?? false}
+            solfegeOcrText={activeTune?.solfegeOcrText ?? null}
             showLyrics={showLyrics}
             viewMode={viewMode}
             onViewModeChange={setViewMode}

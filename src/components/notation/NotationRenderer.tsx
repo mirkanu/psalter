@@ -760,25 +760,12 @@ export function NotationRenderer({
     // Plan 04.9.9-05 gap closure: note-count safety net. Pads short w: outputs
     // so abcjs never leaves trailing note heads unaligned. NEVER truncates —
     // if tokens already match or exceed note count, returns unchanged.
-    //
-    // Phase 04.9.11 fix (Plan 02): Changed padding from `_` to middle dot
-    // (U+00B7). `_` in ABC w: lines means "hold until end of slur" — abcjs
-    // renders it as an empty <tspan> (empty textContent in the DOM), so the
-    // UAT checker counts those positions as uncovered. Middle dot is a regular
-    // syllable character that abcjs renders with non-empty textContent.
     function padWLineToNoteCount(wLine: string, musicSubLine: string): string {
       try {
         const tokens = wLine.split(/\s+/).filter(Boolean)
         const noteCount = countNoteHeads(musicSubLine)
         if (noteCount <= 0 || tokens.length >= noteCount) return wLine
-        // Use a visible syllable placeholder for padding. `_` (ABC melisma
-        // hold) is wrong: abcjs treats it as {skip: true, to: 'slur'} and
-        // renders an empty tspan, causing the checker to count those notes as
-        // uncovered. Non-breaking space (\u00a0) fails too: abcjs's
-        // parseCommon.strip uses /\s+/ which matches \u00a0, silently dropping
-        // the token. Middle dot (U+00B7, ·) is a regular character that
-        // abcjs stores as a syllable and the DOM checker reads as non-empty.
-        const padding = Array(noteCount - tokens.length).fill('·').join(' ')
+        const padding = Array(noteCount - tokens.length).fill('_').join(' ')
         return wLine + ' ' + padding
       } catch {
         return wLine

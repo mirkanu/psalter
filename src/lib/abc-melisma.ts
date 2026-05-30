@@ -160,7 +160,7 @@ export function buildWLineFromSolfa(
   if (splitPoints) {
     const rawBoundaries = [
       0,
-      ...splitPoints.map((sp) => syllabicCountToRawIndex(allPassings, sp)),
+      ...splitPoints.map((sp) => sp),
       totalEvents,
     ]
     phraseStart = rawBoundaries[phraseIndex] ?? 0
