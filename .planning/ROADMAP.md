@@ -178,6 +178,33 @@ Plans:
 **Wave 5** *(depends on Wave 4)*
 - [ ] 04.10-05-PLAN.md — User sing-test checkpoint against iOS Scottish Psalter (phase completion predicate)
 
+### Phase 04.11: Solfège Underline OCR — Universal Melisma Extraction (INSERTED, successor to 04.10)
+
+**Goal**: Replace heuristic melisma compensation with canonical melisma data sourced from the original solfège JPG scans. Re-OCR the solfège pages with a Claude Vision prompt that preserves underlines (the current prompt deliberately discards them, per `CLAUDE.md` hard rule #3), then merge that underline data into each tune's ABC `w:` lines as `_` continuation tokens. Inherits the embedded-w-line runtime path proved out in Phase 04.10 (NotationRenderer w-branch, abc-embedded-lyrics helpers, /dev preview harness, UAT infrastructure).
+
+**Requirements** (subject to /gsd-discuss-phase 04.11):
+- New Claude Vision OCR prompt that preserves underlines on solfège pages
+- Handling for ambiguous underlines (faint print, scan artifacts, joined-vs-separate underlines under adjacent syllables)
+- Strategy for tunes with missing or low-quality JPGs
+- Output format decision: emit `_` continuation tokens directly into each tune's `abc_notation`, OR store melisma data in a separate column and merge at render time
+- Per-meter (CM/LM/SM/CMD) sampling/sing-test gate — full 150-tune sing-test is not feasible
+- Migration path: single batch with documented rollback vs progressive per-meter rollout
+- Cleanup of wrong-direction 04.10 artifacts (DB row already rolled back; remove `scripts/convert-crimond-musicxml.ts`, replace MusicXML per-tune recipe in `tune-digitisation-research.md`)
+
+**Out of scope**: schema migrations beyond what's needed for melisma storage; refactoring heuristic alignment code that's not on the underline-aware path; new tune ingestion (only re-OCR'ing existing tunes' source JPGs).
+
+**Depends on**: Phase 04.10 (embedded-w-line runtime path, UAT infrastructure)
+
+**Predicate for "complete"**: sampled tunes per meter family pass user sing-test against the iOS Scottish Psalter, with melisma rendering matching the reference.
+
+**Canonical references**:
+- `.planning/research/lyric-to-note-alignment.md` (alignment algorithm, single source of truth)
+- `.planning/research/tonic-solfa-notation.md` (underline syntax)
+- `.planning/phases/04.10-verified-musicxml-pilot-crimond/04.10-FINDINGS.md` (why we're here)
+- `CLAUDE.md` hard rules 1-3 (melisma definition, passing-note disambiguation, current pipeline limitations)
+
+**Plans**: TBD (run `/gsd-discuss-phase 04.11` then `/gsd-plan-phase 04.11`)
+
 ### Phase 4.5 (INSERTED): Psalm Detail Overhaul
 **Goal**: Restructure the psalm detail page from 4 tabs to 7 tabs matching psalter.cprc.co.uk exactly; move lyrics + score + audio into the Overview tab; add abcjs notation with stanza navigation and Staff/Solfège toggle; add loading.tsx skeletons to /psalms, /psalms/[id], /tunes, and /tunes/[id] routes
 **Depends on**: Phase 4
