@@ -203,7 +203,24 @@ Plans:
 - `.planning/phases/04.10-verified-musicxml-pilot-crimond/04.10-FINDINGS.md` (why we're here)
 - `CLAUDE.md` hard rules 1-3 (melisma definition, passing-note disambiguation, current pipeline limitations)
 
-**Plans**: TBD (run `/gsd-discuss-phase 04.11` then `/gsd-plan-phase 04.11`)
+**Plans**: 6 plans
+
+Plans:
+**Wave 1**
+- [ ] 04.11-01-PLAN.md — Rollback snapshot (all 150 tunes.abc_notation) + rollback-recipe.md + D-06 delete of 04.10 convert-crimond-musicxml artifacts
+
+**Wave 2** *(parallel — both depend on 01)*
+- [ ] 04.11-02-PLAN.md — TDD: src/lib/build-embedded-wline.ts pure transform (Crimond §8 worked example + PHRASE_BREAK-invariance + count-equality invariants)
+- [ ] 04.11-03-PLAN.md — src/lib/ocr-melisma-v3.ts with underline-preserving Vision prompt (Claude Haiku 4.5) + export v2 retry/preprocess helpers
+
+**Wave 3** *(depends on 02 + 03)*
+- [ ] 04.11-04-PLAN.md — scripts/ocr-melisma-batch.ts with --wave-a-passed gate + samples.json (12 tunes, 10-12 entries) + scripts/uat/wave-a-sample-uat.js
+
+**Wave 4** *(depends on 01, 02, 03, 04)*
+- [ ] 04.11-05-PLAN.md — Wave A execution: dry-run, --apply 12 tunes, pm2 restart, Playwright UAT, **user sing-test checkpoint**, WAVE-A-SIGNOFF.md (autonomous=false)
+
+**Wave 5** *(depends on 05)*
+- [ ] 04.11-06-PLAN.md — Wave B execution: wave-b.json generation, dry-run, --apply --wave-a-passed (~132 tunes), pm2 restart, TOLERANCE=0 verify-staff-alignment.js sweep (D-03 gate 2), D-06 tune-digitisation-research.md recipe rewrite (autonomous=false)
 
 ### Phase 4.5 (INSERTED): Psalm Detail Overhaul
 **Goal**: Restructure the psalm detail page from 4 tabs to 7 tabs matching psalter.cprc.co.uk exactly; move lyrics + score + audio into the Overview tab; add abcjs notation with stanza navigation and Staff/Solfège toggle; add loading.tsx skeletons to /psalms, /psalms/[id], /tunes, and /tunes/[id] routes
