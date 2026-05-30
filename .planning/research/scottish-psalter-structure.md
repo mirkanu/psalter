@@ -5,6 +5,10 @@
 **Role:** Canonical reference for the metrical structure of the Scottish Psalter as used by CPRC. Consumed by the alignment-implementation phase to design the data model and rendering algorithm.
 **Sources:** See §7. Primary triangulation: user briefing (CPRC precentor), live PostgreSQL data (148 tunes / 184 psalm versions with ABC notation, snapshotted 2026-05-17), 1650 psalter introductions, modern hymnology references.
 
+> **See also:** [Lyric-to-Note Alignment](./lyric-to-note-alignment.md) — **canonical** reference for melismas, slurs, underlines, and the syllable-to-note mapping algorithm. This doc defers to it on all melisma/alignment matters.
+
+> **Errata 2026-05-30:** §2 "Extended final phrases" previously documented a **dot-pair-based melisma detection theory** (claiming `f.,r` → the `r` is a passing note) and a duration-heuristic fallback. **Both are wrong as a theory of the notation.** The solfège `.` is a half-beat rhythm subdivision, NOT a melisma marker. The canonical melisma marker in solfège is the **underline beneath the note**; in staff notation it is the **slur**. Our pipeline lost the underline during OCR (the prompt explicitly discarded it), so the dot-pair heuristic was adopted as a workaround — but it produces correct results only when rhythm coincides with melisma, which is unreliable. The section below has been replaced with the corrected theory. See `lyric-to-note-alignment.md` §3 for the cross-format canonical mapping.
+
 ---
 
 ## 1. Meter Taxonomy
@@ -123,30 +127,37 @@ Because DCM-ness is encoded in Airtable's `Double length` column and not yet mig
 
 A second name-evidence DCM candidate in the data is *Petersham* (`name='Petersham (CMD, EPC tune)'`, `meter='CM'`). Use Old 44th as the primary teaching example; Petersham as the secondary.
 
-### Extended final phrases
+### Melismas and extended phrases
 
-Some tunes in the corpus have **more note heads in their final phrase than the metrical syllable count requires**. Concretely confirmed in the ABC data (2026-05-28 Playwright sweep, 84/150 psalms affected):
+Many tunes in the corpus have **more note heads per phrase than the metrical syllable count requires**. Concretely confirmed in the ABC data (2026-05-28 Playwright sweep, 84/150 psalms affected):
 
-| Tune | Meter | Expected notes in phrase 4 | Actual notes in phrase 4 |
-|---|---|---|---|
-| Crimond | CM | 6 | 12 |
-| Old 100th | LM | 8 | 24 |
-| Crediton | CM | 6 | 12 |
+| Tune | Meter | Phrase | Expected syllables | Actual notes |
+|---|---|---|---|---|
+| Crimond | CM | 1 | 8 | 10 (2 melismas: "my", "herd") |
+| Crimond | CM | 4 | 6 | 12 |
+| Old 100th | LM | 4 | 8 | 24 |
+| Crediton | CM | 4 | 6 | 12 |
 
-These extra notes are **melismas** — passing notes / runs where one syllable is held across multiple notes. **Confirmed by CPRC precentor (2026-05-28): all displayed notes are part of the main phrase and are sung to words.** They are not cadential figures or encoding errors.
+The extra notes are **melismas** — one syllable sung across multiple consecutive notes. **Confirmed by CPRC precentor (2026-05-28): all displayed notes are part of the main phrase and are sung to words.** They are not cadential figures or encoding errors.
 
-Crimond phrase 4 analysis (Playwright sweep + parser inspection, 2026-05-28):
-- 2 extra notes are **dot-pair passing notes** (`f.,r` → the `r` after the dot is passing) — detectable directly from `solfege_ocr_text` in the DB
-- 4 extra notes come from **3-slot cells** (`m:r:r`, `m:f:m` etc.) — not explicitly marked as passing in the sol-fa text; require a duration heuristic
+**Canonical melisma theory:** see [lyric-to-note-alignment.md](./lyric-to-note-alignment.md). The short version:
 
-**`w:` token is `_` (hold/melisma), not `*` (skip).** `_` instructs abcjs to hold the previous syllable over an additional note — the correct semantic for a melismatic note that is sung to the preceding syllable's vowel. `*` would skip the note (render it with no lyric), which is wrong.
+- A melisma is encoded by a **slur** in staff notation, by an **underline** in solfège, and by a `_` token in the ABC `w:` line.
+- A held note (`—` in solfège, long-duration note in ABC) is also an implicit melisma — one syllable across multiple beats with a single attack.
+- The solfège `.` (half-beat subdivision) is **rhythm only** — it does NOT mark a melisma. A `b g` dot-pair could be two separate syllables OR a one-syllable melisma; only the underline disambiguates.
+- The canonical detection algorithm is in `lyric-to-note-alignment.md` §6: slur-start → assign syllable to slur-start note → skip every note up to slur-stop.
 
-**Fix strategy (zero new AI cost — 2026-05-28):**
-1. **Dot-pair detection** — modify `parseVoiceLine` in `solfege-parser.ts` to tag second token of every dot-pair as `passing: true`. Emit `_` in `w:` lines for those positions.
-2. **Duration heuristic fallback** — where `noteCount > syllableCount` after step 1, assign `_` to shortest-duration notes until balanced.
-3. **Assert & flag** — tunes still mismatched after step 2 are flagged for manual review rather than silently mis-aligning.
+**Verified example:** Crimond phrase 1 = "The Lord's my shepherd, I'll not want;" (8 syllables on 10 notes). "my" and "herd" each span a beamed `b g` pair under a slur. See `lyric-to-note-alignment.md` §8 for the full per-syllable per-note mapping, verified against Eleanor Gow's published arrangement and Dieuwe de Boer's MusicXML rendering.
 
-**Coverage:** 144/172 tunes have `solfege_ocr_text` in DB. The 28 tunes without solfege data fall back to step 2 (duration heuristic only) or get flagged. See Phase 04.9.9 for implementation.
+**`w:` token semantics (ABC):** `_` holds the previous syllable across an additional note (correct for melisma continuation). `*` skips the note with no lyric (wrong). Use `_`.
+
+### Status of earlier dot-pair / duration-heuristic approach
+
+The "dot-pair detection + duration heuristic" approach previously documented here (and partially implemented in `src/lib/abc-melisma.ts` and `getPassingPositions` in `src/lib/solfege-parser.ts`) is **a workaround for OCR data loss, not a theory of the notation**. It was adopted because the OCR prompt was instructed to discard underlines, so dot-pairs were the only proxy signal left. Results are correct only when rhythm and melisma happen to coincide.
+
+**Long-term path:** see `lyric-to-note-alignment.md` §9 — re-acquire the lost data either by updating the OCR prompt to preserve underlines, or by ingesting MusicXML (from Hymnary or de Boer's repo) where slurs are already present.
+
+**Coverage status:** 144/172 tunes have `solfege_ocr_text` in DB. All current solfège transcriptions are missing underline information.
 
 ### Anti-example: meter mismatch is a data error, not a structural pattern
 
@@ -189,7 +200,7 @@ the quiet waters by.
 
 **Parsing rule:** Verse-number tokens are `^(\d+)` at the start of any word, with no whitespace between the number and the following word. The parser must extract these without modifying the underlying lyric flow. **How the parsed verse boundaries are surfaced visually (superscript, inline number, side gutter, hover, etc.) is a rendering-layer decision deferred to the alignment-implementation phase** — out of scope for this doc.
 
-The full Psalm 23 lyric (verses 1–6 in 6 stanzas, with similar mid-stanza splits in other stanzas) is the canonical test case for the alignment engine.
+The full Psalm 23 lyric (verses 1–6 in 6 stanzas, with similar mid-stanza splits in other stanzas) is the canonical test case for the alignment engine. **Ground-truth visual reference for Psalm 23 + Crimond:** Eleanor Gow's published arrangement (image saved at `/tmp/reference-ps23.png`, user-confirmed correct 2026-05-30) and Dieuwe de Boer's MusicXML rendering at [metricalpsalter.com](https://metricalpsalter.com/) (sing-tested by user, exact match). See [lyric-to-note-alignment.md](./lyric-to-note-alignment.md) §7 for the full verified reference catalogue and §8 for the per-syllable per-note mapping.
 
 ---
 

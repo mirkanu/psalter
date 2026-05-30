@@ -4,7 +4,13 @@ Researched 2026-05-12 from: Wikipedia, Curwen Standard Course, A Dictionary of M
 and direct inspection of 6 Scottish Psalter JPEG images (Abbeyville, Ballerma, Bangor, Boston,
 Carlisle, Aspurg, Aurelia).
 
-> **See also:** [Scottish Psalter Metrical Structure](./scottish-psalter-structure.md) — sibling reference covering meter taxonomy, tune anatomy, stanza-vs-verse model, syllabification, and line-break principles.
+> **See also:**
+> - [Lyric-to-Note Alignment](./lyric-to-note-alignment.md) — **canonical** reference for melismas, slurs, underlines, and syllable-to-note mapping. Defers from this doc on all alignment matters.
+> - [Scottish Psalter Metrical Structure](./scottish-psalter-structure.md) — sibling reference covering meter taxonomy, tune anatomy, stanza-vs-verse model, syllabification, and line-break principles.
+
+> **Errata 2026-05-30:** Earlier versions of this doc instructed transcribers to "ignore the underline visually" beneath solfège notes. This was **wrong** — the underline is the canonical solfège marker for melisma continuation (one syllable held across multiple notes). Discarding it caused systematic alignment data loss across the corpus. The underline must be **preserved** in transcription. The "Other Symbols" section below has been corrected; the OCR prompt in `src/lib/ocr-solfege-v2.ts` is pending a matching fix. See `lyric-to-note-alignment.md` §3 for the canonical theory.
+
+> **Terminology note:** "Passing note" is used in this doc in **two distinct senses**. Where it appears next to `de`/`re`/`le` etc. it means *chromatic auxiliary tone* (a harmonic concept). Where it appears next to the underline-beneath-notes symbol it means *melisma continuation* (a text-setting concept). These are unrelated despite sharing the term. See `lyric-to-note-alignment.md` §2 for the disambiguation.
 
 ---
 
@@ -67,11 +73,11 @@ The vowel after the syllable changes the pitch:
 
 | Symbol | Semitone (from tonic) | Common usage |
 |--------|----------------------|--------------|
-| `de`   | +1 above d           | passing note |
-| `re`   | +1 above r           | passing note |
+| `de`   | +1 above d           | chromatic passing tone (harmonic — see Errata) |
+| `re`   | +1 above r           | chromatic passing tone (harmonic — see Errata) |
 | `fe`   | +1 above f (= raised fah) | very common |
 | `se`   | +1 above s (= raised soh = leading tone in minor) | harmonic minor |
-| `le`   | +1 above l           | passing note |
+| `le`   | +1 above l           | chromatic passing tone (harmonic — see Errata) |
 | `ta`   | -1 below t (= flat 7th) | **most common flat; used in minor & blues** |
 | `la`   | -1 below l (= flat 6th = Ab if DOH=C) | minor scales |
 | `ba`   | flat 6th in minor (= la) | alternative name |
@@ -109,7 +115,7 @@ Chromatics + octave: write both → `se_1`, `fe_1`, `ta_1`, `re'`
 d.r  :m     → d + r share beat 1 (each a quaver), m fills beat 2
 d   :m.f    → d fills beat 1,  m + f share beat 2
 d.r :m.f    → two quaver pairs filling a complete 2-beat cell
-s.f :m.r    → same pattern (very common in passing-note runs)
+s.f :m.r    → same pattern (very common in subdivided runs; may or may not be melismatic — see Underline below)
 ```
 The `.` can also combine with holds:
 ```
@@ -128,6 +134,8 @@ d :— |— :m   → d held across the barline for a total of 3 beats, then m
 d :—.r        → d dotted (3 quavers), r (1 quaver)
 ```
 
+**Hold and melisma:** A held note is **also an implicit melisma** in the broad sense — one syllable, multiple beat positions. This is mechanism 2 in [lyric-to-note-alignment.md §4](./lyric-to-note-alignment.md#4-two-melisma-mechanisms--explicit-and-implicit). Unlike underlined melisma continuations (which involve multiple discrete note attacks), held notes have one attack with sustained duration. Both forms coexist in Scottish Psalter tunes.
+
 ### Pickup / anacrusis
 A cell before the first full barline with a single note:
 `:s |d' :s |...`  — the `:s` is a pickup (one beat, the last beat of bar 0).
@@ -143,7 +151,7 @@ In some editions printed as `0` (zero).
 
 | Symbol | Meaning |
 |--------|---------|
-| **Underline** beneath notes | **Passing notes** — notes without their own text syllable, sung smoothly through. Very common for subdivided runs like `r.m:f.s`. Just transcribe the notes; ignore the underline visually. |
+| **Underline** beneath notes | **Melisma continuation marker** — the underlined note has NO text syllable of its own; it is sung as a continuation of the previous note's syllable (one vowel held across the underlined note's pitch). Curwen-tradition pedagogy calls these "passing notes" (the melismatic sense — see Errata at top of doc; NOT the same as the chromatic passing tones `de`/`re`/`le`). **MUST be preserved in transcription** — convention: append `_` to the underlined note's solfège symbol, e.g. `m f_ r_ d` for an underlined `f` and `r`. The `_` suffix marks "this note is a melisma continuation." Losing this marker is destructive; we cannot reconstruct it from rhythm alone. See [lyric-to-note-alignment.md](./lyric-to-note-alignment.md) for the canonical theory and §3 for the cross-format mapping (solfège underline ↔ staff notation slur ↔ MusicXML `<slur>` ↔ ABC w-line `_`). |
 | `://` or `:||` / `|:` | Repeat sign |
 | `\|\|` at end | Double barline — end of tune or section |
 | **Amen** | Separate 2-chord section printed after the final `\|\|`. Each voice has 2 notes. Transcribe as-is. |

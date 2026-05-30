@@ -339,7 +339,8 @@ fetch/98832 (the Crimond ID shown on the main tune page) returns an HTML license
 4. Validate in abcjs renderer. Common issues:
    - Key signature transposition (xml2abc may output in concert pitch)
    - Time signature formatting
-   - Ties vs slurs
+   - **Ties vs slurs** — visually similar curved lines, musically distinct. A **tie** joins 2 notes of the same pitch (sustain — one syllable across the tie). A **slur** joins 2+ notes of different pitches (melisma — one syllable across the slur). Both affect syllable counting. xml2abc may emit them differently; verify rendering matches source. See [lyric-to-note-alignment.md §5](./lyric-to-note-alignment.md#5-beam-vs-slur-vs-tie--visually-similar-musically-distinct).
+   - **Slur preservation** — slurs are the canonical MusicXML melisma marker. If xml2abc drops slurs, the resulting ABC loses melisma information and lyric alignment will be wrong. Always inspect the output ABC for slur tokens (`(...)`) where the MusicXML had `<slur>` markup. See §"Source-of-truth quality" below.
    - Anacrusis (pickup bar) handling
 
 ### Phase 2: MutopiaProject LilyPond conversion (~10 tunes)
@@ -423,3 +424,52 @@ The following tunes from the CPRC 172 list do not have confirmed Hymnary slugs a
 - St Ethelreda, St Kilda, St Lawrence, St Leonard, St Mary, St Paul
 - Thanksgiving, Tiverton, University, Wallace, Walton, Warwick
 - Webb, Wetherby
+
+---
+
+## Source-of-truth quality (added 2026-05-30)
+
+> See also: [Lyric-to-Note Alignment](./lyric-to-note-alignment.md) — canonical theory of melisma encoding across formats.
+
+Different tune sources preserve melisma data (slurs in MusicXML, slurs in printed score, underlines in solfège) with varying reliability. This section catalogs known sources and their melisma fidelity.
+
+### Why this matters
+
+Slurs in MusicXML are the canonical marker for melisma — one syllable held across multiple notes. The slur-based syllable assignment algorithm (see [lyric-to-note-alignment.md §6](./lyric-to-note-alignment.md#6-slur--syllable-assignment-algorithm)) requires that slurs be present in the source data. If the source has stripped slurs, alignment cannot be performed correctly — only heuristics (with known failure modes) remain.
+
+### Verified sources
+
+| Source | Coverage | Melisma data | Verified by | Confidence |
+|---|---|---|---|---|
+| **Dieuwe de Boer ([scottishmetricalpsalter](https://github.com/dieuwedeboer/scottishmetricalpsalter/tree/master/docs/tunes))** | 7 tunes: Crimond, Felix, Spohr, Richmond, Tallis (CM), Old100th, TallisCanon (LM) | Explicit `<slur>` markup in MusicXML | Crimond sing-tested 2026-05-30 against Eleanor Gow → exact match | **Canonical** for Crimond; other 6 pending per-tune verification |
+| **Hymnary.org MusicXML** (fetch IDs in `src/lib/hymnary-lookup.ts`) | ~50 of our CM tunes | **VARIES per tune** — must audit each | Spot-check 2026-05-30: Crimond (132196) has slurs but no lyrics; Dundee (99321) has slurs + lyrics + `<syllabic>` markup; Bangor (98966) has slurs + lyrics. The Crimond file's missing lyrics is unusual; most Hymnary files include verse text. | **Mixed** — verify slur presence per tune before relying on it |
+| **Free Church of Scotland Sing Psalms Music PDF** ([praise-resources](https://freechurch.org/praise-resources/)) | All Sing Psalms tunes | Printed score with aligned syllables | Not yet audited | **Pending** |
+| **iOS Scottish Psalter app** | TBD | Screenshots showing lyric-to-note alignment | User to provide representative samples | **Pending** |
+| **Eleanor Gow's published Crimond arrangement** | 1 tune (Crimond, 3/4 arrangement) | Printed score | User confirmation 2026-05-30: "I have sung it and it's perfect" | **Canonical** for Crimond |
+
+### Our solfège OCR pipeline
+
+`solfege_ocr_text` in our DB does NOT contain melisma information. The OCR prompt in `src/lib/ocr-solfege-v2.ts:70` instructed the Vision model to discard underlines (the canonical solfège melisma marker). This was based on the original guidance in `tonic-solfa-notation.md` line 146, which has now been corrected. See `lyric-to-note-alignment.md` §9 for the implications and remediation path.
+
+### Per-tune audit needed
+
+Before relying on any Hymnary MusicXML file for alignment, audit:
+
+```bash
+# Download
+curl -sL https://hymnary.org/media/fetch/{ID} -o tune.xml
+# Check for slurs and lyrics
+grep -c "<slur\|<text>\|<syllabic" tune.xml
+```
+
+Files with `<text>` and `<syllabic>` markup contain explicit lyric-to-note alignment and can be used directly. Files with `<slur>` but no `<text>` (like the Crimond fetch) require running the de Boer-style algorithm to apply syllables. Files with neither cannot be used — fall back to another source.
+
+### Forward-path options (summary)
+
+Three paths to canonical alignment data across all our tunes (~50 CM + alt-meter):
+
+1. **De Boer MusicXML + Hymnary MusicXML hybrid** — use de Boer's 7 verified tunes; supplement with Hymnary's slur-bearing files; identify gaps for manual work.
+2. **Update OCR prompt + re-OCR** — modify `ocr-solfege-v2.ts:70` to preserve underlines as `_` suffix; re-run OCR across the corpus. Most general but costs Vision API calls.
+3. **Hybrid: MusicXML where available, current heuristic for the long tail** — graceful degradation. Mark lower confidence in UI for heuristic-only tunes.
+
+Decision and execution deferred until ground-truth verification across multiple psalm/tune pairings is complete (user is providing iOS app screenshots as additional ground truth).
