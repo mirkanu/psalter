@@ -18,6 +18,7 @@ import {
 import { buildEmbeddedWline } from '@/lib/build-embedded-wline'
 import { solFaToAbc } from '@/lib/solfege-parser'
 import { checkAgainstMeter } from '@/lib/meter-syllable-shape'
+import { parseSavedWLines } from '@/lib/parse-saved-w-lines'
 
 const AbcRenderer = dynamic(() => import('./AbcRenderer'), { ssr: false })
 
@@ -32,6 +33,15 @@ export function MelismaEditorClient({ tunes }: Props) {
   const [tuneId, setTuneId] = useState<number | null>(tunes[0]?.id ?? null)
   const [filter, setFilter] = useState('')
   const [underlined, setUnderlined] = useState<Record<number, boolean>>({})
+  // True once the user has explicitly toggled any underline (vs underlines
+  // pre-populated from a saved tune's w-lines). Drives the "saved state
+  // verbatim" short-circuit on the live preview.
+  const [underlinedUserDirty, setUnderlinedUserDirty] = useState(false)
+  // Syllables parsed from the loaded tune's saved w-lines, when present.
+  // One entry per phrase. Preferred over stanza1SyllablesPerLine so reopening
+  // a tune like Abbeyville (saved with a 6-syllable repeat) sees its true
+  // 34-syllable shape instead of the 28-syllable meter default.
+  const [savedSyllablesPerPhrase, setSavedSyllablesPerPhrase] = useState<string[][] | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
   const [previewSize, setPreviewSize] = useState<PreviewSize>('md')
@@ -127,7 +137,10 @@ export function MelismaEditorClient({ tunes }: Props) {
 
   const onTuneChange = useCallback((id: number) => {
     setTuneId(id)
-    setUnderlined({})
+    // underlined + savedSyllablesPerPhrase are owned by the parseSavedWLines
+    // effect — do NOT reset them here, or the effect's pre-population gets
+    // clobbered when re-selecting the same tune in the dropdown.
+    setUnderlinedUserDirty(false)
     setEditedAbc(null)
     setGridMode('underline')
     setEditedSyllables(null)
@@ -143,6 +156,29 @@ export function MelismaEditorClient({ tunes }: Props) {
     setShowHistory(false)
     setDecisionMsg(null)
   }, [])
+
+  // Pre-populate underline + syllable state from saved w-lines when reopening
+  // a tune for re-editing. Without this, melismas the user previously marked
+  // are invisible (the grid would show no amber underlines) and the syllable
+  // count would not match the saved note count for tunes that repeat lines
+  // (e.g. Abbeyville's 34-syllable layout for 37 notes).
+  useEffect(() => {
+    if (!tune) return
+    const parsed = parseSavedWLines(tune.abcNotation)
+    if (!parsed) {
+      setUnderlined({})
+      setSavedSyllablesPerPhrase(null)
+      setUnderlinedUserDirty(false)
+      return
+    }
+    const u: Record<number, boolean> = {}
+    for (const gi of parsed.underlinedGlobalIndices) u[gi] = true
+    setUnderlined(u)
+    setUnderlinedUserDirty(false)
+    setSavedSyllablesPerPhrase(
+      parsed.syllablesPerPhrase.some(p => p.length > 0) ? parsed.syllablesPerPhrase : null,
+    )
+  }, [tune])
 
   // Fetch decision state on tune select.
   useEffect(() => {
@@ -202,6 +238,7 @@ export function MelismaEditorClient({ tunes }: Props) {
 
   const toggle = useCallback((globalIdx: number) => {
     setUnderlined(u => ({ ...u, [globalIdx]: !u[globalIdx] }))
+    setUnderlinedUserDirty(true)
     setSaveMsg(null)
   }, [])
 
@@ -323,8 +360,11 @@ export function MelismaEditorClient({ tunes }: Props) {
         .map(line => line.split(/\s+/).filter(Boolean))
         .filter(line => line.length > 0)
     }
+    // Saved-w-line syllables are preferred over stanza-1 syllables when present
+    // (so a tune saved with a repeat keeps its true syllable shape on reopen).
+    if (savedSyllablesPerPhrase !== null) return savedSyllablesPerPhrase
     return tune?.stanza1SyllablesPerLine ?? []
-  }, [editedSyllables, tune])
+  }, [editedSyllables, savedSyllablesPerPhrase, tune])
   const effectiveSyllables = useMemo(
     () => effectiveSyllablesPerLine.flat(),
     [effectiveSyllablesPerLine],
@@ -395,14 +435,11 @@ export function MelismaEditorClient({ tunes }: Props) {
     const tokenStrs = tokens.map(t => t.token)
     const underlinedFlags = tokens.map(t => Boolean(underlined[t.globalIdx]))
     // Short-circuit: if the input ABC already has embedded w: lines AND the
-    // user has not toggled any underlines, render the saved state as-is.
-    // Re-running buildEmbeddedWline against a saved-with-repeat tune (e.g.
-    // Abbeyville needs 34 syllables but stanza-1 only provides 28) would
-    // produce a misaligned preview that hides the user's previously-correct
-    // save. Once the user toggles an underline, fall through to a real rebuild.
+    // user has not made any new underline edits in this session, render the
+    // saved state as-is. Pre-populated underlines from saved w-lines do NOT
+    // count as edits — only `toggle()` flips `underlinedUserDirty` to true.
     const inputHasWLines = /^\s*w:/m.test(effectiveAbc)
-    const noUnderlinesToggled = underlinedFlags.every(u => !u)
-    if (inputHasWLines && noUnderlinesToggled) {
+    if (inputHasWLines && !underlinedUserDirty && editedAbc === null) {
       return {
         abc: effectiveAbc,
         passesValidation: true,
@@ -416,7 +453,7 @@ export function MelismaEditorClient({ tunes }: Props) {
       syllables: effectiveSyllables,
       existingAbc: effectiveAbc,
     })
-  }, [tune, tokens, underlined, effectiveAbc, effectiveSyllables])
+  }, [tune, tokens, underlined, effectiveAbc, effectiveSyllables, underlinedUserDirty, editedAbc])
 
   const underlineCount = useMemo(
     () => tokens.filter(t => underlined[t.globalIdx]).length,
