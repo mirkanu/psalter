@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { useState, useMemo, useCallback } from 'react'
 import type { TuneOption } from './page'
 import { extractSopranoTokens } from '@/lib/abc-soprano-tokens'
+import { abcNoteToSolfege, extractDohFromAbc } from '@/lib/abc-note-to-solfege'
 import { buildEmbeddedWline } from '@/lib/build-embedded-wline'
 
 const AbcRenderer = dynamic(() => import('./AbcRenderer'), { ssr: false })
@@ -13,7 +14,9 @@ interface Props {
 }
 
 type PreviewSize = 'sm' | 'md' | 'lg'
-const PREVIEW_SCALE: Record<PreviewSize, number> = { sm: 0.7, md: 1, lg: 1.4 }
+// staffwidth multiplier — bigger value = wider staffwidth = fewer wraps + smaller-looking notes.
+// Smaller value = narrower staffwidth = more wraps + bigger notes.
+const PREVIEW_STAFF_MULT: Record<PreviewSize, number> = { sm: 1.4, md: 1.0, lg: 0.65 }
 
 export function MelismaEditorClient({ tunes }: Props) {
   const [tuneId, setTuneId] = useState<number | null>(tunes[0]?.id ?? null)
@@ -21,7 +24,7 @@ export function MelismaEditorClient({ tunes }: Props) {
   const [underlined, setUnderlined] = useState<Record<number, boolean>>({})
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
-  const [previewSize, setPreviewSize] = useState<PreviewSize>('sm')
+  const [previewSize, setPreviewSize] = useState<PreviewSize>('md')
 
   const filteredTunes = useMemo(
     () =>
@@ -37,6 +40,8 @@ export function MelismaEditorClient({ tunes }: Props) {
     () => (tune ? extractSopranoTokens(tune.abcNotation) : []),
     [tune],
   )
+
+  const doh = useMemo(() => (tune ? extractDohFromAbc(tune.abcNotation) : 'C'), [tune])
 
   const phrases = useMemo(() => {
     const out: Array<{ phraseIdx: number; tokens: typeof tokens }> = []
@@ -129,7 +134,7 @@ export function MelismaEditorClient({ tunes }: Props) {
           ))}
         </select>
         <div className="text-sm text-gray-600">
-          notes={tokens.length} · underlined={underlineCount} · syllables={syllableCount}
+          doh={doh} · notes={tokens.length} · underlined={underlineCount} · syllables={syllableCount}
           {tokens.length > 0 && (
             <span className={`ml-2 font-medium ${countMatch ? 'text-green-700' : 'text-red-700'}`}>
               {countMatch ? '✓ counts match' : `✗ non-underlined ${nonUnderlinedCount} ≠ syllables ${syllableCount}`}
@@ -207,9 +212,9 @@ export function MelismaEditorClient({ tunes }: Props) {
                               ? 'bg-amber-200 border-amber-500 text-amber-900 underline decoration-2 underline-offset-2'
                               : 'bg-white border-gray-300 text-gray-800 hover:bg-gray-100'
                           }`}
-                          title={`Note ${tok.globalIdx + 1} of ${tokens.length}`}
+                          title={`Note ${tok.globalIdx + 1} of ${tokens.length} — ABC: ${tok.token}`}
                         >
-                          {tok.token}
+                          {abcNoteToSolfege(tok.token, doh)}
                         </button>
                       )
                     })}
@@ -242,7 +247,7 @@ export function MelismaEditorClient({ tunes }: Props) {
             </div>
             {built ? (
               <>
-                <AbcRenderer abc={built.abc} scale={PREVIEW_SCALE[previewSize]} />
+                <AbcRenderer abc={built.abc} staffWidthMultiplier={PREVIEW_STAFF_MULT[previewSize]} />
                 {built.warnings.length > 0 && (
                   <div className="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-300 rounded p-2 max-h-32 overflow-auto">
                     <strong>Warnings:</strong>
