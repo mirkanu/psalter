@@ -394,6 +394,22 @@ export function MelismaEditorClient({ tunes }: Props) {
     if (!tune || tokens.length === 0) return null
     const tokenStrs = tokens.map(t => t.token)
     const underlinedFlags = tokens.map(t => Boolean(underlined[t.globalIdx]))
+    // Short-circuit: if the input ABC already has embedded w: lines AND the
+    // user has not toggled any underlines, render the saved state as-is.
+    // Re-running buildEmbeddedWline against a saved-with-repeat tune (e.g.
+    // Abbeyville needs 34 syllables but stanza-1 only provides 28) would
+    // produce a misaligned preview that hides the user's previously-correct
+    // save. Once the user toggles an underline, fall through to a real rebuild.
+    const inputHasWLines = /^\s*w:/m.test(effectiveAbc)
+    const noUnderlinesToggled = underlinedFlags.every(u => !u)
+    if (inputHasWLines && noUnderlinesToggled) {
+      return {
+        abc: effectiveAbc,
+        passesValidation: true,
+        warnings: [],
+        perPhrase: [],
+      }
+    }
     return buildEmbeddedWline({
       tokens: tokenStrs,
       underlined: underlinedFlags,

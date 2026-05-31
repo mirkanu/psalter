@@ -146,7 +146,16 @@ export function buildEmbeddedWline(
   let cursor = 0
 
   for (let pIdx = 0; pIdx < split.phrases.length; pIdx++) {
+    // Strip any pre-existing w: lines from the phrase body. The input ABC may
+    // already contain embedded w-lines (e.g. when re-editing a tune already
+    // saved through this editor) — without this strip, the append below would
+    // produce DUPLICATE w-lines per phrase, which abcjs would render as two
+    // rows of lyrics under each staff.
     const body = split.phrases[pIdx]
+      .split('\n')
+      .filter((l) => !/^\s*w:/.test(l))
+      .join('\n')
+      .trim()
     const noteHeadCount = countNoteHeads(body)
     const slice = wStream.slice(cursor, cursor + noteHeadCount)
     const wTokenCount = slice.length
