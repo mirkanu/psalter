@@ -10,7 +10,13 @@ import {
   solfegeToAbcNote,
   parseSolfegeToken,
 } from '@/lib/abc-note-to-solfege'
+import {
+  insertTokenAtPhraseEnd,
+  moveTokenBefore,
+  moveTokenToPhraseEnd,
+} from '@/lib/abc-edit-ops'
 import { buildEmbeddedWline } from '@/lib/build-embedded-wline'
+import { solFaToAbc } from '@/lib/solfege-parser'
 
 const AbcRenderer = dynamic(() => import('./AbcRenderer'), { ssr: false })
 
@@ -38,6 +44,12 @@ export function MelismaEditorClient({ tunes }: Props) {
   // Editable stanza-1 syllables. Needed for 8.6.8.6.6 etc.
   const [editedSyllables, setEditedSyllables] = useState<string | null>(null)
   const [showSyllableEditor, setShowSyllableEditor] = useState(false)
+  // Raw solfège-OCR text (soprano string) — for fixing `:`, `.`, `—` typos in
+  // the original Vision OCR output. When the user clicks "Show on Live Preview"
+  // we re-run solFaToAbc and load the result as editedAbc.
+  const [editedRawSoprano, setEditedRawSoprano] = useState<string | null>(null)
+  const [showRawSolfege, setShowRawSolfege] = useState(false)
+  const [rawConvertError, setRawConvertError] = useState<string | null>(null)
 
   const filteredTunes = useMemo(
     () =>
@@ -91,6 +103,9 @@ export function MelismaEditorClient({ tunes }: Props) {
     setEditedAbc(null)
     setGridMode('underline')
     setEditedSyllables(null)
+    setEditedRawSoprano(null)
+    setShowRawSolfege(false)
+    setRawConvertError(null)
     setShowSyllableEditor(false)
     setSaveMsg(null)
   }, [])
@@ -102,13 +117,59 @@ export function MelismaEditorClient({ tunes }: Props) {
 
   const resetEdits = useCallback(() => {
     setEditedAbc(null)
+    setUnderlined({})
     setSaveMsg(null)
   }, [])
+
+  const revertToOcr = useCallback(() => {
+    if (!tune?.abcNotationOcr) return
+    setEditedAbc(tune.abcNotationOcr)
+    setUnderlined({})
+    setSaveMsg(null)
+  }, [tune])
 
   const resetSyllableEdits = useCallback(() => {
     setEditedSyllables(null)
     setSaveMsg(null)
   }, [])
+
+  // Append a new note (defaults to doh — the singer can re-edit immediately).
+  const addNoteToPhraseEnd = useCallback(
+    (phraseIdx: number) => {
+      const baseAbc = editedAbc ?? tune?.abcNotation ?? ''
+      // Default new token = "d2" in F major: the doh, half-cell duration. Two units
+      // matches the most common rhythmic value in the existing ABC bodies.
+      const defaultToken = solfegeToAbcNote('d', doh, 'd2') || 'd2'
+      const next = insertTokenAtPhraseEnd(baseAbc, phraseIdx, defaultToken)
+      setEditedAbc(next)
+      setSaveMsg(null)
+    },
+    [editedAbc, tune, doh],
+  )
+
+  // Drag-and-drop reorder. Source = globalIdx; target is either another
+  // token (drop-before) or a phrase-end marker (drop-at-end).
+  const moveToken = useCallback(
+    (sourceGlobalIdx: number, target: { kind: 'before'; globalIdx: number } | { kind: 'phrase-end'; phraseIdx: number }) => {
+      const source = tokens[sourceGlobalIdx]
+      if (!source) return
+      const baseAbc = editedAbc ?? tune?.abcNotation ?? ''
+      let next: string
+      if (target.kind === 'phrase-end') {
+        next = moveTokenToPhraseEnd(baseAbc, source.absStart, source.absEnd, target.phraseIdx)
+      } else {
+        const targetTok = tokens[target.globalIdx]
+        if (!targetTok || targetTok.globalIdx === sourceGlobalIdx) return
+        next = moveTokenBefore(baseAbc, source.absStart, source.absEnd, targetTok.absStart)
+      }
+      if (next === baseAbc) return
+      setEditedAbc(next)
+      // Drop stale underline flags — globalIdx mapping changes after a move.
+      setUnderlined({})
+      setSaveMsg(null)
+    },
+    [tokens, editedAbc, tune],
+  )
 
   // Per-cell solfège edit commit. Replaces the token in the working ABC body
   // and updates editedAbc so the preview/grid re-renders.
@@ -137,6 +198,55 @@ export function MelismaEditorClient({ tunes }: Props) {
     }
     return tune?.stanza1Syllables ?? []
   }, [editedSyllables, tune])
+
+  // Raw OCR JSON parsed once per tune. Source of truth for the raw-solfège
+  // textarea (we surface the soprano string for editing; other voices stay
+  // visible read-only for context).
+  const ocrJson = useMemo(() => {
+    const raw = tune?.solfegeOcrText
+    if (!raw) return null
+    try {
+      return JSON.parse(raw) as {
+        doh?: string; time?: string; lah?: string; mode?: string
+        soprano?: string; alto?: string; tenor?: string; bass?: string
+      }
+    } catch {
+      return null
+    }
+  }, [tune])
+
+  const initialRawSoprano = ocrJson?.soprano ?? ''
+  const effectiveRawSoprano = editedRawSoprano ?? initialRawSoprano
+
+  // Convert the (edited) raw soprano string back through solFaToAbc and load
+  // the result as editedAbc so the live preview reflects it.
+  const applyRawToPreview = useCallback(() => {
+    if (!tune || !ocrJson) return
+    setRawConvertError(null)
+    try {
+      const result = solFaToAbc(
+        effectiveRawSoprano,
+        ocrJson.doh ?? 'C',
+        ocrJson.time ?? 'C',
+        tune.name,
+        ocrJson.lah,
+        ocrJson.mode,
+      )
+      if (!result.abc || result.abc.length < 10) {
+        throw new Error('solFaToAbc produced empty ABC')
+      }
+      setEditedAbc(result.abc)
+      setUnderlined({})
+      setSaveMsg(null)
+    } catch (err) {
+      setRawConvertError(err instanceof Error ? err.message : String(err))
+    }
+  }, [tune, ocrJson, effectiveRawSoprano])
+
+  const resetRawSolfegeEdits = useCallback(() => {
+    setEditedRawSoprano(null)
+    setRawConvertError(null)
+  }, [])
 
   const built = useMemo(() => {
     if (!tune || tokens.length === 0) return null
@@ -339,48 +449,68 @@ export function MelismaEditorClient({ tunes }: Props) {
                   <button
                     onClick={resetEdits}
                     className="px-2 py-0.5 rounded border bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-                    title="Discard all note edits and revert to the DB version"
+                    title="Discard all note edits and revert to the current DB version"
                   >
                     ↶ Revert notes
                   </button>
                 )}
+                {tune.abcNotationOcr && (
+                  <button
+                    onClick={revertToOcr}
+                    className="px-2 py-0.5 rounded border bg-red-50 border-red-300 text-red-800 hover:bg-red-100"
+                    title="Discard all edits AND any DB writes — restore the original Vision-OCR import"
+                  >
+                    ↩ Revert to OCR
+                  </button>
+                )}
               </div>
             </div>
+            <p className="text-[11px] text-gray-500 mb-2">
+              Tip: drag a cell by the ⋮⋮ handle to move it (within a phrase or across phrases).
+              Drop on another cell to insert before it; drop on the “+” at end of a phrase to append.
+            </p>
             <div className="space-y-2">
               {phrases.map(p => (
                 <div key={p.phraseIdx} className="flex items-start gap-1">
                   <span className="text-xs text-gray-500 w-16 shrink-0 pt-1.5">phrase {p.phraseIdx + 1}</span>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1 items-center">
                     {p.tokens.map(tok => {
                       const isUnderlined = Boolean(underlined[tok.globalIdx])
                       const solfegeStr = abcNoteToSolfege(tok.token, doh)
-                      if (gridMode === 'solfege') {
-                        return (
-                          <SolfegeCell
-                            key={`${tok.globalIdx}-${tok.absStart}`}
-                            initialValue={solfegeStr}
-                            highlighted={isUnderlined}
-                            originalToken={tok.token}
-                            onCommit={v => commitSolfegeEdit(tok.globalIdx, v)}
-                            title={`Note ${tok.globalIdx + 1} of ${tokens.length} — ABC: ${tok.token}`}
-                          />
-                        )
-                      }
                       return (
-                        <button
-                          key={tok.globalIdx}
-                          onClick={() => toggle(tok.globalIdx)}
-                          className={`px-2 py-1 text-xs font-mono rounded border min-w-[2.5rem] ${
-                            isUnderlined
-                              ? 'bg-amber-200 border-amber-500 text-amber-900 underline decoration-2 underline-offset-2'
-                              : 'bg-white border-gray-300 text-gray-800 hover:bg-gray-100'
-                          }`}
-                          title={`Note ${tok.globalIdx + 1} of ${tokens.length} — ABC: ${tok.token}`}
+                        <DraggableCell
+                          key={`${tok.globalIdx}-${tok.absStart}`}
+                          globalIdx={tok.globalIdx}
+                          onMoveBefore={src => moveToken(src, { kind: 'before', globalIdx: tok.globalIdx })}
                         >
-                          {solfegeStr}
-                        </button>
+                          {gridMode === 'solfege' ? (
+                            <SolfegeCell
+                              initialValue={solfegeStr}
+                              highlighted={isUnderlined}
+                              originalToken={tok.token}
+                              onCommit={v => commitSolfegeEdit(tok.globalIdx, v)}
+                              title={`Note ${tok.globalIdx + 1} of ${tokens.length} — ABC: ${tok.token}`}
+                            />
+                          ) : (
+                            <button
+                              onClick={() => toggle(tok.globalIdx)}
+                              className={`px-2 py-1 text-xs font-mono rounded border min-w-[2.5rem] ${
+                                isUnderlined
+                                  ? 'bg-amber-200 border-amber-500 text-amber-900 underline decoration-2 underline-offset-2'
+                                  : 'bg-white border-gray-300 text-gray-800 hover:bg-gray-100'
+                              }`}
+                              title={`Note ${tok.globalIdx + 1} of ${tokens.length} — ABC: ${tok.token}`}
+                            >
+                              {solfegeStr}
+                            </button>
+                          )}
+                        </DraggableCell>
                       )
                     })}
+                    <PhraseEndDropZone
+                      onAdd={() => addNoteToPhraseEnd(p.phraseIdx)}
+                      onMoveHere={src => moveToken(src, { kind: 'phrase-end', phraseIdx: p.phraseIdx })}
+                    />
                   </div>
                 </div>
               ))}
@@ -462,6 +592,84 @@ export function MelismaEditorClient({ tunes }: Props) {
                   className="w-full h-24 text-xs font-mono border border-gray-300 rounded p-2"
                   spellCheck={false}
                 />
+              </div>
+            )}
+          </div>
+
+          {/* Raw solfège-OCR text editor */}
+          <div className="bg-white border border-gray-300 rounded p-3">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-medium">
+                Raw solfège (OCR){' '}
+                {!ocrJson && <span className="text-xs text-gray-400 font-normal">(no solfege_ocr_text for this tune)</span>}
+                {editedRawSoprano !== null && (
+                  <span className="ml-2 px-1.5 py-0.5 text-xs bg-amber-100 text-amber-900 rounded font-normal">
+                    edited
+                  </span>
+                )}
+              </h2>
+              <div className="flex items-center gap-1 text-xs">
+                <button
+                  onClick={() => setShowRawSolfege(s => !s)}
+                  disabled={!ocrJson}
+                  className={`px-2 py-0.5 rounded border ${
+                    showRawSolfege
+                      ? 'bg-amber-100 border-amber-400 text-amber-900'
+                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                  } disabled:opacity-40 disabled:cursor-not-allowed`}
+                  title="Edit the raw soprano solfège string (fix :, ., — typos from the OCR)"
+                >
+                  ✎ Edit raw
+                </button>
+                {showRawSolfege && (
+                  <button
+                    onClick={applyRawToPreview}
+                    className="px-2 py-0.5 rounded border bg-blue-100 border-blue-400 text-blue-900 hover:bg-blue-200"
+                    title="Re-run solFaToAbc on the edited text and load the result into the live preview"
+                  >
+                    ▶ Show on Live Preview
+                  </button>
+                )}
+                {editedRawSoprano !== null && (
+                  <button
+                    onClick={resetRawSolfegeEdits}
+                    className="px-2 py-0.5 rounded border bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    ↶ Revert
+                  </button>
+                )}
+              </div>
+            </div>
+            {showRawSolfege && ocrJson && (
+              <div>
+                <div className="text-[11px] text-gray-500 mb-1">
+                  Soprano voice (string from Vision OCR). Edits here are not saved automatically —
+                  click <strong>Show on Live Preview</strong> to convert through solFaToAbc and load
+                  into the preview / note grid. Then click <strong>Save to DB</strong> in the
+                  header. Other voices (alto/tenor/bass) shown below for context, not editable here.
+                </div>
+                <textarea
+                  value={effectiveRawSoprano}
+                  onChange={e => {
+                    setEditedRawSoprano(e.target.value)
+                    setSaveMsg(null)
+                  }}
+                  className="w-full h-20 text-xs font-mono border border-gray-300 rounded p-2"
+                  spellCheck={false}
+                />
+                {rawConvertError && (
+                  <div className="mt-1 text-xs text-red-700">
+                    ⚠ Conversion failed: {rawConvertError}
+                  </div>
+                )}
+                {(ocrJson.alto || ocrJson.tenor || ocrJson.bass) && (
+                  <details className="mt-2 text-[11px] text-gray-600">
+                    <summary className="cursor-pointer">Other voices (read-only)</summary>
+                    {ocrJson.alto && <div className="font-mono mt-1">alto: {ocrJson.alto}</div>}
+                    {ocrJson.tenor && <div className="font-mono">tenor: {ocrJson.tenor}</div>}
+                    {ocrJson.bass && <div className="font-mono">bass: {ocrJson.bass}</div>}
+                  </details>
+                )}
               </div>
             )}
           </div>
@@ -586,5 +794,89 @@ function SolfegeCell({ initialValue, highlighted, originalToken, onCommit, title
       title={`${title ?? ''} · type a solfège syllable (m, fe, s', d_1)`}
       spellCheck={false}
     />
+  )
+}
+
+// ─── Drag-and-drop wrapper around any cell ────────────────────────────────────
+
+const DRAG_MIME = 'application/x-melisma-source-idx'
+
+interface DraggableCellProps {
+  globalIdx: number
+  onMoveBefore: (sourceGlobalIdx: number) => void
+  children: React.ReactNode
+}
+
+function DraggableCell({ globalIdx, onMoveBefore, children }: DraggableCellProps) {
+  const [hover, setHover] = useState(false)
+  return (
+    <div
+      className={`flex items-stretch rounded ${hover ? 'ring-2 ring-blue-400' : ''}`}
+      onDragOver={e => {
+        if (e.dataTransfer.types.includes(DRAG_MIME)) {
+          e.preventDefault()
+          setHover(true)
+        }
+      }}
+      onDragLeave={() => setHover(false)}
+      onDrop={e => {
+        e.preventDefault()
+        setHover(false)
+        const src = Number(e.dataTransfer.getData(DRAG_MIME))
+        if (!Number.isFinite(src) || src === globalIdx) return
+        onMoveBefore(src)
+      }}
+    >
+      <span
+        draggable
+        onDragStart={e => {
+          e.dataTransfer.setData(DRAG_MIME, String(globalIdx))
+          e.dataTransfer.effectAllowed = 'move'
+        }}
+        className="px-1 py-1 text-gray-400 cursor-grab hover:text-gray-700 select-none text-xs"
+        title="Drag to move this note"
+      >
+        ⋮⋮
+      </span>
+      {children}
+    </div>
+  )
+}
+
+// Drop zone + "+" button at the end of each phrase row.
+interface PhraseEndDropZoneProps {
+  onAdd: () => void
+  onMoveHere: (sourceGlobalIdx: number) => void
+}
+
+function PhraseEndDropZone({ onAdd, onMoveHere }: PhraseEndDropZoneProps) {
+  const [hover, setHover] = useState(false)
+  return (
+    <button
+      type="button"
+      onClick={onAdd}
+      onDragOver={e => {
+        if (e.dataTransfer.types.includes(DRAG_MIME)) {
+          e.preventDefault()
+          setHover(true)
+        }
+      }}
+      onDragLeave={() => setHover(false)}
+      onDrop={e => {
+        e.preventDefault()
+        setHover(false)
+        const src = Number(e.dataTransfer.getData(DRAG_MIME))
+        if (!Number.isFinite(src)) return
+        onMoveHere(src)
+      }}
+      className={`px-2 py-1 text-xs rounded border ml-1 ${
+        hover
+          ? 'bg-blue-100 border-blue-400 text-blue-900 ring-2 ring-blue-400'
+          : 'bg-white border-dashed border-gray-300 text-gray-500 hover:bg-gray-50'
+      }`}
+      title="Click to add a new note (defaults to doh). Drop a dragged note here to move it to end of this phrase."
+    >
+      +
+    </button>
   )
 }

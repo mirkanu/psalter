@@ -56,6 +56,7 @@ export const tunes = pgTable('tunes', {
   meter: text('meter'),                          // normalised: CM, LM, SM, etc.
   abcNotation: text('abc_notation'),             // NULL until Phase 4 (soprano only)
   abcNotationLegacy: text('abc_notation_legacy'),// backup of pre-260514 abc_notation (old extractTuneV2 pipeline)
+  abcNotationOcr: text('abc_notation_ocr'),      // permanent snapshot of the OCR-imported ABC (pre-04.11 manual edits) — revert target for /dev/melisma-editor
   solfegeOcrText: text('solfege_ocr_text'),      // raw Claude Vision transcription JSON
   abcSatb: text('abc_satb'),                     // 4-voice SATB ABC from solFaToAbcMultiVoice
   scoreJpgUrl: text('score_jpg_url'),            // local /tunes/ path (never Airtable URL)
