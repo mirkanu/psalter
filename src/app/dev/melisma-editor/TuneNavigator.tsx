@@ -12,6 +12,7 @@ interface Props {
 
 type StatusFilter = 'any' | 'approved' | 'not_approved' | 'none'
 type ErrorFilter = 'any' | 'yes' | 'no'
+type ErrorKindFilter = 'any' | 'melisma' | 'meter' | 'both'
 
 const STATUS_LABEL: Record<NonNullable<TuneOption['decisionStatus']>, string> = {
   approved: 'Approved',
@@ -23,6 +24,7 @@ export function TuneNavigator({ tunes, currentTuneId, onSelect, onClose }: Props
   const [meterFilter, setMeterFilter] = useState<string>('any')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('any')
   const [errorFilter, setErrorFilter] = useState<ErrorFilter>('any')
+  const [errorKind, setErrorKind] = useState<ErrorKindFilter>('any')
 
   // Unique meter list for the meter filter dropdown
   const meters = useMemo(() => {
@@ -39,11 +41,15 @@ export function TuneNavigator({ tunes, currentTuneId, onSelect, onClose }: Props
       if (statusFilter === 'approved' && t.decisionStatus !== 'approved') return false
       if (statusFilter === 'not_approved' && t.decisionStatus !== 'not_approved') return false
       if (statusFilter === 'none' && t.decisionStatus !== null) return false
-      if (errorFilter === 'yes' && !t.countError) return false
-      if (errorFilter === 'no' && t.countError) return false
+      const hasAnyErr = t.melismaError || t.meterError
+      if (errorFilter === 'yes' && !hasAnyErr) return false
+      if (errorFilter === 'no' && hasAnyErr) return false
+      if (errorKind === 'melisma' && !t.melismaError) return false
+      if (errorKind === 'meter' && !t.meterError) return false
+      if (errorKind === 'both' && !(t.melismaError && t.meterError)) return false
       return true
     })
-  }, [tunes, query, meterFilter, statusFilter, errorFilter])
+  }, [tunes, query, meterFilter, statusFilter, errorFilter, errorKind])
 
   // Tally per filter for footer
   const tally = {
@@ -51,7 +57,8 @@ export function TuneNavigator({ tunes, currentTuneId, onSelect, onClose }: Props
     shown: filtered.length,
     approved: tunes.filter(t => t.decisionStatus === 'approved').length,
     notApproved: tunes.filter(t => t.decisionStatus === 'not_approved').length,
-    error: tunes.filter(t => t.countError).length,
+    melismaErr: tunes.filter(t => t.melismaError).length,
+    meterErr: tunes.filter(t => t.meterError).length,
   }
 
   return (
@@ -98,7 +105,7 @@ export function TuneNavigator({ tunes, currentTuneId, onSelect, onClose }: Props
             </select>
           </label>
           <label className="text-xs text-gray-600 flex items-center gap-1">
-            Error
+            Any error
             <select
               value={errorFilter}
               onChange={e => setErrorFilter(e.target.value as ErrorFilter)}
@@ -107,6 +114,19 @@ export function TuneNavigator({ tunes, currentTuneId, onSelect, onClose }: Props
               <option value="any">any</option>
               <option value="yes">yes</option>
               <option value="no">no</option>
+            </select>
+          </label>
+          <label className="text-xs text-gray-600 flex items-center gap-1">
+            Kind
+            <select
+              value={errorKind}
+              onChange={e => setErrorKind(e.target.value as ErrorKindFilter)}
+              className="border rounded px-1.5 py-0.5 text-xs"
+            >
+              <option value="any">any</option>
+              <option value="melisma">melisma only</option>
+              <option value="meter">meter only</option>
+              <option value="both">both</option>
             </select>
           </label>
           <div className="flex-1" />
@@ -127,12 +147,17 @@ export function TuneNavigator({ tunes, currentTuneId, onSelect, onClose }: Props
                 <th className="px-4 py-2 font-medium">Meter</th>
                 <th className="px-4 py-2 font-medium">Status</th>
                 <th className="px-4 py-2 font-medium">Last comment</th>
-                <th className="px-4 py-2 font-medium">Count error</th>
+                <th className="px-4 py-2 font-medium" colSpan={2}>Syllable count error</th>
+              </tr>
+              <tr className="text-left text-gray-500 text-xs border-b">
+                <th colSpan={4}></th>
+                <th className="px-4 py-1 font-normal" title="Non-underlined notes ≠ syllables (top counts-match check)">melisma</th>
+                <th className="px-4 py-1 font-normal" title="Stanza-1 syllables per line ≠ meter requirement">meter</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-500">No tunes match these filters.</td></tr>
+                <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-500">No tunes match these filters.</td></tr>
               ) : (
                 filtered.map(t => {
                   const isCurrent = t.id === currentTuneId
@@ -159,10 +184,17 @@ export function TuneNavigator({ tunes, currentTuneId, onSelect, onClose }: Props
                         {t.lastComment ?? <span className="text-gray-400">—</span>}
                       </td>
                       <td className="px-4 py-2">
-                        {t.countError ? (
-                          <span className="inline-block px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-900">✗ yes</span>
+                        {t.melismaError ? (
+                          <span className="inline-block px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-900">✗ melisma</span>
                         ) : (
-                          <span className="inline-block px-1.5 py-0.5 rounded text-xs bg-emerald-100 text-emerald-900">✓ no</span>
+                          <span className="inline-block px-1.5 py-0.5 rounded text-xs bg-emerald-100 text-emerald-900">✓</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2">
+                        {t.meterError ? (
+                          <span className="inline-block px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-900">✗ meter</span>
+                        ) : (
+                          <span className="inline-block px-1.5 py-0.5 rounded text-xs bg-emerald-100 text-emerald-900">✓</span>
                         )}
                       </td>
                     </tr>
@@ -178,7 +210,8 @@ export function TuneNavigator({ tunes, currentTuneId, onSelect, onClose }: Props
           <span>·</span>
           <span>Approved: {tally.approved}</span>
           <span>Not Approved: {tally.notApproved}</span>
-          <span>Errors: {tally.error}</span>
+          <span>Melisma errors: {tally.melismaErr}</span>
+          <span>Meter errors: {tally.meterErr}</span>
         </div>
       </div>
     </div>

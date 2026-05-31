@@ -18,10 +18,12 @@ import {
 } from '@/lib/abc-edit-ops'
 import { buildEmbeddedWline } from '@/lib/build-embedded-wline'
 import { solFaToAbc } from '@/lib/solfege-parser'
-import { checkAgainstMeter } from '@/lib/meter-syllable-shape'
+import { checkAgainstMeter, expectedSyllablesByLine } from '@/lib/meter-syllable-shape'
+import { forceMatchMeterShape } from '@/lib/force-match-meter-shape'
 import { parseSavedWLines } from '@/lib/parse-saved-w-lines'
 import { splitOnPhraseBreaks, countNoteHeads } from '@/lib/abc-phrases'
 import { injectPhraseBreaksAtCounts } from '@/lib/inject-phrase-breaks-at-counts'
+import { parseOcrSyllableSequence } from '@/lib/parse-ocr-syllables'
 import { TuneNavigator } from './TuneNavigator'
 
 const AbcRenderer = dynamic(() => import('./AbcRenderer'), { ssr: false })
@@ -396,6 +398,19 @@ export function MelismaEditorClient({ tunes }: Props) {
   // Effective syllable list: edited value (if present) else DB original.
   // editedSyllables is newline-separated by lyric line, space-separated within
   // each line — the textarea preserves the structure across edits.
+  // Auto-fix stanza-1 syllables to match meter when the syllabifier produces
+  // the wrong per-line count. Only kicks in when the user has not manually
+  // overridden the syllables AND the tune has no saved w-line syllables (those
+  // are authoritative). Returns the fixed shape plus a per-line "adjusted"
+  // flag for UI highlighting.
+  const autoFixed = useMemo(() => {
+    const src = tune?.stanza1SyllablesPerLine ?? []
+    if (src.length === 0) return { fixed: src, adjusted: [] as boolean[] }
+    const expected = expectedSyllablesByLine(tune?.meter ?? null)
+    if (!expected) return { fixed: src, adjusted: src.map(() => false) }
+    return forceMatchMeterShape(src, expected)
+  }, [tune])
+
   const effectiveSyllablesPerLine: string[][] = useMemo(() => {
     if (editedSyllables !== null) {
       return editedSyllables
@@ -406,8 +421,9 @@ export function MelismaEditorClient({ tunes }: Props) {
     // Saved-w-line syllables are preferred over stanza-1 syllables when present
     // (so a tune saved with a repeat keeps its true syllable shape on reopen).
     if (savedSyllablesPerPhrase !== null) return savedSyllablesPerPhrase
-    return tune?.stanza1SyllablesPerLine ?? []
-  }, [editedSyllables, savedSyllablesPerPhrase, tune])
+    // Otherwise use meter-fitted stanza-1 syllables (auto-fix when needed).
+    return autoFixed.fixed
+  }, [editedSyllables, savedSyllablesPerPhrase, autoFixed])
   const effectiveSyllables = useMemo(
     () => effectiveSyllablesPerLine.flat(),
     [effectiveSyllablesPerLine],
@@ -441,6 +457,21 @@ export function MelismaEditorClient({ tunes }: Props) {
   }, [tune])
 
   const initialRawSoprano = ocrJson?.soprano ?? ''
+
+  // OCR-derived solfège labels (the labels printed on the JPG). Used as the
+  // grid display in preference to abcNoteToSolfege — the latter can diverge
+  // when the stored ABC has chromatic accidentals that don't match the
+  // diatonic OCR source (Carlisle: ABC `=B2 _g2 =B2 e _d` would show
+  // `la_1 ma la_1 d ta` whereas the JPG shows `d s d m r`). Falls back to
+  // ABC-derived labels if the OCR sequence length doesn't match the token
+  // count (rare; structurally-edited tunes).
+  const ocrLabels = useMemo<string[] | null>(() => {
+    if (!initialRawSoprano) return null
+    const labels = parseOcrSyllableSequence(initialRawSoprano)
+    if (labels.length === 0) return null
+    if (labels.length !== tokens.length) return null
+    return labels
+  }, [initialRawSoprano, tokens.length])
   const effectiveRawSoprano = editedRawSoprano ?? initialRawSoprano
 
   // Convert the (edited) raw soprano string back through solFaToAbc and load
@@ -838,7 +869,7 @@ export function MelismaEditorClient({ tunes }: Props) {
                   <div className="flex flex-wrap gap-1 items-center">
                     {p.tokens.map(tok => {
                       const isUnderlined = Boolean(underlined[tok.globalIdx])
-                      const solfegeStr = abcNoteToSolfege(tok.token, doh)
+                      const solfegeStr = ocrLabels?.[tok.globalIdx] ?? abcNoteToSolfege(tok.token, doh)
                       return (
                         <DraggableCell
                           key={`${tok.globalIdx}-${tok.absStart}`}
@@ -951,6 +982,11 @@ export function MelismaEditorClient({ tunes }: Props) {
                   const chk = meterCheck[i]
                   const expected = chk?.expected ?? null
                   const isMismatch = chk && !chk.match
+                  // Auto-fix highlight: only shown when we're displaying the
+                  // raw stanza-1 path (not edited / saved overrides), and the
+                  // line was actually modified to fit the meter.
+                  const showAutoFixedBadge =
+                    editedSyllables === null && savedSyllablesPerPhrase === null && Boolean(autoFixed.adjusted[i])
                   return (
                     <div key={i} className={`flex gap-2 ${isMismatch ? 'text-red-700' : ''}`}>
                       <span className="text-gray-400 w-4 shrink-0">{i + 1}.</span>
@@ -961,6 +997,14 @@ export function MelismaEditorClient({ tunes }: Props) {
                           {expected !== null && (expected === line.length ? '' : ` ≠ ${expected}`)}
                           )
                         </span>
+                        {showAutoFixedBadge && (
+                          <span
+                            className="ml-1.5 px-1 py-0.5 text-[10px] bg-purple-100 text-purple-900 rounded border border-purple-200 align-middle"
+                            title="Auto-fixed to match meter — review/override via the syllables textarea if needed"
+                          >
+                            auto
+                          </span>
+                        )}
                       </span>
                     </div>
                   )

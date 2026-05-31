@@ -6,6 +6,7 @@ import { isNotNull, asc, eq, desc, sql } from 'drizzle-orm'
 import { syllabifyForAbc } from '@/lib/lyrics'
 import { countNoteHeads } from '@/lib/abc-phrases'
 import { parseSavedWLines } from '@/lib/parse-saved-w-lines'
+import { checkAgainstMeter } from '@/lib/meter-syllable-shape'
 import { MelismaEditorClient } from './MelismaEditorClient'
 
 export const dynamic = 'force-dynamic'
@@ -39,8 +40,13 @@ export interface TuneOption {
   decisionStatus: 'approved' | 'not_approved' | null
   /** Most recent non-null comment text (latest entry), or null. */
   lastComment: string | null
-  /** True when the tune's saved ABC notes don't equal its expected syllable count. */
-  countError: boolean
+  /** True when the tune's saved notes vs syllables count doesn't balance
+   *  (i.e. non-underlined notes ≠ syllables — the editor's top "✗ counts
+   *  don't match" check). For unsaved tunes, equivalent to notes ≠ stanza1. */
+  melismaError: boolean
+  /** True when stanza-1 syllables per line don't match the meter requirement
+   *  (the "Stanza-1 syllables" panel's "✗ N lines ≠ meter" flag). */
+  meterError: boolean
 }
 
 function slugify(name: string): string {
@@ -67,6 +73,7 @@ async function loadTunes(): Promise<TuneOption[]> {
       abcNotationOcr: tunes.abcNotationOcr,
       solfegeOcrText: tunes.solfegeOcrText,
       phraseShapeOverride: tunes.phraseShapeOverride,
+      doubleLength: tunes.doubleLength,
     })
     .from(tunes)
     .where(isNotNull(tunes.abcNotation))
@@ -114,15 +121,40 @@ async function loadTunes(): Promise<TuneOption[]> {
       if (pvRows.length === 1) {
         const ls = pvRows[0].lyricsStructured as unknown as Array<{ lines?: Array<{ text?: string }> }> | null
         let stanzaLineTexts: string[] = []
+        // DCM tunes sing two CM stanzas as one musical "stanza" — pull both
+        // stanza 1 AND stanza 2 so the editor sees the full 8-line shape
+        // [8,6,8,6,8,6,8,6]. Same for other doubled meters (LMD, SMD).
+        const isDoubled = r.doubleLength === true
         if (Array.isArray(ls) && Array.isArray(ls[0]?.lines)) {
           stanzaLineTexts = ls[0]!.lines!.map(l => (l?.text ?? '').trim()).filter(t => t.length > 0)
+          if (isDoubled && Array.isArray(ls[1]?.lines)) {
+            stanzaLineTexts = stanzaLineTexts.concat(
+              ls[1]!.lines!.map(l => (l?.text ?? '').trim()).filter(t => t.length > 0),
+            )
+          }
         } else if (pvRows[0].lyricsImportedRaw) {
           const allLines = pvRows[0].lyricsImportedRaw
             .split('\n')
             .map(l => l.replace(/^\d+/, '').trim())
-          const firstBlank = allLines.findIndex(l => l.length === 0)
-          stanzaLineTexts = (firstBlank === -1 ? allLines : allLines.slice(0, firstBlank))
-            .filter(l => l.length > 0)
+          if (isDoubled) {
+            // Take the first TWO stanza blocks (separated by blank lines).
+            const blocks: string[][] = []
+            let current: string[] = []
+            for (const l of allLines) {
+              if (l.length === 0) {
+                if (current.length > 0) { blocks.push(current); current = [] }
+              } else {
+                current.push(l)
+              }
+              if (blocks.length === 2) break
+            }
+            if (current.length > 0 && blocks.length < 2) blocks.push(current)
+            stanzaLineTexts = blocks.slice(0, 2).flat()
+          } else {
+            const firstBlank = allLines.findIndex(l => l.length === 0)
+            stanzaLineTexts = (firstBlank === -1 ? allLines : allLines.slice(0, firstBlank))
+              .filter(l => l.length > 0)
+          }
         }
         if (stanzaLineTexts.length > 0) {
           stanza1SyllablesPerLine = stanzaLineTexts.map(t =>
@@ -148,29 +180,34 @@ async function loadTunes(): Promise<TuneOption[]> {
       stanza1Syllables = stanza1SyllablesPerLine.flat()
     }
 
-    // Live count-error computation:
-    // - If saved w-lines exist, the per-phrase syllable list already balances
-    //   with note count by construction → no error.
-    // - Otherwise, compare total note heads against stanza-1 syllables. Repeat-
-    //   last-line leniency: if notes === stanza1 + lastLineLen, also OK.
-    let countError = false
+    // Live count-error computation — two independent flags:
+    // melismaError: notes vs syllables (top counts-match check).
+    // meterError: stanza-1 syllables vs meter requirements (Stanza-1 panel).
+    let melismaError = false
     const totalNotes = countNoteHeads(r.abcNotation!)
     const saved = parseSavedWLines(r.abcNotation!)
     if (saved) {
       const savedTotal =
         saved.underlinedGlobalIndices.length +
         saved.syllablesPerPhrase.reduce((a, l) => a + l.length, 0)
-      countError = savedTotal !== totalNotes
+      melismaError = savedTotal !== totalNotes
     } else if (stanza1Syllables.length > 0) {
       const stanzaLen = stanza1Syllables.length
       const lastLineLen =
         stanza1SyllablesPerLine[stanza1SyllablesPerLine.length - 1]?.length ?? 0
-      countError =
+      melismaError =
         totalNotes !== stanzaLen &&
         !(lastLineLen > 0 && totalNotes === stanzaLen + lastLineLen)
     }
-    // If the tune has no resolvable lyrics, leave countError=false rather than
-    // flagging — it's not the editor's job to flag missing lyrics.
+
+    // meterError: any stanza-1 line whose actual syllable count disagrees with
+    // the meter's expected per-line count (repeat-last-line aware via
+    // checkAgainstMeter). Tunes with no resolvable lyrics aren't flagged.
+    let meterError = false
+    if (stanza1SyllablesPerLine.length > 0) {
+      const checks = checkAgainstMeter(stanza1SyllablesPerLine, r.meter)
+      meterError = checks.some((c) => !c.match)
+    }
 
     out.push({
       id: r.id,
@@ -186,7 +223,8 @@ async function loadTunes(): Promise<TuneOption[]> {
       psalmNumber,
       decisionStatus: statusByTune.get(r.id) ?? null,
       lastComment: lastCommentByTune.get(r.id) ?? null,
-      countError,
+      melismaError,
+      meterError,
     })
   }
 
