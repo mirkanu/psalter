@@ -14,6 +14,7 @@ import {
   insertTokenAtPhraseEnd,
   moveTokenBefore,
   moveTokenToPhraseEnd,
+  deleteTokenAt,
 } from '@/lib/abc-edit-ops'
 import { buildEmbeddedWline } from '@/lib/build-embedded-wline'
 import { solFaToAbc } from '@/lib/solfege-parser'
@@ -136,6 +137,15 @@ export function MelismaEditorClient({ tunes }: Props) {
   }, [tokens])
 
   const onTuneChange = useCallback((id: number) => {
+    if (id === tuneId) return
+    // Guard against losing unsaved work when switching tunes. "Unsaved" means
+    // the user touched ANY edit surface since the last save / tune load.
+    if (underlinedUserDirty || editedAbc !== null || editedSyllables !== null || editedRawSoprano !== null) {
+      const ok = window.confirm(
+        'You have unsaved changes (notes, melismas, syllables, or raw solfège). Switching tunes will discard them. Continue?',
+      )
+      if (!ok) return
+    }
     setTuneId(id)
     // underlined + savedSyllablesPerPhrase are owned by the parseSavedWLines
     // effect — do NOT reset them here, or the effect's pre-population gets
@@ -155,7 +165,7 @@ export function MelismaEditorClient({ tunes }: Props) {
     setHistory([])
     setShowHistory(false)
     setDecisionMsg(null)
-  }, [])
+  }, [tuneId, underlinedUserDirty, editedAbc, editedSyllables, editedRawSoprano])
 
   // Pre-populate underline + syllable state from saved w-lines when reopening
   // a tune for re-editing. Without this, melismas the user previously marked
@@ -325,6 +335,35 @@ export function MelismaEditorClient({ tunes }: Props) {
         }
         return out
       })
+      setSaveMsg(null)
+    },
+    [tokens, editedAbc, tune],
+  )
+
+  // Delete a single note. Removes the token from the working ABC and
+  // remaps underline flags so higher-index notes' melisma marks stay attached.
+  const deleteNote = useCallback(
+    (globalIdx: number) => {
+      const tok = tokens[globalIdx]
+      if (!tok) return
+      const baseAbc = editedAbc ?? tune?.abcNotation ?? ''
+      const newBody = deleteTokenAt(baseAbc, tok.absStart, tok.absEnd)
+      setEditedAbc(newBody)
+      // Remap underline flags: drop the deleted note's flag, shift higher
+      // indices down by one. Pre-populated `savedSyllablesPerPhrase` no longer
+      // matches the new note count — clear it so the user-edited syllables /
+      // stanza-1 fallback takes over.
+      setUnderlined(prev => {
+        const next: Record<number, boolean> = {}
+        for (const k of Object.keys(prev)) {
+          const idx = Number(k)
+          if (idx === globalIdx) continue
+          const shifted = idx > globalIdx ? idx - 1 : idx
+          if (prev[idx]) next[shifted] = true
+        }
+        return next
+      })
+      setSavedSyllablesPerPhrase(null)
       setSaveMsg(null)
     },
     [tokens, editedAbc, tune],
@@ -773,13 +812,24 @@ export function MelismaEditorClient({ tunes }: Props) {
                           onMoveBefore={src => moveToken(src, { kind: 'before', globalIdx: tok.globalIdx })}
                         >
                           {gridMode === 'solfege' ? (
-                            <SolfegeCell
-                              initialValue={solfegeStr}
-                              highlighted={isUnderlined}
-                              originalToken={tok.token}
-                              onCommit={v => commitSolfegeEdit(tok.globalIdx, v)}
-                              title={`Note ${tok.globalIdx + 1} of ${tokens.length} — ABC: ${tok.token}`}
-                            />
+                            <span className="inline-flex items-center">
+                              <SolfegeCell
+                                initialValue={solfegeStr}
+                                highlighted={isUnderlined}
+                                originalToken={tok.token}
+                                onCommit={v => commitSolfegeEdit(tok.globalIdx, v)}
+                                title={`Note ${tok.globalIdx + 1} of ${tokens.length} — ABC: ${tok.token}`}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => deleteNote(tok.globalIdx)}
+                                className="ml-0.5 w-4 h-4 inline-flex items-center justify-center text-[10px] leading-none text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                title={`Delete note ${tok.globalIdx + 1} (${solfegeStr})`}
+                                aria-label={`Delete note ${tok.globalIdx + 1}`}
+                              >
+                                ×
+                              </button>
+                            </span>
                           ) : (
                             <button
                               onClick={() => toggle(tok.globalIdx)}
