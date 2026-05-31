@@ -20,6 +20,8 @@ import { buildEmbeddedWline } from '@/lib/build-embedded-wline'
 import { solFaToAbc } from '@/lib/solfege-parser'
 import { checkAgainstMeter } from '@/lib/meter-syllable-shape'
 import { parseSavedWLines } from '@/lib/parse-saved-w-lines'
+import { splitOnPhraseBreaks, countNoteHeads } from '@/lib/abc-phrases'
+import { injectPhraseBreaksAtCounts } from '@/lib/inject-phrase-breaks-at-counts'
 
 const AbcRenderer = dynamic(() => import('./AbcRenderer'), { ssr: false })
 
@@ -456,13 +458,35 @@ export function MelismaEditorClient({ tunes }: Props) {
       if (!result.abc || result.abc.length < 10) {
         throw new Error('solFaToAbc produced empty ABC')
       }
-      setEditedAbc(result.abc)
+      // Preserve existing PHRASE_BREAK positions (by cumulative note-head
+      // count) from the current ABC. solFaToAbc produces a phrase-unaware
+      // ABC, so without this the user's edit would silently strip all phrase
+      // divisions. Typo-fix edits don't change note counts, so the breaks
+      // re-land in the same places.
+      const baseAbc = editedAbc ?? tune.abcNotation
+      const currentSplit = splitOnPhraseBreaks(baseAbc)
+      const perPhraseCounts = currentSplit.phrases.map((p) => countNoteHeads(p))
+      const withBreaks = injectPhraseBreaksAtCounts(result.abc, perPhraseCounts)
+      // If the new note count differs from the old, surface a warning so the
+      // user knows their structural edit may have invalidated the breaks.
+      const oldTotal = perPhraseCounts.reduce((a, b) => a + b, 0)
+      let warning: string | null = null
+      if (withBreaks.totalNotes !== oldTotal) {
+        warning =
+          `Note count changed (${oldTotal} → ${withBreaks.totalNotes}). ` +
+          `${withBreaks.inserted}/${Math.max(0, perPhraseCounts.length - 1)} phrase divisions re-applied — verify in the note grid.`
+      } else if (withBreaks.inserted < perPhraseCounts.length - 1) {
+        warning = `Only ${withBreaks.inserted}/${perPhraseCounts.length - 1} phrase divisions could be re-applied.`
+      }
+      setEditedAbc(withBreaks.abc)
       setUnderlined({})
+      setSavedSyllablesPerPhrase(null)
       setSaveMsg(null)
+      if (warning) setRawConvertError(warning)
     } catch (err) {
       setRawConvertError(err instanceof Error ? err.message : String(err))
     }
-  }, [tune, ocrJson, effectiveRawSoprano])
+  }, [tune, ocrJson, effectiveRawSoprano, editedAbc])
 
   const resetRawSolfegeEdits = useCallback(() => {
     setEditedRawSoprano(null)
