@@ -37,11 +37,32 @@ export function renderEmbeddedWPhrase(
       'renderEmbeddedWPhrase called on phrase without w: lines — call site MUST gate on hasEmbeddedWLines() first',
     )
   }
-  // Emit the body as-authored. Trim trailing whitespace per line only.
+  // Emit the body as-authored — BUT merge consecutive music text lines into
+  // a single line. Without this, a phrase whose music is split across multiple
+  // text lines (e.g. a leading "| |" empty bar on its own line followed by
+  // the real notes on the next line) renders as MULTIPLE staff systems in
+  // abcjs — each music text line becomes its own staff. That produces the
+  // empty-3rd-staff bug observed on Abbeyville (Phase 04.11 Plan 05).
+  //
+  // Rule (parallels NotationRenderer.tsx OLD path cleanedBody reducer):
+  //   - Info-field lines (`X:`, `K:`, `M:`, `w:`, etc.) stay on their own line.
+  //   - Consecutive non-info-field lines are joined with a single space.
+  // abcjs ignores extra whitespace between ABC tokens, so the join is safe.
+  const isInfoField = (s: string) => /^\s*[A-Za-z]:/.test(s)
   const cycle0Lines = phraseBody
     .split('\n')
     .map((l) => l.replace(/\s+$/, ''))
     .filter((l) => l.length > 0)
+    .reduce<string[]>((acc, line) => {
+      if (isInfoField(line)) {
+        acc.push(line)
+      } else if (acc.length > 0 && !isInfoField(acc[acc.length - 1])) {
+        acc[acc.length - 1] += ' ' + line.trim()
+      } else {
+        acc.push(line)
+      }
+      return acc
+    }, [])
   const needsHeuristicFallback = Array.from(
     { length: Math.max(cycleCount, 1) },
     (_, idx) => idx > 0,
