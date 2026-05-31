@@ -111,3 +111,124 @@ export function abcNoteToSolfege(abcToken: string, doh: string): string {
 
   return syl + suffix
 }
+
+// ─── Inverse: solfège → ABC note (preserving duration from old token) ────────
+
+// Lookups for syllable → semitone offset from doh (mirrors DEGREE in solfege-parser).
+const SYLLABLE_TO_SEMI: Record<string, number> = {
+  d: 0, de: 1, r: 2, re: 3, ra: 1,
+  m: 4, ma: 3, me: 3,
+  f: 5, fe: 6,
+  s: 7, se: 8,
+  l: 9, le: 10, la: 8, ba: 8,
+  t: 11, ta: 10,
+}
+
+// Prefer flat spelling when in a flat key, sharp otherwise.
+function preferFlatForDoh(doh: string): boolean {
+  return /^(F|Bb|Eb|Ab|Db|Gb)$/.test(doh)
+}
+
+/**
+ * Parse a solfège token like "m", "fe", "s'", "d_1", "m,," into:
+ *   - syllable (base + optional chromatic suffix)
+ *   - octaveOffset relative to the singer's reference octave
+ *
+ * Octave markers: `'` = +1, `,` = -1, `_N` (digit N) = -N (matches print convention).
+ */
+export function parseSolfegeToken(input: string): { syllable: string; octaveOffset: number } | null {
+  const s = input.trim()
+  if (!s) return null
+  // Match: letters (syllable) + optional octave markers (', ", _1, _2, etc.)
+  const m = s.match(/^([a-z]+)((?:'|,)*)(?:_(\d))?$/)
+  if (!m) return null
+  const syllable = m[1]
+  const apostrophes = (m[2].match(/'/g) ?? []).length
+  const commas = (m[2].match(/,/g) ?? []).length
+  const underscoreDigit = m[3] ? Number(m[3]) : 0
+  if (!(syllable in SYLLABLE_TO_SEMI)) return null
+  const octaveOffset = apostrophes - commas - underscoreDigit
+  return { syllable, octaveOffset }
+}
+
+/**
+ * Convert a solfège token to an ABC note token in the given key, preserving
+ * the duration suffix from the original ABC token (so editing pitch doesn't
+ * change rhythm). Returns the original token unchanged on parse error.
+ */
+export function solfegeToAbcNote(solfege: string, doh: string, originalAbcToken: string): string {
+  const parsed = parseSolfegeToken(solfege)
+  if (!parsed) return originalAbcToken
+
+  // Extract duration suffix from original token (anything after letter+octave markers).
+  const origMatch = originalAbcToken.match(/^([_^=]?)([A-Ga-g])([,']*)(.*)$/)
+  const durationSuffix = origMatch ? origMatch[4] : ''
+
+  const dohSemi = DOH_SEMITONES[doh] ?? 0
+  const targetSemi = (dohSemi + SYLLABLE_TO_SEMI[parsed.syllable] + 1200) % 12
+
+  // Map semitone → (letter, accidental). Explicit accidentals override the
+  // key signature for that letter (per ABC convention), so we compute the
+  // candidate semitone of each (letter, accidental) pair WITHOUT applying the
+  // key sig when an accidental is present, and WITH the key sig when none is.
+  const LETTER_ORDER = ['c', 'd', 'e', 'f', 'g', 'a', 'b'] as const
+  const keyFlats = KEY_FLATS[doh] ?? new Set()
+  const keySharps = KEY_SHARPS[doh] ?? new Set()
+  function semiOf(letter: string, acc: '' | '^' | '_' | '='): number {
+    let s = LETTER_SEMI[letter]
+    if (acc === '^') s += 1
+    else if (acc === '_') s -= 1
+    else if (acc === '') {
+      if (keyFlats.has(letter.toUpperCase())) s -= 1
+      if (keySharps.has(letter.toUpperCase())) s += 1
+    }
+    // acc === '=' → use LETTER_SEMI[letter] directly (natural override)
+    return ((s % 12) + 12) % 12
+  }
+
+  // Build a preference-ordered list of (letter, acc) candidates and pick the
+  // first whose computed semitone equals targetSemi.
+  //  1. No accidental (key-sig default) — cleanest.
+  //  2. Natural override (=) — only useful when key sig sharps/flats that letter.
+  //  3. Sharp (^) or flat (_) — preferred direction depends on the key.
+  const preferFlat = preferFlatForDoh(doh)
+  const accentOrder: Array<'' | '=' | '^' | '_'> = preferFlat
+    ? ['', '=', '_', '^']
+    : ['', '=', '^', '_']
+
+  let chosenLetter = ''
+  let accidental: '' | '^' | '_' | '=' = ''
+  outer: for (const acc of accentOrder) {
+    for (const L of LETTER_ORDER) {
+      if (semiOf(L, acc) === targetSemi) {
+        chosenLetter = L
+        accidental = acc
+        break outer
+      }
+    }
+  }
+  if (!chosenLetter) return originalAbcToken // give up — should not happen
+
+  // Octave markers. ABC: lowercase = +1 from uppercase base; `'` adds octave, `,` subtracts.
+  // Our solfège uses "no marker" as the reference octave, which we previously mapped to
+  // ABC lowercase + 0 trailing marks. So we reproduce that:
+  //   octaveOffset 0  → lowercase letter, no marker
+  //   octaveOffset +1 → lowercase letter + "'"
+  //   octaveOffset -1 → uppercase letter (one octave down)
+  //   octaveOffset -2 → uppercase letter + ","
+  let letter = chosenLetter
+  let octStr = ''
+  let off = parsed.octaveOffset
+  if (off >= 1) {
+    octStr = "'".repeat(off)
+  } else if (off === 0) {
+    // no marker
+  } else if (off === -1) {
+    letter = chosenLetter.toUpperCase()
+  } else if (off < -1) {
+    letter = chosenLetter.toUpperCase()
+    octStr = ','.repeat(Math.abs(off) - 1)
+  }
+
+  return accidental + letter + octStr + durationSuffix
+}

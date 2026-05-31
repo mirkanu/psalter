@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { abcNoteToSolfege, extractDohFromAbc } from './abc-note-to-solfege'
+import { abcNoteToSolfege, extractDohFromAbc, solfegeToAbcNote, parseSolfegeToken } from './abc-note-to-solfege'
 
 describe('extractDohFromAbc', () => {
   it('reads K:F', () => {
@@ -45,4 +45,44 @@ describe('abcNoteToSolfege — C major', () => {
 describe('abcNoteToSolfege — accidentals', () => {
   it('^c in C → de (raised doh)', () => expect(abcNoteToSolfege('^c', 'C')).toBe('de'))
   it('_b in C → ta (flat te)', () => expect(abcNoteToSolfege('_b', 'C')).toBe('ta'))
+})
+
+describe('parseSolfegeToken', () => {
+  it('plain syllable', () => expect(parseSolfegeToken('m')).toEqual({ syllable: 'm', octaveOffset: 0 }))
+  it('chromatic syllable', () => expect(parseSolfegeToken('fe')).toEqual({ syllable: 'fe', octaveOffset: 0 }))
+  it("upper octave '", () => expect(parseSolfegeToken("s'")).toEqual({ syllable: 's', octaveOffset: 1 }))
+  it("double upper ''", () => expect(parseSolfegeToken("d''")).toEqual({ syllable: 'd', octaveOffset: 2 }))
+  it('lower octave _1', () => expect(parseSolfegeToken('s_1')).toEqual({ syllable: 's', octaveOffset: -1 }))
+  it('lower octave _2', () => expect(parseSolfegeToken('d_2')).toEqual({ syllable: 'd', octaveOffset: -2 }))
+  it('lower via comma', () => expect(parseSolfegeToken('m,')).toEqual({ syllable: 'm', octaveOffset: -1 }))
+  it('rejects garbage', () => expect(parseSolfegeToken('xyz')).toBeNull())
+  it('rejects empty', () => expect(parseSolfegeToken('')).toBeNull())
+})
+
+describe('solfegeToAbcNote — Crimond F major', () => {
+  it('s + duration "2" → c2', () => expect(solfegeToAbcNote('s', 'F', 'c2')).toBe('c2'))
+  it('m + duration "4" → a4', () => expect(solfegeToAbcNote('m', 'F', 'a4')).toBe('a4'))
+  it('f → b (key signature gives Bb naturally)', () => expect(solfegeToAbcNote('f', 'F', 'b')).toBe('b'))
+  it('d + no duration → f', () => expect(solfegeToAbcNote('d', 'F', 'g')).toBe('f'))
+  it("s' preserves duration → c'4", () => expect(solfegeToAbcNote("s'", 'F', "c'4")).toBe("c'4"))
+  it('fe → =b (B-natural override of Bb key sig)', () => expect(solfegeToAbcNote('fe', 'F', 'b')).toBe('=b'))
+})
+
+describe('solfegeToAbcNote — round-trip', () => {
+  const KEYS = ['F', 'C', 'G', 'D', 'Bb', 'Eb']
+  const TOKENS = ['c', 'd', 'e', 'f', 'g', 'a', 'b', "c'", "d'", "f'"]
+  for (const key of KEYS) {
+    for (const tok of TOKENS) {
+      it(`${tok} in ${key} round-trips`, () => {
+        const sol = abcNoteToSolfege(tok, key)
+        const back = solfegeToAbcNote(sol, key, tok)
+        // After round-trip, re-extract solfège should match.
+        expect(abcNoteToSolfege(back, key)).toBe(sol)
+      })
+    }
+  }
+})
+
+describe('solfegeToAbcNote — invalid input passes through', () => {
+  it('garbage returns original', () => expect(solfegeToAbcNote('xyz', 'F', 'c2')).toBe('c2'))
 })
