@@ -35,7 +35,37 @@ function buildPerPhraseFragments(abc: string): string[] {
   try {
     const split = splitOnPhraseBreaks(abc)
     if (!split.header || split.phrases.length === 0) return [abc]
-    return split.phrases.map(body => `${split.header}\n${body}`)
+
+    // Strip the title (T:) and tempo (Q:) from the header — repeating them on
+    // every per-phrase staff makes the preview look like 5 mini-scores. Keep
+    // only what abcjs needs to parse pitch + rhythm: X, M, L, K (+ accidentals).
+    const minimalHeader = split.header
+      .split('\n')
+      .filter(line => {
+        const t = line.trim()
+        return !(t.startsWith('T:') || t.startsWith('Q:'))
+      })
+      .join('\n')
+
+    return split.phrases.map(body => {
+      // Each phrase body may contain internal line breaks (e.g. Crimond's
+      // phrase 2: "=b4 |\n=b2c'4a2 | a2b2a2g4"). abcjs treats each music line
+      // as a new staff system, so the leading `=b4 |` would render on its own
+      // empty-looking row AND the w: line would attach to the wrong half.
+      // Collapse the body to a single music line.
+      const musicLines: string[] = []
+      const wLines: string[] = []
+      for (const raw of body.split('\n')) {
+        const trimmed = raw.trim()
+        if (trimmed === '') continue
+        if (trimmed.startsWith('w:')) wLines.push(trimmed)
+        else if (trimmed.startsWith('%')) continue
+        else musicLines.push(trimmed)
+      }
+      const flatMusic = musicLines.join(' ').replace(/\s+/g, ' ').trim()
+      const flatBody = [flatMusic, ...wLines].join('\n')
+      return `${minimalHeader}\n${flatBody}`
+    })
   } catch {
     return [abc]
   }
@@ -180,8 +210,18 @@ export default function AbcRenderer({ abc, staffWidthMultiplier = 1 }: Props) {
         {playError && <span className="text-xs text-red-700">⚠ {playError}</span>}
       </div>
       <div ref={phrasesContainerRef} className="abc-render" />
-      {/* Hidden full-tune render used as the synth's visualObj source. */}
-      <div ref={synthRenderRef} style={{ display: 'none' }} aria-hidden />
+      {/*
+        Hidden full-tune render used as the synth's visualObj source.
+        abcjs's `responsive: 'resize'` REWRITES the `style` attribute of the
+        element it renders into, so we can't put display:none on it directly.
+        Instead, wrap it in an outer div whose attributes abcjs never touches.
+      */}
+      <div
+        style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', visibility: 'hidden' }}
+        aria-hidden
+      >
+        <div ref={synthRenderRef} />
+      </div>
     </div>
   )
 }

@@ -17,6 +17,7 @@ import {
 } from '@/lib/abc-edit-ops'
 import { buildEmbeddedWline } from '@/lib/build-embedded-wline'
 import { solFaToAbc } from '@/lib/solfege-parser'
+import { checkAgainstMeter } from '@/lib/meter-syllable-shape'
 
 const AbcRenderer = dynamic(() => import('./AbcRenderer'), { ssr: false })
 
@@ -218,6 +219,17 @@ export function MelismaEditorClient({ tunes }: Props) {
     () => effectiveSyllablesPerLine.flat(),
     [effectiveSyllablesPerLine],
   )
+
+  // Per-line meter check: actual vs expected from the tune's meter (CM=[8,6,8,6] etc.)
+  const meterCheck = useMemo(
+    () => checkAgainstMeter(effectiveSyllablesPerLine, tune?.meter ?? null),
+    [effectiveSyllablesPerLine, tune],
+  )
+  // Only flag mismatches when we actually have lyrics. A tune with zero
+  // syllables resolved from DB would otherwise show "4 lines ≠ meter" noise.
+  const meterMismatchCount = effectiveSyllablesPerLine.length > 0
+    ? meterCheck.filter(c => !c.match).length
+    : 0
 
   // Raw OCR JSON parsed once per tune. Source of truth for the raw-solfège
   // textarea (we surface the soprano string for editing; other voices stay
@@ -545,9 +557,22 @@ export function MelismaEditorClient({ tunes }: Props) {
                 <span className="text-xs text-gray-500 font-normal">
                   ({effectiveSyllables.length})
                 </span>
+                {tune.meter && (
+                  <span className="ml-2 text-xs text-gray-500 font-normal">
+                    · meter {tune.meter}
+                  </span>
+                )}
                 {editedSyllables !== null && (
                   <span className="ml-2 px-1.5 py-0.5 text-xs bg-amber-100 text-amber-900 rounded font-normal">
                     edited
+                  </span>
+                )}
+                {meterMismatchCount > 0 && (
+                  <span
+                    className="ml-2 px-1.5 py-0.5 text-xs bg-red-100 text-red-800 rounded font-normal"
+                    title="One or more lyric lines disagree with the meter — likely a syllabifier over/under-split. Surface a fix in lib/lyrics.ts PSALM_SYLLABLE_OVERRIDES."
+                  >
+                    ✗ {meterMismatchCount} line{meterMismatchCount === 1 ? '' : 's'} ≠ meter
                   </span>
                 )}
               </h2>
@@ -577,15 +602,24 @@ export function MelismaEditorClient({ tunes }: Props) {
                 {effectiveSyllablesPerLine.length === 0 ? (
                   <span className="text-gray-400">(no syllables resolved from DB — open editor to enter them manually)</span>
                 ) : (
-                  effectiveSyllablesPerLine.map((line, i) => (
-                    <div key={i} className="flex gap-2">
-                      <span className="text-gray-400 w-4 shrink-0">{i + 1}.</span>
-                      <span className="flex-1">
-                        {line.join(' ')}{' '}
-                        <span className="text-gray-400">({line.length})</span>
-                      </span>
-                    </div>
-                  ))
+                  effectiveSyllablesPerLine.map((line, i) => {
+                    const chk = meterCheck[i]
+                    const expected = chk?.expected ?? null
+                    const isMismatch = chk && !chk.match
+                    return (
+                      <div key={i} className={`flex gap-2 ${isMismatch ? 'text-red-700' : ''}`}>
+                        <span className="text-gray-400 w-4 shrink-0">{i + 1}.</span>
+                        <span className="flex-1">
+                          {line.join(' ')}{' '}
+                          <span className={isMismatch ? 'text-red-700 font-medium' : 'text-gray-400'}>
+                            ({line.length}
+                            {expected !== null && (expected === line.length ? '' : ` ≠ ${expected}`)}
+                            )
+                          </span>
+                        </span>
+                      </div>
+                    )
+                  })
                 )}
               </div>
             ) : (
