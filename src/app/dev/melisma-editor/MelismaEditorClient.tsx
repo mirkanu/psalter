@@ -62,6 +62,17 @@ export function MelismaEditorClient({ tunes }: Props) {
   const tune = useMemo(() => tunes.find(t => t.id === tuneId) ?? null, [tunes, tuneId])
   const effectiveAbc = editedAbc ?? tune?.abcNotation ?? ''
 
+  // Auto-select the unique match when the filter narrows to one tune. Without
+  // this, the dropdown would visually show only Crimond but the editor would
+  // still display the previously-selected tune (#user-feedback).
+  useEffect(() => {
+    if (filter.trim() === '') return
+    if (filteredTunes.length === 1 && filteredTunes[0].id !== tuneId) {
+      onTuneChange(filteredTunes[0].id)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, filteredTunes.length])
+
   // Position-tracked tokens. Re-extracted on every ABC change.
   const tokens = useMemo(
     () => (effectiveAbc ? extractSopranoTokensWithPos(effectiveAbc) : []),
@@ -192,12 +203,21 @@ export function MelismaEditorClient({ tunes }: Props) {
   )
 
   // Effective syllable list: edited value (if present) else DB original.
-  const effectiveSyllables = useMemo(() => {
+  // editedSyllables is newline-separated by lyric line, space-separated within
+  // each line — the textarea preserves the structure across edits.
+  const effectiveSyllablesPerLine: string[][] = useMemo(() => {
     if (editedSyllables !== null) {
-      return editedSyllables.split(/\s+/).filter(Boolean)
+      return editedSyllables
+        .split('\n')
+        .map(line => line.split(/\s+/).filter(Boolean))
+        .filter(line => line.length > 0)
     }
-    return tune?.stanza1Syllables ?? []
+    return tune?.stanza1SyllablesPerLine ?? []
   }, [editedSyllables, tune])
+  const effectiveSyllables = useMemo(
+    () => effectiveSyllablesPerLine.flat(),
+    [effectiveSyllablesPerLine],
+  )
 
   // Raw OCR JSON parsed once per tune. Source of truth for the raw-solfège
   // textarea (we surface the soprano string for editing; other voices stay
@@ -553,43 +573,51 @@ export function MelismaEditorClient({ tunes }: Props) {
               </div>
             </div>
             {!showSyllableEditor ? (
-              <div className="text-xs font-mono text-gray-700 break-words">
-                {effectiveSyllables.length === 0 ? (
+              <div className="text-xs font-mono text-gray-700 break-words space-y-0.5">
+                {effectiveSyllablesPerLine.length === 0 ? (
                   <span className="text-gray-400">(no syllables resolved from DB — open editor to enter them manually)</span>
                 ) : (
-                  effectiveSyllables.join(' ')
+                  effectiveSyllablesPerLine.map((line, i) => (
+                    <div key={i} className="flex gap-2">
+                      <span className="text-gray-400 w-4 shrink-0">{i + 1}.</span>
+                      <span className="flex-1">
+                        {line.join(' ')}{' '}
+                        <span className="text-gray-400">({line.length})</span>
+                      </span>
+                    </div>
+                  ))
                 )}
               </div>
             ) : (
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs text-gray-600 flex-1">
-                    Space-separated syllables for the embedded w-line. For repeated-line
-                    meters (e.g. 8.6.8.6.6), duplicate the relevant words manually.
+                    One lyric line per row; syllables space-separated within a line.
+                    For repeated-line meters (e.g. 8.6.8.6.6), append the repeat as a new line.
                   </span>
-                  {tune.stanza1Syllables.length > 0 && (
+                  {tune.stanza1SyllablesPerLine.length > 0 && (
                     <button
                       onClick={() => {
-                        const base = (editedSyllables ?? tune.stanza1Syllables.join(' ')).trim()
-                        const list = base.split(/\s+/).filter(Boolean)
-                        const lastN = list.slice(Math.max(0, list.length - 6))
-                        setEditedSyllables(base + ' ' + lastN.join(' '))
+                        const baseLines = (editedSyllables ?? tune.stanza1SyllablesPerLine.map(l => l.join(' ')).join('\n')).split('\n')
+                        const filtered = baseLines.filter(l => l.trim().length > 0)
+                        const lastLine = filtered[filtered.length - 1] ?? ''
+                        setEditedSyllables(filtered.concat(lastLine).join('\n'))
                         setSaveMsg(null)
                       }}
                       className="px-2 py-0.5 text-xs rounded border bg-white border-gray-300 text-gray-700 hover:bg-gray-50 shrink-0"
-                      title="Append the last 6 syllables (handy for 8.6.8.6.6)"
+                      title="Append a copy of the last lyric line (handy for 8.6.8.6.6)"
                     >
-                      + repeat last 6
+                      + repeat last line
                     </button>
                   )}
                 </div>
                 <textarea
-                  value={editedSyllables ?? tune.stanza1Syllables.join(' ')}
+                  value={editedSyllables ?? tune.stanza1SyllablesPerLine.map(l => l.join(' ')).join('\n')}
                   onChange={e => {
                     setEditedSyllables(e.target.value)
                     setSaveMsg(null)
                   }}
-                  className="w-full h-24 text-xs font-mono border border-gray-300 rounded p-2"
+                  className="w-full h-32 text-xs font-mono border border-gray-300 rounded p-2"
                   spellCheck={false}
                 />
               </div>
