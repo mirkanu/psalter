@@ -52,6 +52,22 @@ export function MelismaEditorClient({ tunes }: Props) {
   const [showRawSolfege, setShowRawSolfege] = useState(false)
   const [rawConvertError, setRawConvertError] = useState<string | null>(null)
 
+  // ── Decision state (status + comments persisted to tune_melisma_decisions) ──
+  type MelismaStatus = 'approved' | 'not_approved'
+  interface DecisionEntry {
+    id: number
+    status: MelismaStatus | null
+    comment: string | null
+    createdAt: string
+  }
+  const [currentStatus, setCurrentStatus] = useState<MelismaStatus | ''>('')
+  const [statusDirty, setStatusDirty] = useState(false)
+  const [pendingComment, setPendingComment] = useState('')
+  const [history, setHistory] = useState<DecisionEntry[]>([])
+  const [showHistory, setShowHistory] = useState(false)
+  const [decisionSaving, setDecisionSaving] = useState(false)
+  const [decisionMsg, setDecisionMsg] = useState<string | null>(null)
+
   const filteredTunes = useMemo(
     () =>
       tunes.filter(t =>
@@ -120,7 +136,69 @@ export function MelismaEditorClient({ tunes }: Props) {
     setRawConvertError(null)
     setShowSyllableEditor(false)
     setSaveMsg(null)
+    setCurrentStatus('')
+    setStatusDirty(false)
+    setPendingComment('')
+    setHistory([])
+    setShowHistory(false)
+    setDecisionMsg(null)
   }, [])
+
+  // Fetch decision state on tune select.
+  useEffect(() => {
+    if (tuneId == null) return
+    let cancelled = false
+    fetch(`/api/dev/melisma-decision?tuneId=${tuneId}`)
+      .then(r => r.json())
+      .then((data: { currentStatus: MelismaStatus | null; history: DecisionEntry[] }) => {
+        if (cancelled) return
+        setCurrentStatus(data.currentStatus ?? '')
+        setStatusDirty(false)
+        setHistory(data.history)
+      })
+      .catch(() => { /* silent — dev tool */ })
+    return () => { cancelled = true }
+  }, [tuneId])
+
+  const onSaveDecision = useCallback(async () => {
+    if (!tune) return
+    const hasStatusChange = statusDirty
+    const trimmedComment = pendingComment.trim()
+    const hasComment = trimmedComment.length > 0
+    if (!hasStatusChange && !hasComment) {
+      setDecisionMsg('Nothing to save — change status or enter a comment.')
+      return
+    }
+    setDecisionSaving(true)
+    setDecisionMsg(null)
+    try {
+      const body: { tuneId: number; status?: MelismaStatus | null; comment?: string } = {
+        tuneId: tune.id,
+      }
+      if (hasStatusChange) body.status = currentStatus === '' ? null : currentStatus
+      if (hasComment) body.comment = trimmedComment
+      const res = await fetch('/api/dev/melisma-decision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'unknown error')
+      const entry = json.entry as DecisionEntry
+      setHistory(h => [entry, ...h])
+      setCurrentStatus((json.currentStatus as MelismaStatus | null) ?? '')
+      setStatusDirty(false)
+      setPendingComment('')
+      const parts: string[] = []
+      if (hasStatusChange) parts.push(`status → ${currentStatus === '' ? '(cleared)' : currentStatus}`)
+      if (hasComment) parts.push('comment logged')
+      setDecisionMsg(`✓ Saved: ${parts.join(' · ')}`)
+    } catch (err) {
+      setDecisionMsg(`✗ Save failed: ${err instanceof Error ? err.message : String(err)}`)
+    } finally {
+      setDecisionSaving(false)
+    }
+  }, [tune, statusDirty, currentStatus, pendingComment])
 
   const toggle = useCallback((globalIdx: number) => {
     setUnderlined(u => ({ ...u, [globalIdx]: !u[globalIdx] }))
@@ -368,7 +446,14 @@ export function MelismaEditorClient({ tunes }: Props) {
       const res = await fetch('/api/dev/melisma-save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tuneId: tune.id, abcNotation: abcToSave }),
+        body: JSON.stringify({
+          tuneId: tune.id,
+          abcNotation: abcToSave,
+          // Always send the current per-line shape so the server can update or
+          // clear phrase_shape_override. The server compares against the
+          // meter default and stores NULL if they match.
+          phraseShape: effectiveSyllablesPerLine.map(l => l.length),
+        }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'unknown error')
@@ -379,7 +464,7 @@ export function MelismaEditorClient({ tunes }: Props) {
     } finally {
       setSaving(false)
     }
-  }, [tune, built, willSaveMode, effectiveAbc])
+  }, [tune, built, willSaveMode, effectiveAbc, effectiveSyllablesPerLine])
 
   if (!tune) return <div className="p-8 text-gray-700">No tunes with ABC notation in the DB.</div>
 
@@ -419,10 +504,46 @@ export function MelismaEditorClient({ tunes }: Props) {
           )}
         </div>
         <div className="flex-1" />
+      </div>
+
+      {/* ── Decision bar: status + comment + Save to DB ────────────────── */}
+      <div className="border-b border-gray-200 bg-white px-6 py-3 flex flex-wrap items-center gap-3">
+        <label className="text-sm font-medium text-gray-700">Status</label>
+        <select
+          value={currentStatus}
+          onChange={e => {
+            setCurrentStatus(e.target.value as '' | MelismaStatus)
+            setStatusDirty(true)
+            setDecisionMsg(null)
+          }}
+          className="border rounded px-2 py-1 text-sm min-w-[10rem]"
+        >
+          <option value="">— (default)</option>
+          <option value="approved">Approved</option>
+          <option value="not_approved">Not Approved</option>
+        </select>
+        <input
+          type="text"
+          placeholder="Comment (optional)…"
+          value={pendingComment}
+          onChange={e => {
+            setPendingComment(e.target.value)
+            setDecisionMsg(null)
+          }}
+          className="border rounded px-2 py-1 text-sm flex-1 min-w-[16rem]"
+        />
+        <button
+          onClick={onSaveDecision}
+          disabled={decisionSaving || (!statusDirty && pendingComment.trim().length === 0)}
+          className="px-3 py-1.5 text-sm font-medium bg-emerald-600 text-white rounded shadow-sm hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:shadow-none"
+          title="Save status and/or comment to decision log"
+        >
+          {decisionSaving ? 'Saving…' : 'Save decision'}
+        </button>
         <button
           onClick={onSave}
           disabled={saving || !!saveDisabledReason}
-          className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded shadow-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:shadow-none"
+          className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded shadow-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:shadow-none ml-auto"
           title={saveDisabledReason ?? 'Save to production DB'}
         >
           {saving
@@ -431,6 +552,57 @@ export function MelismaEditorClient({ tunes }: Props) {
               ? '💾 Save note edits (no melisma)'
               : '💾 Save to DB'}
         </button>
+      </div>
+
+      {decisionMsg && (
+        <div className={`px-6 py-1.5 text-xs ${decisionMsg.startsWith('✓') ? 'bg-emerald-50 text-emerald-900' : 'bg-amber-50 text-amber-900'} border-b border-gray-200`}>
+          {decisionMsg}
+        </div>
+      )}
+
+      <div className="border-b border-gray-200 bg-white px-6 py-2">
+        <button
+          onClick={() => setShowHistory(s => !s)}
+          className="text-xs text-gray-600 hover:text-gray-900 underline"
+        >
+          {showHistory ? '▾' : '▸'} Show Status History {history.length > 0 && `(${history.length})`}
+        </button>
+        {showHistory && (
+          <div className="mt-2 max-h-64 overflow-y-auto">
+            {history.length === 0 ? (
+              <p className="text-xs text-gray-500 italic">No decisions logged yet for this tune.</p>
+            ) : (
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-left text-gray-500 border-b">
+                    <th className="py-1 pr-3 font-normal">When</th>
+                    <th className="py-1 pr-3 font-normal">Status</th>
+                    <th className="py-1 font-normal">Comment</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.map(h => (
+                    <tr key={h.id} className="border-b border-gray-100 align-top">
+                      <td className="py-1 pr-3 text-gray-600 whitespace-nowrap">
+                        {new Date(h.createdAt).toLocaleString()}
+                      </td>
+                      <td className="py-1 pr-3">
+                        {h.status === 'approved' ? (
+                          <span className="inline-block px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-900">Approved</span>
+                        ) : h.status === 'not_approved' ? (
+                          <span className="inline-block px-1.5 py-0.5 rounded bg-red-100 text-red-900">Not Approved</span>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td className="py-1 text-gray-800">{h.comment || <span className="text-gray-400">—</span>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
       </div>
 
       {saveDisabledReason && (
