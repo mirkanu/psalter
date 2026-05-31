@@ -22,6 +22,7 @@ import { checkAgainstMeter } from '@/lib/meter-syllable-shape'
 import { parseSavedWLines } from '@/lib/parse-saved-w-lines'
 import { splitOnPhraseBreaks, countNoteHeads } from '@/lib/abc-phrases'
 import { injectPhraseBreaksAtCounts } from '@/lib/inject-phrase-breaks-at-counts'
+import { TuneNavigator } from './TuneNavigator'
 
 const AbcRenderer = dynamic(() => import('./AbcRenderer'), { ssr: false })
 
@@ -35,6 +36,7 @@ const PREVIEW_STAFF_MULT: Record<PreviewSize, number> = { sm: 1.4, md: 1.0, lg: 
 export function MelismaEditorClient({ tunes }: Props) {
   const [tuneId, setTuneId] = useState<number | null>(tunes[0]?.id ?? null)
   const [filter, setFilter] = useState('')
+  const [showNavigator, setShowNavigator] = useState(false)
   const [underlined, setUnderlined] = useState<Record<number, boolean>>({})
   // True once the user has explicitly toggled any underline (vs underlines
   // pre-populated from a saved tune's w-lines). Drives the "saved state
@@ -606,6 +608,14 @@ export function MelismaEditorClient({ tunes }: Props) {
             </option>
           ))}
         </select>
+        <button
+          type="button"
+          onClick={() => setShowNavigator(true)}
+          className="px-2.5 py-1 text-xs font-medium rounded border bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+          title="Open full tune navigator with status, comment, and error filters"
+        >
+          ☰ Browse…
+        </button>
         <div className="text-sm text-gray-600">
           doh={doh} · notes={tokens.length} · underlined={underlineCount} · syllables={syllableCount}
           {tokens.length > 0 && (
@@ -1112,6 +1122,15 @@ export function MelismaEditorClient({ tunes }: Props) {
           )}
         </div>
       </div>
+
+      {showNavigator && (
+        <TuneNavigator
+          tunes={tunes}
+          currentTuneId={tuneId}
+          onSelect={(id) => onTuneChange(id)}
+          onClose={() => setShowNavigator(false)}
+        />
+      )}
     </div>
   )
 }
