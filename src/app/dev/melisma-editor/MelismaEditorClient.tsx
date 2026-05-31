@@ -3,8 +3,13 @@
 import dynamic from 'next/dynamic'
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import type { TuneOption } from './page'
-import { extractSopranoTokens } from '@/lib/abc-soprano-tokens'
-import { abcNoteToSolfege, extractDohFromAbc } from '@/lib/abc-note-to-solfege'
+import { extractSopranoTokensWithPos, replaceTokenAt } from '@/lib/abc-soprano-tokens'
+import {
+  abcNoteToSolfege,
+  extractDohFromAbc,
+  solfegeToAbcNote,
+  parseSolfegeToken,
+} from '@/lib/abc-note-to-solfege'
 import { buildEmbeddedWline } from '@/lib/build-embedded-wline'
 
 const AbcRenderer = dynamic(() => import('./AbcRenderer'), { ssr: false })
@@ -14,8 +19,6 @@ interface Props {
 }
 
 type PreviewSize = 'sm' | 'md' | 'lg'
-// staffwidth multiplier — bigger value = wider staffwidth = smaller-looking notes;
-// smaller = narrower staffwidth = bigger notes (more wraps).
 const PREVIEW_STAFF_MULT: Record<PreviewSize, number> = { sm: 1.4, md: 1.0, lg: 0.65 }
 
 export function MelismaEditorClient({ tunes }: Props) {
@@ -26,12 +29,13 @@ export function MelismaEditorClient({ tunes }: Props) {
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
   const [previewSize, setPreviewSize] = useState<PreviewSize>('md')
 
-  // Editable ABC body — null means "use the DB original".
+  // Working ABC body — edited per-cell (solfège mode) or via raw textarea.
+  // null means "use the DB original verbatim".
   const [editedAbc, setEditedAbc] = useState<string | null>(null)
-  const [showEditor, setShowEditor] = useState(false)
-  // Editable stanza-1 syllables (space-separated) — null means "use the DB original".
-  // Needed for tunes like Abbeyville (8.6.8.6.6) where the score has more
-  // phrases than the lyrics, requiring manual duplication of the repeated line.
+  // Edit mode for the note grid: 'underline' (default click toggles melisma)
+  // vs 'solfege' (cells become editable solfège inputs).
+  const [gridMode, setGridMode] = useState<'underline' | 'solfege'>('underline')
+  // Editable stanza-1 syllables. Needed for 8.6.8.6.6 etc.
   const [editedSyllables, setEditedSyllables] = useState<string | null>(null)
   const [showSyllableEditor, setShowSyllableEditor] = useState(false)
 
@@ -46,9 +50,9 @@ export function MelismaEditorClient({ tunes }: Props) {
   const tune = useMemo(() => tunes.find(t => t.id === tuneId) ?? null, [tunes, tuneId])
   const effectiveAbc = editedAbc ?? tune?.abcNotation ?? ''
 
-  // Re-extract tokens / doh whenever the working ABC changes (DB switch or edit).
+  // Position-tracked tokens. Re-extracted on every ABC change.
   const tokens = useMemo(
-    () => (effectiveAbc ? extractSopranoTokens(effectiveAbc) : []),
+    () => (effectiveAbc ? extractSopranoTokensWithPos(effectiveAbc) : []),
     [effectiveAbc],
   )
   const doh = useMemo(
@@ -56,8 +60,7 @@ export function MelismaEditorClient({ tunes }: Props) {
     [effectiveAbc],
   )
 
-  // If the token count changes (user added/removed notes), drop any underline
-  // flags beyond the new count so we don't carry stale state.
+  // If the token count changes, drop stale underline flags beyond the new count.
   useEffect(() => {
     setUnderlined(prev => {
       const filtered: Record<number, boolean> = {}
@@ -82,12 +85,11 @@ export function MelismaEditorClient({ tunes }: Props) {
     return out
   }, [tokens])
 
-  // Reset all per-tune state when switching tunes.
   const onTuneChange = useCallback((id: number) => {
     setTuneId(id)
     setUnderlined({})
     setEditedAbc(null)
-    setShowEditor(false)
+    setGridMode('underline')
     setEditedSyllables(null)
     setShowSyllableEditor(false)
     setSaveMsg(null)
@@ -107,6 +109,26 @@ export function MelismaEditorClient({ tunes }: Props) {
     setEditedSyllables(null)
     setSaveMsg(null)
   }, [])
+
+  // Per-cell solfège edit commit. Replaces the token in the working ABC body
+  // and updates editedAbc so the preview/grid re-renders.
+  const commitSolfegeEdit = useCallback(
+    (globalIdx: number, newSolfege: string) => {
+      const tok = tokens[globalIdx]
+      if (!tok) return
+      const trimmed = newSolfege.trim()
+      const oldSolfege = abcNoteToSolfege(tok.token, doh)
+      if (trimmed === '' || trimmed === oldSolfege) return // no-op
+      if (!parseSolfegeToken(trimmed)) return // reject garbage silently
+      const newAbcToken = solfegeToAbcNote(trimmed, doh, tok.token)
+      if (newAbcToken === tok.token) return
+      const baseAbc = editedAbc ?? tune?.abcNotation ?? ''
+      const newBody = replaceTokenAt(baseAbc, tok.absStart, tok.absEnd, newAbcToken)
+      setEditedAbc(newBody)
+      setSaveMsg(null)
+    },
+    [tokens, doh, editedAbc, tune],
+  )
 
   // Effective syllable list: edited value (if present) else DB original.
   const effectiveSyllables = useMemo(() => {
@@ -137,34 +159,53 @@ export function MelismaEditorClient({ tunes }: Props) {
   const syllableCount = effectiveSyllables.length
   const countMatch = nonUnderlinedCount === syllableCount
 
+  // Save mode logic (see commit msg: melisma workflow OR ABC-only edits).
+  const isMelismaWorkflow = underlineCount > 0
+  const hasAbcEdits = editedAbc !== null
+  const willSaveMode: 'melisma' | 'abc-only' | null = isMelismaWorkflow
+    ? 'melisma'
+    : hasAbcEdits
+      ? 'abc-only'
+      : null
+
   const saveDisabledReason =
-    !built
+    !tune
       ? 'No tune loaded'
-      : !countMatch
-        ? `non-underlined count (${nonUnderlinedCount}) ≠ syllables (${syllableCount}) — mark more or fewer underlines`
-        : !built.passesValidation
-          ? 'buildEmbeddedWline reports validation failure — see warnings'
-          : null
+      : willSaveMode === 'melisma'
+        ? !built
+          ? 'No tune loaded'
+          : !countMatch
+            ? `non-underlined count (${nonUnderlinedCount}) ≠ syllables (${syllableCount}) — mark more or fewer underlines, or clear all to save only ABC edits`
+            : !built.passesValidation
+              ? 'buildEmbeddedWline reports validation failure — see warnings'
+              : null
+        : willSaveMode === 'abc-only'
+          ? null
+          : 'Nothing to save: mark underlines, OR edit notes via the solfège grid / raw ABC. (Syllable edits alone don’t persist — they only affect w-line generation.)'
 
   const onSave = useCallback(async () => {
-    if (!tune || !built) return
+    if (!tune || !willSaveMode) return
+    const abcToSave =
+      willSaveMode === 'melisma' && built ? built.abc : effectiveAbc
+    if (!abcToSave) return
     setSaving(true)
     setSaveMsg(null)
     try {
       const res = await fetch('/api/dev/melisma-save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tuneId: tune.id, abcNotation: built.abc }),
+        body: JSON.stringify({ tuneId: tune.id, abcNotation: abcToSave }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'unknown error')
-      setSaveMsg(`✓ Saved "${json.tune?.name ?? tune.name}" to production DB. Open the psalm preview below + reload to sing-test.`)
+      const modeLabel = willSaveMode === 'melisma' ? 'with w-line' : '(ABC only)'
+      setSaveMsg(`✓ Saved "${json.tune?.name ?? tune.name}" to production DB ${modeLabel}. Open the psalm preview below + reload to sing-test.`)
     } catch (err) {
       setSaveMsg(`✗ Save failed: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setSaving(false)
     }
-  }, [tune, built])
+  }, [tune, built, willSaveMode, effectiveAbc])
 
   if (!tune) return <div className="p-8 text-gray-700">No tunes with ABC notation in the DB.</div>
 
@@ -199,7 +240,7 @@ export function MelismaEditorClient({ tunes }: Props) {
           )}
           {editedAbc !== null && (
             <span className="ml-2 px-1.5 py-0.5 text-xs bg-amber-100 text-amber-900 rounded">
-              ABC edited
+              notes edited
             </span>
           )}
         </div>
@@ -210,7 +251,11 @@ export function MelismaEditorClient({ tunes }: Props) {
           className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded shadow-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:shadow-none"
           title={saveDisabledReason ?? 'Save to production DB'}
         >
-          {saving ? 'Saving…' : '💾 Save to DB'}
+          {saving
+            ? 'Saving…'
+            : willSaveMode === 'abc-only'
+              ? '💾 Save note edits (no melisma)'
+              : '💾 Save to DB'}
         </button>
       </div>
 
@@ -249,46 +294,78 @@ export function MelismaEditorClient({ tunes }: Props) {
             </div>
           )}
           <p className="text-xs text-gray-600 mt-2">
-            Click a note below for every underlined note in the print. Underlines mark melisma
-            continuations (syllable sustained across multiple notes).
+            <strong>Underline mode:</strong> click any note to toggle melisma (amber).
+            <br />
+            <strong>Solfège mode:</strong> each cell becomes editable — type the correct
+            syllable (e.g. <code>m</code>, <code>fe</code>, <code>s&apos;</code>, <code>d_1</code>)
+            and press Enter or Tab to commit. Rhythm/duration is preserved.
           </p>
         </div>
 
         {/* Right: editor */}
         <div className="col-span-7 space-y-4">
           <div className="bg-white border border-gray-300 rounded p-3">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-medium">Note grid (click to toggle underline)</h2>
+            <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+              <h2 className="text-sm font-medium">
+                Note grid
+                <span className="text-xs text-gray-500 ml-2 font-normal">
+                  ({gridMode === 'underline' ? 'click to toggle melisma' : 'edit solfège in cells'})
+                </span>
+              </h2>
               <div className="flex items-center gap-1 text-xs">
+                <span className="text-gray-500 mr-1">mode:</span>
                 <button
-                  onClick={() => setShowEditor(s => !s)}
+                  onClick={() => setGridMode('underline')}
                   className={`px-2 py-0.5 rounded border ${
-                    showEditor
+                    gridMode === 'underline'
                       ? 'bg-amber-100 border-amber-400 text-amber-900'
                       : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                   }`}
-                  title="Edit the ABC body (fix wrong notes, durations, accidentals, etc.)"
                 >
-                  ✎ Edit ABC
+                  Underlines
+                </button>
+                <button
+                  onClick={() => setGridMode('solfege')}
+                  className={`px-2 py-0.5 rounded border ${
+                    gridMode === 'solfege'
+                      ? 'bg-amber-100 border-amber-400 text-amber-900'
+                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                  title="Edit notes by typing solfège syllables. Rhythm preserved from the existing ABC."
+                >
+                  ✎ Edit solfège
                 </button>
                 {editedAbc !== null && (
                   <button
                     onClick={resetEdits}
                     className="px-2 py-0.5 rounded border bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-                    title="Discard edits and revert to the DB version"
+                    title="Discard all note edits and revert to the DB version"
                   >
-                    ↶ Revert
+                    ↶ Revert notes
                   </button>
                 )}
               </div>
             </div>
             <div className="space-y-2">
               {phrases.map(p => (
-                <div key={p.phraseIdx} className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500 w-16 shrink-0">phrase {p.phraseIdx + 1}</span>
+                <div key={p.phraseIdx} className="flex items-start gap-1">
+                  <span className="text-xs text-gray-500 w-16 shrink-0 pt-1.5">phrase {p.phraseIdx + 1}</span>
                   <div className="flex flex-wrap gap-1">
                     {p.tokens.map(tok => {
                       const isUnderlined = Boolean(underlined[tok.globalIdx])
+                      const solfegeStr = abcNoteToSolfege(tok.token, doh)
+                      if (gridMode === 'solfege') {
+                        return (
+                          <SolfegeCell
+                            key={`${tok.globalIdx}-${tok.absStart}`}
+                            initialValue={solfegeStr}
+                            highlighted={isUnderlined}
+                            originalToken={tok.token}
+                            onCommit={v => commitSolfegeEdit(tok.globalIdx, v)}
+                            title={`Note ${tok.globalIdx + 1} of ${tokens.length} — ABC: ${tok.token}`}
+                          />
+                        )
+                      }
                       return (
                         <button
                           key={tok.globalIdx}
@@ -300,7 +377,7 @@ export function MelismaEditorClient({ tunes }: Props) {
                           }`}
                           title={`Note ${tok.globalIdx + 1} of ${tokens.length} — ABC: ${tok.token}`}
                         >
-                          {abcNoteToSolfege(tok.token, doh)}
+                          {solfegeStr}
                         </button>
                       )
                     })}
@@ -308,28 +385,9 @@ export function MelismaEditorClient({ tunes }: Props) {
                 </div>
               ))}
             </div>
-            {showEditor && (
-              <div className="mt-3 border-t border-gray-200 pt-3">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-gray-600">
-                    Edit the ABC body. Live preview + note grid update on every keystroke.
-                    Underlines reset if you change the note count.
-                  </span>
-                </div>
-                <textarea
-                  value={effectiveAbc}
-                  onChange={e => {
-                    setEditedAbc(e.target.value)
-                    setSaveMsg(null)
-                  }}
-                  className="w-full h-64 text-xs font-mono border border-gray-300 rounded p-2"
-                  spellCheck={false}
-                />
-              </div>
-            )}
           </div>
 
-          {/* Syllable editor (for tunes with repeats like Abbeyville 8.6.8.6.6) */}
+          {/* Syllable editor */}
           <div className="bg-white border border-gray-300 rounded p-3">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-sm font-medium">
@@ -351,7 +409,6 @@ export function MelismaEditorClient({ tunes }: Props) {
                       ? 'bg-amber-100 border-amber-400 text-amber-900'
                       : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                   }`}
-                  title="Edit the syllable list (for tunes like Abbeyville 8.6.8.6.6 where the score has a repeated phrase)"
                 >
                   ✎ Edit lyrics
                 </button>
@@ -359,7 +416,6 @@ export function MelismaEditorClient({ tunes }: Props) {
                   <button
                     onClick={resetSyllableEdits}
                     className="px-2 py-0.5 rounded border bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-                    title="Revert to the DB stanza-1 lyrics"
                   >
                     ↶ Revert
                   </button>
@@ -384,8 +440,6 @@ export function MelismaEditorClient({ tunes }: Props) {
                   {tune.stanza1Syllables.length > 0 && (
                     <button
                       onClick={() => {
-                        // Append the last 6 syllables (CM line 4 / SM line 4 pattern).
-                        // User can hand-edit further.
                         const base = (editedSyllables ?? tune.stanza1Syllables.join(' ')).trim()
                         const list = base.split(/\s+/).filter(Boolean)
                         const lastN = list.slice(Math.max(0, list.length - 6))
@@ -393,7 +447,7 @@ export function MelismaEditorClient({ tunes }: Props) {
                         setSaveMsg(null)
                       }}
                       className="px-2 py-0.5 text-xs rounded border bg-white border-gray-300 text-gray-700 hover:bg-gray-50 shrink-0"
-                      title="Append the last 6 syllables (handy for 8.6.8.6.6 / SM-with-repeat tunes)"
+                      title="Append the last 6 syllables (handy for 8.6.8.6.6)"
                     >
                       + repeat last 6
                     </button>
@@ -458,6 +512,21 @@ export function MelismaEditorClient({ tunes }: Props) {
             <pre className="text-xs mt-2 overflow-auto whitespace-pre-wrap">{built?.abc ?? ''}</pre>
           </details>
 
+          <details className="bg-white border border-gray-300 rounded p-3">
+            <summary className="text-sm font-medium cursor-pointer text-gray-700">
+              Advanced: edit raw ABC (for changes outside notes — bar lines, durations, accidentals)
+            </summary>
+            <textarea
+              value={effectiveAbc}
+              onChange={e => {
+                setEditedAbc(e.target.value)
+                setSaveMsg(null)
+              }}
+              className="mt-2 w-full h-64 text-xs font-mono border border-gray-300 rounded p-2"
+              spellCheck={false}
+            />
+          </details>
+
           {tune.psalmNumber && (
             <details className="bg-white border border-gray-300 rounded p-3">
               <summary className="text-sm font-medium cursor-pointer">
@@ -473,5 +542,49 @@ export function MelismaEditorClient({ tunes }: Props) {
         </div>
       </div>
     </div>
+  )
+}
+
+// ─── Per-cell solfège input (used when grid mode is 'solfege') ───────────────
+
+interface SolfegeCellProps {
+  initialValue: string
+  highlighted: boolean
+  originalToken: string
+  onCommit: (value: string) => void
+  title?: string
+}
+
+function SolfegeCell({ initialValue, highlighted, originalToken, onCommit, title }: SolfegeCellProps) {
+  const [value, setValue] = useState(initialValue)
+
+  // If the upstream solfège changes (e.g. tune switch, revert, neighbour edit
+  // changed an accidental that affects this cell's reading), sync local state.
+  useEffect(() => {
+    setValue(initialValue)
+  }, [initialValue])
+
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={e => setValue(e.target.value)}
+      onBlur={() => onCommit(value)}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === 'Tab') {
+          (e.target as HTMLInputElement).blur()
+        } else if (e.key === 'Escape') {
+          setValue(initialValue)
+          ;(e.target as HTMLInputElement).blur()
+        }
+      }}
+      className={`w-12 px-1 py-1 text-xs font-mono text-center rounded border focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+        highlighted
+          ? 'bg-amber-100 border-amber-400 text-amber-900'
+          : 'bg-white border-gray-300 text-gray-800'
+      }`}
+      title={`${title ?? ''} · type a solfège syllable (m, fe, s', d_1)`}
+      spellCheck={false}
+    />
   )
 }

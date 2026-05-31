@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { extractSopranoTokens } from './abc-soprano-tokens'
+import { extractSopranoTokens, extractSopranoTokensWithPos, replaceTokenAt } from './abc-soprano-tokens'
 
 const CRIMOND = `X:1
 T:Crimond
@@ -40,5 +40,40 @@ describe('extractSopranoTokens', () => {
 
   it('handles empty body', () => {
     expect(extractSopranoTokens('')).toEqual([])
+  })
+})
+
+describe('extractSopranoTokensWithPos', () => {
+  it('returns same tokens as extractSopranoTokens with positions', () => {
+    const a = extractSopranoTokens(CRIMOND)
+    const b = extractSopranoTokensWithPos(CRIMOND)
+    expect(b.length).toBe(a.length)
+    expect(b.map(t => t.token)).toEqual(a.map(t => t.token))
+    expect(b.map(t => t.phraseIdx)).toEqual(a.map(t => t.phraseIdx))
+  })
+
+  it('positions are increasing and non-overlapping', () => {
+    const toks = extractSopranoTokensWithPos(CRIMOND)
+    for (let i = 1; i < toks.length; i++) {
+      expect(toks[i].absStart).toBeGreaterThanOrEqual(toks[i - 1].absEnd)
+    }
+  })
+
+  it('the substring at each position matches the token', () => {
+    const toks = extractSopranoTokensWithPos(CRIMOND)
+    for (const t of toks) {
+      expect(CRIMOND.slice(t.absStart, t.absEnd)).toBe(t.token)
+    }
+  })
+})
+
+describe('replaceTokenAt + extractSopranoTokensWithPos round-trip', () => {
+  it('replacing first c2 with a2 changes only that token', () => {
+    const toks = extractSopranoTokensWithPos(CRIMOND)
+    expect(toks[0].token).toBe('c2')
+    const newBody = replaceTokenAt(CRIMOND, toks[0].absStart, toks[0].absEnd, 'a2')
+    const newToks = extractSopranoTokensWithPos(newBody)
+    expect(newToks[0].token).toBe('a2')
+    expect(newToks.slice(1).map(t => t.token)).toEqual(toks.slice(1).map(t => t.token))
   })
 })
