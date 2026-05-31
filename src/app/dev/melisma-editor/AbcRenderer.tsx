@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react'
 import * as abcjsModule from 'abcjs'
 import 'abcjs/abcjs-audio.css'
+import { splitOnPhraseBreaks } from '@/lib/abc-phrases'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const abcjs = (abcjsModule as any).default ?? abcjsModule
@@ -17,9 +18,35 @@ interface Props {
   staffWidthMultiplier?: number
 }
 
+/**
+ * Build the per-phrase ABC fragments rendered as separate staff lines.
+ *
+ * The input is the full embedded-w-line ABC (with `% PHRASE_BREAK` markers).
+ * Each fragment shares the header (X/T/M/L/Q/K) plus a single phrase body
+ * (notes + its w: line). Rendering each fragment as its own abcjs call
+ * guarantees one staff system per phrase — matching how the production
+ * NotationRenderer lays out the same content.
+ *
+ * Returns at least one fragment (the whole input) on parse failure so the
+ * preview never goes blank.
+ */
+function buildPerPhraseFragments(abc: string): string[] {
+  if (!abc.trim()) return []
+  try {
+    const split = splitOnPhraseBreaks(abc)
+    if (!split.header || split.phrases.length === 0) return [abc]
+    return split.phrases.map(body => `${split.header}\n${body}`)
+  } catch {
+    return [abc]
+  }
+}
+
 export default function AbcRenderer({ abc, staffWidthMultiplier = 1 }: Props) {
   const outerRef = useRef<HTMLDivElement>(null)
-  const renderRef = useRef<HTMLDivElement>(null)
+  const phrasesContainerRef = useRef<HTMLDivElement>(null)
+  // Hidden full render kept around so abcjs synth can play the entire tune
+  // across all phrases (per-phrase visualObjs would only play one phrase each).
+  const synthRenderRef = useRef<HTMLDivElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const visualObjRef = useRef<any>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,6 +56,8 @@ export default function AbcRenderer({ abc, staffWidthMultiplier = 1 }: Props) {
   const [containerWidth, setContainerWidth] = useState(0)
   const [playState, setPlayState] = useState<'idle' | 'loading' | 'playing'>('idle')
   const [playError, setPlayError] = useState<string | null>(null)
+
+  const fragments = useMemo(() => buildPerPhraseFragments(abc), [abc])
 
   // Measure container width.
   useLayoutEffect(() => {
@@ -45,22 +74,38 @@ export default function AbcRenderer({ abc, staffWidthMultiplier = 1 }: Props) {
     return () => obs.disconnect()
   }, [])
 
-  // Render abcjs notation on abc/width/scale change. Reset synth — it'll
-  // re-initialise on next Play.
+  // Render each phrase fragment into its own child div + the full ABC into a
+  // hidden div for the synth.
   useEffect(() => {
-    const el = renderRef.current
-    if (!el || containerWidth === 0) return
-    el.innerHTML = ''
+    const container = phrasesContainerRef.current
+    const synthEl = synthRenderRef.current
+    if (!container || !synthEl || containerWidth === 0) return
+
+    container.innerHTML = ''
+    synthEl.innerHTML = ''
+
+    const staffwidth = Math.max(200, Math.floor(containerWidth * staffWidthMultiplier))
+
     try {
-      const staffwidth = Math.max(200, Math.floor(containerWidth * staffWidthMultiplier))
-      const result = abcjs.renderAbc(el, abc, { responsive: 'resize', staffwidth })
+      // Per-phrase visible renders.
+      fragments.forEach((frag, i) => {
+        const div = document.createElement('div')
+        div.className = 'abc-phrase-line'
+        if (i > 0) div.style.marginTop = '4px'
+        container.appendChild(div)
+        abcjs.renderAbc(div, frag, { responsive: 'resize', staffwidth })
+      })
+
+      // Single full-tune render for synth.
+      const result = abcjs.renderAbc(synthEl, abc, { responsive: 'resize', staffwidth: 800 })
       visualObjRef.current = Array.isArray(result) ? result[0] : result
     } catch (err) {
-      el.innerHTML = `<div class="text-red-700 text-sm">abcjs render error: ${
+      container.innerHTML = `<div class="text-red-700 text-sm">abcjs render error: ${
         err instanceof Error ? err.message : String(err)
       }</div>`
       visualObjRef.current = null
     }
+
     // Invalidate any existing synth — must re-init for new score.
     if (synthRef.current) {
       try { synthRef.current.stop() } catch { /* noop */ }
@@ -68,7 +113,7 @@ export default function AbcRenderer({ abc, staffWidthMultiplier = 1 }: Props) {
     }
     setPlayState('idle')
     setPlayError(null)
-  }, [abc, staffWidthMultiplier, containerWidth])
+  }, [abc, fragments, staffWidthMultiplier, containerWidth])
 
   const stop = useCallback(() => {
     if (synthRef.current) {
@@ -108,8 +153,6 @@ export default function AbcRenderer({ abc, staffWidthMultiplier = 1 }: Props) {
       synth.start()
       synthRef.current = synth
       setPlayState('playing')
-      // abcjs synth doesn't emit a "finished" event consistently; reset
-      // state after the estimated duration.
       const totalMs = synth.duration ? synth.duration * 1000 : 30_000
       window.setTimeout(() => {
         if (synthRef.current === synth) setPlayState('idle')
@@ -136,7 +179,9 @@ export default function AbcRenderer({ abc, staffWidthMultiplier = 1 }: Props) {
         </button>
         {playError && <span className="text-xs text-red-700">⚠ {playError}</span>}
       </div>
-      <div ref={renderRef} className="abc-render" />
+      <div ref={phrasesContainerRef} className="abc-render" />
+      {/* Hidden full-tune render used as the synth's visualObj source. */}
+      <div ref={synthRenderRef} style={{ display: 'none' }} aria-hidden />
     </div>
   )
 }

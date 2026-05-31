@@ -14,6 +14,15 @@ const syllabize = require('nlp-syllables/src/syllables') as (word: string) => st
  * count mismatch on a specific word.
  */
 const PSALM_SYLLABLE_OVERRIDES: Record<string, string[]> = {
+  // NLP splits "praise/raise" as "prai-se / rai-se" (2 syl); correct singing = 1.
+  // These are the single biggest source of CM/SM/LM count mismatches in the
+  // Scottish Psalter because praise-words appear in every doxology and Ps 150.
+  praise: ['praise'],
+  praises: ['praises'],
+  praised: ['praised'],
+  raise: ['raise'],
+  raises: ['raises'],
+  raised: ['raised'],
   // prayer: NLP gives 1 syllable; traditional singing = 2 (pray-er)
   prayer: ['pray', 'er'],
   prayers: ['pray', 'ers'],
