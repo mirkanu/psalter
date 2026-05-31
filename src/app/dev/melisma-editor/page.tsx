@@ -1,9 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { db } from '@/db'
-import { tunes, psalmVersionTunes, psalmVersions } from '@/db/schema'
-import { isNotNull, asc, eq } from 'drizzle-orm'
+import { tunes, psalmVersionTunes, psalmVersions, tuneMelismaDecisions } from '@/db/schema'
+import { isNotNull, asc, eq, desc, sql } from 'drizzle-orm'
 import { syllabifyForAbc } from '@/lib/lyrics'
+import { countNoteHeads } from '@/lib/abc-phrases'
+import { parseSavedWLines } from '@/lib/parse-saved-w-lines'
 import { MelismaEditorClient } from './MelismaEditorClient'
 
 export const dynamic = 'force-dynamic'
@@ -19,6 +21,10 @@ export interface TuneOption {
   // Raw OCR transcription (JSON-as-string) — surfaced for the editor's
   // "raw solfège" mode where the user can fix `:`, `.`, `—`, voice typos.
   solfegeOcrText: string | null
+  // Per-tune phrase syllable shape override (e.g. [8,6,8,6,6] for Abbeyville).
+  // NULL means "use the meter default" (CM → [8,6,8,6]). Authored here +
+  // consumed by NotationRenderer for cycles 2+.
+  phraseShapeOverride: number[] | null
   // Resolved from disk via slug match (DB column is often empty).
   solfegeJpgUrls: string[]
   // Stanza-1 fully-flattened syllables (all lines joined) for default alignment.
@@ -28,6 +34,13 @@ export interface TuneOption {
   stanza1SyllablesPerLine: string[][]
   // Linked psalm number for the side-by-side lyrics preview.
   psalmNumber: number | null
+  // ── Tune navigator extras (populated server-side for the modal table) ──
+  /** Latest non-null status from tune_melisma_decisions, or null. */
+  decisionStatus: 'approved' | 'not_approved' | null
+  /** Most recent non-null comment text (latest entry), or null. */
+  lastComment: string | null
+  /** True when the tune's saved ABC notes don't equal its expected syllable count. */
+  countError: boolean
 }
 
 function slugify(name: string): string {
@@ -53,10 +66,28 @@ async function loadTunes(): Promise<TuneOption[]> {
       abcNotation: tunes.abcNotation,
       abcNotationOcr: tunes.abcNotationOcr,
       solfegeOcrText: tunes.solfegeOcrText,
+      phraseShapeOverride: tunes.phraseShapeOverride,
     })
     .from(tunes)
     .where(isNotNull(tunes.abcNotation))
     .orderBy(asc(tunes.name))
+
+  // Fetch ALL decisions in one query, then derive per-tune currentStatus +
+  // latest non-empty comment in JS. Cheaper than N round-trips.
+  const allDecisions = await db
+    .select()
+    .from(tuneMelismaDecisions)
+    .orderBy(desc(tuneMelismaDecisions.createdAt), desc(tuneMelismaDecisions.id))
+  const statusByTune = new Map<number, 'approved' | 'not_approved'>()
+  const lastCommentByTune = new Map<number, string>()
+  for (const d of allDecisions) {
+    if (d.status && !statusByTune.has(d.tuneId)) {
+      statusByTune.set(d.tuneId, d.status as 'approved' | 'not_approved')
+    }
+    if (d.comment && d.comment.length > 0 && !lastCommentByTune.has(d.tuneId)) {
+      lastCommentByTune.set(d.tuneId, d.comment)
+    }
+  }
 
   const out: TuneOption[] = []
   for (const r of rows) {
@@ -104,6 +135,43 @@ async function loadTunes(): Promise<TuneOption[]> {
       }
     }
 
+    // Apply phrase_shape_override if it requires more lines than the lyrics
+    // natively provide (Abbeyville-style 8.6.8.6.6): pad by repeating the
+    // last lyric line until we hit the override length. This is the
+    // canonical "repeat last line" pattern.
+    const override = r.phraseShapeOverride
+    if (Array.isArray(override) && stanza1SyllablesPerLine.length > 0 && override.length > stanza1SyllablesPerLine.length) {
+      while (stanza1SyllablesPerLine.length < override.length) {
+        const lastLine = stanza1SyllablesPerLine[stanza1SyllablesPerLine.length - 1]
+        stanza1SyllablesPerLine.push([...lastLine])
+      }
+      stanza1Syllables = stanza1SyllablesPerLine.flat()
+    }
+
+    // Live count-error computation:
+    // - If saved w-lines exist, the per-phrase syllable list already balances
+    //   with note count by construction → no error.
+    // - Otherwise, compare total note heads against stanza-1 syllables. Repeat-
+    //   last-line leniency: if notes === stanza1 + lastLineLen, also OK.
+    let countError = false
+    const totalNotes = countNoteHeads(r.abcNotation!)
+    const saved = parseSavedWLines(r.abcNotation!)
+    if (saved) {
+      const savedTotal =
+        saved.underlinedGlobalIndices.length +
+        saved.syllablesPerPhrase.reduce((a, l) => a + l.length, 0)
+      countError = savedTotal !== totalNotes
+    } else if (stanza1Syllables.length > 0) {
+      const stanzaLen = stanza1Syllables.length
+      const lastLineLen =
+        stanza1SyllablesPerLine[stanza1SyllablesPerLine.length - 1]?.length ?? 0
+      countError =
+        totalNotes !== stanzaLen &&
+        !(lastLineLen > 0 && totalNotes === stanzaLen + lastLineLen)
+    }
+    // If the tune has no resolvable lyrics, leave countError=false rather than
+    // flagging — it's not the editor's job to flag missing lyrics.
+
     out.push({
       id: r.id,
       name: r.name,
@@ -111,10 +179,14 @@ async function loadTunes(): Promise<TuneOption[]> {
       abcNotation: r.abcNotation!,
       abcNotationOcr: r.abcNotationOcr,
       solfegeOcrText: r.solfegeOcrText,
+      phraseShapeOverride: r.phraseShapeOverride ?? null,
       solfegeJpgUrls: findSolfegeJpgs(slugify(r.name)),
       stanza1Syllables,
       stanza1SyllablesPerLine,
       psalmNumber,
+      decisionStatus: statusByTune.get(r.id) ?? null,
+      lastComment: lastCommentByTune.get(r.id) ?? null,
+      countError,
     })
   }
 
