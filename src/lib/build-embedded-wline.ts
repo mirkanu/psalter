@@ -11,6 +11,26 @@
  */
 import { splitOnPhraseBreaks, countNoteHeads } from './abc-phrases'
 
+/**
+ * Remove empty measures (`|  |`, `| \n |`, etc. — two bar lines separated by
+ * whitespace only) from the music body. Editor token-deletions can leave behind
+ * empty measures (e.g. moving the only two notes out of `| ^f2g6 |` leaves
+ * `|  |`), which would otherwise become a visible empty bar in abcjs.
+ *
+ * Conservative: only matches `|` not adjacent to `:`, `]`, `[`, or another `|`
+ * (so `||`, `|:`, `:|`, `|]`, `[|` repeat markers are preserved untouched).
+ * Iterates until stable to collapse chains like `| | |` → `|`.
+ */
+function collapseEmptyMeasures(abc: string): string {
+  let prev = abc
+  let next = abc.replace(/(?<![|:[])\|[ \t\n]+\|(?![|:\]])/g, '|')
+  while (next !== prev) {
+    prev = next
+    next = next.replace(/(?<![|:[])\|[ \t\n]+\|(?![|:\]])/g, '|')
+  }
+  return next
+}
+
 export interface BuildEmbeddedWlineInput {
   tokens: string[]
   underlined: boolean[]
@@ -118,7 +138,7 @@ export function buildEmbeddedWline(
   const wStream = buildWStream(tokens, underlined, syllables, warnings)
 
   // --- Step 2: split existing ABC into header + phrase bodies ---
-  const split = splitOnPhraseBreaks(existingAbc)
+  const split = splitOnPhraseBreaks(collapseEmptyMeasures(existingAbc))
 
   // --- Step 3: per phrase, slice the matching number of tokens by note-head count ---
   const perPhrase: PerPhraseDiagnostic[] = []
