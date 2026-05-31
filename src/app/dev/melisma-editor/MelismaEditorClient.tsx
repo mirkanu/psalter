@@ -29,6 +29,11 @@ export function MelismaEditorClient({ tunes }: Props) {
   // Editable ABC body — null means "use the DB original".
   const [editedAbc, setEditedAbc] = useState<string | null>(null)
   const [showEditor, setShowEditor] = useState(false)
+  // Editable stanza-1 syllables (space-separated) — null means "use the DB original".
+  // Needed for tunes like Abbeyville (8.6.8.6.6) where the score has more
+  // phrases than the lyrics, requiring manual duplication of the repeated line.
+  const [editedSyllables, setEditedSyllables] = useState<string | null>(null)
+  const [showSyllableEditor, setShowSyllableEditor] = useState(false)
 
   const filteredTunes = useMemo(
     () =>
@@ -83,6 +88,8 @@ export function MelismaEditorClient({ tunes }: Props) {
     setUnderlined({})
     setEditedAbc(null)
     setShowEditor(false)
+    setEditedSyllables(null)
+    setShowSyllableEditor(false)
     setSaveMsg(null)
   }, [])
 
@@ -96,6 +103,19 @@ export function MelismaEditorClient({ tunes }: Props) {
     setSaveMsg(null)
   }, [])
 
+  const resetSyllableEdits = useCallback(() => {
+    setEditedSyllables(null)
+    setSaveMsg(null)
+  }, [])
+
+  // Effective syllable list: edited value (if present) else DB original.
+  const effectiveSyllables = useMemo(() => {
+    if (editedSyllables !== null) {
+      return editedSyllables.split(/\s+/).filter(Boolean)
+    }
+    return tune?.stanza1Syllables ?? []
+  }, [editedSyllables, tune])
+
   const built = useMemo(() => {
     if (!tune || tokens.length === 0) return null
     const tokenStrs = tokens.map(t => t.token)
@@ -103,10 +123,10 @@ export function MelismaEditorClient({ tunes }: Props) {
     return buildEmbeddedWline({
       tokens: tokenStrs,
       underlined: underlinedFlags,
-      syllables: tune.stanza1Syllables,
+      syllables: effectiveSyllables,
       existingAbc: effectiveAbc,
     })
-  }, [tune, tokens, underlined, effectiveAbc])
+  }, [tune, tokens, underlined, effectiveAbc, effectiveSyllables])
 
   const underlineCount = useMemo(
     () => tokens.filter(t => underlined[t.globalIdx]).length,
@@ -114,7 +134,7 @@ export function MelismaEditorClient({ tunes }: Props) {
   )
 
   const nonUnderlinedCount = tokens.length - underlineCount
-  const syllableCount = tune?.stanza1Syllables.length ?? 0
+  const syllableCount = effectiveSyllables.length
   const countMatch = nonUnderlinedCount === syllableCount
 
   const saveDisabledReason =
@@ -303,6 +323,89 @@ export function MelismaEditorClient({ tunes }: Props) {
                     setSaveMsg(null)
                   }}
                   className="w-full h-64 text-xs font-mono border border-gray-300 rounded p-2"
+                  spellCheck={false}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Syllable editor (for tunes with repeats like Abbeyville 8.6.8.6.6) */}
+          <div className="bg-white border border-gray-300 rounded p-3">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-medium">
+                Stanza-1 syllables{' '}
+                <span className="text-xs text-gray-500 font-normal">
+                  ({effectiveSyllables.length})
+                </span>
+                {editedSyllables !== null && (
+                  <span className="ml-2 px-1.5 py-0.5 text-xs bg-amber-100 text-amber-900 rounded font-normal">
+                    edited
+                  </span>
+                )}
+              </h2>
+              <div className="flex items-center gap-1 text-xs">
+                <button
+                  onClick={() => setShowSyllableEditor(s => !s)}
+                  className={`px-2 py-0.5 rounded border ${
+                    showSyllableEditor
+                      ? 'bg-amber-100 border-amber-400 text-amber-900'
+                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                  title="Edit the syllable list (for tunes like Abbeyville 8.6.8.6.6 where the score has a repeated phrase)"
+                >
+                  ✎ Edit lyrics
+                </button>
+                {editedSyllables !== null && (
+                  <button
+                    onClick={resetSyllableEdits}
+                    className="px-2 py-0.5 rounded border bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                    title="Revert to the DB stanza-1 lyrics"
+                  >
+                    ↶ Revert
+                  </button>
+                )}
+              </div>
+            </div>
+            {!showSyllableEditor ? (
+              <div className="text-xs font-mono text-gray-700 break-words">
+                {effectiveSyllables.length === 0 ? (
+                  <span className="text-gray-400">(no syllables resolved from DB — open editor to enter them manually)</span>
+                ) : (
+                  effectiveSyllables.join(' ')
+                )}
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs text-gray-600 flex-1">
+                    Space-separated syllables for the embedded w-line. For repeated-line
+                    meters (e.g. 8.6.8.6.6), duplicate the relevant words manually.
+                  </span>
+                  {tune.stanza1Syllables.length > 0 && (
+                    <button
+                      onClick={() => {
+                        // Append the last 6 syllables (CM line 4 / SM line 4 pattern).
+                        // User can hand-edit further.
+                        const base = (editedSyllables ?? tune.stanza1Syllables.join(' ')).trim()
+                        const list = base.split(/\s+/).filter(Boolean)
+                        const lastN = list.slice(Math.max(0, list.length - 6))
+                        setEditedSyllables(base + ' ' + lastN.join(' '))
+                        setSaveMsg(null)
+                      }}
+                      className="px-2 py-0.5 text-xs rounded border bg-white border-gray-300 text-gray-700 hover:bg-gray-50 shrink-0"
+                      title="Append the last 6 syllables (handy for 8.6.8.6.6 / SM-with-repeat tunes)"
+                    >
+                      + repeat last 6
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  value={editedSyllables ?? tune.stanza1Syllables.join(' ')}
+                  onChange={e => {
+                    setEditedSyllables(e.target.value)
+                    setSaveMsg(null)
+                  }}
+                  className="w-full h-24 text-xs font-mono border border-gray-300 rounded p-2"
                   spellCheck={false}
                 />
               </div>
