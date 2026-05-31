@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import type { TuneOption } from './page'
 import { extractSopranoTokens } from '@/lib/abc-soprano-tokens'
 import { abcNoteToSolfege, extractDohFromAbc } from '@/lib/abc-note-to-solfege'
@@ -14,8 +14,8 @@ interface Props {
 }
 
 type PreviewSize = 'sm' | 'md' | 'lg'
-// staffwidth multiplier — bigger value = wider staffwidth = fewer wraps + smaller-looking notes.
-// Smaller value = narrower staffwidth = more wraps + bigger notes.
+// staffwidth multiplier — bigger value = wider staffwidth = smaller-looking notes;
+// smaller = narrower staffwidth = bigger notes (more wraps).
 const PREVIEW_STAFF_MULT: Record<PreviewSize, number> = { sm: 1.4, md: 1.0, lg: 0.65 }
 
 export function MelismaEditorClient({ tunes }: Props) {
@@ -26,6 +26,10 @@ export function MelismaEditorClient({ tunes }: Props) {
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
   const [previewSize, setPreviewSize] = useState<PreviewSize>('md')
 
+  // Editable ABC body — null means "use the DB original".
+  const [editedAbc, setEditedAbc] = useState<string | null>(null)
+  const [showEditor, setShowEditor] = useState(false)
+
   const filteredTunes = useMemo(
     () =>
       tunes.filter(t =>
@@ -35,13 +39,30 @@ export function MelismaEditorClient({ tunes }: Props) {
   )
 
   const tune = useMemo(() => tunes.find(t => t.id === tuneId) ?? null, [tunes, tuneId])
+  const effectiveAbc = editedAbc ?? tune?.abcNotation ?? ''
 
+  // Re-extract tokens / doh whenever the working ABC changes (DB switch or edit).
   const tokens = useMemo(
-    () => (tune ? extractSopranoTokens(tune.abcNotation) : []),
-    [tune],
+    () => (effectiveAbc ? extractSopranoTokens(effectiveAbc) : []),
+    [effectiveAbc],
+  )
+  const doh = useMemo(
+    () => (effectiveAbc ? extractDohFromAbc(effectiveAbc) : 'C'),
+    [effectiveAbc],
   )
 
-  const doh = useMemo(() => (tune ? extractDohFromAbc(tune.abcNotation) : 'C'), [tune])
+  // If the token count changes (user added/removed notes), drop any underline
+  // flags beyond the new count so we don't carry stale state.
+  useEffect(() => {
+    setUnderlined(prev => {
+      const filtered: Record<number, boolean> = {}
+      for (const k of Object.keys(prev)) {
+        const idx = Number(k)
+        if (idx < tokens.length) filtered[idx] = prev[idx]
+      }
+      return filtered
+    })
+  }, [tokens.length])
 
   const phrases = useMemo(() => {
     const out: Array<{ phraseIdx: number; tokens: typeof tokens }> = []
@@ -56,15 +77,22 @@ export function MelismaEditorClient({ tunes }: Props) {
     return out
   }, [tokens])
 
-  // Reset underline state when switching tunes
+  // Reset all per-tune state when switching tunes.
   const onTuneChange = useCallback((id: number) => {
     setTuneId(id)
     setUnderlined({})
+    setEditedAbc(null)
+    setShowEditor(false)
     setSaveMsg(null)
   }, [])
 
   const toggle = useCallback((globalIdx: number) => {
     setUnderlined(u => ({ ...u, [globalIdx]: !u[globalIdx] }))
+    setSaveMsg(null)
+  }, [])
+
+  const resetEdits = useCallback(() => {
+    setEditedAbc(null)
     setSaveMsg(null)
   }, [])
 
@@ -76,9 +104,9 @@ export function MelismaEditorClient({ tunes }: Props) {
       tokens: tokenStrs,
       underlined: underlinedFlags,
       syllables: tune.stanza1Syllables,
-      existingAbc: tune.abcNotation,
+      existingAbc: effectiveAbc,
     })
-  }, [tune, tokens, underlined])
+  }, [tune, tokens, underlined, effectiveAbc])
 
   const underlineCount = useMemo(
     () => tokens.filter(t => underlined[t.globalIdx]).length,
@@ -88,6 +116,15 @@ export function MelismaEditorClient({ tunes }: Props) {
   const nonUnderlinedCount = tokens.length - underlineCount
   const syllableCount = tune?.stanza1Syllables.length ?? 0
   const countMatch = nonUnderlinedCount === syllableCount
+
+  const saveDisabledReason =
+    !built
+      ? 'No tune loaded'
+      : !countMatch
+        ? `non-underlined count (${nonUnderlinedCount}) ≠ syllables (${syllableCount}) — mark more or fewer underlines`
+        : !built.passesValidation
+          ? 'buildEmbeddedWline reports validation failure — see warnings'
+          : null
 
   const onSave = useCallback(async () => {
     if (!tune || !built) return
@@ -101,7 +138,7 @@ export function MelismaEditorClient({ tunes }: Props) {
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'unknown error')
-      setSaveMsg(`✓ Saved "${json.tune?.name ?? tune.name}". Reload the lyrics preview to verify.`)
+      setSaveMsg(`✓ Saved "${json.tune?.name ?? tune.name}" to production DB. Open the psalm preview below + reload to sing-test.`)
     } catch (err) {
       setSaveMsg(`✗ Save failed: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
@@ -137,26 +174,31 @@ export function MelismaEditorClient({ tunes }: Props) {
           doh={doh} · notes={tokens.length} · underlined={underlineCount} · syllables={syllableCount}
           {tokens.length > 0 && (
             <span className={`ml-2 font-medium ${countMatch ? 'text-green-700' : 'text-red-700'}`}>
-              {countMatch ? '✓ counts match' : `✗ non-underlined ${nonUnderlinedCount} ≠ syllables ${syllableCount}`}
+              {countMatch ? '✓ counts match' : '✗ counts don’t match'}
+            </span>
+          )}
+          {editedAbc !== null && (
+            <span className="ml-2 px-1.5 py-0.5 text-xs bg-amber-100 text-amber-900 rounded">
+              ABC edited
             </span>
           )}
         </div>
         <div className="flex-1" />
         <button
           onClick={onSave}
-          disabled={saving || !built || !countMatch || !built.passesValidation}
-          className="px-3 py-1 text-sm bg-blue-600 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed"
-          title={
-            !countMatch
-              ? 'Counts must match before saving'
-              : !built?.passesValidation
-                ? 'Validation failing — see warnings below'
-                : 'Save to production DB'
-          }
+          disabled={saving || !!saveDisabledReason}
+          className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded shadow-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:shadow-none"
+          title={saveDisabledReason ?? 'Save to production DB'}
         >
-          {saving ? 'Saving…' : 'Save to DB'}
+          {saving ? 'Saving…' : '💾 Save to DB'}
         </button>
       </div>
+
+      {saveDisabledReason && (
+        <div className="px-6 py-1.5 text-xs text-gray-600 bg-gray-100 border-b border-gray-200">
+          Save disabled — {saveDisabledReason}
+        </div>
+      )}
 
       {saveMsg && (
         <div className={`px-6 py-2 text-sm ${saveMsg.startsWith('✓') ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-900'}`}>
@@ -195,7 +237,31 @@ export function MelismaEditorClient({ tunes }: Props) {
         {/* Right: editor */}
         <div className="col-span-7 space-y-4">
           <div className="bg-white border border-gray-300 rounded p-3">
-            <h2 className="text-sm font-medium mb-2">Note grid (click to toggle underline)</h2>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-medium">Note grid (click to toggle underline)</h2>
+              <div className="flex items-center gap-1 text-xs">
+                <button
+                  onClick={() => setShowEditor(s => !s)}
+                  className={`px-2 py-0.5 rounded border ${
+                    showEditor
+                      ? 'bg-amber-100 border-amber-400 text-amber-900'
+                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                  title="Edit the ABC body (fix wrong notes, durations, accidentals, etc.)"
+                >
+                  ✎ Edit ABC
+                </button>
+                {editedAbc !== null && (
+                  <button
+                    onClick={resetEdits}
+                    className="px-2 py-0.5 rounded border bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                    title="Discard edits and revert to the DB version"
+                  >
+                    ↶ Revert
+                  </button>
+                )}
+              </div>
+            </div>
             <div className="space-y-2">
               {phrases.map(p => (
                 <div key={p.phraseIdx} className="flex items-center gap-1">
@@ -222,6 +288,25 @@ export function MelismaEditorClient({ tunes }: Props) {
                 </div>
               ))}
             </div>
+            {showEditor && (
+              <div className="mt-3 border-t border-gray-200 pt-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-gray-600">
+                    Edit the ABC body. Live preview + note grid update on every keystroke.
+                    Underlines reset if you change the note count.
+                  </span>
+                </div>
+                <textarea
+                  value={effectiveAbc}
+                  onChange={e => {
+                    setEditedAbc(e.target.value)
+                    setSaveMsg(null)
+                  }}
+                  className="w-full h-64 text-xs font-mono border border-gray-300 rounded p-2"
+                  spellCheck={false}
+                />
+              </div>
+            )}
           </div>
 
           <div className="bg-white border border-gray-300 rounded p-3">
@@ -266,7 +351,7 @@ export function MelismaEditorClient({ tunes }: Props) {
           </div>
 
           <details className="bg-white border border-gray-300 rounded p-3">
-            <summary className="text-sm font-medium cursor-pointer">Generated ABC</summary>
+            <summary className="text-sm font-medium cursor-pointer">Generated ABC (what will be saved)</summary>
             <pre className="text-xs mt-2 overflow-auto whitespace-pre-wrap">{built?.abc ?? ''}</pre>
           </details>
 
