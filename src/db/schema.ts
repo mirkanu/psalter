@@ -57,6 +57,7 @@ export const tunes = pgTable('tunes', {
   abcNotation: text('abc_notation'),             // NULL until Phase 4 (soprano only)
   abcNotationLegacy: text('abc_notation_legacy'),// backup of pre-260514 abc_notation (old extractTuneV2 pipeline)
   abcNotationOcr: text('abc_notation_ocr'),      // permanent snapshot of the OCR-imported ABC (pre-04.11 manual edits) — revert target for /dev/melisma-editor
+  phraseShapeOverride: jsonb('phrase_shape_override').$type<number[] | null>(),  // per-tune phrase syllable shape (e.g. [8,6,8,6,6] for Abbeyville). NULL = use meter default. Authored in /dev/melisma-editor, consumed by NotationRenderer for cycles 2+.
   solfegeOcrText: text('solfege_ocr_text'),      // raw Claude Vision transcription JSON
   abcSatb: text('abc_satb'),                     // 4-voice SATB ABC from solFaToAbcMultiVoice
   scoreJpgUrl: text('score_jpg_url'),            // local /tunes/ path (never Airtable URL)
@@ -260,6 +261,20 @@ export const tuneNotationFeedback = pgTable('tune_notation_feedback', {
   selectedVersion: text('selected_version').notNull().default('none'),
   comment: text('comment').notNull().default(''),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+/**
+ * tune_melisma_decisions — append-only audit log of per-tune status decisions
+ * and comments captured in /dev/melisma-editor. Each entry may set a status,
+ * a comment, or both. The "current" status for a tune is the latest row whose
+ * status is non-null. Comments may be submitted without a status change.
+ */
+export const tuneMelismaDecisions = pgTable('tune_melisma_decisions', {
+  id: serial('id').primaryKey(),
+  tuneId: integer('tune_id').notNull().references(() => tunes.id, { onDelete: 'cascade' }),
+  status: text('status'),                       // 'approved' | 'not_approved' | null
+  comment: text('comment'),                     // free text; null if status-only
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
 // ─── Relations (Drizzle Relational API) ──────────────────────────────────────
