@@ -13,6 +13,12 @@ export interface TuneOption {
   name: string
   meter: string | null
   abcNotation: string
+  // Permanently-preserved OCR-imported ABC (Phase 04.11 snapshot).
+  // Null only for tunes that had no OCR data at backfill time.
+  abcNotationOcr: string | null
+  // Raw OCR transcription (JSON-as-string) — surfaced for the editor's
+  // "raw solfège" mode where the user can fix `:`, `.`, `—`, voice typos.
+  solfegeOcrText: string | null
   // Resolved from disk via slug match (DB column is often empty).
   solfegeJpgUrls: string[]
   // Stanza-1 fully-flattened syllables (all lines joined) for default alignment.
@@ -42,6 +48,8 @@ async function loadTunes(): Promise<TuneOption[]> {
       name: tunes.name,
       meter: tunes.meter,
       abcNotation: tunes.abcNotation,
+      abcNotationOcr: tunes.abcNotationOcr,
+      solfegeOcrText: tunes.solfegeOcrText,
     })
     .from(tunes)
     .where(isNotNull(tunes.abcNotation))
@@ -96,6 +104,8 @@ async function loadTunes(): Promise<TuneOption[]> {
       name: r.name,
       meter: r.meter,
       abcNotation: r.abcNotation!,
+      abcNotationOcr: r.abcNotationOcr,
+      solfegeOcrText: r.solfegeOcrText,
       solfegeJpgUrls: findSolfegeJpgs(slugify(r.name)),
       stanza1Syllables,
       psalmNumber,
