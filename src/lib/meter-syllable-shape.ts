@@ -89,10 +89,17 @@ export function checkAgainstMeter(
     ? Math.max(actualPerLine.length, expected.length)
     : actualPerLine.length
   const out: LineCheck[] = []
+  const lastExpectedIdx = expected ? expected.length - 1 : -1
   for (let i = 0; i < maxLines; i++) {
     const a = actualPerLine[i]?.length ?? 0
     const e = expected?.[i] ?? null
-    out.push({ actual: a, expected: e, match: e === null ? true : a === e })
+    // Last meter line allows "repeat last line" patterns where the user folded
+    // the repeat into the same line (e.g. CM stanza-1 line 4 = 12 syllables =
+    // 6 × 2). Pass when `actual` is a positive integer multiple of `expected`.
+    const isLastMeterLine = i === lastExpectedIdx
+    const isRepeatedLast = e !== null && e > 0 && isLastMeterLine && a > 0 && a % e === 0
+    const match = e === null ? true : a === e || isRepeatedLast
+    out.push({ actual: a, expected: e, match })
   }
   return out
 }
