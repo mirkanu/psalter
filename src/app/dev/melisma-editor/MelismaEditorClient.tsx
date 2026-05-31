@@ -12,12 +12,16 @@ interface Props {
   tunes: TuneOption[]
 }
 
+type PreviewSize = 'sm' | 'md' | 'lg'
+const PREVIEW_SCALE: Record<PreviewSize, number> = { sm: 0.7, md: 1, lg: 1.4 }
+
 export function MelismaEditorClient({ tunes }: Props) {
   const [tuneId, setTuneId] = useState<number | null>(tunes[0]?.id ?? null)
   const [filter, setFilter] = useState('')
   const [underlined, setUnderlined] = useState<Record<number, boolean>>({})
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
+  const [previewSize, setPreviewSize] = useState<PreviewSize>('sm')
 
   const filteredTunes = useMemo(
     () =>
@@ -156,17 +160,26 @@ export function MelismaEditorClient({ tunes }: Props) {
       )}
 
       <div className="grid grid-cols-12 gap-4 p-4">
-        {/* Left: solfège JPG */}
+        {/* Left: solfège JPG(s) */}
         <div className="col-span-5">
-          <h2 className="text-sm font-medium mb-2">Solfège source</h2>
-          {tune.solfegeJpgUrl ? (
-            <img
-              src={tune.solfegeJpgUrl}
-              alt={`Solfège for ${tune.name}`}
-              className="w-full border border-gray-300 rounded shadow-sm bg-white"
-            />
+          <h2 className="text-sm font-medium mb-2">
+            Solfège source {tune.solfegeJpgUrls.length > 1 && <span className="text-xs text-gray-500">({tune.solfegeJpgUrls.length} pages)</span>}
+          </h2>
+          {tune.solfegeJpgUrls.length > 0 ? (
+            <div className="space-y-2">
+              {tune.solfegeJpgUrls.map(url => (
+                <img
+                  key={url}
+                  src={url}
+                  alt={`Solfège for ${tune.name}`}
+                  className="w-full border border-gray-300 rounded shadow-sm bg-white"
+                />
+              ))}
+            </div>
           ) : (
-            <div className="border border-gray-300 rounded p-4 text-gray-500 text-sm">No solfège JPG for this tune.</div>
+            <div className="border border-gray-300 rounded p-4 text-gray-500 text-sm">
+              No solfège JPG found at <code>public/tunes/{tune.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-solfege-*.jpg</code>
+            </div>
           )}
           <p className="text-xs text-gray-600 mt-2">
             Click a note below for every underlined note in the print. Underlines mark melisma
@@ -207,10 +220,29 @@ export function MelismaEditorClient({ tunes }: Props) {
           </div>
 
           <div className="bg-white border border-gray-300 rounded p-3">
-            <h2 className="text-sm font-medium mb-2">Live preview (with lyrics)</h2>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-medium">Live preview (with lyrics)</h2>
+              <div className="flex items-center gap-1 text-xs">
+                <span className="text-gray-500 mr-1">size:</span>
+                {(['sm', 'md', 'lg'] as const).map(s => (
+                  <button
+                    key={s}
+                    onClick={() => setPreviewSize(s)}
+                    className={`px-2 py-0.5 rounded border ${
+                      previewSize === s
+                        ? 'bg-blue-100 border-blue-400 text-blue-900'
+                        : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                    aria-label={s === 'sm' ? 'small' : s === 'md' ? 'medium' : 'large'}
+                  >
+                    {s === 'sm' ? 'A−' : s === 'md' ? 'A' : 'A+'}
+                  </button>
+                ))}
+              </div>
+            </div>
             {built ? (
               <>
-                <AbcRenderer abc={built.abc} />
+                <AbcRenderer abc={built.abc} scale={PREVIEW_SCALE[previewSize]} />
                 {built.warnings.length > 0 && (
                   <div className="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-300 rounded p-2 max-h-32 overflow-auto">
                     <strong>Warnings:</strong>
