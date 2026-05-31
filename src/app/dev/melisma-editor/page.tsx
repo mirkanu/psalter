@@ -1,3 +1,5 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import { db } from '@/db'
 import { tunes, psalmVersionTunes, psalmVersions } from '@/db/schema'
 import { isNotNull, asc, eq } from 'drizzle-orm'
@@ -11,11 +13,26 @@ export interface TuneOption {
   name: string
   meter: string | null
   abcNotation: string
-  solfegeJpgUrl: string | null
+  // Resolved from disk via slug match (DB column is often empty).
+  solfegeJpgUrls: string[]
   // Stanza-1 fully-flattened syllables (all lines joined) for default alignment.
   stanza1Syllables: string[]
   // Linked psalm number for the side-by-side lyrics preview.
   psalmNumber: number | null
+}
+
+function slugify(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
+function findSolfegeJpgs(slug: string): string[] {
+  const dir = path.join(process.cwd(), 'public', 'tunes')
+  if (!fs.existsSync(dir)) return []
+  const prefix = `${slug}-solfege-`
+  return fs.readdirSync(dir)
+    .filter(f => f.startsWith(prefix) && f.endsWith('.jpg'))
+    .sort()
+    .map(f => `/tunes/${f}`)
 }
 
 async function loadTunes(): Promise<TuneOption[]> {
@@ -25,7 +42,6 @@ async function loadTunes(): Promise<TuneOption[]> {
       name: tunes.name,
       meter: tunes.meter,
       abcNotation: tunes.abcNotation,
-      solfegeJpgUrl: tunes.solfegeJpgUrl,
     })
     .from(tunes)
     .where(isNotNull(tunes.abcNotation))
@@ -80,7 +96,7 @@ async function loadTunes(): Promise<TuneOption[]> {
       name: r.name,
       meter: r.meter,
       abcNotation: r.abcNotation!,
-      solfegeJpgUrl: r.solfegeJpgUrl,
+      solfegeJpgUrls: findSolfegeJpgs(slugify(r.name)),
       stanza1Syllables,
       psalmNumber,
     })

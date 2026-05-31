@@ -8,9 +8,10 @@ const abcjs = (abcjsModule as any).default ?? abcjsModule
 
 interface Props {
   abc: string
+  scale?: number
 }
 
-export default function AbcRenderer({ abc }: Props) {
+export default function AbcRenderer({ abc, scale = 1 }: Props) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -18,11 +19,11 @@ export default function AbcRenderer({ abc }: Props) {
     if (!el) return
     el.innerHTML = ''
     try {
-      abcjs.renderAbc(el, abc, { responsive: 'resize' })
+      abcjs.renderAbc(el, abc, { responsive: 'resize', scale })
     } catch (err) {
       el.innerHTML = `<div class="text-red-700 text-sm">abcjs render error: ${err instanceof Error ? err.message : String(err)}</div>`
     }
-  }, [abc])
+  }, [abc, scale])
 
   return <div ref={ref} className="abc-render" />
 }
