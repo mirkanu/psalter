@@ -161,23 +161,55 @@ export function MelismaEditorClient({ tunes }: Props) {
 
   // Drag-and-drop reorder. Source = globalIdx; target is either another
   // token (drop-before) or a phrase-end marker (drop-at-end).
+  //
+  // Underline flags are remapped to follow the moved token — they MUST persist
+  // because the user is typically marking melismas and fixing note positions
+  // in the same session.
   const moveToken = useCallback(
     (sourceGlobalIdx: number, target: { kind: 'before'; globalIdx: number } | { kind: 'phrase-end'; phraseIdx: number }) => {
       const source = tokens[sourceGlobalIdx]
       if (!source) return
       const baseAbc = editedAbc ?? tune?.abcNotation ?? ''
       let next: string
+      // Compute the moved token's new globalIdx so we can remap underline flags.
+      let newIdx: number
       if (target.kind === 'phrase-end') {
         next = moveTokenToPhraseEnd(baseAbc, source.absStart, source.absEnd, target.phraseIdx)
+        const tokensInOrBeforePhrase = tokens.filter(t => t.phraseIdx <= target.phraseIdx).length
+        const sourceWasInOrBefore = source.phraseIdx <= target.phraseIdx
+        newIdx = sourceWasInOrBefore ? tokensInOrBeforePhrase - 1 : tokensInOrBeforePhrase
       } else {
         const targetTok = tokens[target.globalIdx]
         if (!targetTok || targetTok.globalIdx === sourceGlobalIdx) return
         next = moveTokenBefore(baseAbc, source.absStart, source.absEnd, targetTok.absStart)
+        const T = target.globalIdx
+        newIdx = sourceGlobalIdx < T ? T - 1 : T
       }
       if (next === baseAbc) return
       setEditedAbc(next)
-      // Drop stale underline flags — globalIdx mapping changes after a move.
-      setUnderlined({})
+      // Remap underlined flags so they follow the move:
+      //   - the moved token's flag is preserved at the new index
+      //   - tokens between source and destination shift by ±1
+      //   - tokens outside that range are unaffected
+      setUnderlined(prev => {
+        const out: Record<number, boolean> = {}
+        for (const key of Object.keys(prev)) {
+          const oldIdx = Number(key)
+          if (!prev[oldIdx]) continue
+          let mapped: number
+          if (oldIdx === sourceGlobalIdx) {
+            mapped = newIdx
+          } else if (sourceGlobalIdx < newIdx) {
+            // forward move: indices in (source, newIdx] shift -1
+            mapped = oldIdx > sourceGlobalIdx && oldIdx <= newIdx ? oldIdx - 1 : oldIdx
+          } else {
+            // backward move (newIdx <= sourceGlobalIdx): indices in [newIdx, source) shift +1
+            mapped = oldIdx >= newIdx && oldIdx < sourceGlobalIdx ? oldIdx + 1 : oldIdx
+          }
+          out[mapped] = true
+        }
+        return out
+      })
       setSaveMsg(null)
     },
     [tokens, editedAbc, tune],
@@ -577,16 +609,21 @@ export function MelismaEditorClient({ tunes }: Props) {
                 )}
               </h2>
               <div className="flex items-center gap-1 text-xs">
-                <button
-                  onClick={() => setShowSyllableEditor(s => !s)}
-                  className={`px-2 py-0.5 rounded border ${
-                    showSyllableEditor
-                      ? 'bg-amber-100 border-amber-400 text-amber-900'
-                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  ✎ Edit lyrics
-                </button>
+                {tune.stanza1SyllablesPerLine.length > 0 && (
+                  <button
+                    onClick={() => {
+                      const baseLines = (editedSyllables ?? tune.stanza1SyllablesPerLine.map(l => l.join(' ')).join('\n')).split('\n')
+                      const filtered = baseLines.filter(l => l.trim().length > 0)
+                      const lastLine = filtered[filtered.length - 1] ?? ''
+                      setEditedSyllables(filtered.concat(lastLine).join('\n'))
+                      setSaveMsg(null)
+                    }}
+                    className="px-2 py-0.5 rounded border bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                    title="Append a copy of the last lyric line (handy for 8.6.8.6.6 — the score has 5 phrases but the lyrics only 4)"
+                  >
+                    + repeat last line
+                  </button>
+                )}
                 {editedSyllables !== null && (
                   <button
                     onClick={resetSyllableEdits}
@@ -597,65 +634,30 @@ export function MelismaEditorClient({ tunes }: Props) {
                 )}
               </div>
             </div>
-            {!showSyllableEditor ? (
-              <div className="text-xs font-mono text-gray-700 break-words space-y-0.5">
-                {effectiveSyllablesPerLine.length === 0 ? (
-                  <span className="text-gray-400">(no syllables resolved from DB — open editor to enter them manually)</span>
-                ) : (
-                  effectiveSyllablesPerLine.map((line, i) => {
-                    const chk = meterCheck[i]
-                    const expected = chk?.expected ?? null
-                    const isMismatch = chk && !chk.match
-                    return (
-                      <div key={i} className={`flex gap-2 ${isMismatch ? 'text-red-700' : ''}`}>
-                        <span className="text-gray-400 w-4 shrink-0">{i + 1}.</span>
-                        <span className="flex-1">
-                          {line.join(' ')}{' '}
-                          <span className={isMismatch ? 'text-red-700 font-medium' : 'text-gray-400'}>
-                            ({line.length}
-                            {expected !== null && (expected === line.length ? '' : ` ≠ ${expected}`)}
-                            )
-                          </span>
+            <div className="text-xs font-mono text-gray-700 break-words space-y-0.5">
+              {effectiveSyllablesPerLine.length === 0 ? (
+                <span className="text-gray-400">(no stanza-1 lyrics resolved from DB for this tune)</span>
+              ) : (
+                effectiveSyllablesPerLine.map((line, i) => {
+                  const chk = meterCheck[i]
+                  const expected = chk?.expected ?? null
+                  const isMismatch = chk && !chk.match
+                  return (
+                    <div key={i} className={`flex gap-2 ${isMismatch ? 'text-red-700' : ''}`}>
+                      <span className="text-gray-400 w-4 shrink-0">{i + 1}.</span>
+                      <span className="flex-1">
+                        {line.join(' ')}{' '}
+                        <span className={isMismatch ? 'text-red-700 font-medium' : 'text-gray-400'}>
+                          ({line.length}
+                          {expected !== null && (expected === line.length ? '' : ` ≠ ${expected}`)}
+                          )
                         </span>
-                      </div>
-                    )
-                  })
-                )}
-              </div>
-            ) : (
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs text-gray-600 flex-1">
-                    One lyric line per row; syllables space-separated within a line.
-                    For repeated-line meters (e.g. 8.6.8.6.6), append the repeat as a new line.
-                  </span>
-                  {tune.stanza1SyllablesPerLine.length > 0 && (
-                    <button
-                      onClick={() => {
-                        const baseLines = (editedSyllables ?? tune.stanza1SyllablesPerLine.map(l => l.join(' ')).join('\n')).split('\n')
-                        const filtered = baseLines.filter(l => l.trim().length > 0)
-                        const lastLine = filtered[filtered.length - 1] ?? ''
-                        setEditedSyllables(filtered.concat(lastLine).join('\n'))
-                        setSaveMsg(null)
-                      }}
-                      className="px-2 py-0.5 text-xs rounded border bg-white border-gray-300 text-gray-700 hover:bg-gray-50 shrink-0"
-                      title="Append a copy of the last lyric line (handy for 8.6.8.6.6)"
-                    >
-                      + repeat last line
-                    </button>
-                  )}
-                </div>
-                <textarea
-                  value={editedSyllables ?? tune.stanza1SyllablesPerLine.map(l => l.join(' ')).join('\n')}
-                  onChange={e => {
-                    setEditedSyllables(e.target.value)
-                    setSaveMsg(null)
-                  }}
-                  className="w-full h-32 text-xs font-mono border border-gray-300 rounded p-2"
-                  spellCheck={false}
-                />
-              </div>
-            )}
+                      </span>
+                    </div>
+                  )
+                })
+              )}
+            </div>
           </div>
 
           {/* Raw solfège-OCR text editor */}
