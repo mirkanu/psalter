@@ -35,7 +35,11 @@ interface Props {
 type PreviewSize = 'sm' | 'md' | 'lg'
 const PREVIEW_STAFF_MULT: Record<PreviewSize, number> = { sm: 1.4, md: 1.0, lg: 0.65 }
 
-export function MelismaEditorClient({ tunes }: Props) {
+export function MelismaEditorClient({ tunes: initialTunes }: Props) {
+  // Local stateful copy so client-side decision saves can patch the row
+  // immediately — otherwise the navigator (which reads `tunes`) keeps
+  // showing the stale status until the next full page load.
+  const [tunes, setTunes] = useState<TuneOption[]>(initialTunes)
   const [tuneId, setTuneId] = useState<number | null>(tunes[0]?.id ?? null)
   const [filter, setFilter] = useState('')
   const [showNavigator, setShowNavigator] = useState(false)
@@ -260,9 +264,28 @@ export function MelismaEditorClient({ tunes }: Props) {
       if (!res.ok) throw new Error(json.error || 'unknown error')
       const entry = json.entry as DecisionEntry
       setHistory(h => [entry, ...h])
-      setCurrentStatus((json.currentStatus as MelismaStatus | null) ?? '')
+      const newCurrent = (json.currentStatus as MelismaStatus | null) ?? ''
+      setCurrentStatus(newCurrent)
       setStatusDirty(false)
       setPendingComment('')
+      // Patch the local tunes copy so the navigator reflects the new state
+      // without a full page reload. Only mirrors the "latest-status row's
+      // comment" rule used by the loader (page.tsx).
+      setTunes(prev => prev.map(t => {
+        if (t.id !== tune.id) return t
+        const next = { ...t }
+        if (hasStatusChange) {
+          next.decisionStatus = newCurrent === '' ? null : newCurrent
+          // If status changed, the loader would source the comment from THIS
+          // row (the new latest-status row). Use this save's comment if any,
+          // else clear (older comments belong to superseded statuses).
+          next.lastComment = hasComment ? trimmedComment : null
+        } else if (hasComment && next.decisionStatus === null) {
+          // Comment-only save and no status set — show as the latest comment.
+          next.lastComment = trimmedComment
+        }
+        return next
+      }))
       const parts: string[] = []
       if (hasStatusChange) parts.push(`status → ${currentStatus === '' ? '(cleared)' : currentStatus}`)
       if (hasComment) parts.push('comment logged')
