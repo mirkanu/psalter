@@ -131,19 +131,32 @@ async function loadTunes(): Promise<TuneOption[]> {
         .from(psalmVersions)
         .where(eq(psalmVersions.id, pvts[0].psalmVersionId))
       if (pvRows.length === 1) {
-        const ls = pvRows[0].lyricsStructured as unknown as Array<{ lines?: Array<{ text?: string }> }> | null
+        const ls = pvRows[0].lyricsStructured as unknown as Array<{ lines?: Array<{ text?: string; syllables?: string[] }> }> | null
         let stanzaLineTexts: string[] = []
+        // Per-line syllable overrides (when present from the bulk meter-fit
+        // script). When the source line has its own `syllables` array, use it
+        // verbatim — bypass the runtime syllabifier. Stored in a parallel
+        // map keyed by line index so we can slot them back after the text-
+        // based syllabify pass below.
+        const overridesByLineIdx = new Map<number, string[]>()
         // DCM tunes sing two CM stanzas as one musical "stanza" — pull both
         // stanza 1 AND stanza 2 so the editor sees the full 8-line shape
         // [8,6,8,6,8,6,8,6]. Same for other doubled meters (LMD, SMD).
         const isDoubled = r.doubleLength === true
         if (Array.isArray(ls) && Array.isArray(ls[0]?.lines)) {
-          stanzaLineTexts = ls[0]!.lines!.map(l => (l?.text ?? '').trim()).filter(t => t.length > 0)
-          if (isDoubled && Array.isArray(ls[1]?.lines)) {
-            stanzaLineTexts = stanzaLineTexts.concat(
-              ls[1]!.lines!.map(l => (l?.text ?? '').trim()).filter(t => t.length > 0),
-            )
+          const collect = (stanza: { lines?: Array<{ text?: string; syllables?: string[] }> }) => {
+            stanza.lines!.forEach((l) => {
+              const text = (l?.text ?? '').trim()
+              if (text.length === 0) return
+              const idx = stanzaLineTexts.length
+              stanzaLineTexts.push(text)
+              if (Array.isArray(l.syllables) && l.syllables.length > 0) {
+                overridesByLineIdx.set(idx, l.syllables)
+              }
+            })
           }
+          collect(ls[0]!)
+          if (isDoubled && Array.isArray(ls[1]?.lines)) collect(ls[1]!)
         } else if (pvRows[0].lyricsImportedRaw) {
           const allLines = pvRows[0].lyricsImportedRaw
             .split('\n')
@@ -169,9 +182,11 @@ async function loadTunes(): Promise<TuneOption[]> {
           }
         }
         if (stanzaLineTexts.length > 0) {
-          stanza1SyllablesPerLine = stanzaLineTexts.map(t =>
-            syllabifyForAbc(t).split(/\s+/).filter(Boolean),
-          )
+          stanza1SyllablesPerLine = stanzaLineTexts.map((t, idx) => {
+            const override = overridesByLineIdx.get(idx)
+            if (override) return [...override]
+            return syllabifyForAbc(t).split(/\s+/).filter(Boolean)
+          })
           stanza1Syllables = stanza1SyllablesPerLine.flat()
         }
         // psalms.id IS the psalm number (1-150) per schema comment
