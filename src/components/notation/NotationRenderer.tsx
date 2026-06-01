@@ -35,6 +35,7 @@ import type { Stanza, StructuredLyrics } from '@/lib/lyrics-structured'
 import { phrasesForMeter } from '@/lib/abc-phrase-meter-map'
 import { hasEmbeddedWLines } from '@/lib/abc-embedded-lyrics'
 import { renderEmbeddedWPhrase } from '@/lib/abc-embedded-w-branch'
+import { splitMusicIntoSubLines } from './splitMusicIntoSubLines'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -691,36 +692,11 @@ export function NotationRenderer({
     if (split.phrases.length === 0) return cleanedHeader
     const parts: string[] = [cleanedHeader]
 
-    // Helper: split a phrase body into N sub-staves at measure boundaries.
-    // Music body is split on `|` into measures, then re-grouped into N chunks.
-    // Each chunk becomes its own newline-separated music line, which abcjs
-    // renders as a separate staff system.
-    function splitMusicIntoSubLines(body: string, n: number): string[] {
-      if (n <= 1) return [body]
-      // Tokenize on the bar `|` — keep the bars attached to the preceding measure.
-      const segs = body.split(/(\|)/).filter((s) => s.length > 0)
-      // Re-pair tokens so each measure includes its trailing bar.
-      const measures: string[] = []
-      let acc = ''
-      for (const s of segs) {
-        acc += s
-        if (s === '|') {
-          measures.push(acc.trim())
-          acc = ''
-        }
-      }
-      if (acc.trim()) measures.push(acc.trim())
-      const realMeasures = measures
-        .filter((m) => m && m !== '|')
-        .filter((m) => !/^\s*[zxZ]\d*\s*$/.test(m)) // exclude bare rest pseudo-bars (z2 trailing rest bug)
-      if (realMeasures.length < 2) return [body]
-      const per = Math.max(1, Math.ceil(realMeasures.length / n))
-      const lines: string[] = []
-      for (let k = 0; k < realMeasures.length; k += per) {
-        lines.push(realMeasures.slice(k, k + per).join(' '))
-      }
-      return lines
-    }
+    // splitMusicIntoSubLines extracted to ./splitMusicIntoSubLines.ts
+    // (Quick 260601-i5d): now appends trailing `|` to every emitted sub-line
+    // so abcjs synth resets accidental scope at phrase boundaries. Fixes
+    // Contemplation "sharps play as naturals" audio bug. See
+    // .planning/debug/contemplation-sharps-as-naturals.md.
 
     // TODO(RENDER-07b): proportional w: split retired by Phase 4.9.7 Plan 03;
     // remove once no other callers added. (Sub-staff loop now indexes per-line
