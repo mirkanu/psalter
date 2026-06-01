@@ -71,6 +71,10 @@ Underlined notes: passing notes — transcribe the letters, ignore the underline
 Amen: a 2-chord section after the final ||. Include it verbatim.
 Multi-page tunes: images are provided in page order (Image 1 first, Image 2 second). Transcribe Image 1 completely — every line from top to bottom — before moving to Image 2. Never interleave or skip lines.
 
+CRITICAL — Multiple SYSTEMS per page: a single page often contains TWO (or more) stacked music systems, each system being a separate 4-voice {SATB} bracket group. The systems are arranged top-to-bottom on the page. Transcribe EVERY system on every page, concatenating left-to-right then top-to-bottom. The tune typically ends with an "A-men" marked after a final ||. Until you see the A-men (or the music clearly stops with no further system below), you have NOT yet finished transcribing — keep going.
+
+For each voice (soprano/alto/tenor/bass), CONCATENATE the contents of all systems into ONE string in reading order. Do not return only the first system.
+
 ━━━ OUTPUT ━━━
 Return ONLY this JSON object (no markdown, no explanation):
 {
@@ -96,7 +100,9 @@ export async function prepareImageBuffer(imagePath: string): Promise<Buffer> {
     : Buffer.from(rawFile)
 }
 
-export async function callClaude(imageBuffers: Buffer | Buffer[], prompt: string, maxTokens = 3000, model = 'claude-haiku-4-5-20251001'): Promise<string> {
+export async function callClaude(imageBuffers: Buffer | Buffer[], prompt: string, maxTokens: number | undefined = 3000, model: string | undefined = 'claude-haiku-4-5-20251001'): Promise<string> {
+  if (maxTokens === undefined) maxTokens = 3000
+  if (model === undefined) model = 'claude-haiku-4-5-20251001'
   const buffers = Array.isArray(imageBuffers) ? imageBuffers : [imageBuffers]
   const imageContent = buffers.map(buf => ({
     type: 'image' as const,
@@ -147,10 +153,14 @@ export interface TranscriptionResult {
 // ─── Stage 1: transcribe solfège image → raw text ────────────────────────────
 
 /** Returns the raw transcribed solfège text (all 4 voices) without converting to ABC. */
-export async function transcribeOnly(tuneName: string, imagePaths: string | string[]): Promise<TranscriptionResult & { rawResponse: string }> {
+export async function transcribeOnly(
+  tuneName: string,
+  imagePaths: string | string[],
+  opts: { model?: string; maxTokens?: number } = {},
+): Promise<TranscriptionResult & { rawResponse: string }> {
   const paths = Array.isArray(imagePaths) ? imagePaths : [imagePaths]
   const imageBuffers = await Promise.all(paths.map(prepareImageBuffer))
-  const rawResponse = await callClaude(imageBuffers, TRANSCRIPTION_PROMPT)
+  const rawResponse = await callClaude(imageBuffers, TRANSCRIPTION_PROMPT, opts.maxTokens, opts.model)
 
   const jsonMatch = rawResponse.match(/\{[\s\S]*\}/)
   if (!jsonMatch) throw new Error(`No JSON in Claude response:\n${rawResponse.slice(0, 500)}`)

@@ -566,8 +566,26 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
         warning = `Only ${withBreaks.inserted}/${perPhraseCounts.length - 1} phrase divisions could be re-applied.`
       }
       setEditedAbc(withBreaks.abc)
-      setUnderlined({})
-      setSavedSyllablesPerPhrase(null)
+      // Preserve user's in-session melisma marks across raw-solfège edits.
+      // - Same note count → keep all underlines verbatim (typo-fix case)
+      // - Fewer notes (Amen trim from end) → drop indices beyond new total,
+      //   keep the rest. The common Ballerma workflow: mark melismas → edit
+      //   raw to remove Amens → Show on Live Preview should NOT wipe the
+      //   melismas the user just marked.
+      // - More notes → keep existing marks, new notes default to non-melisma.
+      if (withBreaks.totalNotes !== oldTotal) {
+        setUnderlined((prev) => {
+          const next: Record<number, boolean> = {}
+          for (const k of Object.keys(prev)) {
+            const idx = Number(k)
+            if (idx < withBreaks.totalNotes && prev[idx]) next[idx] = true
+          }
+          return next
+        })
+        // savedSyllablesPerPhrase came from a different note layout — drop it
+        // and let the auto-fit / stanza-1 path take over for the new shape.
+        setSavedSyllablesPerPhrase(null)
+      }
       setSaveMsg(null)
       if (warning) setRawConvertError(warning)
     } catch (err) {

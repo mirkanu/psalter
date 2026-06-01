@@ -6,7 +6,9 @@ import { isNotNull, asc, eq, desc, sql } from 'drizzle-orm'
 import { syllabifyForAbc } from '@/lib/lyrics'
 import { countNoteHeads } from '@/lib/abc-phrases'
 import { parseSavedWLines } from '@/lib/parse-saved-w-lines'
-import { checkAgainstMeter } from '@/lib/meter-syllable-shape'
+import { checkAgainstMeter, expectedSyllablesByLine } from '@/lib/meter-syllable-shape'
+import { forceMatchMeterShape } from '@/lib/force-match-meter-shape'
+import { regroupLinesToMeter } from '@/lib/regroup-lines-to-meter'
 import { MelismaEditorClient } from './MelismaEditorClient'
 
 export const dynamic = 'force-dynamic'
@@ -192,6 +194,14 @@ async function loadTunes(): Promise<TuneOption[]> {
             if (override) return [...override]
             return syllabifyForAbc(t).split(/\s+/).filter(Boolean)
           })
+          // Some Airtable lyric blocks have MORE lines than the meter expects
+          // because Bible-verse line breaks split short metrical lines
+          // (Darwall 66 66 88: Airtable has 8 short lines that need to fold
+          // into 6 metrical lines [6,6,6,6,8,8]). regroupLinesToMeter folds
+          // them via greedy syllable-count fitting.
+          const expectedForRegroup = expectedSyllablesByLine(r.meter)
+          const regroup = regroupLinesToMeter(stanza1SyllablesPerLine, expectedForRegroup)
+          if (regroup.merged) stanza1SyllablesPerLine = regroup.regrouped
           stanza1Syllables = stanza1SyllablesPerLine.flat()
         }
         // psalms.id IS the psalm number (1-150) per schema comment
@@ -224,9 +234,13 @@ async function loadTunes(): Promise<TuneOption[]> {
         saved.syllablesPerPhrase.reduce((a, l) => a + l.length, 0)
       melismaError = savedTotal !== totalNotes
     } else if (stanza1Syllables.length > 0) {
-      const stanzaLen = stanza1Syllables.length
-      const lastLineLen =
-        stanza1SyllablesPerLine[stanza1SyllablesPerLine.length - 1]?.length ?? 0
+      // Use the SAME auto-fitted shape the editor uses, so navigator agrees.
+      const expectedShape = expectedSyllablesByLine(r.meter)
+      const fitted = expectedShape
+        ? forceMatchMeterShape(stanza1SyllablesPerLine, expectedShape).fixed
+        : stanza1SyllablesPerLine
+      const stanzaLen = fitted.reduce((a, l) => a + l.length, 0)
+      const lastLineLen = fitted[fitted.length - 1]?.length ?? 0
       melismaError =
         totalNotes !== stanzaLen &&
         !(lastLineLen > 0 && totalNotes === stanzaLen + lastLineLen)
@@ -240,9 +254,18 @@ async function loadTunes(): Promise<TuneOption[]> {
     // meterError: any stanza-1 line whose actual syllable count disagrees with
     // the meter's expected per-line count (repeat-last-line aware via
     // checkAgainstMeter). Tunes with no resolvable lyrics aren't flagged.
+    // Mirror the editor's behavior: force-fit per-line counts to meter before
+    // flagging. Without this, tunes whose psalm-version lyrics are in a
+    // different meter than the tune itself (e.g. Aurelia tune is "76 76 D"
+    // but its linked psalm 119 version is CM) would always flag here even
+    // though the editor's auto-fix gives a green ✓.
     let meterError = false
     if (stanza1SyllablesPerLine.length > 0) {
-      const checks = checkAgainstMeter(stanza1SyllablesPerLine, r.meter)
+      const expectedShape = expectedSyllablesByLine(r.meter)
+      const fitted = expectedShape
+        ? forceMatchMeterShape(stanza1SyllablesPerLine, expectedShape).fixed
+        : stanza1SyllablesPerLine
+      const checks = checkAgainstMeter(fitted, r.meter)
       meterError = checks.some((c) => !c.match)
     }
 
