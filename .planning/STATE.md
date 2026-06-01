@@ -29,7 +29,7 @@ Phase: 04.11 (solfege-underline-ocr-melisma) — EXECUTING
 Plan: 2 of 6
 UI-SPEC: Phase 04.9.4 closed out. Singing-view chrome refined across 4 polish rounds (chrome-dedup, singing-chrome-polish, r3, r4); audio first-press bug fixed; tour redesigned (4 steps, per-element spotlights); mobile bar h-11 (44px); lyrics/solfège views get bigger font + padding + inline YouTube embed; "Ps 119:N-M" range titles.
 Status: Ready to execute
-Last activity: 2026-05-30
+Last activity: 2026-06-01 — Completed quick task 260601-i5d: Contemplation sharps-as-naturals fix
 
 Progress: [█████████░] 94%
 
@@ -163,6 +163,7 @@ None yet.
 | 260517-cm0 | 04.9.4 singing r3: audio fixes (1a double-play, 1b first-press, 1d BPM 151), bottom padding, lyrics/solfège font+padding, hide stanza nav off-staff, solfège JPG sizing, inline YouTube embed via TuneAudioPlayer, tour redesign (3 focused steps, lighter backdrop, both arrows on step 1, new psalm-label step), "Ps 119:N-M" titles. Deferred: 1c highlight (refactor) + 1f SoundCloud half (no real DB data) | 2026-05-17 | 8491c92 | [260517-cm0-04.9.4-singing-r3](./quick/260517-cm0-04.9.4-singing-r3/) |
 | 260517-ht8 | 04.9.4 singing r4: STICKY-fix first-press play (prevControlledRef init bug — first effect short-circuited and synth never started); tour reorder to 4 steps (tune-name re-inserted); per-arrow individual spotlights via SVG mask; mobile bar h-11 (44px) — substantially slimmer; view-change auto-hides mini-bar + resets play state | 2026-05-17 | 28f0936 | [260517-ht8-04.9.4-singing-r4](./quick/260517-ht8-04.9.4-singing-r4/) |
 | 260517-u35 | Migrate Airtable Tunes "Double length" boolean → tunes.double_length column. 26/172 tunes flagged DCM. Key prereq for alignment-implementation seed; double_length is broader than CMD — covers all doubled-stanza tunes across all meter families (Aurelia 76 76 D, Old 124th 10 10 10 10 10, four 66 66 88, etc.) | 2026-05-17 | c4b3be7 | [20260517-migrate-tunes-double-length](./quick/20260517-migrate-tunes-double-length/) |
+| 260601-i5d | Fix Contemplation sharps-as-naturals: append trailing `\|` to splitMusicIntoSubLines emissions so abcjs synth resets accidental scope at phrase boundaries. Extracted splitMusicIntoSubLines to a sibling module + unit tests + UAT verifier (MIDI buggy-vs-fixed diff confirmed exactly one NoteOn divergence at idx=16: buggy=76, fixed=75). Regression sweep clean on Crimond/Martyrdom/Old-100th. | 2026-06-01 | 38a6093 | [260601-i5d-fix-contemplation-sharps-as-naturals-app](./quick/260601-i5d-fix-contemplation-sharps-as-naturals-app/) |
 
 - [04.9.8-05]: Character-level tokenizer for insertPhraseBreaks replaces text-line-granular Path NH — emits PHRASE_BREAK at exact note-head offsets independent of ABC text-line boundaries
 - [04.9.8-05]: NotationRenderer cleanedBody merges multi-text-line phrase bodies into single line to prevent phantom extra sub-staves from internal newlines
