@@ -501,7 +501,13 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
     }
   }, [tune])
 
-  const initialRawSoprano = ocrJson?.soprano ?? ''
+  // OCR original (immutable starting point). Used for the "Revert to OCR
+  // original" button and parseOcrSyllableSequence labels (which need the
+  // canonical raw, not user edits).
+  const ocrOriginalSoprano = ocrJson?.soprano ?? ''
+  // Persisted user edit takes precedence over OCR original. Local
+  // editedRawSoprano takes precedence over both.
+  const initialRawSoprano = tune?.solfegeSopranoEdited ?? ocrOriginalSoprano
 
   // OCR-derived solfège labels (the labels printed on the JPG). Used as the
   // grid display in preference to abcNoteToSolfege — the latter can diverge
@@ -511,12 +517,15 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
   // ABC-derived labels if the OCR sequence length doesn't match the token
   // count (rare; structurally-edited tunes).
   const ocrLabels = useMemo<string[] | null>(() => {
-    if (!initialRawSoprano) return null
-    const labels = parseOcrSyllableSequence(initialRawSoprano)
+    // Prefer the persisted edited soprano so labels reflect user fixes (e.g.
+    // removed Amens); fall back to OCR original.
+    const source = initialRawSoprano || ocrOriginalSoprano
+    if (!source) return null
+    const labels = parseOcrSyllableSequence(source)
     if (labels.length === 0) return null
     if (labels.length !== tokens.length) return null
     return labels
-  }, [initialRawSoprano, tokens.length])
+  }, [initialRawSoprano, ocrOriginalSoprano, tokens.length])
   const effectiveRawSoprano = editedRawSoprano ?? initialRawSoprano
 
   // Convert the (edited) raw soprano string back through solFaToAbc and load
@@ -637,6 +646,14 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
     setSaving(true)
     setSaveMsg(null)
     try {
+      // Raw-soprano persistence rule:
+      //   - effectiveRawSoprano matches the OCR original → send null (clear column)
+      //   - differs from OCR original → send the string (persist override)
+      //   - no OCR original to compare against → leave column untouched (undefined)
+      let rawSopranoPayload: string | null | undefined = undefined
+      if (ocrOriginalSoprano) {
+        rawSopranoPayload = effectiveRawSoprano === ocrOriginalSoprano ? null : effectiveRawSoprano
+      }
       const res = await fetch('/api/dev/melisma-save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -647,6 +664,7 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
           // clear phrase_shape_override. The server compares against the
           // meter default and stores NULL if they match.
           phraseShape: effectiveSyllablesPerLine.map(l => l.length),
+          rawSoprano: rawSopranoPayload,
         }),
       })
       const json = await res.json()
@@ -658,7 +676,7 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
     } finally {
       setSaving(false)
     }
-  }, [tune, built, willSaveMode, effectiveAbc, effectiveSyllablesPerLine])
+  }, [tune, built, willSaveMode, effectiveAbc, effectiveSyllablesPerLine, effectiveRawSoprano, ocrOriginalSoprano])
 
   if (!tune) return <div className="p-8 text-gray-700">No tunes with ABC notation in the DB.</div>
 
@@ -1096,8 +1114,22 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
                   <button
                     onClick={resetRawSolfegeEdits}
                     className="px-2 py-0.5 rounded border bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                    title="Discard in-session edits — restore last-saved state"
                   >
-                    ↶ Revert
+                    ↶ Revert edits
+                  </button>
+                )}
+                {ocrOriginalSoprano && effectiveRawSoprano !== ocrOriginalSoprano && (
+                  <button
+                    onClick={() => {
+                      setEditedRawSoprano(ocrOriginalSoprano)
+                      setRawConvertError(null)
+                      setSaveMsg(null)
+                    }}
+                    className="px-2 py-0.5 rounded border bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100"
+                    title="Restore the original Vision OCR text. Save afterwards to clear the persisted edit."
+                  >
+                    ↩ Revert to OCR original
                   </button>
                 )}
               </div>
