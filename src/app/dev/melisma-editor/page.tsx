@@ -22,6 +22,10 @@ export interface TuneOption {
   // Raw OCR transcription (JSON-as-string) — surfaced for the editor's
   // "raw solfège" mode where the user can fix `:`, `.`, `—`, voice typos.
   solfegeOcrText: string | null
+  // User-edited soprano string from the raw-solfège textarea. null = use OCR
+  // original. Editor's textarea defaults to this when present; Revert button
+  // sends null to clear.
+  solfegeSopranoEdited: string | null
   // Per-tune phrase syllable shape override (e.g. [8,6,8,6,6] for Abbeyville).
   // NULL means "use the meter default" (CM → [8,6,8,6]). Authored here +
   // consumed by NotationRenderer for cycles 2+.
@@ -72,6 +76,7 @@ async function loadTunes(): Promise<TuneOption[]> {
       abcNotation: tunes.abcNotation,
       abcNotationOcr: tunes.abcNotationOcr,
       solfegeOcrText: tunes.solfegeOcrText,
+      solfegeSopranoEdited: tunes.solfegeSopranoEdited,
       phraseShapeOverride: tunes.phraseShapeOverride,
       doubleLength: tunes.doubleLength,
     })
@@ -248,6 +253,7 @@ async function loadTunes(): Promise<TuneOption[]> {
       abcNotation: r.abcNotation!,
       abcNotationOcr: r.abcNotationOcr,
       solfegeOcrText: r.solfegeOcrText,
+      solfegeSopranoEdited: r.solfegeSopranoEdited,
       phraseShapeOverride: r.phraseShapeOverride ?? null,
       solfegeJpgUrls: findSolfegeJpgs(slugify(r.name)),
       stanza1Syllables,
