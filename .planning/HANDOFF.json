@@ -1,45 +1,37 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-28T15:27:15Z",
-  "phase": "04.9.8",
-  "phase_name": "staff-display-word-alignment-fix",
-  "phase_dir": ".planning/phases/04.9.8-staff-display-word-alignment-fix",
+  "timestamp": "2026-06-01T12:33:50Z",
+  "phase": "04.11",
+  "phase_name": "solfege-underline-ocr-melisma",
+  "phase_dir": ".planning/phases/04.11-solfege-underline-ocr-melisma",
   "plan": 5,
-  "task": "verification",
+  "task": 5,
   "total_tasks": 5,
-  "status": "paused",
+  "status": "paused-mid-iteration",
   "completed_tasks": [
-    {"id": 1, "name": "Phase setup, research, tooling", "status": "done"},
-    {"id": 2, "name": "insertPhraseBreaks + DB annotation", "status": "done"},
-    {"id": 3, "name": "Playwright UAT sweep", "status": "done"},
-    {"id": 4, "name": "z2 filter + archaic -eth overrides", "status": "done"},
-    {"id": 5, "name": "Character-level tokenizer rewrite + re-migration + mobile fix", "status": "done", "commit": "67e741d"}
+    {"id": 1, "name": "Wave A automated dry-run (original Task 1)", "status": "superseded", "note": "Blocked by Haiku Vision OCR underline-detection failure; pivoted to manual /dev/melisma-editor workflow"},
+    {"id": 2, "name": "Manual /dev/melisma-editor with decision log + raw-solfège persistence", "status": "done", "commit": "76221fb,28a7b88"},
+    {"id": 3, "name": "Editor enhancements: re-edit saved tunes, navigator modal, auto-fix syllables, OCR-key grid labels, DCM support, delete-note, unsaved-change guard, persist history toggle, Browse psalm col + scroll", "status": "done", "commit": "657f46c,f8de9a7,3eac8e4,b787711,a146c12"},
+    {"id": 4, "name": "Bulk DB migrations (syllable force-match, structured lyrics population, OCR _1-misread fix, z-rest ABC re-render, Effingham re-OCR via Sonnet)", "status": "done", "commit": "fc45567,a5750b7,d11afeb"},
+    {"id": 5, "name": "WAVE-A-SIGNOFF.md gating Plan 06 (original Task 5)", "status": "deferred", "note": "Original mechanical gate; replaced by per-tune manual signoff via tune_melisma_decisions log"}
   ],
   "remaining_tasks": [
-    {"id": 6, "name": "Gap planning (user to choose scope)", "status": "not_started"},
-    {"id": 7, "name": "Execute gap plans", "status": "not_started"},
-    {"id": 8, "name": "Re-verification", "status": "not_started"}
+    {"id": 29, "name": "Contemplation audio: sharps play as naturals", "status": "deferred", "note": "User-deferred. May be abcjs key-signature config issue."},
+    {"id": "structured-lyrics-residual", "name": "2 psalm_versions still failed bulk-populate-structured-lyrics", "status": "not_started", "note": "4 of 6 succeeded. Failing 2 can be revisited if those psalms are needed."},
+    {"id": "user-uat", "name": "User UAT of latest fixes", "status": "pending-user", "note": "add-note in Note Grid >8 notes per phrase; Darwall prod render; Ballerma combined Amen-trim + melisma-mark workflow"}
   ],
-  "blockers": [
-    {
-      "description": "User has not yet chosen gap closure scope",
-      "type": "human_action",
-      "workaround": "Re-ask: (1) fix syllabification 'quiet'/'waters' overrides, (2) fix phrase 4 extended note count, (3) relax Playwright test"
-    }
-  ],
+  "blockers": [],
   "human_actions_pending": [
-    {
-      "action": "Choose gap scope for /gsd-plan-phase 04.9.8 --gaps",
-      "context": "Two bugs diagnosed: syllabification errors (quiet/waters) + Crimond phrase 4 has 12 notes for 6 CM syllables. User interrupted AskUserQuestion before selecting.",
-      "blocking": true
-    }
+    {"action": "Verify latest UI fixes in browser", "context": "Commit d11afeb shipped 2 functional changes (#35 Darwall prod / #36 add-note in Note Grid). Playwright was used for structural verification but a human eye on the live editor is still useful before declaring 04.11-05 done.", "blocking": false}
   ],
   "decisions": [
-    {"decision": "Plan 05 tokenizer rewrite is correct — PHRASE_BREAKs at right note positions", "rationale": "Audit + Playwright confirm markers at note 8/14/22 correctly", "phase": "04.9.8"},
-    {"decision": "Trailing notes are a DATA issue not algorithm issue", "rationale": "Crimond ABC has 34 note heads vs expected 28 for CM", "phase": "04.9.8"},
-    {"decision": "syllabifyForAbc splits 'quiet' as 3 syllables (qu-i-et)", "rationale": "Confirmed via direct test; fix = add to PSALM_SYLLABLE_OVERRIDES", "phase": "04.9.8"}
+    {"decision": "Plan 05 pivoted from automated Wave A push to manual /dev/melisma-editor with per-tune decision log", "rationale": "Haiku 4.5 Vision OCR could not reliably detect underlines at quality threshold; gate would never have passed", "phase": "04.11"},
+    {"decision": "Bulk syllable overrides written into existing lyrics_structured.lines[].syllables — NOT a new column", "rationale": "stanza-cycles.ts already reads Line.syllables → propagates everywhere (public renderer + editor + audio) without new wiring", "phase": "04.11"},
+    {"decision": "Per-tune raw-solfège edits stored in new tunes.solfege_soprano_edited column (not via lyrics_structured)", "rationale": "Solfège source is per-tune music data, not per-psalm lyrics. Editor needs separate storage from immutable OCR for Revert-to-OCR.", "phase": "04.11"},
+    {"decision": "Effingham re-OCR uses Sonnet 4.6, not the standard Haiku 4.5", "rationale": "Haiku missed the second music system on multi-system pages. Sonnet captured cleanly. Future improvement: auto-retry with Sonnet when Haiku output looks truncated relative to meter.", "phase": "04.11"},
+    {"decision": "Edit ops use effectiveAbc (with auto-injected PHRASE_BREAKs) as base, not tune.abcNotation", "rationale": "phraseIdx in the rendered grid must match phraseIdx in the operation target. Bare ABC has no breaks → all tokens parse as phraseIdx=0 → inserts land at end of piece.", "phase": "04.11"}
   ],
   "uncommitted_files": [],
-  "next_action": "Re-ask user gap scope question, then run /gsd-plan-phase 04.9.8 --gaps",
-  "context_notes": "Verification.md is stale (pre-Plan-05, shows 4/10 score). True state after Plan 05: ~66/150 passing. Two distinct root causes identified: NLP syllabification bug + extended ABC notation in final phrase of some CM/LM tunes."
+  "next_action": "When user returns: (1) confirm UI fixes work in their browser, (2) decide whether Task #29 (Contemplation audio) is worth investigating now or stays deferred, (3) optionally close Plan 05 with a SUMMARY.md and route to Plan 06 (which existed but was on hold pending Plan 05 signoff).",
+  "context_notes": "Long-running interactive session under /gsd-execute-phase 04.11 --plan 05 --interactive. Plan 05 has effectively been replaced by an emergent manual workflow centered on /dev/melisma-editor. All commits tagged `04.11-05` and committed atomically (one feature/fix per commit). Database has been mutated multiple times — backups stored in backups/ as pg_dump column-inserts SQL (Lancaster was restored once after a curl test inadvertently clobbered it). Service runs via PM2 (id 4) on port 3005. Production URL: psalter.gsdlabs.dev/dev/melisma-editor. Cloudflare Access service token configured (PSALTER_CF_ACCESS_CLIENT_ID/SECRET in /data/home/psalter/.env) — must be explicitly passed to Node subprocesses for Playwright verification."
 }
