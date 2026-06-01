@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import type { TuneOption } from './page'
 
 interface Props {
@@ -25,6 +25,18 @@ export function TuneNavigator({ tunes, currentTuneId, onSelect, onClose }: Props
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('any')
   const [errorFilter, setErrorFilter] = useState<ErrorFilter>('any')
   const [errorKind, setErrorKind] = useState<ErrorKindFilter>('any')
+  const currentRowRef = useRef<HTMLTableRowElement | null>(null)
+
+  // Center the currently-selected row on mount. Runs once after first paint
+  // so refs are attached. No-op if nothing is highlighted yet.
+  useEffect(() => {
+    const el = currentRowRef.current
+    if (!el) return
+    // 'center' lines up the row in the middle of the scroll container.
+    el.scrollIntoView({ block: 'center', behavior: 'auto' })
+    // Run once on mount only — filter changes shouldn't re-trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Unique meter list for the meter filter dropdown
   const meters = useMemo(() => {
@@ -145,25 +157,27 @@ export function TuneNavigator({ tunes, currentTuneId, onSelect, onClose }: Props
               <tr className="text-left text-gray-600">
                 <th className="px-4 py-2 font-medium">Tune</th>
                 <th className="px-4 py-2 font-medium">Meter</th>
+                <th className="px-4 py-2 font-medium">Psalm</th>
                 <th className="px-4 py-2 font-medium">Status</th>
                 <th className="px-4 py-2 font-medium">Last comment</th>
                 <th className="px-4 py-2 font-medium" colSpan={2}>Syllable count error</th>
               </tr>
               <tr className="text-left text-gray-500 text-xs border-b">
-                <th colSpan={4}></th>
+                <th colSpan={5}></th>
                 <th className="px-4 py-1 font-normal" title="Non-underlined notes ≠ syllables (top counts-match check)">melisma</th>
                 <th className="px-4 py-1 font-normal" title="Stanza-1 syllables per line ≠ meter requirement">meter</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-500">No tunes match these filters.</td></tr>
+                <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-500">No tunes match these filters.</td></tr>
               ) : (
                 filtered.map(t => {
                   const isCurrent = t.id === currentTuneId
                   return (
                     <tr
                       key={t.id}
+                      ref={isCurrent ? currentRowRef : undefined}
                       onClick={() => { onSelect(t.id); onClose() }}
                       className={`border-b border-gray-100 cursor-pointer hover:bg-blue-50 ${isCurrent ? 'bg-blue-50/60' : ''}`}
                     >
@@ -171,6 +185,7 @@ export function TuneNavigator({ tunes, currentTuneId, onSelect, onClose }: Props
                         {t.name}{isCurrent && <span className="ml-2 text-xs text-blue-700">(current)</span>}
                       </td>
                       <td className="px-4 py-2 text-gray-700">{t.meter ?? '—'}</td>
+                      <td className="px-4 py-2 text-gray-700">{t.psalmNumber ?? <span className="text-gray-400">—</span>}</td>
                       <td className="px-4 py-2">
                         {t.decisionStatus === 'approved' ? (
                           <span className="inline-block px-1.5 py-0.5 rounded text-xs bg-emerald-100 text-emerald-900">Approved</span>

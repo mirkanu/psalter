@@ -81,7 +81,15 @@ export function MelismaEditorClient({ tunes }: Props) {
   const [statusDirty, setStatusDirty] = useState(false)
   const [pendingComment, setPendingComment] = useState('')
   const [history, setHistory] = useState<DecisionEntry[]>([])
-  const [showHistory, setShowHistory] = useState(false)
+  // Persist across page loads / tune switches in this browser.
+  const [showHistory, setShowHistory] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    return window.localStorage.getItem('melisma-editor.showHistory') === '1'
+  })
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem('melisma-editor.showHistory', showHistory ? '1' : '0')
+  }, [showHistory])
   const [decisionSaving, setDecisionSaving] = useState(false)
   const [decisionMsg, setDecisionMsg] = useState<string | null>(null)
 
@@ -169,7 +177,8 @@ export function MelismaEditorClient({ tunes }: Props) {
     setStatusDirty(false)
     setPendingComment('')
     setHistory([])
-    setShowHistory(false)
+    // showHistory is intentionally NOT reset — it persists across tune
+    // switches and page loads (see localStorage effect).
     setDecisionMsg(null)
   }, [tuneId, underlinedUserDirty, editedAbc, editedSyllables, editedRawSoprano])
 

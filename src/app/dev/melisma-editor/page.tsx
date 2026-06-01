@@ -86,12 +86,24 @@ async function loadTunes(): Promise<TuneOption[]> {
     .from(tuneMelismaDecisions)
     .orderBy(desc(tuneMelismaDecisions.createdAt), desc(tuneMelismaDecisions.id))
   const statusByTune = new Map<number, 'approved' | 'not_approved'>()
+  // Comment to show: the comment field of the SAME row that defines the
+  // current status. This way the user only sees comments that are still
+  // relevant to the latest decision — older comments from superseded
+  // statuses are hidden (e.g. Communion: latest status=Approved, so an
+  // older "remove Amens" Not Approved comment is no longer shown).
   const lastCommentByTune = new Map<number, string>()
   for (const d of allDecisions) {
     if (d.status && !statusByTune.has(d.tuneId)) {
       statusByTune.set(d.tuneId, d.status as 'approved' | 'not_approved')
+      if (d.comment && d.comment.length > 0) {
+        lastCommentByTune.set(d.tuneId, d.comment)
+      }
     }
-    if (d.comment && d.comment.length > 0 && !lastCommentByTune.has(d.tuneId)) {
+  }
+  // Tunes with no status entries but with comment-only entries: show the
+  // most recent comment as a fallback (preserves visibility for triage).
+  for (const d of allDecisions) {
+    if (!statusByTune.has(d.tuneId) && d.comment && d.comment.length > 0 && !lastCommentByTune.has(d.tuneId)) {
       lastCommentByTune.set(d.tuneId, d.comment)
     }
   }
