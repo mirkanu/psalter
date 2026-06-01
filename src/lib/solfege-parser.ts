@@ -254,8 +254,15 @@ function parseVoiceLine(
     const slots = cell.split(':').map(s => s.trim()).filter(Boolean)
 
     for (const slot of slots) {
-      // Check for dot subdivision: "d.r" or "—.m" → split into half-beat tokens
-      const rawSubs = slot.split('.')
+      // Check for subdivision: "d.r" or "—.m" or "l_1,s" → split into half-beat
+      // tokens. Both `.` and `,` are subdivision separators in OCR'd solfa
+      // (some printings prefer one over the other). Internal commas (those
+      // with non-whitespace on both sides) are normalised to dots so the
+      // existing dot-subdivision path handles them. Boundary commas (",d"
+      // pickup octave-down, "d," trailing octave-down) are left intact so
+      // parseSyllable can interpret them as octave markers.
+      const normalisedSlot = slot.replace(/(\S),(\S)/g, '$1.$2')
+      const rawSubs = normalisedSlot.split('.')
       const subTokens = rawSubs.map((s, i) => {
         let tok = s.trim()
         // "m.,r".split('.') → ["m,", "r"]: trailing comma on first token is a rhythmic

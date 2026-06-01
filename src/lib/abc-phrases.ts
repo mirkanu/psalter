@@ -80,7 +80,11 @@ function isInfoFieldLine(line: string): boolean {
 export function countNoteHeads(abc: string): number {
   const musicOnly = abc
     .split('\n')
-    .filter((l) => !isInfoFieldLine(l))
+    // Exclude info-field lines (X:, T:, M:, K:, w:, ...) AND comment lines
+    // (`% PHRASE_BREAK`, etc.). Comment lines contain literal letters like
+    // `A` `E` `B` that would otherwise match the note regex and inflate
+    // the count by ~5 per PHRASE_BREAK marker.
+    .filter((l) => !isInfoFieldLine(l) && !/^\s*%/.test(l))
     .join(' ')
   const stripped = musicOnly
     .replace(/\{[^}]*\}/g, '')
