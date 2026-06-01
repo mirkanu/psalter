@@ -59,6 +59,7 @@ export const tunes = pgTable('tunes', {
   abcNotationOcr: text('abc_notation_ocr'),      // permanent snapshot of the OCR-imported ABC (pre-04.11 manual edits) — revert target for /dev/melisma-editor
   phraseShapeOverride: jsonb('phrase_shape_override').$type<number[] | null>(),  // per-tune phrase syllable shape (e.g. [8,6,8,6,6] for Abbeyville). NULL = use meter default. Authored in /dev/melisma-editor, consumed by NotationRenderer for cycles 2+.
   solfegeOcrText: text('solfege_ocr_text'),      // raw Claude Vision transcription JSON
+  solfegeSopranoEdited: text('solfege_soprano_edited'),  // user-edited soprano string from /dev/melisma-editor; NULL = use OCR original. Revert clears this column.
   abcSatb: text('abc_satb'),                     // 4-voice SATB ABC from solFaToAbcMultiVoice
   scoreJpgUrl: text('score_jpg_url'),            // local /tunes/ path (never Airtable URL)
   solfegeJpgUrl: text('solfege_jpg_url'),
