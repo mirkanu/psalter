@@ -324,7 +324,12 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
   // Append a new note (defaults to doh — the singer can re-edit immediately).
   const addNoteToPhraseEnd = useCallback(
     (phraseIdx: number) => {
-      const baseAbc = editedAbc ?? tune?.abcNotation ?? ''
+      // IMPORTANT: use the post-auto-inject effectiveAbc so phraseIdx
+      // assignments match what the grid renders. The bare tune.abcNotation
+      // has no PHRASE_BREAKs for tunes like Aurelia/Clarkeville, so all
+      // tokens would parse as phraseIdx=0 and inserts would silently land
+      // at the end of the whole piece.
+      const baseAbc = editedAbc ?? effectiveAbc
       // Default new token = "d2" in F major: the doh, half-cell duration. Two units
       // matches the most common rhythmic value in the existing ABC bodies.
       const defaultToken = solfegeToAbcNote('d', doh, 'd2') || 'd2'
@@ -345,7 +350,12 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
     (sourceGlobalIdx: number, target: { kind: 'before'; globalIdx: number } | { kind: 'phrase-end'; phraseIdx: number }) => {
       const source = tokens[sourceGlobalIdx]
       if (!source) return
-      const baseAbc = editedAbc ?? tune?.abcNotation ?? ''
+      // IMPORTANT: use the post-auto-inject effectiveAbc so phraseIdx
+      // assignments match what the grid renders. The bare tune.abcNotation
+      // has no PHRASE_BREAKs for tunes like Aurelia/Clarkeville, so all
+      // tokens would parse as phraseIdx=0 and inserts would silently land
+      // at the end of the whole piece.
+      const baseAbc = editedAbc ?? effectiveAbc
       let next: string
       // Compute the moved token's new globalIdx so we can remap underline flags.
       let newIdx: number
@@ -397,7 +407,12 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
     (globalIdx: number) => {
       const tok = tokens[globalIdx]
       if (!tok) return
-      const baseAbc = editedAbc ?? tune?.abcNotation ?? ''
+      // IMPORTANT: use the post-auto-inject effectiveAbc so phraseIdx
+      // assignments match what the grid renders. The bare tune.abcNotation
+      // has no PHRASE_BREAKs for tunes like Aurelia/Clarkeville, so all
+      // tokens would parse as phraseIdx=0 and inserts would silently land
+      // at the end of the whole piece.
+      const baseAbc = editedAbc ?? effectiveAbc
       const newBody = deleteTokenAt(baseAbc, tok.absStart, tok.absEnd)
       setEditedAbc(newBody)
       // Remap underline flags: drop the deleted note's flag, shift higher
@@ -432,7 +447,12 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
       if (!parseSolfegeToken(trimmed)) return // reject garbage silently
       const newAbcToken = solfegeToAbcNote(trimmed, doh, tok.token)
       if (newAbcToken === tok.token) return
-      const baseAbc = editedAbc ?? tune?.abcNotation ?? ''
+      // IMPORTANT: use the post-auto-inject effectiveAbc so phraseIdx
+      // assignments match what the grid renders. The bare tune.abcNotation
+      // has no PHRASE_BREAKs for tunes like Aurelia/Clarkeville, so all
+      // tokens would parse as phraseIdx=0 and inserts would silently land
+      // at the end of the whole piece.
+      const baseAbc = editedAbc ?? effectiveAbc
       const newBody = replaceTokenAt(baseAbc, tok.absStart, tok.absEnd, newAbcToken)
       setEditedAbc(newBody)
       setSaveMsg(null)
