@@ -1,0 +1,106 @@
+{
+  "contemplation": {
+    "fix_effective": true,
+    "divergent_note_ons": [
+      {
+        "idx": 16,
+        "buggy": 76,
+        "fixed": 75
+      }
+    ],
+    "note_on_count_fixed": 35,
+    "note_on_count_buggy": 35,
+    "fixed_sub_lines_all_end_with_bar": true,
+    "buggy_sub_lines_all_end_with_bar": false,
+    "sub_line_count": 8,
+    "pass": true,
+    "psalm_url": "http://localhost:3005/psalms/101",
+    "expected": "NoteOn divergence with buggy = fixed + 1 at every divergent index",
+    "notes_fixed_first_20": [
+      75,
+      78,
+      73,
+      75,
+      78,
+      76,
+      75,
+      73,
+      71,
+      75,
+      80,
+      78,
+      75,
+      76,
+      73,
+      96,
+      75,
+      76,
+      80,
+      78
+    ],
+    "notes_buggy_first_20": [
+      75,
+      78,
+      73,
+      75,
+      78,
+      76,
+      75,
+      73,
+      71,
+      75,
+      80,
+      78,
+      75,
+      76,
+      73,
+      96,
+      76,
+      76,
+      80,
+      78
+    ]
+  },
+  "visual_check": {
+    "staff_systems": 4,
+    "note_glyphs": 33,
+    "w_text_count": 33,
+    "abcjs_console_errors": [],
+    "pass": true
+  },
+  "regressions": [
+    {
+      "tune": "crimond",
+      "syllable_align": "ok",
+      "audio_errors": [],
+      "staff_systems": 4,
+      "note_glyphs": 34,
+      "w_text_count": 34,
+      "pass": true
+    },
+    {
+      "tune": "martyrdom",
+      "syllable_align": "ok",
+      "audio_errors": [],
+      "staff_systems": 4,
+      "note_glyphs": 33,
+      "w_text_count": 33,
+      "pass": true
+    },
+    {
+      "tune": "old-100th",
+      "syllable_align": "ok",
+      "audio_errors": [],
+      "staff_systems": 1,
+      "note_glyphs": 34,
+      "w_text_count": 34,
+      "pass": true
+    }
+  ],
+  "build_check": {
+    "found": true,
+    "matchedFile": ".next/static/chunks/09z-x5.2tl~lu.js"
+  },
+  "overall_pass": true,
+  "generated_at": "2026-06-01T13:37:34.714Z"
+}
