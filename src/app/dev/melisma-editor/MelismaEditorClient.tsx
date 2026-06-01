@@ -102,7 +102,20 @@ export function MelismaEditorClient({ tunes }: Props) {
   )
 
   const tune = useMemo(() => tunes.find(t => t.id === tuneId) ?? null, [tunes, tuneId])
-  const effectiveAbc = editedAbc ?? tune?.abcNotation ?? ''
+  const rawEffectiveAbc = editedAbc ?? tune?.abcNotation ?? ''
+  // Auto-inject PHRASE_BREAK markers when the tune's ABC has none AND the
+  // meter shape is known. Without this, tunes like Aurelia/Clarkeville
+  // render as a single mega-phrase in the note grid. The injection is
+  // purely a display aid — saved ABC keeps whatever the user explicitly
+  // wrote via the existing Save-to-DB path.
+  const effectiveAbc = useMemo(() => {
+    if (!rawEffectiveAbc) return ''
+    if (/^\s*%\s*PHRASE_BREAK\s*$/m.test(rawEffectiveAbc)) return rawEffectiveAbc
+    const expected = expectedSyllablesByLine(tune?.meter ?? null)
+    if (!expected || expected.length <= 1) return rawEffectiveAbc
+    const injected = injectPhraseBreaksAtCounts(rawEffectiveAbc, expected)
+    return injected.inserted > 0 ? injected.abc : rawEffectiveAbc
+  }, [rawEffectiveAbc, tune])
 
   // Auto-select the unique match when the filter narrows to one tune. Without
   // this, the dropdown would visually show only Crimond but the editor would

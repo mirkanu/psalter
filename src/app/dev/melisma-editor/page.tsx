@@ -210,6 +210,11 @@ async function loadTunes(): Promise<TuneOption[]> {
       melismaError =
         totalNotes !== stanzaLen &&
         !(lastLineLen > 0 && totalNotes === stanzaLen + lastLineLen)
+    } else if (totalNotes > 0) {
+      // No saved w-lines AND no resolvable stanza-1 lyrics, but the tune has
+      // notes. The editor would show "✗ counts don't match" (notes vs 0
+      // syllables) — flag here too so the navigator agrees (Agawam).
+      melismaError = true
     }
 
     // meterError: any stanza-1 line whose actual syllable count disagrees with
