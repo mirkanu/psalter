@@ -53,6 +53,10 @@ export interface TuneOption {
   /** True when stanza-1 syllables per line don't match the meter requirement
    *  (the "Stanza-1 syllables" panel's "✗ N lines ≠ meter" flag). */
   meterError: boolean
+  /** Per-phrase melisma note indices (0-based within phrase). NULL = no approved
+   *  melisma data. Used by the editor to restore underline state without parsing
+   *  embedded w: lines (post-migration path). */
+  melismaPositions: number[][] | null
 }
 
 function slugify(name: string): string {
@@ -80,6 +84,7 @@ async function loadTunes(): Promise<TuneOption[]> {
       solfegeOcrText: tunes.solfegeOcrText,
       solfegeSopranoEdited: tunes.solfegeSopranoEdited,
       phraseShapeOverride: tunes.phraseShapeOverride,
+      melismaPositions: tunes.melismaPositions,
       doubleLength: tunes.doubleLength,
     })
     .from(tunes)
@@ -278,6 +283,7 @@ async function loadTunes(): Promise<TuneOption[]> {
       solfegeOcrText: r.solfegeOcrText,
       solfegeSopranoEdited: r.solfegeSopranoEdited,
       phraseShapeOverride: r.phraseShapeOverride ?? null,
+      melismaPositions: r.melismaPositions ?? null,
       solfegeJpgUrls: findSolfegeJpgs(slugify(r.name)),
       stanza1Syllables,
       stanza1SyllablesPerLine,
