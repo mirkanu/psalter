@@ -22,7 +22,7 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { eq } from 'drizzle-orm'
 import * as schema from '../src/db/schema'
-import { ocrMelismaV3, type MelismaTranscriptionResult } from '../src/lib/ocr-melisma-v3'
+import { ocrMelismaV4Pass2, type MelismaTranscriptionResult } from '../src/lib/ocr-melisma-v3'
 import { buildEmbeddedWline, type BuildEmbeddedWlineResult } from '../src/lib/build-embedded-wline'
 import { slugifyTuneName } from './download-tunes'
 import { syllabifyForAbc } from '../src/lib/lyrics'
@@ -60,7 +60,7 @@ export interface MelismaOcrReview {
  * does not expose usage/model — those fields are optional so future v3 changes
  * (or mock injections in tests) can supply them without breaking the contract.
  */
-export type OcrFn = (imagePaths: string[]) => Promise<
+export type OcrFn = (imagePaths: string[], existingAbc: string) => Promise<
   MelismaTranscriptionResult & {
     usage?: { input_tokens: number; output_tokens: number }
     model?: string
@@ -211,7 +211,7 @@ export async function processTune(
   }
 
   // 4. Vision OCR
-  const ocrResult = await deps.ocrFn(jpgs)
+  const ocrResult = await deps.ocrFn(jpgs, existingAbc)
 
   // Token-usage logging (Plan 06 dependency)
   if (ocrResult.usage && ocrResult.model) {
@@ -359,19 +359,27 @@ async function resolveStanza1Syllables(
   if (pv.length !== 1) return null
 
   const ls = pv[0].lyricsStructured as any
-  let firstLineText: string | null = null
-  if (Array.isArray(ls) && ls[0]?.lines?.[0]?.text) {
-    firstLineText = ls[0].lines[0].text
+  let stanzaText: string | null = null
+  if (Array.isArray(ls) && Array.isArray(ls[0]?.lines)) {
+    // Join ALL lines of stanza 1 — buildEmbeddedWline aligns against the full
+    // stanza, not just line 1. Crimond CM: 4 lines × (8,6,8,6) = 28 syllables.
+    const lines = ls[0].lines
+      .map((l: { text?: string }) => (l?.text ?? '').trim())
+      .filter((t: string) => t.length > 0)
+    if (lines.length > 0) stanzaText = lines.join(' ')
   } else if (pv[0].lyricsImportedRaw) {
-    firstLineText =
-      pv[0].lyricsImportedRaw
-        .split('\n')
-        .map((l: string) => l.replace(/^\d+/, '').trim())
-        .find((l: string) => l.length > 0) ?? null
+    // Fallback: take the first stanza block (lines until first blank line)
+    const allLines = pv[0].lyricsImportedRaw
+      .split('\n')
+      .map((l: string) => l.replace(/^\d+/, '').trim())
+    const firstBlank = allLines.findIndex((l: string) => l.length === 0)
+    const stanzaLines = (firstBlank === -1 ? allLines : allLines.slice(0, firstBlank))
+      .filter((l: string) => l.length > 0)
+    if (stanzaLines.length > 0) stanzaText = stanzaLines.join(' ')
   }
-  if (!firstLineText) return null
+  if (!stanzaText) return null
 
-  const syllables = syllabifyForAbc(firstLineText).split(/\s+/).filter(Boolean)
+  const syllables = syllabifyForAbc(stanzaText).split(/\s+/).filter(Boolean)
   return syllables.length > 0 ? syllables : null
 }
 
@@ -418,7 +426,7 @@ async function main() {
     },
     resolveJpgPaths: resolveJpgPathsOnDisk,
     resolveSyllables: (tuneId) => resolveStanza1Syllables(tuneId, db),
-    ocrFn: ocrMelismaV3,
+    ocrFn: ocrMelismaV4Pass2,
     builder: buildEmbeddedWline,
     updateTune: async (tuneName, abc) => {
       const result = await db
