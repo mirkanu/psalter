@@ -596,7 +596,7 @@ Plans:
 - [x] 04.9.12-01-PLAN.md — Add tunes.melisma_positions jsonb column to schema + [BLOCKING] drizzle-kit push
 
 **Wave 2** *(depends on Wave 1)*
-- [ ] 04.9.12-02-PLAN.md — Migration script: extract positions from 17 approved tunes, strip embedded w: lines, write both back to DB
+- [x] 04.9.12-02-PLAN.md — Migration script: extract positions from 17 approved tunes, strip embedded w: lines, write both back to DB
 
 **Wave 3** *(depends on Wave 1 + Wave 2)*
 - [ ] 04.9.12-03-PLAN.md — Update melisma-save route + MelismaEditorClient + page.tsx to write melismaPositions and send w:-free ABC
