@@ -243,7 +243,21 @@ function parseVoiceLine(
   // Strip Amen (anything after the last ||), then treat remaining || as single bars
   let cleaned = raw.trim()
   const lastDbl = cleaned.lastIndexOf('||')
-  if (lastDbl >= 0) cleaned = cleaned.slice(0, lastDbl)
+  if (lastDbl >= 0) {
+    cleaned = cleaned.slice(0, lastDbl)
+    // Second pass: after removing the final ||, the string may still end with
+    // Amen-like content (e.g. "d | d") before the penultimate ||.
+    // Amen notes have no beat-colon (:) — they are bare pitch tokens separated
+    // only by |. If the tail after the new last || has no : and is short, it is
+    // the Amen section and must also be stripped.
+    const penultimateDbl = cleaned.lastIndexOf('||')
+    if (penultimateDbl >= 0) {
+      const amenCandidate = cleaned.slice(penultimateDbl + 2).trim()
+      if (amenCandidate && !amenCandidate.includes(':') && amenCandidate.length <= 10) {
+        cleaned = cleaned.slice(0, penultimateDbl)
+      }
+    }
+  }
   cleaned = cleaned.replace(/\|\|/g, '|').replace(/\|$/, '').trim()
 
   // Split on | to get cells
