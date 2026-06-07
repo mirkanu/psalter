@@ -33,9 +33,11 @@ import {
 } from '@/lib/stanza-cycles'
 import type { Stanza, StructuredLyrics } from '@/lib/lyrics-structured'
 import { phrasesForMeter } from '@/lib/abc-phrase-meter-map'
-import { hasEmbeddedWLines } from '@/lib/abc-embedded-lyrics'
+import { hasEmbeddedWLines, extractEmbeddedWLines } from '@/lib/abc-embedded-lyrics'
 import { renderEmbeddedWPhrase } from '@/lib/abc-embedded-w-branch'
 import { splitMusicIntoSubLines } from './splitMusicIntoSubLines'
+import { forceMatchMeterShape } from '@/lib/force-match-meter-shape'
+import { expectedSyllablesByLine } from '@/lib/meter-syllable-shape'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -759,9 +761,10 @@ export function NotationRenderer({
     // Defined inside useMemo so it closes over solfegeVoices and tuneMeter.
     function wLineForSyllables(rawText: string, phraseIndex: number): string {
       const text = rawText.replace(/\n/g, ' ')
+      let raw: string
       if (solfegeVoices && tuneMeter) {
         const warnings: string[] = []
-        return buildWLineFromSolfa(
+        raw = buildWLineFromSolfa(
           solfegeVoices.soprano,
           solfegeVoices.doh,
           solfegeVoices.time,
@@ -770,8 +773,19 @@ export function NotationRenderer({
           text,
           warnings,
         )
+      } else {
+        raw = syllabifyForAbc(text)
       }
-      return syllabifyForAbc(text)
+      const tokens = raw.split(/\s+/).filter(Boolean)
+      const expectedShape = expectedSyllablesByLine(tuneMeter)
+      if (expectedShape) {
+        const expected = expectedShape[phraseIndex]
+        if (expected !== undefined && tokens.length !== expected) {
+          const { fixed } = forceMatchMeterShape([tokens], [expected])
+          return (fixed[0] ?? tokens).join(' ')
+        }
+      }
+      return tokens.join(' ')
     }
 
     // Plan 04.9.9-05 gap closure: note-count safety net. Pads short w: outputs
@@ -816,13 +830,36 @@ export function NotationRenderer({
       if (showLyrics && hasEmbeddedWLines(phraseBody)) {
         const cycleCount = visibleCycles.length
         const embedded = renderEmbeddedWPhrase(phraseBody, cycleCount)
-        // Push cycle-0 verbatim lines (music + authored w: lines) into
-        // the accumulator. abcjs handles `_` continuation natively when
-        // the whole phrase body is rendered as a single staff system.
+        // Cycle 0: push verbatim (music + authored w: lines). abcjs handles
+        // `_` continuation natively for the whole phrase body.
         for (const line of embedded.cycle0Lines) parts.push(line)
-        // Pilot scope (O-2 option A): cycles 1+ are intentionally NOT
-        // emitted here. Skipping them keeps the verified alignment intact
-        // for stanza 1 without risking misalignment on later stanzas.
+        // Cycles 1+: extract _ positions from the stored w: line, regenerate
+        // a new w: line for each stanza using the cycle's real psalm text
+        // syllables placed at non-_ positions.
+        if (embedded.needsHeuristicFallback.some(Boolean)) {
+          const storedWContents = extractEmbeddedWLines(phraseBody)
+          const storedContent = storedWContents[0] ?? ''
+          const storedTokens = storedContent.split(/\s+/).filter(Boolean)
+          const nonMelismaCount = storedTokens.filter((t) => t !== '_').length
+          const cycleWLinesGrid = wLinesForPhrase(i)
+          for (let cycleIdx = 1; cycleIdx < cycleCount; cycleIdx++) {
+            if (!embedded.needsHeuristicFallback[cycleIdx]) continue
+            const cycleLines = cycleWLinesGrid[cycleIdx] ?? []
+            const rawText = cycleLines[0] ?? ''
+            if (!rawText.trim()) continue
+            const syllStr = wLineForSyllables(rawText, Math.min(i, split.phrases.length - 1))
+            let syllTokens = syllStr.split(/\s+/).filter(Boolean)
+            if (nonMelismaCount > 0 && syllTokens.length !== nonMelismaCount) {
+              const { fixed } = forceMatchMeterShape([syllTokens], [nonMelismaCount])
+              syllTokens = fixed[0] ?? syllTokens
+            }
+            let syllIdx = 0
+            const newWTokens = storedTokens.map((tok) =>
+              tok === '_' ? '_' : (syllTokens[syllIdx++] ?? '*'),
+            )
+            parts.push(`w: ${newWTokens.join(' ')}`)
+          }
+        }
         continue
       }
       // ── END Phase 04.10 branch ────────────────────────────────────────
