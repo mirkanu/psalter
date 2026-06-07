@@ -46,6 +46,14 @@ export interface NotationRendererProps {
   solfegeJpgUrl: string | null
   tuneName: string
   tuneMeter: string | null
+  /**
+   * Optional per-tune phrase-shape override (e.g. [8,6,8,6,6] for Abbeyville).
+   * When set, takes precedence over phrasesForMeter(tuneMeter) for cycle slicing
+   * AND triggers last-line repetition in stanzas where the lyrics natively
+   * provide fewer lines than the override demands.
+   * Authored in /dev/melisma-editor.
+   */
+  phraseShapeOverride?: number[] | null
   /** Stanza meter (e.g. "CM" or "double-CM") — required for D-20 cycle pairing. */
   stanzaMeter: string | null
   /** Optional recording URLs surfaced in lyrics/solfège views as inline player (260517-cm0 #1f). */
@@ -185,6 +193,7 @@ export function NotationRenderer({
   solfegeJpgUrl,
   tuneName,
   tuneMeter,
+  phraseShapeOverride,
   stanzaMeter,
   showLyrics = true,
   onViewModeChange,
@@ -436,9 +445,13 @@ export function NotationRenderer({
     return () => clearTimeout(timer)
   }, [visibleCycles, viewMode, showOriginal, baseSize])
 
+  // When phraseShapeOverride adds extra phrases beyond the ABC PHRASE_BREAK count
+  // (e.g. Abbeyville [8,6,8,6,6] has 5 phrases but 4 ABC phrases), extend the
+  // index range so the extra phrase gets a staff line too.
+  const effectivePhraseTotal = Math.max(T, phraseShapeOverride?.length ?? 0)
   const visiblePhraseIndices = useMemo<number[]>(
-    () => Array.from({ length: T }, (_, i) => i),
-    [T],
+    () => Array.from({ length: effectivePhraseTotal }, (_, i) => i),
+    [effectivePhraseTotal],
   )
 
   // ── Pagination handlers (cycle-page only) ──────────────────────────────────
@@ -524,8 +537,34 @@ export function NotationRenderer({
   // metrical line per stanza per sub-staff. Cross-stanza alignment is
   // structural: same meter → identical inner length across all cycles.
   function wLinesForPhrase(i: number): string[][] {
+    // Per-tune phrase-shape override (e.g. [8,6,8,6,6] for Abbeyville) wins
+    // over meter-derived count. When set, also pad each cycle's lines by
+    // repeating the last line so cycles 2+ render a 5th phrase's lyrics.
+    const effectivePhraseCount = phraseShapeOverride && phraseShapeOverride.length > 0
+      ? phraseShapeOverride.length
+      : phrasesForMeter(tuneMeter)
     return visibleCycles.map((cycle) => {
-      const grid = mapCycleToPhraseSyllableLines(cycle, phrasesForMeter(tuneMeter))
+      let workingCycle = cycle
+      if (
+        phraseShapeOverride &&
+        phraseShapeOverride.length > 0
+      ) {
+        const flatLineCount = cycle.reduce((sum, s) => sum + s.lines.length, 0)
+        if (flatLineCount > 0 && flatLineCount < effectivePhraseCount) {
+          // Pad the last stanza's last line until we hit the target count.
+          const padded = cycle.map(s => ({ ...s, lines: [...s.lines] }))
+          const lastStanza = padded[padded.length - 1]!
+          const lastLine = lastStanza.lines[lastStanza.lines.length - 1]
+          while (
+            padded.reduce((sum, s) => sum + s.lines.length, 0) < effectivePhraseCount &&
+            lastLine
+          ) {
+            lastStanza.lines.push({ ...lastLine })
+          }
+          workingCycle = padded
+        }
+      }
+      const grid = mapCycleToPhraseSyllableLines(workingCycle, effectivePhraseCount)
       return grid[i] ?? []
     })
   }
@@ -751,7 +790,9 @@ export function NotationRenderer({
     }
 
     for (const i of visiblePhraseIndices) {
-      const phraseBody = (split.phrases[i] ?? '').trim()
+      // For repeated-last-line tunes (phraseShapeOverride has more entries than
+      // ABC phrases), indices beyond T reuse the last ABC phrase's music.
+      const phraseBody = (split.phrases[Math.min(i, split.phrases.length - 1)] ?? '').trim()
       if (!phraseBody) continue
 
       // ── Phase 04.10: verified-MusicXML embedded-w branch ───────────────
