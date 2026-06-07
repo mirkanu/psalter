@@ -599,7 +599,7 @@ Plans:
 - [x] 04.9.12-02-PLAN.md — Migration script: extract positions from 17 approved tunes, strip embedded w: lines, write both back to DB
 
 **Wave 3** *(depends on Wave 1 + Wave 2)*
-- [ ] 04.9.12-03-PLAN.md — Update melisma-save route + MelismaEditorClient + page.tsx to write melismaPositions and send w:-free ABC
+- [x] 04.9.12-03-PLAN.md — Update melisma-save route + MelismaEditorClient + page.tsx to write melismaPositions and send w:-free ABC
 
 **Wave 4** *(depends on Wave 1 + Wave 2 + Wave 3)*
 - [ ] 04.9.12-04-PLAN.md — Replace embedded-w branch in NotationRenderer with positions-based branch; thread melismaPositions from DB; Playwright UAT + human checkpoint
