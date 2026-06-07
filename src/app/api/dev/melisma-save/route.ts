@@ -4,7 +4,8 @@
  * Persists a manually-annotated ABC body to tunes.abc_notation, plus an
  * optional per-tune phrase-shape override (used by NotationRenderer for
  * cycles 2+ to handle tunes like Abbeyville where the score has more
- * phrases than the lyrics natively define).
+ * phrases than the lyrics natively define). Also accepts melismaPositions
+ * to persist per-phrase melisma note indices separately from abc_notation.
  *
  * Gated by Cloudflare Access on the /dev/* path (psalter-dev-tools app).
  *
@@ -17,6 +18,11 @@
  *     // If null literal: clear unconditionally.
  *     // If undefined: leave the column untouched.
  *     phraseShape?: number[] | null,
+ *     // OPTIONAL. Per-phrase melisma note indices (0-based within phrase).
+ *     // undefined → leave column untouched
+ *     // null      → clear (revert to no melisma data)
+ *     // number[][] → store positions
+ *     melismaPositions?: number[][] | null,
  *   }
  */
 
@@ -38,6 +44,11 @@ interface SaveBody {
   // - null      → clear (revert to OCR original)
   // - string    → persist
   rawSoprano?: string | null
+  // Per-phrase melisma note indices (0-based within phrase).
+  // undefined → leave column untouched
+  // null      → clear (revert to no melisma data)
+  // number[][] → store positions
+  melismaPositions?: number[][] | null
 }
 
 export async function POST(req: Request) {
@@ -66,6 +77,21 @@ export async function POST(req: Request) {
     )
   }
 
+  // Validate melismaPositions when provided (T-04.9.12-04 mitigation).
+  if (body.melismaPositions !== undefined && body.melismaPositions !== null) {
+    if (
+      !Array.isArray(body.melismaPositions) ||
+      !body.melismaPositions.every(
+        (p) => Array.isArray(p) && p.every((n) => typeof n === 'number'),
+      )
+    ) {
+      return NextResponse.json(
+        { error: 'melismaPositions must be number[][] or null' },
+        { status: 400 },
+      )
+    }
+  }
+
   // Decide whether to touch phraseShapeOverride.
   // - body.phraseShape === undefined → leave column alone (no update field)
   // - body.phraseShape === null      → clear it
@@ -74,6 +100,7 @@ export async function POST(req: Request) {
     abcNotation: string
     phraseShapeOverride?: number[] | null
     solfegeSopranoEdited?: string | null
+    melismaPositions?: number[][] | null
   } = {
     abcNotation: body.abcNotation,
   }
@@ -113,11 +140,26 @@ export async function POST(req: Request) {
     updateSet.phraseShapeOverride = matchesDefault ? null : body.phraseShape
   }
 
+  // melismaPositions persistence:
+  //   undefined → no change to column (not included in updateSet)
+  //   null      → clear the column
+  //   number[][] → store the positions
+  if (body.melismaPositions === null) {
+    updateSet.melismaPositions = null
+  } else if (body.melismaPositions !== undefined) {
+    updateSet.melismaPositions = body.melismaPositions
+  }
+
   const result = await db
     .update(tunes)
     .set(updateSet)
     .where(eq(tunes.id, body.tuneId))
-    .returning({ id: tunes.id, name: tunes.name, phraseShapeOverride: tunes.phraseShapeOverride })
+    .returning({
+      id: tunes.id,
+      name: tunes.name,
+      phraseShapeOverride: tunes.phraseShapeOverride,
+      melismaPositions: tunes.melismaPositions,
+    })
 
   if (result.length !== 1) {
     return NextResponse.json(
@@ -131,5 +173,6 @@ export async function POST(req: Request) {
     updatedRows: result.length,
     tune: result[0],
     phraseShapeOverride: result[0].phraseShapeOverride,
+    melismaPositions: result[0].melismaPositions,
   })
 }
