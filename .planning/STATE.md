@@ -5,7 +5,7 @@ milestone_name: milestone
 status: executing
 stopped_at: context exhaustion at 91% (2026-05-30)
 last_updated: "2026-05-30T21:37:43.277Z"
-last_activity: 2026-05-30
+last_activity: 2026-06-07 - Completed quick task 260607-gju: Fix Dunfermline psalm 106 Amen-stripping bug
 progress:
   total_phases: 8
   completed_phases: 5
@@ -164,6 +164,7 @@ None yet.
 | 260517-ht8 | 04.9.4 singing r4: STICKY-fix first-press play (prevControlledRef init bug — first effect short-circuited and synth never started); tour reorder to 4 steps (tune-name re-inserted); per-arrow individual spotlights via SVG mask; mobile bar h-11 (44px) — substantially slimmer; view-change auto-hides mini-bar + resets play state | 2026-05-17 | 28f0936 | [260517-ht8-04.9.4-singing-r4](./quick/260517-ht8-04.9.4-singing-r4/) |
 | 260517-u35 | Migrate Airtable Tunes "Double length" boolean → tunes.double_length column. 26/172 tunes flagged DCM. Key prereq for alignment-implementation seed; double_length is broader than CMD — covers all doubled-stanza tunes across all meter families (Aurelia 76 76 D, Old 124th 10 10 10 10 10, four 66 66 88, etc.) | 2026-05-17 | c4b3be7 | [20260517-migrate-tunes-double-length](./quick/20260517-migrate-tunes-double-length/) |
 | 260601-i5d | Fix Contemplation sharps-as-naturals: append trailing `\|` to splitMusicIntoSubLines emissions so abcjs synth resets accidental scope at phrase boundaries. Extracted splitMusicIntoSubLines to a sibling module + unit tests + UAT verifier (MIDI buggy-vs-fixed diff confirmed exactly one NoteOn divergence at idx=16: buggy=76, fixed=75). Regression sweep clean on Crimond/Martyrdom/Old-100th. | 2026-06-01 | 38a6093 | [260601-i5d-fix-contemplation-sharps-as-naturals-app](./quick/260601-i5d-fix-contemplation-sharps-as-naturals-app/) |
+| 260607-gju | Fix Dunfermline psalm 106 phrase 4 misalignment: double-strip Amen notes from solfège soprano string. Single-pass lastIndexOf('||') left "d \| d" Amen notes in cleaned string, inflating totalEvents 28→30 and giving phrase 4 eight note slots instead of six. Fix adds second-pass guard: strips tail after penultimate \|\| if it has no beat-colon (Amen notes never have :). Confirmed via Playwright: all 4 phrases render with correct lyric alignment. | 2026-06-07 | b99c7c2 | [260607-gju-dunfermline-psalm-106-rendering-wrong-de](./quick/260607-gju-dunfermline-psalm-106-rendering-wrong-de/) |
 
 - [04.9.8-05]: Character-level tokenizer for insertPhraseBreaks replaces text-line-granular Path NH — emits PHRASE_BREAK at exact note-head offsets independent of ABC text-line boundaries
 - [04.9.8-05]: NotationRenderer cleanedBody merges multi-text-line phrase bodies into single line to prevent phantom extra sub-staves from internal newlines
