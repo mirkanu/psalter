@@ -199,13 +199,40 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
     setDecisionMsg(null)
   }, [tuneId, underlinedUserDirty, editedAbc, editedSyllables, editedRawSoprano])
 
-  // Pre-populate underline + syllable state from saved w-lines when reopening
-  // a tune for re-editing. Without this, melismas the user previously marked
-  // are invisible (the grid would show no amber underlines) and the syllable
-  // count would not match the saved note count for tunes that repeat lines
-  // (e.g. Abbeyville's 34-syllable layout for 37 notes).
+  // Pre-populate underline + syllable state when reopening a tune for re-editing.
+  // Without this, melismas the user previously marked are invisible (the grid
+  // would show no amber underlines).
+  //
+  // Two paths:
+  //   1. melismaPositions path (post-migration approved tunes): abc_notation has
+  //      no w: lines; restore underlines from tune.melismaPositions instead.
+  //   2. Legacy w-line path: abc_notation has embedded w: lines (pre-migration
+  //      tunes or tunes not yet saved under the new system).
   useEffect(() => {
     if (!tune) return
+
+    // PATH 1: melismaPositions — used for tunes whose ABC no longer carries
+    // embedded w: lines (new save path sends stripped ABC + positions column).
+    if (tune.melismaPositions && tune.melismaPositions.length > 0) {
+      const allTokens = tune.abcNotation
+        ? extractSopranoTokensWithPos(tune.abcNotation)
+        : []
+      const phraseIdxSet = [...new Set(allTokens.map(t => t.phraseIdx))].sort((a, b) => a - b)
+      const u: Record<number, boolean> = {}
+      for (const pIdx of phraseIdxSet) {
+        const phraseToks = allTokens.filter(t => t.phraseIdx === pIdx)
+        const posSet = new Set(tune.melismaPositions[pIdx] ?? [])
+        phraseToks.forEach((tok, intraIdx) => {
+          if (posSet.has(intraIdx)) u[tok.globalIdx] = true
+        })
+      }
+      setUnderlined(u)
+      setUnderlinedUserDirty(false)
+      setSavedSyllablesPerPhrase(null) // positions path doesn't carry syllables
+      return
+    }
+
+    // PATH 2: legacy embedded w: lines.
     const parsed = parseSavedWLines(tune.abcNotation)
     if (!parsed) {
       setUnderlined({})
@@ -692,34 +719,64 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
       if (ocrOriginalSoprano) {
         rawSopranoPayload = effectiveRawSoprano === ocrOriginalSoprano ? null : effectiveRawSoprano
       }
+
+      // Derive per-phrase melisma positions from the current underlined state.
+      // positions[phraseIdx] = array of 0-based intra-phrase indices that are underlined.
+      // Only computed for the melisma workflow; abc-only saves clear the column.
+      let melismaPositionsPayload: number[][] | null = null
+      if (willSaveMode === 'melisma' && underlineCount > 0) {
+        const phraseIdxSet = [...new Set(tokens.map(t => t.phraseIdx))].sort((a, b) => a - b)
+        melismaPositionsPayload = phraseIdxSet.map(pIdx => {
+          const phraseToks = tokens.filter(t => t.phraseIdx === pIdx)
+          const positions: number[] = []
+          phraseToks.forEach((tok, intraIdx) => {
+            if (underlined[tok.globalIdx]) positions.push(intraIdx)
+          })
+          return positions
+        })
+      }
+
+      // Strip w: lines from the ABC before saving — melisma data now lives in
+      // the melismaPositions column, not baked into abc_notation.
+      const strippedAbc = abcToSave
+        .split('\n')
+        .filter(line => !/^\s*w:/.test(line))
+        .join('\n')
+
       const res = await fetch('/api/dev/melisma-save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tuneId: tune.id,
-          abcNotation: abcToSave,
+          abcNotation: strippedAbc,
           // Always send the current per-line shape so the server can update or
           // clear phrase_shape_override. The server compares against the
           // meter default and stores NULL if they match.
           phraseShape: effectiveSyllablesPerLine.map(l => l.length),
           rawSoprano: rawSopranoPayload,
+          melismaPositions: melismaPositionsPayload,
         }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'unknown error')
-      const modeLabel = willSaveMode === 'melisma' ? 'with w-line' : '(ABC only)'
+      const modeLabel = willSaveMode === 'melisma' ? 'with melisma positions' : '(ABC only)'
       setSaveMsg(`✓ Saved "${json.tune?.name ?? tune.name}" to production DB ${modeLabel}. Open the psalm preview below + reload to sing-test.`)
-      // Sync the local tunes copy so the parseSavedWLines effect doesn't wipe
-      // underlines if the user then clicks "Save decision" (which creates a new
-      // tune object, re-triggering the effect on the stale abcNotation).
-      setTunes(prev => prev.map(t => t.id !== tune.id ? t : { ...t, abcNotation: abcToSave }))
+      // Sync the local tunes copy so the tune-load effect can restore underlines
+      // from melismaPositions if the user immediately saves a decision or
+      // re-selects the tune. Use the stripped ABC (no w: lines) and the
+      // freshly-persisted melismaPositions.
+      setTunes(prev => prev.map(t => t.id !== tune.id ? t : {
+        ...t,
+        abcNotation: strippedAbc,
+        melismaPositions: melismaPositionsPayload,
+      }))
       setEditedAbc(null)
     } catch (err) {
       setSaveMsg(`✗ Save failed: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setSaving(false)
     }
-  }, [tune, built, willSaveMode, effectiveAbc, effectiveSyllablesPerLine, effectiveRawSoprano, ocrOriginalSoprano])
+  }, [tune, built, willSaveMode, effectiveAbc, effectiveSyllablesPerLine, effectiveRawSoprano, ocrOriginalSoprano, tokens, underlined, underlineCount])
 
   if (!tune) return <div className="p-8 text-gray-700">No tunes with ABC notation in the DB.</div>
 
