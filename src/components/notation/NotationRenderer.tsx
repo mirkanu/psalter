@@ -828,7 +828,7 @@ export function NotationRenderer({
       //
       // ONLY takes this branch when showLyrics=true AND positions data exists.
       const phrasePositions = melismaPositions?.[i]
-      if (showLyrics && phrasePositions && phrasePositions.length > 0) {
+      if (showLyrics && phrasePositions != null) {
         const posSet = new Set(phrasePositions)
 
         // Count note heads in this phrase to know total slot count.
