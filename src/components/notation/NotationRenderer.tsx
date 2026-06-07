@@ -33,8 +33,6 @@ import {
 } from '@/lib/stanza-cycles'
 import type { Stanza, StructuredLyrics } from '@/lib/lyrics-structured'
 import { phrasesForMeter } from '@/lib/abc-phrase-meter-map'
-import { hasEmbeddedWLines, extractEmbeddedWLines } from '@/lib/abc-embedded-lyrics'
-import { renderEmbeddedWPhrase } from '@/lib/abc-embedded-w-branch'
 import { splitMusicIntoSubLines } from './splitMusicIntoSubLines'
 import { forceMatchMeterShape } from '@/lib/force-match-meter-shape'
 import { expectedSyllablesByLine } from '@/lib/meter-syllable-shape'
@@ -120,6 +118,12 @@ export interface NotationRendererProps {
    * buildWLineFromSolfa. When null, falls back to syllabifyForAbc.
    */
   solfegeOcrText?: string | null
+  /**
+   * Per-phrase melisma note indices from tunes.melisma_positions.
+   * melismaPositions[phraseIdx][k] = 0-based intra-phrase note index that is
+   * a melisma continuation (w: `_` token). NULL/undefined = use heuristic path.
+   */
+  melismaPositions?: number[][] | null
 }
 
 export type ViewMode = 'staff' | 'solfege' | 'lyrics'
@@ -211,6 +215,7 @@ export function NotationRenderer({
   lyricsStructured,
   doubleLength,
   solfegeOcrText = null,
+  melismaPositions = null,
 }: NotationRendererProps) {
   // chromeless mode permanently disables the FS overlay; the singing view IS the fullscreen.
   const allowFullscreen = !chromeless
@@ -809,60 +814,89 @@ export function NotationRenderer({
       const phraseBody = (split.phrases[Math.min(i, split.phrases.length - 1)] ?? '').trim()
       if (!phraseBody) continue
 
-      // ── Phase 04.10: verified-MusicXML embedded-w branch ───────────────
-      // If the phrase body carries source-authored `w:` lines (currently
-      // only Crimond after Plan 04's DB UPDATE), emit cycle 0 VERBATIM
-      // and skip the heuristic w-line construction path entirely
-      // (no splitMusicIntoSubLines, no padWLineToNoteCount, no
-      // splitWLineIntoChunks — Pitfall 4 mitigation). abcjs renders `w:`
-      // with `_` continuations natively when given the whole phrase body.
+      // ── Phase 04.9.12: melisma-positions branch ──────────────────────
+      // When this phrase has melisma positions (from tunes.melisma_positions),
+      // generate w: lines for ALL visible cycles using the real stanza syllables
+      // + positions. This fixes the stanza-page-2+ bug: cycle 0 is no longer
+      // emitted verbatim with stanza-1 text; all cycles use real stanza text.
       //
-      // Multi-stanza handling (Open Question O-2 — option A, recorded in
-      // 04.10-03-SUMMARY.md): cycle 0 uses the embedded path; cycles 1+
-      // are NOT rendered in the embedded branch — the pilot scope is
-      // verified alignment for stanza 1. For Crimond this means stanzas
-      // 2-6 render only when (a) showLyrics=false (music-only) which
-      // falls through to the OLD path naturally, or (b) future per-stanza
-      // w-lines are added to the source ABC. The user's sing-test
-      // predicate (per ROADMAP) is stanza 1 — this is acceptable for the
-      // pilot. Pitfall 6 mitigation: only take this branch when
-      // `showLyrics` is true; lyrics-disabled mode flows through OLD path.
-      if (showLyrics && hasEmbeddedWLines(phraseBody)) {
-        const cycleCount = visibleCycles.length
-        const embedded = renderEmbeddedWPhrase(phraseBody, cycleCount)
-        // Cycle 0: push verbatim (music + authored w: lines). abcjs handles
-        // `_` continuation natively for the whole phrase body.
-        for (const line of embedded.cycle0Lines) parts.push(line)
-        // Cycles 1+: extract _ positions from the stored w: line, regenerate
-        // a new w: line for each stanza using the cycle's real psalm text
-        // syllables placed at non-_ positions.
-        if (embedded.needsHeuristicFallback.some(Boolean)) {
-          const storedWContents = extractEmbeddedWLines(phraseBody)
-          const storedContent = storedWContents[0] ?? ''
-          const storedTokens = storedContent.split(/\s+/).filter(Boolean)
-          const nonMelismaCount = storedTokens.filter((t) => t !== '_').length
+      // Algorithm (lyric-to-note-alignment.md §6):
+      //   1. Get each cycle's syllable text via wLinesForPhrase(i)
+      //   2. Syllabify via wLineForSyllables to get a token list
+      //   3. Build the w: line: for each intra-phrase note index k,
+      //      emit `_` if k is in melismaPositions[i], else consume the next syllable.
+      //
+      // ONLY takes this branch when showLyrics=true AND positions data exists.
+      const phrasePositions = melismaPositions?.[i]
+      if (showLyrics && phrasePositions && phrasePositions.length > 0) {
+        const posSet = new Set(phrasePositions)
+
+        // Count note heads in this phrase to know total slot count.
+        const phraseBodyForCount = (split.phrases[Math.min(i, split.phrases.length - 1)] ?? '').trim()
+        const musicOnlyForCount = phraseBodyForCount.split('\n').filter(l => !/^\s*w:/.test(l)).join('\n')
+        const noteCount = countNoteHeads(musicOnlyForCount)
+        const nonMelismaSlots = Math.max(0, noteCount - phrasePositions.length)
+
+        // Build the cleaned phrase body (no w: lines, music lines merged).
+        const phraseLines = phraseBody.split('\n')
+        const cleanedBodyForPositions = phraseLines
+          .filter((l) => !/^w:/.test(l.trim()))
+          .reduce<string[]>((acc, line) => {
+            if (/^\s*[A-Za-z]:/.test(line)) {
+              acc.push(line)
+            } else if (acc.length > 0 && !/^\s*[A-Za-z]:/.test(acc[acc.length - 1])) {
+              acc[acc.length - 1] += ' ' + line.trim()
+            } else {
+              acc.push(line)
+            }
+            return acc
+          }, [])
+          .join('\n')
+          .trim()
+
+        // T-04.9.12-07: skip positions branch when noteCount=0 (defensive).
+        if (noteCount > 0) {
           const cycleWLinesGrid = wLinesForPhrase(i)
-          for (let cycleIdx = 1; cycleIdx < cycleCount; cycleIdx++) {
-            if (!embedded.needsHeuristicFallback[cycleIdx]) continue
+          const cycleCount = visibleCycles.length
+
+          for (let cycleIdx = 0; cycleIdx < cycleCount; cycleIdx++) {
             const cycleLines = cycleWLinesGrid[cycleIdx] ?? []
             const rawText = cycleLines[0] ?? ''
-            if (!rawText.trim()) continue
-            const syllStr = wLineForSyllables(rawText, Math.min(i, split.phrases.length - 1))
+            let syllStr = rawText.trim()
+              ? wLineForSyllables(rawText, Math.min(i, split.phrases.length - 1))
+              : ''
             let syllTokens = syllStr.split(/\s+/).filter(Boolean)
-            if (nonMelismaCount > 0 && syllTokens.length !== nonMelismaCount) {
-              const { fixed } = forceMatchMeterShape([syllTokens], [nonMelismaCount])
+
+            // Force-fit syllable count to non-melisma slots.
+            if (nonMelismaSlots > 0 && syllTokens.length !== nonMelismaSlots) {
+              const { fixed } = forceMatchMeterShape([syllTokens], [nonMelismaSlots])
               syllTokens = fixed[0] ?? syllTokens
             }
+
+            // Build w: token stream: `_` at melisma positions, syllable elsewhere.
             let syllIdx = 0
-            const newWTokens = storedTokens.map((tok) =>
-              tok === '_' ? '_' : (syllTokens[syllIdx++] ?? '*'),
-            )
-            parts.push(`w: ${newWTokens.join(' ')}`)
+            const wTokens: string[] = []
+            for (let noteIdx = 0; noteIdx < noteCount; noteIdx++) {
+              if (posSet.has(noteIdx)) {
+                wTokens.push('_')
+              } else {
+                wTokens.push(syllTokens[syllIdx++] ?? '·')
+              }
+            }
+
+            const wLine = wTokens.length > 0 ? `w: ${wTokens.join(' ')}` : null
+            if (cycleIdx === 0) {
+              // Push music lines once (for cycle 0 only).
+              for (const line of cleanedBodyForPositions.split('\n')) parts.push(line)
+            }
+            if (wLine) {
+              parts.push(wLine)
+            }
           }
+          continue
         }
-        continue
       }
-      // ── END Phase 04.10 branch ────────────────────────────────────────
+      // ── END Phase 04.9.12 branch ──────────────────────────────────────
 
       // Strip any pre-existing w: lines from the phrase body (defensive).
       // Also join music lines that span multiple ABC text lines into a single
@@ -943,7 +977,7 @@ export function NotationRenderer({
     return parts.join('\n')
     // wLinesForPhrase depends on visibleCycles, captured by closure.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [split, visiblePhraseIndices, visibleCycles, tuneMeter, showLyrics, phraseSubdivisions, chromeless, solfegeVoices])
+  }, [split, visiblePhraseIndices, visibleCycles, tuneMeter, showLyrics, phraseSubdivisions, chromeless, solfegeVoices, melismaPositions])
 
   // ── View area ─────────────────────────────────────────────────────────────
   // Item 2: Play plays once — no chain/repeat. We deliberately do NOT pass
