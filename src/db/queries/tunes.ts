@@ -100,6 +100,12 @@ export interface AlternateTune {
    * via buildWLineFromSolfa. When null, falls back to syllabifyForAbc.
    */
   solfegeOcrText: string | null
+  /**
+   * Plan 04.9.12: Per-phrase melisma note indices saved by the melisma editor.
+   * melismaPositions[phraseIdx][k] = 0-based intra-phrase note index that is a
+   * melisma continuation (w: `_` token). NULL = use heuristic path.
+   */
+  melismaPositions: number[][] | null
 }
 
 export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]> {
@@ -117,6 +123,7 @@ export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]>
       youtubeUrl: true,
       doubleLength: true,
       solfegeOcrText: true,
+      melismaPositions: true,
     },
     orderBy: (t, { asc }) => [asc(t.name)],
   })
