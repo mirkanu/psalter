@@ -449,6 +449,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
             solfegeJpgUrl={activeTune.solfegeJpgUrl ?? null}
             tuneName={activeTune.name ?? 'Tune'}
             tuneMeter={activeTune.meter ?? null}
+            phraseShapeOverride={(activeTune as { phraseShapeOverride?: number[] | null }).phraseShapeOverride ?? null}
             stanzaMeter={primaryVersion?.meter ?? null}
             lyricsStructured={primaryVersion?.lyricsStructured ?? null}
             doubleLength={activeTune.doubleLength ?? false}

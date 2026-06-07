@@ -1,0 +1,282 @@
+Resuming — 172 entries already in JSON
+Processing 172 of 172 tunes
+  [1] "Lancaster" — 1 page(s)
+  [2] "St. Anne" — 1 page(s)
+  [3] "Woodworth" — 1 page(s)
+  SATB warnings for "Woodworth": Unrecognised token: "-t" in ":d.r|m:-:m|s:-.f:m|r:-.m:f|m:-:s|s:r:m|f:-:l|l:-:s|m:-||:d.r"; Unrecognised token: "-d" in ":d|d:-:d|m:-.r:d|t_1:-d:r|d:-:m|r:-:d|r:-:f|f:-:m|d:-||:d|d:"
+  MISSING: "use aots for this psalm" (slug: use-aots-for-this-psalm) — no solfège file found
+  [5] "Lennox" — 2 page(s)
+  [6] "Scarborough" — 1 page(s)
+  [7] "Sawley (start high)" — 1 page(s)
+  MISSING: "Rutherford" (slug: rutherford) — no solfège file found
+  [9] "Moravia" — 1 page(s)
+  SATB warnings for "Moravia": Unrecognised token: "-f_1" in ":s_1 | l_1 :s_1 | s_1 :s_1 | l_1 :s_1 | s_1 :s_1 | d :d | d "
+  [10] "Arnold" — 1 page(s)
+  SATB warnings for "Arnold": Unrecognised token: "l_1,s" in ":s |s :m :s |f :r :f |m :f :m |r :— :r |m :f :s |l_1,s :f :m"; Unrecognised token: "l_1,t" in ":s |s :m :s |f :r :f |m :f :m |r :— :r |m :f :s |l_1,s :f :m"
+  [11] "Main" — 1 page(s)
+  [12] "Bays of Harris" — 1 page(s)
+  transcription failed for "Bays of Harris": No JSON in Claude response:
+I need to carefully examine this image. However, I can see this is actually **staff notation** (standard Western musical notation with treble and bass clefs, note heads on staves), **not tonic sol-fa (Curwen) notation**.
+
+The page header reads:
+- **"BAYS OF HARRIS C.M."**
+- Melody by Alex Muir, 1940-
+- Harmony by John L. Bell, 1949-
+- Music: © Bandleader Publications
+- Arrangement: © W.G.R.G., Iona Community
+
+This is **standard staff notation** written for SATB voices in two systems, in what app
+  [13] "Contemplation" — 1 page(s)
+  [14] "Selma" — 1 page(s)
+  [15] "Newington" — 1 page(s)
+  [16] "Aspurg" — 1 page(s)
+  [17] "Southwark" — 1 page(s)
+  MISSING: "Ellacomb" (slug: ellacomb) — no solfège file found
+  [19] "St. Magnus" — 1 page(s)
+  [20] "Old 134th" — 1 page(s)
+  [21] "Naomi" — 1 page(s)
+  MISSING: "Hawarden" (slug: hawarden) — no solfège file found
+  [23] "Belgrave" — 1 page(s)
+  [24] "New Lydia" — 2 page(s)
+  [25] "Edinburgh" — 1 page(s)
+  transcription failed for "Edinburgh": Unexpected non-whitespace character after JSON at position 369
+  [26] "Aurelia" — 2 page(s)
+  MISSING: "Penitence" (slug: penitence) — no solfège file found
+  [28] "Orlington" — 2 page(s)
+  [29] "Old 100th" — 1 page(s)
+  [30] "Crimond" — 1 page(s)
+  MISSING: "St. Columba" (slug: st-columba) — no solfège file found
+  [32] "Huddersfield" — 1 page(s)
+  [33] "Ravensburg" — 1 page(s)
+  [34] "St. Peter" — 1 page(s)
+  [35] "Culross" — 1 page(s)
+  [36] "Elgin" — 1 page(s)
+  [37] "Coleshill" — 1 page(s)
+  [38] "Old 124th" — 2 page(s)
+  [39] "Silchester" — 1 page(s)
+  MISSING: "Brian's mystery tune ("Ballymena")" (slug: brian-s-mystery-tune-ballymena) — no solfège file found
+  [41] "Kingsfold" — 1 page(s)
+  transcription failed for "Kingsfold": No JSON in Claude response:
+I need to be straightforward with you: this is **not** a Scottish Psalter in tonic sol-fa (Curwen) notation.
+
+This is hymn **275(ii) "I heard the voice of Jesus say"** from what appears to be a standard Christian hymnal, printed in **conventional staff notation** (treble and bass clefs, standard note heads on five-line staves), with chord symbols written above the staves.
+
+There is:
+- **No tonic sol-fa notation** (no d, r, m, f, s, l, t syllables)
+- **No "DOH =" key indicator**
+- **No curly brac
+  [42] "St. Bernard" — 1 page(s)
+  MISSING: "Lafayette" (slug: lafayette) — no solfège file found
+  [44] "Tiverton" — 1 page(s)
+  [45] "Stroudwater" — 1 page(s)
+  [46] "Humility" — 1 page(s)
+  [47] "Bangor" — 1 page(s)
+  MISSING: "Going Home (?)" (slug: going-home) — no solfège file found
+  [49] "French" — 1 page(s)
+  MISSING: "Ebenezer" (slug: ebenezer) — no solfège file found
+  [51] "Kilmarnock" — 1 page(s)
+  [52] "Boswell" — 1 page(s)
+  [53] "Stuttgart" — 1 page(s)
+  [54] "St. Leonard" — 1 page(s)
+  [55] "Wetherby" — 1 page(s)
+  [56] "Communion" — 2 page(s)
+  [57] "Darwall" — 2 page(s)
+  [58] "St. Stephen" — 1 page(s)
+  MISSING: "Maitland" (slug: maitland) — no solfège file found
+  MISSING: "Elrig" (slug: elrig) — no solfège file found
+  [61] "St. Andrew" — 1 page(s)
+  [62] "St. John" — 2 page(s)
+  SATB warnings for "St. John": Unrecognised token: "d' d'" in ":d |m :m |s :s |d' :— |— :d' |t :l |s :fe |s :— |— || :s |l "; Unrecognised token: "f m" in ":d |d :d |r :r |m :— |— :m |m :m |r :r |r :— |— || :m |f :f "
+  [63] "St. Mary" — 1 page(s)
+  [64] "Martyrdom" — 1 page(s)
+  [65] "Trentham" — 1 page(s)
+  [66] "Praetorius" — 1 page(s)
+  [67] "Kredron (EPC chant?)" — 1 page(s)
+  [68] "Cheshire (LRF??)" — 1 page(s)
+  [69] "Abbeyville" — 1 page(s)
+  [70] "London New" — 1 page(s)
+  [71] "Wallace" — 2 page(s)
+  transcription failed for "Wallace": Unexpected non-whitespace character after JSON at position 894
+  [72] "Jackson" — 1 page(s)
+  [73] "St. Kilda" — 1 page(s)
+  [74] "Corona" — 1 page(s)
+  MISSING: "St. Botolph" (slug: st-botolph) — no solfège file found
+  [76] "Sheffield" — 1 page(s)
+  [77] "Old 29th" — 1 page(s)
+  [78] "Martyrs" — 1 page(s)
+  [79] "Stracathro" — 1 page(s)
+  MISSING: "Holly" (slug: holly) — no solfège file found
+  MISSING: "Gabe" (slug: gabe) — no solfège file found
+  [82] "Artaxerxes (EPC tune)" — 1 page(s)
+  SATB warnings for "Artaxerxes (EPC tune)": Unrecognised token: "r,m" in ":d | m.,m :m :r | d.,d :d :r | m.,s :f :m | m :r || :f | m.,"
+  [83] "Eastgate (last line repeat for Ps 133)" — 2 page(s)
+  [84] "Elijah" — 1 page(s)
+  [85] "Richmond" — 1 page(s)
+  [86] "Walton" — 2 page(s)
+  [87] "I Need Thee" — 2 page(s)
+  [88] "Gabriel" — 1 page(s)
+  [89] "Gainsborough" — 1 page(s)
+  [90] "Evan" — 1 page(s)
+  SATB warnings for "Evan": Unrecognised token: "-f_1" in ":m_1 | r_1 :s_1 | s_1 :f_1 | s_1 :f_1 | m_1 :s_1 | s_1 :m_1 "
+  [91] "Leuchars" — 1 page(s)
+  SATB warnings for "Leuchars": Unrecognised token: "d d" in "m :— |m :s |f :m |r :— |m :— |d :d |r :r |m :— || m :— |f :m"; Unrecognised token: "l_1 s_1" in "d :— |d :t_1 |r :d |t_1 :— |t_1 :— |l_1 :l_1 |t_1 :t_1 |d :—"
+  MISSING: "Cleansing Fountain" (slug: cleansing-fountain) — no solfège file found
+  [93] "Orton" — 1 page(s)
+  [94] "St. James" — 1 page(s)
+  [95] "Bishopthorpe" — 1 page(s)
+  SATB warnings for "Bishopthorpe": Unrecognised token: "— l_1" in ":s_1 |s_1 :—:s_1 |f_1 :—:l_1 |s_1 :—:s_1 |s_1 :—:t_1 |d :—:d"
+  [96] "Farrant" — 1 page(s)
+  transcription failed for "Farrant": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNZnButN5fhz6XQ7HRx"}
+  [97] "St. Ethelreda" — 1 page(s)
+  transcription failed for "St. Ethelreda": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNZtyCtS3vw6Gxgzyu6"}
+  MISSING: "Bingham" (slug: bingham) — no solfège file found
+  [99] "Carlisle" — 1 page(s)
+  transcription failed for "Carlisle": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNa3xhFfWh72J2pr9Jw"}
+  [100] "Norwich" — 1 page(s)
+  transcription failed for "Norwich": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNaDPjA86nguyH3tPeK"}
+  [101] "Westminster" — 1 page(s)
+  transcription failed for "Westminster": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNaPctDdLTYMeUCofdT"}
+  [102] "St. Paul" — 1 page(s)
+  transcription failed for "St. Paul": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNaZ7djnWppepUmTBgS"}
+  [103] "Duke Street" — 1 page(s)
+  transcription failed for "Duke Street": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNafpTtQEM13PNS5LrK"}
+  [104] "Erin" — 1 page(s)
+  transcription failed for "Erin": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNandEge11eGFyVFwhb"}
+  [105] "Peterborough" — 1 page(s)
+  transcription failed for "Peterborough": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNawcENSqnPfwBRpW9e"}
+  MISSING: "Alexander (written by Brian Crossett!)" (slug: alexander-written-by-brian-crossett) — no solfège file found
+  [107] "Irish" — 1 page(s)
+  transcription failed for "Irish": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNb3zDB9LYzuATBKHSC"}
+  [108] "Salzburg" — 1 page(s)
+  transcription failed for "Salzburg": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNbAbLJh6qGJbPKAPwv"}
+  [109] "Webb" — 2 page(s)
+  transcription failed for "Webb": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNbKydxArTLku5zqfX3"}
+  [110] "Warwick" — 1 page(s)
+  transcription failed for "Warwick": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNbUnDcTPkpe163Yrhb"}
+  [111] "Ostend" — 2 page(s)
+  transcription failed for "Ostend": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNbbnu1cyvFMZPHJpmh"}
+  [112] "Palestrina (Mr Calendar tune)" — 1 page(s)
+  transcription failed for "Palestrina (Mr Calendar tune)": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNbkvpdc1Q5oL1yh4hE"}
+  [113] "Dennis" — 1 page(s)
+  transcription failed for "Dennis": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNbuw3uMgw9Vquou8fg"}
+  MISSING: "Israel" (slug: israel) — no solfège file found
+  MISSING: "do NOT use aots for this psalm" (slug: do-not-use-aots-for-this-psalm) — no solfège file found
+  [116] "Howard" — 1 page(s)
+  transcription failed for "Howard": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNc4yGprKxBE3VwPoYe"}
+  [117] "Comfort" — 1 page(s)
+  transcription failed for "Comfort": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNcEocTYTgd79Cmi3Xv"}
+  [118] "Petersham (CMD, EPC tune)" — 2 page(s)
+  transcription failed for "Petersham (CMD, EPC tune)": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNcQivKe1NoG4KKjjoF"}
+  [119] "Old 44th" — 2 page(s)
+  transcription failed for "Old 44th": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNcXSz1qzc5kCaN6Gt6"}
+  [120] "Shepherd" — 1 page(s)
+  transcription failed for "Shepherd": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNcm4XwAvQ6h66WFvcX"}
+  [121] "Consolation" — 1 page(s)
+  transcription failed for "Consolation": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNcv9jDW5wBJysaPiUa"}
+  [122] "New 136th" — 2 page(s)
+  transcription failed for "New 136th": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNd3BQA2paQmyBYDBn8"}
+  [123] "Belmont" — 1 page(s)
+  transcription failed for "Belmont": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNdA58nNQgiqKkrA29n"}
+  [124] "Boston" — 1 page(s)
+  transcription failed for "Boston": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNdL3Qx45zABTBL56zp"}
+  [125] "Glasgow" — 1 page(s)
+  transcription failed for "Glasgow": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNdV3ebbnHKv9uXFEeY"}
+  [126] "Franconia" — 1 page(s)
+  transcription failed for "Franconia": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNddxgEHfvxcDNzB6NG"}
+  [127] "Kathrine" — 1 page(s)
+  transcription failed for "Kathrine": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNdo2P6eVTEjtoY1T2i"}
+  [128] "Azmon/Denfield" — 1 page(s)
+  transcription failed for "Azmon/Denfield": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNdxuT674PB6omsPHpb"}
+  [129] "Dunfermline" — 1 page(s)
+  transcription failed for "Dunfermline": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNe5Rs4ZhgqUnMZJ6aY"}
+  [130] "Southwold" — 1 page(s)
+  transcription failed for "Southwold": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNeFAFdAjZAQ6pSKgkq"}
+  MISSING: "Thanksgiving" (slug: thanksgiving) — no solfège file found
+  [132] "Perfect Way" — 2 page(s)
+  transcription failed for "Perfect Way": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNeREEfDWrHoNnVRt5f"}
+  [133] "Rest" — 1 page(s)
+  transcription failed for "Rest": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNeahFGrAf7GDf8w1rR"}
+  MISSING: "Diademata" (slug: diademata) — no solfège file found
+  MISSING: "St Louis (Redner)" (slug: st-louis-redner) — no solfège file found
+  [136] "Clarkeville" — 2 page(s)
+  transcription failed for "Clarkeville": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNemSAFcjbGcKdGHqDD"}
+  [137] "Wiltshire" — 1 page(s)
+  transcription failed for "Wiltshire": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNetCTWDnXZkGm1JEF1"}
+  [138] "Dundee" — 1 page(s)
+  transcription failed for "Dundee": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNezg92Jrv7zXFLYzn8"}
+  [139] "Evangel" — 2 page(s)
+  transcription failed for "Evangel": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNfCW37dAazFFtMzbkF"}
+  [140] "Argyle" — 1 page(s)
+  transcription failed for "Argyle": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNfMot9widXg5kfPZsu"}
+  [141] "New Britain" — 1 page(s)
+  transcription failed for "New Britain": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNfWhuzCUzSg8JnxLMu"}
+  MISSING: "Leominster" (slug: leominster) — no solfège file found
+  [143] "Soldau" — 1 page(s)
+  transcription failed for "Soldau": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNfdBbY9YVwScg6fkY6"}
+  [144] "Dunlapscreek" — 1 page(s)
+  transcription failed for "Dunlapscreek": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNfjenS6XRM1rWPvY2e"}
+  [145] "Lynton" — 1 page(s)
+  transcription failed for "Lynton": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNftox1HF9MnppBrzii"}
+  MISSING: "Eventide" (slug: eventide) — no solfège file found
+  MISSING: "Rockingham" (slug: rockingham) — no solfège file found
+  [148] "Harington" — 1 page(s)
+  transcription failed for "Harington": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNg3iUgvpRZg7gCR8uS"}
+  [149] "Desert DONT SING" — 2 page(s)
+  transcription failed for "Desert DONT SING": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNgEDWNSrAigauJpjmq"}
+  [150] "Gräfenberg" — 1 page(s)
+  transcription failed for "Gräfenberg": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNgLaVQXA9qABs9WHDT"}
+  [151] "Agawam" — 1 page(s)
+  transcription failed for "Agawam": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNgWVYbcb2fjmNSJ28i"}
+  [152] "St. Lawrence" — 1 page(s)
+  transcription failed for "St. Lawrence": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNgqFQdZT3GifduVqUQ"}
+  [153] "Lloyd" — 1 page(s)
+  transcription failed for "Lloyd": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNgzDubUYZ4pECCcDRJ"}
+  [154] "Crediton" — 1 page(s)
+  transcription failed for "Crediton": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNh6jpycdpGw7ND87jE"}
+  [155] "St Agnes, Durham (start high)" — 1 page(s)
+  transcription failed for "St Agnes, Durham (start high)": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNhDRQohvoWjV4fHP8c"}
+  MISSING: "Traditional" (slug: traditional) — no solfège file found
+  [157] "Winchester" — 1 page(s)
+  transcription failed for "Winchester": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNhNHTt3GDNyVhEijju"}
+  [158] "Saxony" — 2 page(s)
+  transcription failed for "Saxony": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNhaKWQ1c1SAzQDGjiV"}
+  [159] "Eden (NB 1st note 2nd line!)" — 1 page(s)
+  transcription failed for "Eden (NB 1st note 2nd line!)": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNhhkFHaHPZAzfs2x23"}
+  MISSING: "Fountain" (slug: fountain) — no solfège file found
+  [161] "University" — 1 page(s)
+  transcription failed for "University": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNhs36EH8rxqDUUcfSD"}
+  [162] "Effingham" — 1 page(s)
+  transcription failed for "Effingham": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNhyXGe7ZkKabLUyTZD"}
+  [163] "Pembroke" — 2 page(s)
+  transcription failed for "Pembroke": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNiA4HFcQHqfgZDjpnP"}
+  [164] "St. Asaph" — 2 page(s)
+  transcription failed for "St. Asaph": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNiHfgHdwdcukoVfZWU"}
+  [165] "Spohr" — 1 page(s)
+  transcription failed for "Spohr": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNiTo8eYWhzw1jTRo6x"}
+  [166] "Ballerma (start high)" — 1 page(s)
+  transcription failed for "Ballerma (start high)": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNiairGKWzvDQHhZhG6"}
+  [167] "Rimington" — 1 page(s)
+  transcription failed for "Rimington": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNikppBYcxF9aTcKiJT"}
+  [168] "St. Flavian" — 1 page(s)
+  transcription failed for "St. Flavian": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNisdavG28KjcwFzTwn"}
+  [169] "Beatitudo" — 1 page(s)
+  transcription failed for "Beatitudo": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNj3k3kvW2cd9gV7bGc"}
+  [170] "Ericstane" — 1 page(s)
+  transcription failed for "Ericstane": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNjCmXN5dc4U7HmJshs"}
+  [171] "Tallis" — 1 page(s)
+  transcription failed for "Tallis": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNjKNu31ozrwB9vG29B"}
+  [172] "Forest Green" — 1 page(s)
+  transcription failed for "Forest Green": 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CayNjS3z5QZjyouPcvRMS"}
+
+── Summary ──────────────────────────────────────────────────────
+Total tunes in DB:      172
+With solfège images:    144
+Successful soprano ABC: 75
+With solfege OCR text:  75
+With SATB ABC:          75
+No solfège image:       28
+Failures:               69
+────────────────────────────────────────────────────────────────
+Success rate (of tunes with images): 52.1%
+Acceptance bar: ≥95% of 144 tunes with images = ≥137 tunes
+FAIL: below 95% acceptance bar — check solfege-ocr.json for failures

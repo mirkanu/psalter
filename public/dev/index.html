@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sketch Viewer</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+      background: #f3f4f6;
+      color: #1f2937;
+    }
+
+    .container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    nav {
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    nav .max-width {
+      max-width: 80rem;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 0.25rem 0.75rem;
+      border-radius: 0.375rem;
+      border: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    button.active {
+      background: #2563eb;
+      color: white;
+    }
+
+    button:not(.active) {
+      background: #d1d5db;
+      color: #1f2937;
+    }
+
+    button:not(.active):hover {
+      background: #9ca3af;
+    }
+
+    main {
+      flex: 1;
+      padding: 2rem;
+    }
+
+    main .max-width {
+      max-width: 80rem;
+      margin: 0 auto;
+    }
+
+    .content {
+      background: white;
+      border-radius: 0.375rem;
+    }
+
+    .placeholder {
+      color: #6b7280;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 1rem;
+      border-radius: 0.375rem;
+      margin-bottom: 1rem;
+    }
+
+    iframe {
+      width: 100%;
+      height: 90vh;
+      border: none;
+      border-radius: 0.375rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <div class="max-width">
+        <h1>Sketch Viewer</h1>
+        <div class="button-group" id="buttons"></div>
+      </div>
+    </nav>
+    <main>
+      <div class="max-width">
+        <div id="content" class="content">
+          <div class="placeholder">Select a sketch to view</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const sketches = [
+      { id: '001-hymnal-layout-variants', name: 'Hymnal Layout Variants' },
+      { id: '002-dynamic-sizing-interaction', name: 'Dynamic Sizing Interaction' },
+      { id: '003-fullscreen-navigation', name: 'Fullscreen Navigation' },
+    ];
+
+    const container = document.getElementById('buttons');
+    const content = document.getElementById('content');
+
+    // Build button group
+    sketches.forEach(sketch => {
+      const btn = document.createElement('button');
+      btn.textContent = sketch.name;
+      btn.dataset.id = sketch.id;
+      btn.onclick = () => loadSketch(sketch.id);
+      container.appendChild(btn);
+    });
+
+    function updateActiveButton(sketchId) {
+      document.querySelectorAll('button[data-id]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.id === sketchId);
+      });
+    }
+
+    function loadSketch(sketchId) {
+      updateActiveButton(sketchId);
+      const src = `/sketches/${sketchId}/index.html`;
+      content.innerHTML = `<iframe src="${src}" title="${sketchId}"></iframe>`;
+    }
+
+    // Load sketch from URL parameter
+    const params = new URLSearchParams(window.location.search);
+    const sketch = params.get('sketch');
+    if (sketch && sketches.some(s => s.id === sketch)) {
+      loadSketch(sketch);
+    }
+  </script>
+</body>
+</html>

@@ -1,10 +1,54 @@
 {
-  "generatedAt": "2026-05-29T23:50:45.338Z",
+  "generatedAt": "2026-05-30T08:58:10.064Z",
   "base": "http://localhost:3005",
   "tolerance": 1,
-  "psalmsChecked": 150,
-  "passed": 139,
-  "skipped": 11,
-  "failed": 0,
-  "failures": []
+  "psalmsChecked": 3,
+  "passed": 2,
+  "skipped": 0,
+  "failed": 1,
+  "failures": [
+    {
+      "psalm": 100,
+      "reason": "empty-notes",
+      "failures": [
+        {
+          "line": "abcjs-l3",
+          "noteCount": 24,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 16,
+          "trailingEmpty": 14
+        }
+      ],
+      "allStaves": [
+        {
+          "line": "abcjs-l0",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l1",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l2",
+          "noteCount": 8,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 0,
+          "trailingEmpty": 0
+        },
+        {
+          "line": "abcjs-l3",
+          "noteCount": 24,
+          "notesWithLyric": 8,
+          "notesWithoutLyric": 16,
+          "trailingEmpty": 14
+        }
+      ]
+    }
+  ]
 }

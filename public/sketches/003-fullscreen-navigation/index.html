@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sketch 003: Full-Screen Navigation</title>
+  <link rel="stylesheet" href="../themes/default.css">
+  <style>
+    .fullscreen-demo {
+      margin: var(--space-lg) 0;
+    }
+
+    .fullscreen-frame {
+      position: relative;
+      border: 2px solid #333;
+      border-radius: 8px;
+      overflow: hidden;
+      background: white;
+    }
+
+    /* Variant A: Sticky Bottom Bar */
+    .variant-a .fullscreen-frame {
+      width: 375px;
+      height: 700px;
+      margin: 0 auto;
+    }
+
+    .variant-a .fullscreen-content {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: var(--space-md);
+    }
+
+    .variant-a .fullscreen-content-main {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: white;
+    }
+
+    .variant-a .staff-demo {
+      width: 100%;
+      height: 120px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-image:
+        repeating-linear-gradient(
+          to bottom,
+          #333,
+          #333 2px,
+          transparent 2px,
+          transparent 20px
+        );
+      margin-bottom: var(--space-md);
+    }
+
+    .variant-a .note {
+      position: absolute;
+      color: var(--brand-primary);
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .variant-a .nav-bar {
+      display: flex;
+      gap: var(--space-sm);
+      justify-content: center;
+      padding: var(--space-md);
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+    }
+
+    .variant-a .nav-bar button {
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    /* Variant B: Overlay Top Bar */
+    .variant-b .fullscreen-frame {
+      width: 375px;
+      height: 700px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .variant-b .fullscreen-content {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .variant-b .nav-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      gap: var(--space-sm);
+      justify-content: center;
+      padding: var(--space-md);
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 10;
+    }
+
+    .variant-b .nav-overlay button {
+      padding: 8px 12px;
+      font-size: 12px;
+      background: rgba(255, 255, 255, 0.9);
+      color: #333;
+      border: none;
+    }
+
+    .variant-b .fullscreen-content-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 50px var(--space-md) var(--space-md);
+    }
+
+    .variant-b .staff-demo {
+      width: 100%;
+      height: 120px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-image:
+        repeating-linear-gradient(
+          to bottom,
+          #333,
+          #333 2px,
+          transparent 2px,
+          transparent 20px
+        );
+      margin-bottom: var(--space-md);
+    }
+
+    .variant-b .note {
+      position: absolute;
+      color: var(--brand-primary);
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    /* Variant C: Landscape Layout */
+    .variant-c .fullscreen-frame {
+      width: 700px;
+      height: 375px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .variant-c .fullscreen-content {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      height: 100%;
+    }
+
+    .variant-c .fullscreen-content-main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-lg);
+      background: white;
+    }
+
+    .variant-c .staff-demo {
+      width: 400px;
+      height: 100px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-image:
+        repeating-linear-gradient(
+          to bottom,
+          #333,
+          #333 2px,
+          transparent 2px,
+          transparent 20px
+        );
+      margin-bottom: var(--space-md);
+    }
+
+    .variant-c .note {
+      position: absolute;
+      color: var(--brand-primary);
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .variant-c .side-nav {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: var(--space-md);
+      padding: var(--space-lg);
+      background: var(--bg-secondary);
+      border-left: 1px solid var(--border);
+    }
+
+    .variant-c .side-nav button {
+      padding: 12px 16px;
+      font-size: 11px;
+      width: 60px;
+    }
+
+    .lyrics-under {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .variant-note {
+      background: #fffacd;
+      border-left: 3px solid #ffd700;
+      padding: var(--space-md);
+      margin-top: var(--space-lg);
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .desktop-preview {
+      max-width: 800px;
+      margin: var(--space-xl) auto;
+      padding: var(--space-lg);
+      background: var(--bg-secondary);
+      border-radius: 6px;
+    }
+
+    .close-button {
+      position: absolute;
+      top: var(--space-md);
+      left: var(--space-md);
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="sketch-wrapper">
+    <div class="sketch-toolbar">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchVariant(event, 'var-a')">A: Sticky Nav ★</button>
+        <button class="tab-btn" onclick="switchVariant(event, 'var-b')">B: Overlay Nav</button>
+        <button class="tab-btn" onclick="switchVariant(event, 'var-c')">C: Landscape Grid</button>
+      </div>
+    </div>
+
+    <!-- Variant A: Sticky Bottom Bar -->
+    <div id="var-a" class="variant active">
+      <div style="max-width: 600px; margin: 0 auto; padding: var(--space-lg);">
+        <h2>Variant A: Sticky Bottom Navigation Bar</h2>
+
+        <div class="info-text">
+          <strong>Use case:</strong> Mobile portrait full-screen (most common). Prev/Next buttons stick to bottom, always reachable without scrolling.
+        </div>
+
+        <div class="fullscreen-demo variant-a">
+          <div class="fullscreen-frame">
+            <div class="fullscreen-content">
+              <div class="fullscreen-content-main">
+                <div style="text-align: center; margin-bottom: var(--space-lg);">
+                  <div style="font-size: 12px; color: var(--text-light); margin-bottom: var(--space-sm);">Psalm 23</div>
+                  <div style="font-weight: bold; color: var(--brand-primary);">Verse 1 of 6</div>
+                </div>
+
+                <div class="staff-demo">
+                  <div class="note" style="left: 15%;">♪</div>
+                  <div class="note" style="left: 30%;">♪</div>
+                  <div class="note" style="left: 45%;">♪</div>
+                  <div class="note" style="left: 60%;">♪</div>
+                  <div class="note" style="left: 75%;">♪</div>
+                </div>
+
+                <div class="lyrics-under">
+                  The Lord's my shepherd
+                </div>
+              </div>
+
+              <div class="nav-bar">
+                <button class="secondary">◀ Prev</button>
+                <button>Exit Full ⤡</button>
+                <button class="secondary">Next ▶</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="variant-note">
+          <strong>Pros:</strong> Clear, always accessible, doesn't block content<br>
+          <strong>Cons:</strong> Takes up space; requires enough vertical height
+        </div>
+      </div>
+    </div>
+
+    <!-- Variant B: Overlay Top Bar -->
+    <div id="var-b" class="variant">
+      <div style="max-width: 600px; margin: 0 auto; padding: var(--space-lg);">
+        <h2>Variant B: Overlay Navigation (Top)</h2>
+
+        <div class="info-text">
+          <strong>Use case:</strong> Maximize staff visibility. Nav buttons float on top, minimizing space loss.
+        </div>
+
+        <div class="fullscreen-demo variant-b">
+          <div class="fullscreen-frame">
+            <div class="nav-overlay">
+              <button>◀ Prev</button>
+              <button>Exit ⤡</button>
+              <button>Next ▶</button>
+            </div>
+
+            <div class="fullscreen-content">
+              <div class="fullscreen-content-main">
+                <div style="text-align: center; margin-bottom: var(--space-lg);">
+                  <div style="font-size: 12px; color: var(--text-light); margin-bottom: var(--space-sm);">Psalm 23</div>
+                  <div style="font-weight: bold; color: var(--brand-primary);">Verse 1 of 6</div>
+                </div>
+
+                <div class="staff-demo">
+                  <div class="note" style="left: 15%;">♪</div>
+                  <div class="note" style="left: 30%;">♪</div>
+                  <div class="note" style="left: 45%;">♪</div>
+                  <div class="note" style="left: 60%;">♪</div>
+                  <div class="note" style="left: 75%;">♪</div>
+                </div>
+
+                <div class="lyrics-under">
+                  The Lord's my shepherd
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="variant-note">
+          <strong>Pros:</strong> Maximizes staff space, semi-transparent background shows staff<br>
+          <strong>Cons:</strong> Can obscure staff if not designed carefully; overlay opacity matters
+        </div>
+      </div>
+    </div>
+
+    <!-- Variant C: Landscape Layout -->
+    <div id="var-c" class="variant">
+      <div style="max-width: 900px; margin: 0 auto; padding: var(--space-lg);">
+        <h2>Variant C: Landscape Layout (iPad/Tablet)</h2>
+
+        <div class="info-text">
+          <strong>Use case:</strong> Landscape orientation. Side navigation allows verse scrolling without losing nav buttons. Good for tablets.
+        </div>
+
+        <div class="fullscreen-demo variant-c">
+          <div class="fullscreen-frame">
+            <div class="fullscreen-content">
+              <div class="fullscreen-content-main">
+                <div style="text-align: center; margin-bottom: var(--space-lg);">
+                  <div style="font-size: 12px; color: var(--text-light); margin-bottom: var(--space-sm);">Psalm 23</div>
+                  <div style="font-weight: bold; color: var(--brand-primary);">Verse 1 of 6</div>
+                </div>
+
+                <div class="staff-demo">
+                  <div class="note" style="left: 15%;">♪</div>
+                  <div class="note" style="left: 30%;">♪</div>
+                  <div class="note" style="left: 45%;">♪</div>
+                  <div class="note" style="left: 60%;">♪</div>
+                  <div class="note" style="left: 75%;">♪</div>
+                </div>
+
+                <div class="lyrics-under">
+                  The Lord's my shepherd, I'll not want
+                </div>
+              </div>
+
+              <div class="side-nav">
+                <button class="secondary">◀<br>Prev</button>
+                <button>Exit<br>⤡</button>
+                <button class="secondary">Next<br>▶</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="variant-note">
+          <strong>Pros:</strong> Side nav always visible, landscape uses width efficiently<br>
+          <strong>Cons:</strong> Less staff width; only works in landscape
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparison & Recommendation -->
+    <div style="max-width: 1000px; margin: var(--space-2xl) auto; padding: var(--space-lg); background: var(--bg-secondary); border-radius: 6px;">
+      <h2>Comparison & Recommendation</h2>
+
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Variant</th>
+            <th>Use Case</th>
+            <th>Staff Visibility</th>
+            <th>Nav Accessibility</th>
+            <th>Scrolling</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="background: #e8f5e9;">
+            <td><strong>A: Sticky Bottom ★</strong></td>
+            <td>Mobile portrait (most)</td>
+            <td>Good (nav doesn't block)</td>
+            <td>Excellent (no scroll)</td>
+            <td>Verse text scrolls, nav stays</td>
+          </tr>
+          <tr>
+            <td>B: Overlay Top</td>
+            <td>Mobile (portrait/landscape)</td>
+            <td>Excellent (maximized)</td>
+            <td>Good (overlay persistent)</td>
+            <td>Full content scrolls</td>
+          </tr>
+          <tr>
+            <td>C: Landscape Grid</td>
+            <td>Tablet (landscape)</td>
+            <td>Good (side doesn't block)</td>
+            <td>Excellent (always visible)</td>
+            <td>Verse scrolls in main area</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 style="margin-top: var(--space-lg);">Recommended Strategy</h3>
+      <ul style="font-size: 13px; line-height: 1.8;">
+        <li><strong>Portrait (<768px):</strong> Use Variant A (sticky bottom). Most common, proven mobile pattern.</li>
+        <li><strong>Landscape (768px-1024px):</strong> Use Variant B or C. Landscape has wider viewport, either works.</li>
+        <li><strong>Desktop (>1024px):</strong> Full-screen mode less relevant (regular layout preferred), but if enabled, use Variant C equivalent with side nav.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    function switchVariant(event, variantId) {
+      document.querySelectorAll('.variant').forEach(v => {
+        v.classList.remove('active');
+      });
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      document.getElementById(variantId).classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>

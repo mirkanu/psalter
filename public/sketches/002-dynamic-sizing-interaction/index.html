@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sketch 002: Dynamic Sizing Interaction</title>
+  <link rel="stylesheet" href="../themes/default.css">
+  <style>
+    .sizing-demo {
+      background: white;
+      border-radius: 6px;
+      padding: var(--space-lg);
+      margin: var(--space-lg) 0;
+      border: 1px solid var(--border);
+    }
+
+    .size-controls {
+      display: flex;
+      gap: var(--space-md);
+      align-items: center;
+      margin-bottom: var(--space-lg);
+      padding: var(--space-md);
+      background: var(--bg-secondary);
+      border-radius: 4px;
+    }
+
+    .size-btn {
+      padding: 6px 12px;
+      background: var(--brand-primary);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .size-btn:hover {
+      background: #134056;
+    }
+
+    .size-display {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-secondary);
+      min-width: 80px;
+      padding: 0 var(--space-md);
+    }
+
+    .staff-lines {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: var(--space-lg) 0;
+      background-image:
+        repeating-linear-gradient(
+          to bottom,
+          #333,
+          #333 2px,
+          transparent 2px,
+          transparent 20px
+        );
+    }
+
+    .note-markers {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+    }
+
+    .note-marker {
+      color: var(--brand-primary);
+      font-weight: bold;
+      font-size: 1.4em;
+    }
+
+    .lyrics-line {
+      text-align: center;
+      font-size: 1em;
+      color: var(--text-secondary);
+      margin: var(--space-md) 0;
+    }
+
+    .verse-text {
+      background: var(--bg-secondary);
+      border-radius: 4px;
+      padding: var(--space-md);
+      margin: var(--space-md) 0;
+      line-height: 1.6;
+    }
+
+    .verse-text p {
+      margin: 0;
+      font-size: 1em;
+    }
+
+    .info-text {
+      font-size: 12px;
+      color: var(--text-secondary);
+      padding: var(--space-md);
+      background: #f0f8ff;
+      border-left: 3px solid #4a90e2;
+      border-radius: 4px;
+      margin-bottom: var(--space-lg);
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-xl);
+      margin-bottom: var(--space-xl);
+    }
+
+    @media (max-width: 768px) {
+      .demo-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .size-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--text-light);
+      letter-spacing: 0.5px;
+      margin-bottom: var(--space-sm);
+    }
+
+    /* Variant A: Small Base Size */
+    .variant-a .staff-lines {
+      height: 60px;
+    }
+
+    .variant-a .staff-lines {
+      background-image:
+        repeating-linear-gradient(
+          to bottom,
+          #333,
+          #333 1.5px,
+          transparent 1.5px,
+          transparent 15px
+        );
+    }
+
+    .variant-a .note-marker {
+      font-size: 1.2em;
+    }
+
+    .variant-a .lyrics-line {
+      font-size: 12px;
+    }
+
+    .variant-a .verse-text p {
+      font-size: 12px;
+    }
+
+    /* Variant B: Medium Base Size */
+    .variant-b .staff-lines {
+      height: 80px;
+    }
+
+    .variant-b .note-marker {
+      font-size: 1.4em;
+    }
+
+    .variant-b .lyrics-line {
+      font-size: 14px;
+    }
+
+    .variant-b .verse-text p {
+      font-size: 14px;
+    }
+
+    /* Variant C: Large Base Size */
+    .variant-c .staff-lines {
+      height: 100px;
+    }
+
+    .variant-c .staff-lines {
+      background-image:
+        repeating-linear-gradient(
+          to bottom,
+          #333,
+          #333 2.5px,
+          transparent 2.5px,
+          transparent 25px
+        );
+    }
+
+    .variant-c .note-marker {
+      font-size: 1.6em;
+    }
+
+    .variant-c .lyrics-line {
+      font-size: 16px;
+    }
+
+    .variant-c .verse-text p {
+      font-size: 16px;
+    }
+
+    .variant-c .verse-text {
+      column-count: 1;
+    }
+
+    /* Responsive at different widths */
+    .size-at-width {
+      margin-bottom: var(--space-xl);
+      border-left: 3px solid var(--brand-secondary);
+      padding-left: var(--space-lg);
+    }
+
+    .size-at-width h4 {
+      color: var(--brand-secondary);
+      margin-bottom: var(--space-md);
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: var(--space-lg) 0;
+      font-size: 13px;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      border: 1px solid var(--border);
+      padding: var(--space-md);
+      text-align: left;
+    }
+
+    .comparison-table th {
+      background: var(--bg-secondary);
+      font-weight: bold;
+    }
+
+    .comparison-table tr:hover {
+      background: #f5f5f5;
+    }
+  </style>
+</head>
+<body>
+  <div class="sketch-wrapper">
+    <div class="sketch-toolbar">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchVariant(event, 'var-a')">Small (12px) ★</button>
+        <button class="tab-btn" onclick="switchVariant(event, 'var-b')">Medium (14px)</button>
+        <button class="tab-btn" onclick="switchVariant(event, 'var-c')">Large (16px)</button>
+      </div>
+    </div>
+
+    <!-- Variant A: Small Base Size -->
+    <div id="var-a" class="variant active">
+      <div style="max-width: 1000px; margin: 0 auto; padding: var(--space-lg);">
+        <h2>Variant A: Small Base Size (A− selected)</h2>
+
+        <div class="info-text">
+          <strong>Scenario:</strong> User taps A− button. Base font size is 12px for lyrics, staff scales proportionally smaller. More lyrics visible on screen, less detail on staff.
+        </div>
+
+        <div class="sizing-demo variant-a">
+          <div class="size-controls">
+            <button class="size-btn" onclick="alert('A− pressed: decreases size further')">A−</button>
+            <span class="size-display">12px base</span>
+            <button class="size-btn" onclick="alert('A+ pressed: increases size')">A+</button>
+          </div>
+
+          <div class="size-label">Staff + Inline Lyrics</div>
+          <div class="staff-lines">
+            <div class="note-markers">
+              <span class="note-marker">♪</span>
+              <span class="note-marker">♪</span>
+              <span class="note-marker">♪</span>
+              <span class="note-marker">♪</span>
+              <span class="note-marker">♪</span>
+              <span class="note-marker">♪</span>
+            </div>
+          </div>
+
+          <div class="lyrics-line">
+The Lord's my shep- herd, I'll not want, He makes me down to lie
+          </div>
+
+          <div style="margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px solid var(--border);">
+            <div class="size-label">Verse Text at 1000px Width</div>
+            <div class="verse-text" style="column-count: 2; column-gap: var(--space-lg);">
+              <p><strong>1.</strong> The Lord's my shepherd, I'll not want, He makes me down to lie In pastures green; he leads me the Quiet waters by.</p>
+              <p><strong>2.</strong> My soul he doth restore again; And me to walk doth make Within the paths of righteousness, Even for his own name's sake.</p>
+              <p><strong>3.</strong> Yea, though I walk in death's dark vale, Yet will I fear none ill; For thou art with me, and thy rod And staff me comfort still.</p>
+            </div>
+            <div style="font-size: 11px; color: var(--text-light); margin-top: var(--space-sm);">
+              ✓ 3 verses visible, scrollable
+            </div>
+          </div>
+
+          <div style="margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 1px solid var(--border);">
+            <h3>How Content Fits at Different Widths</h3>
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th>Viewport</th>
+                  <th>Staff Lines</th>
+                  <th>Lyrics Line Count</th>
+                  <th>Verse Display</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1024px Desktop</td>
+                  <td>Small (60px)</td>
+                  <td>1 line (wraps syllables)</td>
+                  <td>2 columns, 3+ verses visible</td>
+                </tr>
+                <tr style="background: #fff3cd;">
+                  <td>768px Tablet</td>
+                  <td>Small (60px)</td>
+                  <td>2 lines</td>
+                  <td>1 column, 2-3 verses visible</td>
+                </tr>
+                <tr>
+                  <td>375px Mobile</td>
+                  <td>Small (60px)</td>
+                  <td>2-3 lines (narrower)</td>
+                  <td>1 verse at a time</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variant B: Medium Base Size -->
+    <div id="var-b" class="variant">
+      <div style="max-width: 1000px; margin: 0 auto; padding: var(--space-lg);">
+        <h2>Variant B: Medium Base Size (Default)</h2>
+
+        <div class="info-text">
+          <strong>Scenario:</strong> Default state. Base font size is 14px. Good balance between readability and content visibility.
+        </div>
+
+        <div class="sizing-demo variant-b">
+          <div class="size-controls">
+            <button class="size-btn" onclick="alert('A− pressed: decreases to small')">A−</button>
+            <span class="size-display">14px base</span>
+            <button class="size-btn" onclick="alert('A+ pressed: increases to large')">A+</button>
+          </div>
+
+          <div class="size-label">Staff + Inline Lyrics</div>
+          <div class="staff-lines">
+            <div class="note-markers">
+              <span class="note-marker">♪</span>
+              <span class="note-marker">♪</span>
+              <span class="note-marker">♪</span>
+              <span class="note-marker">♪</span>
+              <span class="note-marker">♪</span>
+              <span class="note-marker">♪</span>
+            </div>
+          </div>
+
+          <div class="lyrics-line">
+The Lord's my shep- herd, I'll not want, He makes me down to lie
+          </div>
+
+          <div style="margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px solid var(--border);">
+            <div class="size-label">Verse Text at 1000px Width</div>
+            <div class="verse-text" style="column-count: 2; column-gap: var(--space-lg);">
+              <p><strong>1.</strong> The Lord's my shepherd, I'll not want, He makes me down to lie In pastures green; he leads me the Quiet waters by.</p>
+              <p><strong>2.</strong> My soul he doth restore again; And me to walk doth make Within the paths of righteousness, Even for his own name's sake.</p>
+              <p><strong>3.</strong> Yea, though I walk in death's dark vale, Yet will I fear none ill; For thou art with me, and thy rod And staff me comfort still.</p>
+            </div>
+            <div style="font-size: 11px; color: var(--text-light); margin-top: var(--space-sm);">
+              ✓ 2-3 verses visible, scrollable
+            </div>
+          </div>
+
+          <div style="margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 1px solid var(--border);">
+            <h3>How Content Fits at Different Widths</h3>
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th>Viewport</th>
+                  <th>Staff Lines</th>
+                  <th>Lyrics Line Count</th>
+                  <th>Verse Display</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1024px Desktop</td>
+                  <td>Medium (80px)</td>
+                  <td>1 line (wraps syllables)</td>
+                  <td>2 columns, 2-3 verses visible</td>
+                </tr>
+                <tr style="background: #fff3cd;">
+                  <td>768px Tablet</td>
+                  <td>Medium (80px)</td>
+                  <td>2 lines</td>
+                  <td>1 column, 1-2 verses visible</td>
+                </tr>
+                <tr>
+                  <td>375px Mobile</td>
+                  <td>Medium (80px)</td>
+                  <td>3 lines (narrower)</td>
+                  <td>1 verse at a time, scroll</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variant C: Large Base Size -->
+    <div id="var-c" class="variant">
+      <div style="max-width: 1000px; margin: 0 auto; padding: var(--space-lg);">
+        <h2>Variant C: Large Base Size (A+ selected)</h2>
+
+        <div class="info-text">
+          <strong>Scenario:</strong> User taps A+ button. Base font size is 16px. High readability, less content visible. Good for accessibility or readers with vision needs.
+        </div>
+
+        <div class="sizing-demo variant-c">
+          <div class="size-controls">
+            <button class="size-btn" onclick="alert('A− pressed: decreases size')">A−</button>
+            <span class="size-display">16px base</span>
+            <button class="size-btn" onclick="alert('A+ pressed: increases further')">A+</button>
+          </div>
+
+          <div class="size-label">Staff + Inline Lyrics</div>
+          <div class="staff-lines">
+            <div class="note-markers">
+              <span class="note-marker">♪</span>
+              <span class="note-marker">♪</span>
+              <span class="note-marker">♪</span>
+              <span class="note-marker">♪</span>
+              <span class="note-marker">♪</span>
+              <span class="note-marker">♪</span>
+            </div>
+          </div>
+
+          <div class="lyrics-line">
+The Lord's my shep- herd, I'll not want, He makes me down to lie
+          </div>
+
+          <div style="margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px solid var(--border);">
+            <div class="size-label">Verse Text at 1000px Width</div>
+            <div class="verse-text">
+              <p><strong>1.</strong> The Lord's my shepherd, I'll not want, He makes me down to lie In pastures green; he leads me the Quiet waters by.</p>
+              <p style="margin-top: var(--space-md);"><strong>2.</strong> My soul he doth restore again; And me to walk doth make Within the paths of righteousness, Even for his own name's sake.</p>
+            </div>
+            <div style="font-size: 11px; color: var(--text-light); margin-top: var(--space-sm);">
+              ✓ 1-2 verses visible, more scrolling needed
+            </div>
+          </div>
+
+          <div style="margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: 1px solid var(--border);">
+            <h3>How Content Fits at Different Widths</h3>
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th>Viewport</th>
+                  <th>Staff Lines</th>
+                  <th>Lyrics Line Count</th>
+                  <th>Verse Display</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1024px Desktop</td>
+                  <td>Large (100px)</td>
+                  <td>1 line (wraps syllables)</td>
+                  <td>Single column, 1-2 verses</td>
+                </tr>
+                <tr style="background: #fff3cd;">
+                  <td>768px Tablet</td>
+                  <td>Large (100px)</td>
+                  <td>2+ lines</td>
+                  <td>Single column, 1 verse</td>
+                </tr>
+                <tr>
+                  <td>375px Mobile</td>
+                  <td>Large (100px)</td>
+                  <td>3+ lines (narrow)</td>
+                  <td>1 verse, scroll heavy</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchVariant(event, variantId) {
+      document.querySelectorAll('.variant').forEach(v => {
+        v.classList.remove('active');
+      });
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      document.getElementById(variantId).classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sketch 001: Hymnal Layout Variants</title>
+  <link rel="stylesheet" href="../themes/default.css">
+  <style>
+    .desktop-frame {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      overflow: hidden;
+      margin: var(--space-lg) 0;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .mobile-frame {
+      width: 375px;
+      border: 12px solid #333;
+      border-radius: 40px;
+      overflow: hidden;
+      margin: var(--space-lg) auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      background: white;
+    }
+
+    .mobile-frame::before {
+      content: '';
+      display: block;
+      height: 25px;
+      background: #333;
+      position: relative;
+      z-index: 10;
+    }
+
+    .mobile-content {
+      background: white;
+      height: 667px;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    /* Variant A: Sidebar Layout (Desktop) */
+    .layout-a-desktop {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: var(--space-lg);
+      padding: var(--space-lg);
+      min-height: 600px;
+      background: var(--bg-secondary);
+    }
+
+    .layout-a-desktop .score-area {
+      background: white;
+      border-radius: 6px;
+      padding: var(--space-lg);
+    }
+
+    .layout-a-desktop .verses-panel {
+      background: white;
+      border-radius: 6px;
+      padding: var(--space-lg);
+      border-left: 3px solid var(--brand-secondary);
+      overflow-y: auto;
+      max-height: 600px;
+    }
+
+    .verses-panel .verse-stanza {
+      font-size: 13px;
+      line-height: 1.5;
+      margin-bottom: var(--space-lg);
+    }
+
+    /* Variant B: Centered Layout (Desktop) */
+    .layout-b-desktop {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: var(--space-lg);
+    }
+
+    .layout-b-desktop .score-area {
+      background: white;
+      border-radius: 6px;
+      padding: var(--space-lg);
+      margin-bottom: var(--space-xl);
+    }
+
+    .layout-b-desktop .verses-panel {
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      padding: var(--space-lg);
+      column-count: 2;
+      column-gap: var(--space-lg);
+    }
+
+    /* Variant C: Mobile Stacked */
+    .layout-c-mobile {
+      display: flex;
+      flex-direction: column;
+      padding: var(--space-md);
+    }
+
+    .layout-c-mobile .score-area {
+      background: white;
+      border-radius: 6px;
+      padding: var(--space-md);
+      margin-bottom: var(--space-md);
+    }
+
+    .layout-c-mobile .verses-panel {
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      padding: var(--space-md);
+      border-top: 3px solid var(--brand-secondary);
+    }
+
+    .layout-c-mobile .verses-panel .verse-stanza {
+      font-size: 13px;
+      margin-bottom: var(--space-md);
+    }
+
+    /* Staff Visualization */
+    .staff-demo {
+      position: relative;
+      height: 100px;
+      margin: var(--space-md) 0;
+      background-image:
+        repeating-linear-gradient(
+          to bottom,
+          #333,
+          #333 2px,
+          transparent 2px,
+          transparent 20px
+        );
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .staff-demo .note-marker {
+      position: absolute;
+      font-size: 28px;
+      color: var(--brand-primary);
+      font-weight: bold;
+    }
+
+    .note-1 { left: 10%; top: 30%; }
+    .note-2 { left: 25%; top: 50%; }
+    .note-3 { left: 40%; top: 40%; }
+    .note-4 { left: 55%; top: 60%; }
+    .note-5 { left: 70%; top: 35%; }
+    .note-6 { left: 85%; top: 50%; }
+
+    .lyrics-under-staff {
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+      margin-top: var(--space-sm);
+      word-spacing: 0.8em;
+    }
+
+    /* Controls */
+    .score-controls {
+      display: flex;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-md);
+      flex-wrap: wrap;
+    }
+
+    .score-controls button {
+      padding: var(--space-sm) var(--space-md);
+      font-size: 12px;
+    }
+
+    /* Size Label */
+    .size-label {
+      display: inline-block;
+      font-size: 11px;
+      color: var(--text-light);
+      margin-left: var(--space-sm);
+      font-family: var(--font-mono);
+    }
+
+    /* Highlight active variant */
+    .highlight {
+      box-shadow: 0 0 0 3px rgba(26, 77, 122, 0.2);
+    }
+
+    /* Descriptions */
+    .variant-desc {
+      background: #fffacd;
+      border-left: 4px solid #ffd700;
+      padding: var(--space-md);
+      margin-bottom: var(--space-lg);
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    .frame-label {
+      font-size: 11px;
+      color: var(--text-light);
+      margin-bottom: var(--space-sm);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="sketch-wrapper">
+    <div class="sketch-toolbar">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchVariant(event, 'variant-a')">Variant A: Sidebar ★</button>
+        <button class="tab-btn" onclick="switchVariant(event, 'variant-b')">Variant B: Centered</button>
+        <button class="tab-btn" onclick="switchVariant(event, 'variant-c')">Variant C: Mobile Stack</button>
+      </div>
+    </div>
+
+    <!-- Variant A: Sidebar Layout (Desktop) -->
+    <div id="variant-a" class="variant active">
+      <div style="max-width: 1200px; margin: 0 auto; padding: var(--space-lg);">
+        <h2>Variant A: Sidebar Layout (Desktop)</h2>
+        <div class="variant-desc">
+          <strong>Layout:</strong> Score on left (main content), verses on right sidebar. <strong>Pros:</strong> All content visible at once, natural reading flow. <strong>Cons:</strong> Sidebar squashes at narrow widths.
+        </div>
+
+        <div class="frame-label">1280px Desktop</div>
+        <div class="desktop-frame">
+          <div class="layout-a-desktop">
+            <div class="score-area">
+              <div class="score-controls">
+                <button class="secondary">◀ Prev Verse</button>
+                <button>Staff</button>
+                <button class="secondary">Solfège</button>
+                <button class="secondary">Lyrics Only</button>
+                <button class="secondary">▶ Play</button>
+                <button class="secondary">Next Verse ▶</button>
+              </div>
+
+              <div style="font-size: 14px; color: var(--text-light); margin-bottom: var(--space-md);">
+                Psalm 23 - "Crimond" (CM meter)
+              </div>
+
+              <div class="staff-demo">
+                <div class="note-marker note-1">♪</div>
+                <div class="note-marker note-2">♪</div>
+                <div class="note-marker note-3">♪</div>
+                <div class="note-marker note-4">♪</div>
+                <div class="note-marker note-5">♪</div>
+                <div class="note-marker note-6">♪</div>
+              </div>
+
+              <div class="lyrics-under-staff">
+The Lord's my shep- herd, I'll not want, He makes me down to lie.
+              </div>
+
+              <div style="margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px solid var(--border); font-size: 13px; line-height: 1.6;">
+                <strong>Size Controls:</strong> <button class="secondary" style="padding: 4px 8px; font-size: 12px;">A−</button> <span class="size-label">14px base</span> <button class="secondary" style="padding: 4px 8px; font-size: 12px;">A+</button>
+              </div>
+            </div>
+
+            <div class="verses-panel">
+              <div style="font-weight: bold; margin-bottom: var(--space-md); color: var(--brand-secondary);">Verses</div>
+              <div class="verse-stanza">
+                <span class="verse-number">1.</span>
+The Lord's my shepherd, I'll not want,<br>
+He makes me down to lie<br>
+In pastures green; he leads me the<br>
+Quiet waters by.
+              </div>
+              <div class="verse-stanza">
+                <span class="verse-number">2.</span>
+My soul he doth restore again;<br>
+And me to walk doth make<br>
+Within the paths of righteousness,<br>
+Even for his own name's sake.
+              </div>
+              <div class="verse-stanza">
+                <span class="verse-number">3.</span>
+Yea, though I walk in death's dark vale,<br>
+Yet will I fear none ill;<br>
+For thou art with me, and thy rod<br>
+And staff me comfort still.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variant B: Centered Layout (Desktop) -->
+    <div id="variant-b" class="variant">
+      <div style="max-width: 1000px; margin: 0 auto; padding: var(--space-lg);">
+        <h2>Variant B: Centered Layout (Desktop)</h2>
+        <div class="variant-desc">
+          <strong>Layout:</strong> Score centered, verses in two-column below. <strong>Pros:</strong> Score is focal point, responsive verses. <strong>Cons:</strong> Scrolling to see verses, less scannable reference.
+        </div>
+
+        <div class="frame-label">1000px Desktop</div>
+        <div class="desktop-frame" style="padding: var(--space-lg);">
+          <div class="layout-b-desktop">
+            <div class="score-area">
+              <div class="score-controls">
+                <button class="secondary">◀ Prev Verse</button>
+                <button>Staff</button>
+                <button class="secondary">Solfège</button>
+                <button class="secondary">Lyrics Only</button>
+                <button class="secondary">▶ Play</button>
+                <button class="secondary">Next Verse ▶</button>
+              </div>
+
+              <div style="font-size: 14px; color: var(--text-light); margin-bottom: var(--space-md);">
+                Psalm 23 - "Crimond" (CM meter)
+              </div>
+
+              <div class="staff-demo">
+                <div class="note-marker note-1">♪</div>
+                <div class="note-marker note-2">♪</div>
+                <div class="note-marker note-3">♪</div>
+                <div class="note-marker note-4">♪</div>
+                <div class="note-marker note-5">♪</div>
+                <div class="note-marker note-6">♪</div>
+              </div>
+
+              <div class="lyrics-under-staff">
+The Lord's my shep- herd, I'll not want, He makes me down to lie.
+              </div>
+
+              <div style="margin-top: var(--space-lg); padding-top: var(--space-lg); border-top: 1px solid var(--border); font-size: 13px; line-height: 1.6; text-align: center;">
+                <button class="secondary" style="padding: 4px 8px; font-size: 12px;">A−</button> <span class="size-label">14px base</span> <button class="secondary" style="padding: 4px 8px; font-size: 12px;">A+</button>
+              </div>
+            </div>
+
+            <div class="verses-panel">
+              <div style="font-weight: bold; margin-bottom: var(--space-md); color: var(--brand-secondary);">All Verses</div>
+              <div class="verse-stanza">
+                <span class="verse-number">1.</span> The Lord's my shepherd, I'll not want, He makes me down to lie In pastures green; he leads me the Quiet waters by.
+              </div>
+              <div class="verse-stanza">
+                <span class="verse-number">2.</span> My soul he doth restore again; And me to walk doth make Within the paths of righteousness, Even for his own name's sake.
+              </div>
+              <div class="verse-stanza">
+                <span class="verse-number">3.</span> Yea, though I walk in death's dark vale, Yet will I fear none ill; For thou art with me, and thy rod And staff me comfort still.
+              </div>
+              <div class="verse-stanza">
+                <span class="verse-number">4.</span> My table thou hast furnished in Presence of my foes; My head thou dost with oil anoint, And my cup overflows.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variant C: Mobile Stacked -->
+    <div id="variant-c" class="variant">
+      <div style="max-width: 800px; margin: 0 auto; padding: var(--space-lg);">
+        <h2>Variant C: Mobile Stack (375px Viewport)</h2>
+        <div class="variant-desc">
+          <strong>Layout:</strong> Score at top, verses below. <strong>Pros:</strong> Natural mobile scroll, full-width utilization. <strong>Cons:</strong> Scrolling required to see verses while reading staff.
+        </div>
+
+        <div class="mobile-frame">
+          <div class="mobile-content">
+            <div class="layout-c-mobile">
+              <div style="font-size: 12px; color: var(--text-light); margin-bottom: var(--space-sm);">
+                Psalm 23 - "Crimond"
+              </div>
+
+              <div class="score-area">
+                <div class="score-controls">
+                  <button style="flex: 1; padding: 8px; font-size: 11px;">◀ Prev</button>
+                  <button style="flex: 1; padding: 8px; font-size: 11px;">Staff</button>
+                  <button class="secondary" style="flex: 1; padding: 8px; font-size: 11px;">Solfège</button>
+                </div>
+
+                <div class="staff-demo" style="height: 80px;">
+                  <div class="note-marker note-1">♪</div>
+                  <div class="note-marker note-2">♪</div>
+                  <div class="note-marker note-3">♪</div>
+                  <div class="note-marker note-4">♪</div>
+                  <div class="note-marker note-5">♪</div>
+                  <div class="note-marker note-6">♪</div>
+                </div>
+
+                <div class="lyrics-under-staff" style="font-size: 11px;">
+The Lord's my shep-herd, I'll not want
+                </div>
+
+                <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-sm); font-size: 11px;">
+                  <button class="secondary" style="padding: 4px;">A−</button>
+                  <span class="size-label">14px</span>
+                  <button class="secondary" style="padding: 4px;">A+</button>
+                  <button class="secondary" style="flex: 1; margin-left: var(--space-sm);">⛶ Full</button>
+                </div>
+              </div>
+
+              <div class="verses-panel">
+                <div style="font-weight: bold; margin-bottom: var(--space-md); color: var(--brand-secondary); font-size: 13px;">Verse 1</div>
+                <div class="verse-stanza">
+The Lord's my shepherd, I'll not want,<br>
+He makes me down to lie<br>
+In pastures green; he leads me the<br>
+Quiet waters by.
+                </div>
+
+                <div style="margin-top: var(--space-lg); padding-top: var(--space-md); border-top: 1px solid var(--border);">
+                  <div style="font-weight: bold; margin-bottom: var(--space-md); color: var(--brand-secondary); font-size: 13px;">Verse 2</div>
+                  <div class="verse-stanza">
+My soul he doth restore again;<br>
+And me to walk doth make<br>
+Within the paths of righteousness,<br>
+Even for his own name's sake.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchVariant(event, variantId) {
+      // Hide all variants
+      document.querySelectorAll('.variant').forEach(v => {
+        v.classList.remove('active');
+      });
+
+      // Deactivate all tabs
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      // Show selected variant
+      document.getElementById(variantId).classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>

@@ -334,6 +334,7 @@ export function SingingView({
             solfegeJpgUrl={solfegeJpgUrl}
             tuneName={tuneName}
             tuneMeter={meter}
+            phraseShapeOverride={(activeTune as { phraseShapeOverride?: number[] | null } | undefined)?.phraseShapeOverride ?? null}
             stanzaMeter={stanzaMeter}
             lyricsStructured={lyricsStructured}
             doubleLength={activeTune?.doubleLength ?? false}
