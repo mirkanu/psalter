@@ -709,6 +709,11 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
       if (!res.ok) throw new Error(json.error || 'unknown error')
       const modeLabel = willSaveMode === 'melisma' ? 'with w-line' : '(ABC only)'
       setSaveMsg(`✓ Saved "${json.tune?.name ?? tune.name}" to production DB ${modeLabel}. Open the psalm preview below + reload to sing-test.`)
+      // Sync the local tunes copy so the parseSavedWLines effect doesn't wipe
+      // underlines if the user then clicks "Save decision" (which creates a new
+      // tune object, re-triggering the effect on the stale abcNotation).
+      setTunes(prev => prev.map(t => t.id !== tune.id ? t : { ...t, abcNotation: abcToSave }))
+      setEditedAbc(null)
     } catch (err) {
       setSaveMsg(`✗ Save failed: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
