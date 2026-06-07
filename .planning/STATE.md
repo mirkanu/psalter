@@ -79,6 +79,7 @@ Progress: [█████████░] 94%
 
 ### Roadmap Evolution
 
+- Phase 7 added: Melisma positions as tune-level data — strip w: lines from stored ABC, add tunes.melisma_positions jsonb column, migrate 17 approved tunes, update save route + editor + NotationRenderer to use positions at render time (dropping embedded-w: branch)
 - Phase 4.9.4 inserted after Phase 4.9.3: Staff View Refinements & Onboarding — header cleanup, first-run tour, dynamic zoom, glass bottom bar, A+/A- relocation, Play/Gear split (URGENT)
 - Phase 4.9.6 inserted after Phase 4.9.5: Psalter Alignment Implementation — promotes seeds/psalter-alignment-implementation.md; consumes Phase 4.9.5 doc; fixes DCM/alternate-meter/amen alignment bugs (URGENT)
 - Phase 04.9.8 inserted after Phase 04.9.7: Staff Display Word Alignment Fix — 4 PHRASE_BREAKs per CM tune, z2 phantom-bar fix, archaic word overrides (URGENT)

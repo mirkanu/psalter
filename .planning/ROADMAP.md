@@ -585,6 +585,16 @@ Plans:
 **Wave 2** *(depends on Wave 1)*
 - [ ] 04.9.11-02-PLAN.md — Apply selected fix path (A/B/C/D) + re-run sweep + VERIFICATION.md + human visual verify (checkpoint)
 
+### Phase 7: Melisma positions as tune-level data — strip w: lines from stored ABC, add tunes.melisma_positions jsonb column (array of note indices), migrate existing 17 approved tunes, update save route to write positions separately, update editor to send underlined indices directly, update NotationRenderer to read positions and generate per-stanza w: lines at render time (dropping the embedded-w: branch)
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 6
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 7 to break down)
+
 ---
 
 ## Milestone 2 — Precentor Portal & Polish
