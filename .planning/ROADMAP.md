@@ -587,12 +587,22 @@ Plans:
 
 ### Phase 4.9.12 (INSERTED): Melisma positions as tune-level data
 **Goal:** Decouple melisma storage from ABC lyrics. Add `tunes.melisma_positions` jsonb column (array of note indices), strip embedded `w:` lines from stored ABC, migrate 17 approved tunes, update the melisma-save route and /dev/melisma-editor to write positions separately, update NotationRenderer to read positions and generate per-stanza `w:` lines at render time using real psalm text (dropping the embedded-w: branch).
-**Requirements**: TBD
+**Requirements**: MELISMA-01, MELISMA-02, MELISMA-03, MELISMA-04
 **Depends on:** Phase 4.9.11
-**Plans:** 0 plans
+**Plans:** 4 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 4.9.12 to break down)
+**Wave 1**
+- [ ] 04.9.12-01-PLAN.md — Add tunes.melisma_positions jsonb column to schema + [BLOCKING] drizzle-kit push
+
+**Wave 2** *(depends on Wave 1)*
+- [ ] 04.9.12-02-PLAN.md — Migration script: extract positions from 17 approved tunes, strip embedded w: lines, write both back to DB
+
+**Wave 3** *(depends on Wave 1 + Wave 2)*
+- [ ] 04.9.12-03-PLAN.md — Update melisma-save route + MelismaEditorClient + page.tsx to write melismaPositions and send w:-free ABC
+
+**Wave 4** *(depends on Wave 1 + Wave 2 + Wave 3)*
+- [ ] 04.9.12-04-PLAN.md — Replace embedded-w branch in NotationRenderer with positions-based branch; thread melismaPositions from DB; Playwright UAT + human checkpoint
 
 ---
 
