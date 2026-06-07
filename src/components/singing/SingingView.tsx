@@ -339,6 +339,7 @@ export function SingingView({
             lyricsStructured={lyricsStructured}
             doubleLength={activeTune?.doubleLength ?? false}
             solfegeOcrText={activeTune?.solfegeOcrText ?? null}
+            melismaPositions={(activeTune as { melismaPositions?: number[][] | null } | undefined)?.melismaPositions ?? null}
             showLyrics={showLyrics}
             viewMode={viewMode}
             onViewModeChange={setViewMode}
