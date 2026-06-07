@@ -144,6 +144,7 @@ export default async function TunePage({ params }: PageProps) {
               solfegeJpgUrl={solfegePages[0] ?? null}
               tuneName={tune.name ?? `Tune ${tune.id}`}
               tuneMeter={tune.meter ?? null}
+              phraseShapeOverride={tune.phraseShapeOverride ?? null}
               stanzaMeter={firstLinkedPsalmVersion?.meter ?? null}
               lyricsStructured={(firstLinkedPsalmVersion?.lyricsStructured ?? null) as import('@/lib/lyrics-structured').StructuredLyrics | null}
               doubleLength={tune.doubleLength ?? false}

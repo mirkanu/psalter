@@ -585,15 +585,14 @@ Plans:
 **Wave 2** *(depends on Wave 1)*
 - [ ] 04.9.11-02-PLAN.md — Apply selected fix path (A/B/C/D) + re-run sweep + VERIFICATION.md + human visual verify (checkpoint)
 
-### Phase 7: Melisma positions as tune-level data — strip w: lines from stored ABC, add tunes.melisma_positions jsonb column (array of note indices), migrate existing 17 approved tunes, update save route to write positions separately, update editor to send underlined indices directly, update NotationRenderer to read positions and generate per-stanza w: lines at render time (dropping the embedded-w: branch)
-
-**Goal:** [To be planned]
+### Phase 4.9.12 (INSERTED): Melisma positions as tune-level data
+**Goal:** Decouple melisma storage from ABC lyrics. Add `tunes.melisma_positions` jsonb column (array of note indices), strip embedded `w:` lines from stored ABC, migrate 17 approved tunes, update the melisma-save route and /dev/melisma-editor to write positions separately, update NotationRenderer to read positions and generate per-stanza `w:` lines at render time using real psalm text (dropping the embedded-w: branch).
 **Requirements**: TBD
-**Depends on:** Phase 6
+**Depends on:** Phase 4.9.11
 **Plans:** 0 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 7 to break down)
+- [ ] TBD (run /gsd-plan-phase 4.9.12 to break down)
 
 ---
 
@@ -627,7 +626,7 @@ Plans:
 ## Progress
 
 **Milestone 1 Execution Order:**
-1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 4.9.5 → 4.9.6 → 4.9.7 → 4.9.8 → 4.9.9 → 4.9.10 → 4.9.11
+1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 4.9.5 → 4.9.6 → 4.9.7 → 4.9.8 → 4.9.9 → 4.9.10 → 4.9.11 → 4.9.12
 
 **Milestone 2 Execution Order:**
 5 → 6
@@ -656,6 +655,7 @@ Plans:
 | 4.9.9. Staff Alignment — Melisma Support | 0/TBD | Not started | - |
 | 4.9.10. PHRASE_BREAK Re-annotation | 2/2 | Complete | 2026-05-29 |
 | 4.9.11. Lyric-Count False Positive Fix | 0/TBD | Not started | - |
+| 4.9.12. Melisma positions as tune-level data | 0/TBD | Not started | - |
 
 ### Milestone 2 — Precentor Portal & Polish
 

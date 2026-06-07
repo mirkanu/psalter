@@ -2,14 +2,14 @@
   "id": 64,
   "name": "Martyrdom",
   "slug": "martyrdom",
-  "status": "low_confidence",
+  "status": "validation_failure",
   "preWlineAbc": "X:1\nT:Martyrdom\nM:C\nL:1/8\nQ:1/4=76\nK:A\ne2a4f2 | e4abc'4 | b2\n% PHRASE_BREAK\na4c'2 | e'4c'2a4 | c'2\n% PHRASE_BREAK\nb4e'2 |\nc'4b2a4 | c'2d'4c'2\n% PHRASE_BREAK\n | b4c'2e2 | f2abc'4 | b2a4a2 | a2\n",
-  "newAbc": null,
+  "newAbc": "X:1\nT:Martyrdom\nM:C\nL:1/8\nQ:1/4=76\nK:A\ne2a4f2 | e4abc'4 | b2\nw: Be mer- ci- ful to _ me, O\n% PHRASE_BREAK\na4c'2 | e'4c'2a4 | c'2\nw: God; thy mer- cy un- to\n% PHRASE_BREAK\nb4e'2 |\nc'4b2a4 | c'2d'4c'2\nw: me Do thou ex- tend; be- cause my\n% PHRASE_BREAK\n| b4c'2e2 | f2abc'4 | b2a4a2 | a2\nw: soul doth put her trust _ in thee: * * *",
   "perPhraseDiagnostics": [
     {
       "phraseIdx": 0,
-      "noteHeadCount": 15,
-      "wTokenCount": 0,
+      "noteHeadCount": 8,
+      "wTokenCount": 8,
       "syllables": [
         "Be",
         "mer-",
@@ -18,17 +18,159 @@
         "to",
         "me,",
         "O",
-        "God;"
+        "God;",
+        "thy",
+        "mer-",
+        "cy",
+        "un-",
+        "to",
+        "me",
+        "Do",
+        "thou",
+        "ex-",
+        "tend;",
+        "be-",
+        "cause",
+        "my",
+        "soul",
+        "doth",
+        "put",
+        "her",
+        "trust",
+        "in",
+        "thee:"
       ],
       "underlinedTokenIndices": [
-        1,
         5,
-        11
+        27
       ],
-      "minConfidence": 0.8
+      "minConfidence": 0.9
+    },
+    {
+      "phraseIdx": 1,
+      "noteHeadCount": 6,
+      "wTokenCount": 6,
+      "syllables": [
+        "Be",
+        "mer-",
+        "ci-",
+        "ful",
+        "to",
+        "me,",
+        "O",
+        "God;",
+        "thy",
+        "mer-",
+        "cy",
+        "un-",
+        "to",
+        "me",
+        "Do",
+        "thou",
+        "ex-",
+        "tend;",
+        "be-",
+        "cause",
+        "my",
+        "soul",
+        "doth",
+        "put",
+        "her",
+        "trust",
+        "in",
+        "thee:"
+      ],
+      "underlinedTokenIndices": [
+        5,
+        27
+      ],
+      "minConfidence": 0.9
+    },
+    {
+      "phraseIdx": 2,
+      "noteHeadCount": 8,
+      "wTokenCount": 8,
+      "syllables": [
+        "Be",
+        "mer-",
+        "ci-",
+        "ful",
+        "to",
+        "me,",
+        "O",
+        "God;",
+        "thy",
+        "mer-",
+        "cy",
+        "un-",
+        "to",
+        "me",
+        "Do",
+        "thou",
+        "ex-",
+        "tend;",
+        "be-",
+        "cause",
+        "my",
+        "soul",
+        "doth",
+        "put",
+        "her",
+        "trust",
+        "in",
+        "thee:"
+      ],
+      "underlinedTokenIndices": [
+        5,
+        27
+      ],
+      "minConfidence": 0.9
+    },
+    {
+      "phraseIdx": 3,
+      "noteHeadCount": 11,
+      "wTokenCount": 11,
+      "syllables": [
+        "Be",
+        "mer-",
+        "ci-",
+        "ful",
+        "to",
+        "me,",
+        "O",
+        "God;",
+        "thy",
+        "mer-",
+        "cy",
+        "un-",
+        "to",
+        "me",
+        "Do",
+        "thou",
+        "ex-",
+        "tend;",
+        "be-",
+        "cause",
+        "my",
+        "soul",
+        "doth",
+        "put",
+        "her",
+        "trust",
+        "in",
+        "thee:"
+      ],
+      "underlinedTokenIndices": [
+        5,
+        27
+      ],
+      "minConfidence": 0.9
     }
   ],
   "warnings": [
-    "min token confidence 0.80 < 0.85"
+    "syllable count mismatch: non-underlined tokens=31 vs syllables.length=28",
+    "token 30 (?) has no syllable: syllable stream exhausted at syllIdx=28",
+    "token 31 (?) has no syllable: syllable stream exhausted at syllIdx=28",
+    "token 32 (?) has no syllable: syllable stream exhausted at syllIdx=28"
   ]
 }
