@@ -14,6 +14,44 @@ const syllabize = require('nlp-syllables/src/syllables') as (word: string) => st
  * count mismatch on a specific word.
  */
 const PSALM_SYLLABLE_OVERRIDES: Record<string, string[]> = {
+  // NLP over-splits single-syllable words ending in -ce/-te/-re (silent-e pattern).
+  // These cause the last syllable to be dropped from 8-note phrases when the
+  // phrase gets 9 tokens instead of 8.
+  place: ['place'],
+  grace: ['grace'],
+  face: ['face'],
+  race: ['race'],
+  space: ['space'],
+  trace: ['trace'],
+  waste: ['waste'],
+  taste: ['taste'],
+  haste: ['haste'],
+  paste: ['paste'],
+  snare: ['snare'],
+  bare: ['bare'],
+  care: ['care'],
+  dare: ['dare'],
+  fare: ['fare'],
+  hare: ['hare'],
+  mare: ['mare'],
+  rare: ['rare'],
+  share: ['share'],
+  spare: ['spare'],
+  stare: ['stare'],
+  square: ['square'],
+  // NLP gives pestilence 4 syllables (pes-ti-len-ce); correct = 3 (pes-ti-lence)
+  pestilence: ['pes', 'ti', 'lence'],
+  // NLP under-splits common words (gives 1 syllable; correct = 2)
+  under: ['un', 'der'],
+  only: ['on', 'ly'],
+  upon: ['up', 'on'],
+  over: ['o', 'ver'],
+  therein: ['there', 'in'],
+  // NLP gives deliver 2 syllables (de-liver); correct = 3 (de-li-ver)
+  deliver: ['de', 'li', 'ver'],
+  deliverance: ['de', 'li', 'ver', 'ance'],
+  // NLP gives assuredly 3 syllables; correct singing = 4 (as-sur-ed-ly)
+  assuredly: ['as', 'sur', 'ed', 'ly'],
   // NLP splits "praise/raise" as "prai-se / rai-se" (2 syl); correct singing = 1.
   // These are the single biggest source of CM/SM/LM count mismatches in the
   // Scottish Psalter because praise-words appear in every doxology and Ps 150.
