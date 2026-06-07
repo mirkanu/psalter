@@ -862,12 +862,17 @@ export function NotationRenderer({
           for (let cycleIdx = 0; cycleIdx < cycleCount; cycleIdx++) {
             const cycleLines = cycleWLinesGrid[cycleIdx] ?? []
             const rawText = cycleLines[0] ?? ''
-            let syllStr = rawText.trim()
-              ? wLineForSyllables(rawText, Math.min(i, split.phrases.length - 1))
-              : ''
-            let syllTokens = syllStr.split(/\s+/).filter(Boolean)
+            // Use raw syllabification, NOT wLineForSyllables, because
+            // wLineForSyllables force-matches to the meter's total syllable
+            // count (e.g. 8 for LM), but nonMelismaSlots = noteCount - melismas
+            // can be smaller (e.g. 6 when 3 notes are holds). Using
+            // wLineForSyllables first would truncate syllables from the end
+            // when the second forceMatch reduces to nonMelismaSlots.
+            let syllTokens: string[] = rawText.trim()
+              ? syllabifyForAbc(rawText.replace(/\n/g, ' ')).split(/\s+/).filter(Boolean)
+              : []
 
-            // Force-fit syllable count to non-melisma slots.
+            // Force-fit to the exact number of non-melisma note slots.
             if (nonMelismaSlots > 0 && syllTokens.length !== nonMelismaSlots) {
               const { fixed } = forceMatchMeterShape([syllTokens], [nonMelismaSlots])
               syllTokens = fixed[0] ?? syllTokens
