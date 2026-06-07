@@ -885,7 +885,7 @@ export function NotationRenderer({
             // Proportionally distribute the single lyric line across sub-staves.
             const rawText = cycleLines[0]
             if (!rawText || !rawText.trim()) continue
-            const syllabified = wLineForSyllables(rawText, i)
+            const syllabified = wLineForSyllables(rawText, Math.min(i, split.phrases.length - 1))
             const chunks = splitWLineIntoChunks(syllabified, actualSubdivisions)
             const chunk = chunks[sub]
             if (!chunk || !chunk.trim()) continue
@@ -897,7 +897,7 @@ export function NotationRenderer({
             // emit no w: line for that sub-staff.
             const text = cycleLines[sub]
             if (!text || !text.trim()) continue
-            const wRaw = wLineForSyllables(text, i)
+            const wRaw = wLineForSyllables(text, Math.min(i, split.phrases.length - 1))
             parts.push(`w: ${padWLineToNoteCount(wRaw, musicSubLines[sub])}`)
           }
         }
