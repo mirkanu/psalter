@@ -56,6 +56,7 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
   const [previewSize, setPreviewSize] = useState<PreviewSize>('md')
+  const [iframeNonce, setIframeNonce] = useState(() => Date.now())
 
   // Working ABC body — edited per-cell (solfège mode) or via raw textarea.
   // null means "use the DB original verbatim".
@@ -250,6 +251,9 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
   }, [tune])
 
   // Fetch decision state on tune select.
+  // Reset iframe nonce on tune change so the prod-preview always loads fresh.
+  useEffect(() => { setIframeNonce(Date.now()) }, [tuneId])
+
   useEffect(() => {
     if (tuneId == null) return
     let cancelled = false
@@ -1331,11 +1335,20 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
 
           {tune.psalmNumber && (
             <details className="bg-white border border-gray-300 rounded p-3">
-              <summary className="text-sm font-medium cursor-pointer">
-                Psalm {tune.psalmNumber} on production (reload after save to sing-test)
+              <summary className="text-sm font-medium cursor-pointer flex items-center justify-between">
+                <span>Psalm {tune.psalmNumber} on production</span>
+                <button
+                  type="button"
+                  onClick={e => { e.preventDefault(); setIframeNonce(Date.now()) }}
+                  className="ml-2 px-2 py-0.5 text-xs border border-gray-300 rounded hover:bg-gray-100"
+                  title="Force-reload prod preview (bypass cache)"
+                >
+                  ⟳ Reload
+                </button>
               </summary>
               <iframe
-                src={`https://psalter.gsdlabs.dev/psalms/${tune.psalmNumber}`}
+                key={iframeNonce}
+                src={`https://psalter.gsdlabs.dev/psalms/${tune.psalmNumber}?_r=${iframeNonce}`}
                 className="w-full h-[600px] border border-gray-200 mt-2 rounded"
                 title={`Psalm ${tune.psalmNumber} preview`}
               />
