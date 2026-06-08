@@ -14,6 +14,9 @@ const syllabize = require('nlp-syllables/src/syllables') as (word: string) => st
  * count mismatch on a specific word.
  */
 const PSALM_SYLLABLE_OVERRIDES: Record<string, string[]> = {
+  // Scottish Psalter elided forms — count as 0 syllables (no note of their own).
+  // "th'" before a vowel-initial word (Almighty, eternal, etc.) is elided in singing.
+  "th'": [],
   // NLP over-splits single-syllable words ending in -ce/-te/-re (silent-e pattern).
   // These cause the last syllable to be dropped from 8-note phrases when the
   // phrase gets 9 tokens instead of 8.
@@ -163,7 +166,11 @@ export function syllabifyForAbc(text: string): string {
     const syllables: string[] =
       PSALM_SYLLABLE_OVERRIDES[lowerStripped] ?? syllabize(lowerStripped)
 
-    if (syllables.length <= 1) {
+    if (syllables.length === 0) {
+      // Zero syllables — elided word (e.g. "th'"), produces no token
+      return ''
+    }
+    if (syllables.length === 1) {
       // Single syllable — preserve original capitalisation of stripped word
       return stripped + trailing
     }
@@ -175,7 +182,7 @@ export function syllabifyForAbc(text: string): string {
     return joined + trailing
   })
 
-  return result.join(' ')
+  return result.filter(Boolean).join(' ')
 }
 
 /**
