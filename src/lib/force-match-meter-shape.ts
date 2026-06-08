@@ -71,8 +71,12 @@ export function forceMatchMeterShape(
 /** Merge the best adjacent pair into one syllable. Returns null if no merge possible. */
 function mergeOnceAtBestBoundary(line: string[]): string[] | null {
   if (line.length < 2) return null
-  // First pass: find an index where line[i] ends with '-' (hyphenated mid-word).
-  for (let i = 0; i < line.length - 1; i++) {
+  // Scan right-to-left for a hyphenated mid-word boundary. Scanning from the
+  // RIGHT ensures we merge the last over-split word first, which is correct
+  // for meter-fitting: when a phrase has N+1 syllables for N notes, the extra
+  // syllable is typically at the end of the phrase (e.g. "pla- ce" for "place"),
+  // not in the middle (e.g. "se- cret" for "secret" which is genuinely 2 notes).
+  for (let i = line.length - 2; i >= 0; i--) {
     if (line[i].endsWith('-')) {
       const merged = line[i].slice(0, -1) + line[i + 1]
       return [...line.slice(0, i), merged, ...line.slice(i + 2)]
