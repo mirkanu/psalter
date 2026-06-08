@@ -1333,29 +1333,32 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
             />
           </details>
 
-          {tune.psalmNumber && (
-            <details className="bg-white border border-gray-300 rounded p-3">
-              <summary className="text-sm font-medium cursor-pointer flex items-center justify-between">
-                <span>Psalm {tune.psalmNumber} on production</span>
-                <button
-                  type="button"
-                  onClick={e => { e.preventDefault(); setIframeNonce(Date.now()) }}
-                  className="ml-2 px-2 py-0.5 text-xs border border-gray-300 rounded hover:bg-gray-100"
-                  title="Force-reload prod preview (bypass cache)"
-                >
-                  ⟳ Reload
-                </button>
-              </summary>
-              <iframe
-                key={iframeNonce}
-                src={`https://psalter.gsdlabs.dev/psalms/${tune.psalmNumber}?_r=${iframeNonce}`}
-                className="w-full h-[600px] border border-gray-200 mt-2 rounded"
-                title={`Psalm ${tune.psalmNumber} preview`}
-              />
-            </details>
-          )}
         </div>
       </div>
+
+      {tune.psalmNumber && (
+        <div className="px-4 pb-4">
+          <details className="bg-white border border-gray-300 rounded p-3">
+            <summary className="text-sm font-medium cursor-pointer flex items-center justify-between">
+              <span>Psalm {tune.psalmNumber} on production</span>
+              <button
+                type="button"
+                onClick={e => { e.preventDefault(); setIframeNonce(Date.now()) }}
+                className="ml-2 px-2 py-0.5 text-xs border border-gray-300 rounded hover:bg-gray-100"
+                title="Force-reload prod preview (bypass cache)"
+              >
+                ⟳ Reload
+              </button>
+            </summary>
+            <iframe
+              key={iframeNonce}
+              src={`https://psalter.gsdlabs.dev/psalms/${tune.psalmNumber}?_r=${iframeNonce}`}
+              className="w-full h-[800px] border border-gray-200 mt-2 rounded"
+              title={`Psalm ${tune.psalmNumber} preview`}
+            />
+          </details>
+        </div>
+      )}
 
       {showNavigator && (
         <TuneNavigator
