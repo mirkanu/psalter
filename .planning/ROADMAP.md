@@ -32,6 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 4.9.8 (INSERTED): Staff Display Word Alignment Fix** - Fix staff view word alignment: words cut off at end of staff lines, notes with no words underneath. Change CM/LM/SM tunes from 1 PHRASE_BREAK (2 phrases) to 3 PHRASE_BREAKs (4 phrases, one per metrical line) using note-head counting to find the 8/6 split. Fix trailing z2 rest phantom-bar bug. Add archaic word overrides. All 150 psalms render with zero empty note positions at row ends.
 - [ ] **Phase 4.9.9 (INSERTED): Staff Alignment — Melisma Support** - Fix the remaining 84 failing psalms in staff view by implementing `_` hold tokens for passing notes. Use solfège OCR text already in DB to detect dot-pair passing notes; apply duration heuristic for residual mismatches.
 - [x] **Phase 4.9.10 (INSERTED): Staff Alignment — PHRASE_BREAK Re-annotation** - Re-run annotate-phrase-breaks.ts with Path NH tokenizer; 150/150 psalms pass staff alignment sweep; RENDER-08 closed. (completed 2026-05-29)
+- [ ] **Phase 04.12 (INSERTED): Explore Page Rebuild** - Full /explore rebuild to match psalter.cprc.co.uk: schema migrations (psalms.date_bc/occasion, naves_topics.messianic, verse_naves_topics.sub_topic/quotation, new creedal_references table); UI rebuilds for all 6 sections (Themes split by topic_type, Messianic By Topic view, Quoted in NT, Other Topics with sub-topic drill-down, Authors filterable table, Creeds/Heidelberg Catechism)
 
 ### Milestone 2 — Precentor Portal & Polish
 
@@ -603,6 +604,41 @@ Plans:
 
 **Wave 4** *(depends on Wave 1 + Wave 2 + Wave 3)*
 - [ ] 04.9.12-04-PLAN.md — Replace embedded-w branch in NotationRenderer with positions-based branch; thread melismaPositions from DB; Playwright UAT + human checkpoint
+
+### Phase 4.12: Explore Page Rebuild
+**Goal**: Rebuild /explore to match psalter.cprc.co.uk across all 6 sections — migrate missing schema fields, fetch new Airtable data, and redesign the page as a single scrollable layout with anchor sections. Users can browse psalms by theme, find NT quotations, explore Nave's topics with sub-topic drill-down, filter by author with historical metadata, and look up Heidelberg Catechism connections.
+**Requirements**: EXPLORE-01, EXPLORE-02, EXPLORE-03, EXPLORE-04, EXPLORE-05, EXPLORE-06
+**Depends on:** Phase 4.8
+**Plans:** 5 plans
+**UI hint**: yes
+
+Plans:
+**Wave 1**
+- [ ] 04.12-01-PLAN.md — Schema changes (psalms.date_bc/occasion, naves_topics.messianic, naves_topic_entries + verse_naves_topic_entries + creedal_references) + [BLOCKING] drizzle-kit push + shadcn Collapsible/Table install
+
+**Wave 2** *(depends on Wave 1)*
+- [ ] 04.12-02-PLAN.md — Standalone scripts/migrate-explore-04-12.ts (no JPG download) + 6 new explore.ts query functions + integration tests
+
+**Wave 3** *(parallel — both depend on Wave 1 + Wave 2)*
+- [ ] 04.12-03-PLAN.md — QuotedInNT + HeidelbergCatechism (collapsible client) + MessianicByTopic (server) + ExploreAnchorNav (IntersectionObserver)
+- [ ] 04.12-04-PLAN.md — AuthorsTable (filterable/sortable client) + rebuild /explore/naves/[slug] sub-topic drill-down
+
+**Wave 4** *(depends on Wave 2 + Wave 3)*
+- [ ] 04.12-05-PLAN.md — Compose explore/page.tsx (6 sections + anchors) + 6-section loading.tsx + Playwright UAT + human visual sign-off
+
+**Schema changes:**
+- `psalms` — add `date_bc` (integer) and `occasion` (text) from Airtable fields "B.C." and "Probably Occasion on which Psalm was Composed"
+- `naves_topics` — add `messianic` (text) from Airtable field `Messianic?` (values: "Primarily Messianic", "Not Messianic but glimpses (Highlights)", "Not Messianic; parallel situations (Parallels)")
+- `verse_naves_topics` — add `sub_topic` (text) and `quotation` (text) from Airtable table `tblggtBfVTmTUeyNs`
+- New table `creedal_references(id, verse_id, creed, question_number, url)` from Airtable table `tblMJW2An5w3CB0ws`
+
+**6 section layout (single scrollable page with anchors):**
+1. When you're feeling... — `topic_type = "When you..."`
+2. By Theme — `topic_type IN ("Main Topic", "Mood", "Song Type")`
+3. In the NT — Quoted in NT (verse_naves_topics WHERE naves_topic = "Quotations and Allusions") + Messianic By Topic view
+4. Other Topics — Nave's topics with sub-topic drill-down
+5. Authors — sortable/filterable table using psalms.date_bc + occasion
+6. Heidelberg Catechism — creedal_references
 
 ---
 
