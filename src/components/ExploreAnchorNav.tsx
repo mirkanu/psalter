@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 
 const SECTIONS = [
-  { id: 'when-you', label: "When you're..." },
+  { id: 'when-you', label: "When you..." },
   { id: 'by-theme', label: "By Theme" },
   { id: 'in-the-nt', label: "In the NT" },
   { id: 'other-topics', label: "Other Topics" },
