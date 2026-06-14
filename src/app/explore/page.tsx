@@ -217,7 +217,9 @@ export default async function ExplorePage() {
           <Separator className="my-4" />
 
           <h3 className="text-base font-semibold mb-3">Messianic by Topic</h3>
-          <MessianicByTopic topics={messianicByTopic.filter((t): t is typeof t & { name: string } => t.name !== null)} />
+          <MessianicByTopic topics={messianicByTopic
+            .filter((t): t is typeof t & { name: string } => t.name !== null)
+            .map((t) => ({ ...t, slug: navesSlugMap.get(t.id) ?? slugify(t.name) }))} />
 
           <div className="mt-6">
             <Link
