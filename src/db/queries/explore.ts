@@ -28,6 +28,16 @@ export const fetchTopicsWithCounts = cache(async function fetchTopicsWithCounts(
     .orderBy(desc(count(psalmTopics.psalmId)))
 })
 
+export const fetchAllTopicsWithCounts = cache(async function fetchAllTopicsWithCounts() {
+  return db
+    .select({ id: topics.id, name: topics.name, count: count(psalmTopics.psalmId) })
+    .from(topics)
+    .leftJoin(psalmTopics, eq(psalmTopics.topicId, topics.id))
+    .where(isNotNull(topics.name))
+    .groupBy(topics.id, topics.name)
+    .orderBy(desc(count(psalmTopics.psalmId)))
+})
+
 export const fetchWhenYouTopics = cache(async function fetchWhenYouTopics() {
   return db
     .select({ id: topics.id, name: topics.name, count: count(psalmTopics.psalmId) })

@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import type { Metadata } from "next"
-import { fetchTopicsWithCounts, fetchPsalmsByTopic } from "@/db/queries/explore"
+import { fetchAllTopicsWithCounts, fetchPsalmsByTopic } from "@/db/queries/explore"
 import { Badge } from "@/components/ui/badge"
 
 interface PageProps {
@@ -37,7 +37,7 @@ function buildTopicSlugMap(
 
 export async function generateStaticParams() {
   try {
-  const topics = await fetchTopicsWithCounts()
+  const topics = await fetchAllTopicsWithCounts()
   const slugMap = buildTopicSlugMap(
     topics.filter((t): t is typeof t & { name: string } => t.name !== null)
   )
@@ -50,7 +50,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
-  const topics = await fetchTopicsWithCounts()
+  const topics = await fetchAllTopicsWithCounts()
   const slugMap = buildTopicSlugMap(
     topics.filter((t): t is typeof t & { name: string } => t.name !== null)
   )
@@ -62,7 +62,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function TopicPage({ params }: PageProps) {
   const { slug } = await params
-  const topics = await fetchTopicsWithCounts()
+  const topics = await fetchAllTopicsWithCounts()
   const slugMap = buildTopicSlugMap(
     topics.filter((t): t is typeof t & { name: string } => t.name !== null)
   )
