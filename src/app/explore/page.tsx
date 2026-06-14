@@ -95,7 +95,7 @@ export default async function ExplorePage() {
       <div className="mt-8">
         {/* Section 1: When you're feeling... */}
         <section id="when-you">
-          <h2 className="text-xl font-semibold mb-4">When you&apos;re...</h2>
+          <h2 className="text-xl font-semibold mb-4">When you...</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
             {whenYouTopics.map((topic) => (
               <Link
