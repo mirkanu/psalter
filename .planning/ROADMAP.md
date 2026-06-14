@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 4.9.8 (INSERTED): Staff Display Word Alignment Fix** - Fix staff view word alignment: words cut off at end of staff lines, notes with no words underneath. Change CM/LM/SM tunes from 1 PHRASE_BREAK (2 phrases) to 3 PHRASE_BREAKs (4 phrases, one per metrical line) using note-head counting to find the 8/6 split. Fix trailing z2 rest phantom-bar bug. Add archaic word overrides. All 150 psalms render with zero empty note positions at row ends.
 - [ ] **Phase 4.9.9 (INSERTED): Staff Alignment — Melisma Support** - Fix the remaining 84 failing psalms in staff view by implementing `_` hold tokens for passing notes. Use solfège OCR text already in DB to detect dot-pair passing notes; apply duration heuristic for residual mismatches.
 - [x] **Phase 4.9.10 (INSERTED): Staff Alignment — PHRASE_BREAK Re-annotation** - Re-run annotate-phrase-breaks.ts with Path NH tokenizer; 150/150 psalms pass staff alignment sweep; RENDER-08 closed. (completed 2026-05-29)
-- [ ] **Phase 04.12 (INSERTED): Explore Page Rebuild** - Full /explore rebuild to match psalter.cprc.co.uk: schema migrations (psalms.date_bc/occasion, naves_topics.messianic, verse_naves_topics.sub_topic/quotation, new creedal_references table); UI rebuilds for all 6 sections (Themes split by topic_type, Messianic By Topic view, Quoted in NT, Other Topics with sub-topic drill-down, Authors filterable table, Creeds/Heidelberg Catechism)
+- [x] **Phase 04.12 (INSERTED): Explore Page Rebuild** - Full /explore rebuild to match psalter.cprc.co.uk: schema migrations (psalms.date_bc/occasion, naves_topics.messianic, verse_naves_topics.sub_topic/quotation, new creedal_references table); UI rebuilds for all 6 sections (Themes split by topic_type, Messianic By Topic view, Quoted in NT, Other Topics with sub-topic drill-down, Authors filterable table, Creeds/Heidelberg Catechism) (completed 2026-06-14)
 
 ### Milestone 2 — Precentor Portal & Polish
 
@@ -624,7 +624,7 @@ Plans:
 - [x] 04.12-04-PLAN.md — AuthorsTable (filterable/sortable client) + rebuild /explore/naves/[slug] sub-topic drill-down
 
 **Wave 4** *(depends on Wave 2 + Wave 3)*
-- [ ] 04.12-05-PLAN.md — Compose explore/page.tsx (6 sections + anchors) + 6-section loading.tsx + Playwright UAT + human visual sign-off
+- [x] 04.12-05-PLAN.md — Compose explore/page.tsx (6 sections + anchors) + 6-section loading.tsx + Playwright UAT + human visual sign-off
 
 **Schema changes:**
 - `psalms` — add `date_bc` (integer) and `occasion` (text) from Airtable fields "B.C." and "Probably Occasion on which Psalm was Composed"
