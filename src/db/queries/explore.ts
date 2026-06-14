@@ -248,12 +248,13 @@ export const fetchNavesSubTopics = cache(async function fetchNavesSubTopics(topi
 })
 
 // Section 2: By Theme — topics split by type (Main Topic / Mood / Song Type)
+// isNotNull(topics.name) guards against null-name rows bleeding into the wrong group
 export const fetchTopicsByType = cache(async function fetchTopicsByType(type: string) {
   return db
     .select({ id: topics.id, name: topics.name, count: count(psalmTopics.psalmId) })
     .from(topics)
     .leftJoin(psalmTopics, eq(psalmTopics.topicId, topics.id))
-    .where(eq(topics.topicType, type))
+    .where(and(eq(topics.topicType, type), isNotNull(topics.name)))
     .groupBy(topics.id, topics.name)
     .orderBy(desc(count(psalmTopics.psalmId)))
 })
