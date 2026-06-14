@@ -620,8 +620,8 @@ Plans:
 - [x] 04.12-02-PLAN.md — Standalone scripts/migrate-explore-04-12.ts (no JPG download) + 6 new explore.ts query functions + integration tests
 
 **Wave 3** *(parallel — both depend on Wave 1 + Wave 2)*
-- [ ] 04.12-03-PLAN.md — QuotedInNT + HeidelbergCatechism (collapsible client) + MessianicByTopic (server) + ExploreAnchorNav (IntersectionObserver)
-- [ ] 04.12-04-PLAN.md — AuthorsTable (filterable/sortable client) + rebuild /explore/naves/[slug] sub-topic drill-down
+- [x] 04.12-03-PLAN.md — QuotedInNT + HeidelbergCatechism (collapsible client) + MessianicByTopic (server) + ExploreAnchorNav (IntersectionObserver)
+- [x] 04.12-04-PLAN.md — AuthorsTable (filterable/sortable client) + rebuild /explore/naves/[slug] sub-topic drill-down
 
 **Wave 4** *(depends on Wave 2 + Wave 3)*
 - [ ] 04.12-05-PLAN.md — Compose explore/page.tsx (6 sections + anchors) + 6-section loading.tsx + Playwright UAT + human visual sign-off
