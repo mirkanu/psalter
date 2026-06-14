@@ -11,6 +11,9 @@ import {
   messianicPsalms,
   psalms,
   psalmVersions,
+  navesTopicEntries,
+  verseNavesTopicEntries,
+  creedalReferences,
 } from "@/db/schema"
 
 // --- Topics (Themes) ---
@@ -145,4 +148,112 @@ export const fetchPsalmsByAuthor = cache(async function fetchPsalmsByAuthor(auth
     ORDER BY p.id, pv.id
   `)
   return rows as unknown as Array<{ id: number; firstLine: string | null; meter: string | null }>
+})
+
+// --- Explore Page 04.12: New Query Functions ---
+
+// Section 3a: NT Quotations — 68 sub-entries under "Quotations and Allusions" topic
+export const fetchQuotedInNT = cache(async function fetchQuotedInNT() {
+  const rows = await db.execute(sql`
+    SELECT
+      nte.id,
+      nte.sub_topic,
+      nte.quotation,
+      json_agg(json_build_object('verseId', vnte.verse_id, 'psalmId', v.psalm_id, 'verseNumber', v.verse_number)
+        ORDER BY v.psalm_id, v.verse_number) AS verses
+    FROM naves_topic_entries nte
+    JOIN naves_topics nt ON nt.id = nte.naves_topic_id
+    JOIN verse_naves_topic_entries vnte ON vnte.entry_id = nte.id
+    JOIN verses v ON v.id = vnte.verse_id
+    WHERE nt.name = 'Quotations and Allusions'
+    GROUP BY nte.id, nte.sub_topic, nte.quotation
+    ORDER BY nte.sub_topic
+  `)
+  return rows as unknown as Array<{
+    id: number
+    sub_topic: string | null
+    quotation: string | null
+    verses: Array<{ verseId: number; psalmId: number; verseNumber: number | null }>
+  }>
+})
+
+// Section 3b: Messianic By Topic — 12 naves_topics with messianic IS NOT NULL
+export const fetchMessianicByTopic = cache(async function fetchMessianicByTopic() {
+  return db
+    .select({ id: navesTopics.id, name: navesTopics.name, messianic: navesTopics.messianic })
+    .from(navesTopics)
+    .where(isNotNull(navesTopics.messianic))
+    .orderBy(asc(navesTopics.name))
+})
+
+// Section 5: Authors Table — all 150 psalms with author, dateBC, occasion
+export const fetchPsalmsWithAuthorData = cache(async function fetchPsalmsWithAuthorData() {
+  return db
+    .select({
+      id: psalms.id,
+      author: psalms.author,
+      dateBC: psalms.dateBC,
+      occasion: psalms.occasion,
+    })
+    .from(psalms)
+    .orderBy(asc(psalms.dateBC))  // nulls last handled in client sort
+})
+
+// Section 6: Heidelberg Catechism — 35 distinct question numbers with verse links
+export const fetchHeidelbergCatechism = cache(async function fetchHeidelbergCatechism() {
+  const rows = await db.execute(sql`
+    SELECT
+      cr.question_number,
+      cr.url,
+      json_agg(json_build_object(
+        'psalmId', v.psalm_id,
+        'verseNumber', v.verse_number
+      ) ORDER BY v.psalm_id, v.verse_number) AS verses
+    FROM creedal_references cr
+    JOIN verses v ON v.id = cr.verse_id
+    WHERE cr.creed = 'Heidelberg'
+    GROUP BY cr.question_number, cr.url
+    ORDER BY cr.question_number
+  `)
+  return rows as unknown as Array<{
+    question_number: number
+    url: string
+    verses: Array<{ psalmId: number; verseNumber: number | null }>
+  }>
+})
+
+// Section 4: Naves sub-topic drill-down for /explore/naves/[slug] detail page
+// T-04.12-03: topicId is typed number — parameterised via drizzle sql tag, never raw string concat
+export const fetchNavesSubTopics = cache(async function fetchNavesSubTopics(topicId: number) {
+  const rows = await db.execute(sql`
+    SELECT
+      nte.id,
+      nte.sub_topic,
+      nte.quotation,
+      json_agg(json_build_object('psalmId', v.psalm_id, 'verseNumber', v.verse_number)
+        ORDER BY v.psalm_id, v.verse_number) AS verses
+    FROM naves_topic_entries nte
+    JOIN verse_naves_topic_entries vnte ON vnte.entry_id = nte.id
+    JOIN verses v ON v.id = vnte.verse_id
+    WHERE nte.naves_topic_id = ${topicId}
+    GROUP BY nte.id, nte.sub_topic, nte.quotation
+    ORDER BY nte.sub_topic
+  `)
+  return rows as unknown as Array<{
+    id: number
+    sub_topic: string | null
+    quotation: string | null
+    verses: Array<{ psalmId: number; verseNumber: number | null }>
+  }>
+})
+
+// Section 2: By Theme — topics split by type (Main Topic / Mood / Song Type)
+export const fetchTopicsByType = cache(async function fetchTopicsByType(type: string) {
+  return db
+    .select({ id: topics.id, name: topics.name, count: count(psalmTopics.psalmId) })
+    .from(topics)
+    .leftJoin(psalmTopics, eq(psalmTopics.topicId, topics.id))
+    .where(eq(topics.topicType, type))
+    .groupBy(topics.id, topics.name)
+    .orderBy(desc(count(psalmTopics.psalmId)))
 })
