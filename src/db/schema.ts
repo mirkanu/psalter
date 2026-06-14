@@ -27,6 +27,8 @@ export const psalms = pgTable('psalms', {
   haddingtonIntro: text('haddington_intro'),
   kjvText: text('kjv_text'),
   author: text('author'),
+  dateBC: integer('date_bc'),
+  occasion: text('occasion'),
 })
 
 /**
@@ -177,6 +179,7 @@ export const navesTopics = pgTable('naves_topics', {
   airtableId: text('airtable_id').notNull().unique(),
   name: text('name'),
   description: text('description'),
+  messianic: text('messianic'),
 })
 
 /**
@@ -235,6 +238,39 @@ export const verseNavesTopics = pgTable('verse_naves_topics', {
   verseId: integer('verse_id').notNull().references(() => verses.id),
   navesTopicId: integer('naves_topic_id').notNull().references(() => navesTopics.id),
 }, (t) => [primaryKey({ columns: [t.verseId, t.navesTopicId] })])
+
+/**
+ * naves_topic_entries — Nave's Topic Entries (Airtable: sub-entries per topic)
+ * Individual quotation/sub-topic entries within a Nave's topic
+ */
+export const navesTopicEntries = pgTable('naves_topic_entries', {
+  id: serial('id').primaryKey(),
+  airtableId: text('airtable_id').notNull().unique(),
+  navesTopicId: integer('naves_topic_id').references(() => navesTopics.id),
+  subTopic: text('sub_topic'),
+  quotation: text('quotation'),
+})
+
+/**
+ * verse_naves_topic_entries — many-to-many: verses ↔ naves_topic_entries
+ */
+export const verseNavesTopicEntries = pgTable('verse_naves_topic_entries', {
+  verseId: integer('verse_id').notNull().references(() => verses.id),
+  entryId: integer('entry_id').notNull().references(() => navesTopicEntries.id),
+}, (t) => [primaryKey({ columns: [t.verseId, t.entryId] })])
+
+/**
+ * creedal_references — Creedal References
+ * Links verses to Westminster Confession / Shorter Catechism questions
+ */
+export const creedalReferences = pgTable('creedal_references', {
+  id: serial('id').primaryKey(),
+  airtableId: text('airtable_id').notNull().unique(),
+  verseId: integer('verse_id').references(() => verses.id),
+  creed: text('creed'),
+  questionNumber: integer('question_number'),
+  url: text('url'),
+})
 
 /**
  * verse_doctrines — many-to-many: verses ↔ doctrines
@@ -371,4 +407,18 @@ export const verseNavesTopicsRelations = relations(verseNavesTopics, ({ one }) =
 export const verseDoctrinesRelations = relations(verseDoctrines, ({ one }) => ({
   verse: one(verses, { fields: [verseDoctrines.verseId], references: [verses.id] }),
   doctrine: one(doctrines, { fields: [verseDoctrines.doctrineId], references: [doctrines.id] }),
+}))
+
+export const navesTopicEntriesRelations = relations(navesTopicEntries, ({ one, many }) => ({
+  navesTopic: one(navesTopics, { fields: [navesTopicEntries.navesTopicId], references: [navesTopics.id] }),
+  verseLinks: many(verseNavesTopicEntries),
+}))
+
+export const verseNavesTopicEntriesRelations = relations(verseNavesTopicEntries, ({ one }) => ({
+  verse: one(verses, { fields: [verseNavesTopicEntries.verseId], references: [verses.id] }),
+  entry: one(navesTopicEntries, { fields: [verseNavesTopicEntries.entryId], references: [navesTopicEntries.id] }),
+}))
+
+export const creedalReferencesRelations = relations(creedalReferences, ({ one }) => ({
+  verse: one(verses, { fields: [creedalReferences.verseId], references: [verses.id] }),
 }))
