@@ -96,9 +96,9 @@ export default async function TopicPage({ params }: PageProps) {
           {psalms.map((p) => (
             <div
               key={p.id}
-              className="py-3 flex items-center gap-4 hover:bg-muted rounded transition-colors min-h-[44px]"
+              className="py-3 flex items-start gap-4 hover:bg-muted rounded transition-colors min-h-[44px]"
             >
-              <span className="w-10 shrink-0 font-mono text-sm tabular-nums text-muted-foreground">
+              <span className="w-10 shrink-0 font-mono text-sm tabular-nums text-muted-foreground pt-0.5">
                 {p.id}
               </span>
               <Link

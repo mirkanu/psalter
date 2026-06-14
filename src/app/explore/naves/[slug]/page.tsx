@@ -7,6 +7,7 @@ import {
   fetchNavesSubTopics,
 } from "@/db/queries/explore"
 import { slugify, buildNavesSlugMap } from "@/lib/naves-slugs"
+import { NavesSubTopicList } from "@/components/NavesSubTopicList"
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -61,23 +62,7 @@ export default async function NavesTopicPage({ params }: PageProps) {
           </p>
         </div>
       ) : (
-        <div>
-          {entries.map((entry) => (
-            <div key={entry.id} className="mb-4">
-              <h2 className="text-xl font-semibold mb-2">{entry.sub_topic ?? 'General'}</h2>
-              {entry.verses.map((v) => (
-                <div key={`${v.psalmId}-${v.verseNumber}`} className="mb-1">
-                  <Link href={`/psalms/${v.psalmId}`} className="text-sm font-semibold hover:text-primary">
-                    Psalm {v.psalmId}{v.verseNumber != null ? `:${v.verseNumber}` : ''}
-                  </Link>
-                  {entry.quotation && (
-                    <p className="text-sm text-muted-foreground italic ml-4">{entry.quotation}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
+        <NavesSubTopicList entries={entries} />
       )}
     </div>
   )

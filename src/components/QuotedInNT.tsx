@@ -6,6 +6,15 @@ import { Badge } from "@/components/ui/badge"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { ChevronDown, ChevronUp } from "lucide-react"
 
+const NT_BOOK_ORDER = [
+  'Matthew', 'Mark', 'Luke', 'John', 'Acts', 'Romans',
+  '1 Corinthians', '2 Corinthians', 'Galatians', 'Ephesians',
+  'Philippians', 'Colossians', '1 Thessalonians', '2 Thessalonians',
+  '1 Timothy', '2 Timothy', 'Titus', 'Philemon', 'Hebrews',
+  'James', '1 Peter', '2 Peter', '1 John', '2 John', '3 John',
+  'Jude', 'Revelation',
+]
+
 interface NTEntry {
   id: number
   sub_topic: string | null
@@ -40,34 +49,42 @@ function CollapsibleRow({
 }
 
 export function QuotedInNT({ entries }: { entries: NTEntry[] }) {
+  const sorted = [...entries].sort((a, b) => {
+    const idxA = NT_BOOK_ORDER.findIndex(book => (a.sub_topic ?? '').startsWith(book))
+    const idxB = NT_BOOK_ORDER.findIndex(book => (b.sub_topic ?? '').startsWith(book))
+    return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB)
+  })
+
   return (
     <div>
-      {entries.map((entry) => (
-        <CollapsibleRow
-          key={entry.id}
-          label={entry.sub_topic ?? "General"}
-          count={entry.verses.length}
-        >
-          <div className="space-y-2">
-            {entry.verses.map((v) => (
-              <div key={`${v.verseId}`}>
-                <Link
-                  href={`/psalms/${v.psalmId}`}
-                  className="text-sm font-semibold hover:text-primary"
-                >
-                  Psalm {v.psalmId}
-                  {v.verseNumber != null ? `:${v.verseNumber}` : ""}
-                </Link>
-              </div>
-            ))}
-            {entry.quotation && (
-              <p className="text-sm text-muted-foreground italic ml-4">
-                {entry.quotation}
-              </p>
-            )}
-          </div>
-        </CollapsibleRow>
-      ))}
+      {sorted.map((entry) => {
+        const strippedQuotation = (entry.quotation ?? '').replace(/^\d+:\d+\s*/, '')
+        return (
+          <CollapsibleRow
+            key={entry.id}
+            label={entry.sub_topic ?? "General"}
+            count={entry.verses.length}
+          >
+            <div className="space-y-2">
+              {entry.verses.map((v) => (
+                <div key={`${v.verseId}`} className="mb-2">
+                  <Link
+                    href={`/psalms/${v.psalmId}`}
+                    className="text-sm font-semibold hover:text-primary"
+                  >
+                    Psalm {v.psalmId}
+                  </Link>
+                  {entry.quotation && (
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {v.verseNumber != null ? `${v.verseNumber} ` : ''}{strippedQuotation}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CollapsibleRow>
+        )
+      })}
     </div>
   )
 }
