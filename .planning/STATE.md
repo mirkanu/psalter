@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready_to_plan
-stopped_at: Phase 04.12 complete — code review fixed, post-fix bugs patched
-last_updated: "2026-06-14T00:00:00.000Z"
-last_activity: 2026-06-14
+status: planning
+stopped_at: Phase 5 context gathered
+last_updated: "2026-06-14T21:59:28.847Z"
+last_activity: "2026-06-14 - Completed quick task 260614-l60: Explore polish batch (a-j): Messianic tab, URL routing, card wrap, source credits, NT sort, verse dedup, topic search, Nave's collapsible"
 progress:
-  total_phases: 9
-  completed_phases: 8
+  total_phases: 10
+  completed_phases: 6
   total_plans: 36
-  completed_plans: 36
-  percent: 89
+  completed_plans: 34
+  percent: 94
 ---
 
 # Project State
@@ -85,6 +85,8 @@ Progress: [█████████░] 94%
 - Phase 4.9.4 inserted after Phase 4.9.3: Staff View Refinements & Onboarding — header cleanup, first-run tour, dynamic zoom, glass bottom bar, A+/A- relocation, Play/Gear split (URGENT)
 - Phase 4.9.6 inserted after Phase 4.9.5: Psalter Alignment Implementation — promotes seeds/psalter-alignment-implementation.md; consumes Phase 4.9.5 doc; fixes DCM/alternate-meter/amen alignment bugs (URGENT)
 - Phase 04.9.8 inserted after Phase 04.9.7: Staff Display Word Alignment Fix — 4 PHRASE_BREAKs per CM tune, z2 phantom-bar fix, archaic word overrides (URGENT)
+- Phase 5 edited: edited fields: goal, requirements, success_criteria — full precentor portal redesign with Precenting Sets, psalm table, meter mismatch checker, precenting mode
+- Phase 05.1 inserted after Phase 5: Auth Gate — Better Auth login, route protection, admin-created accounts, auto-populate Precentor from session (URGENT)
 
 ### Decisions
 
@@ -193,9 +195,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-14
-Stopped at: Phase 04.12 complete — code review fixed (8/9 findings), post-fix bugs patched (When you... rename + 404 fix)
-Resume file: None
+Last session: 2026-06-14T21:59:28.720Z
+Stopped at: Phase 5 context gathered
+Resume file: .planning/phases/05-precentor-portal/05-CONTEXT.md
 
 ### Deferred from 04.9.4 polish (separate tickets when needed)
 
