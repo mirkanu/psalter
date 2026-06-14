@@ -36,7 +36,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 ### Milestone 2 — Precentor Portal & Polish
 
-- [ ] **Phase 5: Precentor Portal** - Better Auth login, service event CRUD, psalm+tune set list builder, live service view with pre-loaded notation
+- [ ] **Phase 5: Precentor Portal** - Precenting Sets (Date/Type/Note), psalm+tune table with meter mismatch checker, dnd-kit reordering, TunePickerModal, precenting mode with amber bar and position counter
+- [ ] **Phase 05.1 (INSERTED): Auth Gate** - Better Auth login, /precent/* route protection, admin-created accounts, auto-populate Precentor from session
 - [ ] **Phase 6: Polish** - OG images, Lighthouse 90+, bundle analysis, click feedback, loading skeletons on remaining routes
 
 ## Phase Details
@@ -645,16 +646,46 @@ Plans:
 ## Milestone 2 — Precentor Portal & Polish
 
 ### Phase 5: Precentor Portal
-**Goal**: A logged-in precentor can create service events, build an ordered set list of psalm+tune pairs, and run a live service view that pre-loads all notation
+**Goal**: A precentor can create Precenting Sets (Date, Type, optional Note), build an ordered list of psalm+tune pairs with optional verse ranges, and run a live precenting mode that navigates the set with immediate tune/psalm edits reflected in-view
 **Depends on**: Phase 4.5
-**Requirements**: AUTH-01, AUTH-02, PREC-01, PREC-02, PREC-03, PREC-04, PREC-05, PREC-06
+**Requirements**: PREC-01, PREC-02, PREC-03, PREC-04, PREC-05, PREC-06
 **Success Criteria** (what must be TRUE):
-  1. A precentor can log in with email and password; accounts are created by an admin only (no public self-registration)
-  2. A logged-in precentor can create a service event (date + AM/PM), assign ordered psalm+tune pairs specifying verses/stanzas, and edit or reorder those pairs before the service
-  3. The service set list overview page shows all assigned psalms in sequence before the service begins
-  4. Opening the live service view pre-loads notation for all assigned tunes on page entry — no per-psalm loading delay mid-service
-  5. The precentor can trigger melody audio playback for any tune in the portal via the abcjs Web Audio API (requires a user gesture)
-**Plans**: TBD (5-6 plans)
+  1. A "Precent" top-level nav item lists all Precenting Sets with columns Date, Type, Precentor (hardcoded "Manuel"); a prominent "+ New" button opens the creation form
+  2. Creating a Precenting Set requires Date and Type (AM Service / PM Service / Other, mandatory); Note is optional free text; DB auto-tracks Created and Last Modified separately from Date
+  3. After creation, fields display as read-only with edit affordances; an "Add Psalm" button opens the "Select psalm" modal; selecting a psalm shows an inline verse range input (empty by default, visually inviting) that confirms and adds the psalm as a table row
+  4. The psalms table shows Psalm, Verses, Meter, Tune (defaulting to the psalm's default tune or empty); clicking any Tune cell opens a TunePickerModal pre-filtered to the psalm's meter; rows where the selected tune's meter does not match the psalm's meter are highlighted with a visible "Warning: meter mismatch" indicator
+  5. Rows are reorderable via drag-and-drop using dnd-kit (pointer-event-based, works on mobile); clicking Psalm or Verses opens their respective edit modal; each row has a delete icon (with confirmation) and a play icon (opens precenting mode at that psalm)
+  6. A prominent "Start Precenting" button (light orange) opens the standard single-psalm view in precenting mode: a thin amber bar between the site header and psalm header shows position (e.g. "3/4") with "Precenting Mode" label; left/right navigation arrows (also amber) move through the set in order; clicking Psalm or Tune immediately updates that set entry and loads the new selection; back arrow hidden on first psalm, forward arrow hidden on last
+**Plans**: 5 plans
+**UI hint**: yes
+
+Plans:
+**Wave 1** *(foundation — install deps, schema + DB push, nav, Wave 0 test stubs)*
+- [ ] 05-01-PLAN.md — Install dnd-kit + Calendar, add precenting_sets + set_items tables + [BLOCKING] drizzle-kit push, Precent nav item, all 6 Wave 0 test stubs (RED)
+
+**Wave 2** *(depends on Wave 1)*
+- [ ] 05-02-PLAN.md — Set CRUD API + /precent list page + CreateSetForm + PrecentingSetList + loading.tsx (PREC-01)
+
+**Wave 3** *(depends on Wave 2)*
+- [ ] 05-03-PLAN.md — Item API routes + PsalmListingGrid/TuneGrid reuse props + PsalmPickerModal + TunePickerModal (PREC-02)
+
+**Wave 4** *(depends on Wave 3)*
+- [ ] 05-04-PLAN.md — Reorder API + /precent/[id] detail page + SetDetail + dnd-kit SetItemsSortableList/SetItemRow (mismatch/play/delete) (PREC-03, PREC-04)
+
+**Wave 5** *(depends on Wave 4)*
+- [ ] 05-05-PLAN.md — Precenting mode page + PrecentingBar + SingingView wrap + loading.tsx + Playwright UAT green (PREC-05, PREC-06)
+
+### Phase 05.1: Auth Gate (INSERTED)
+
+**Goal**: Protect all /precent/* routes behind Better Auth login; admin-created accounts only; logged-in user name automatically populates the Precentor field on Precenting Sets; no public self-registration path exists
+**Depends on:** Phase 5
+**Requirements**: AUTH-01, AUTH-02
+**Success Criteria** (what must be TRUE):
+  1. A precentor can log in with email and password via Better Auth; session persists across page reloads
+  2. All /precent/* routes redirect unauthenticated users to the login page; no precentor data is accessible without a valid session
+  3. The Precentor field on Precenting Sets is automatically populated from the logged-in user's display name (no manual entry)
+  4. An admin can create precentor accounts via a CLI script or minimal admin UI; no self-registration route exists
+**Plans**: TBD (2-3 plans)
 **UI hint**: yes
 
 ### Phase 6: Polish
@@ -675,7 +706,7 @@ Plans:
 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 4.9.5 → 4.9.6 → 4.9.7 → 4.9.8 → 4.9.9 → 4.9.10 → 4.9.11 → 4.9.12
 
 **Milestone 2 Execution Order:**
-5 → 6
+5 → 05.1 → 6
 
 ### Milestone 1 — Public Psalter
 
