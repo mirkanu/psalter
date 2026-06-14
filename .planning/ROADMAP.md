@@ -617,7 +617,7 @@ Plans:
 - [x] 04.12-01-PLAN.md — Schema changes (psalms.date_bc/occasion, naves_topics.messianic, naves_topic_entries + verse_naves_topic_entries + creedal_references) + [BLOCKING] drizzle-kit push + shadcn Collapsible/Table install
 
 **Wave 2** *(depends on Wave 1)*
-- [ ] 04.12-02-PLAN.md — Standalone scripts/migrate-explore-04-12.ts (no JPG download) + 6 new explore.ts query functions + integration tests
+- [x] 04.12-02-PLAN.md — Standalone scripts/migrate-explore-04-12.ts (no JPG download) + 6 new explore.ts query functions + integration tests
 
 **Wave 3** *(parallel — both depend on Wave 1 + Wave 2)*
 - [ ] 04.12-03-PLAN.md — QuotedInNT + HeidelbergCatechism (collapsible client) + MessianicByTopic (server) + ExploreAnchorNav (IntersectionObserver)
