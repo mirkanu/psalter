@@ -3,7 +3,6 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import type { Metadata } from "next"
 import { fetchAllTopicsWithCounts, fetchPsalmsByTopic } from "@/db/queries/explore"
-import { Badge } from "@/components/ui/badge"
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -101,17 +100,14 @@ export default async function TopicPage({ params }: PageProps) {
               <span className="w-10 shrink-0 font-mono text-sm tabular-nums text-muted-foreground pt-0.5">
                 {p.id}
               </span>
-              <Link
-                href={`/psalms/${p.id}`}
-                className="flex-1 text-base hover:text-primary transition-colors"
-              >
-                {p.firstLine ?? `Psalm ${p.id}`}
-              </Link>
-              {p.meter && (
-                <Badge variant="secondary" className="shrink-0 text-xs">
-                  {p.meter}
-                </Badge>
-              )}
+              <div className="flex-1 min-w-0">
+                <Link href={`/psalms/${p.id}`} className="text-base hover:text-primary transition-colors block">
+                  {p.firstLine ?? `Psalm ${p.id}`}
+                </Link>
+                {p.meter && (
+                  <span className="text-xs text-muted-foreground">{p.meter}</span>
+                )}
+              </div>
             </div>
           ))}
         </div>
