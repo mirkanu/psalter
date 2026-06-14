@@ -212,25 +212,23 @@ async function run() {
     }
 
     // ----------------------------------------------------------------
-    // Test 10: Mobile viewport — Authors table hides Date B.C. + Occasion columns
+    // Test 10: Mobile viewport — Authors table visible with horizontal scroll
     // ----------------------------------------------------------------
     await page.goto(EXPLORE, { waitUntil: 'networkidle', timeout: 30000 })
     await page.setViewportSize({ width: 375, height: 812 })
     await page.waitForTimeout(200)
 
-    // Check that hidden columns (sm:table-cell) are not visible at 375px
-    // They use hidden sm:table-cell — at 375px they should be hidden (display:none)
+    // All columns remain visible at 375px — table scrolls horizontally (overflow-x-auto)
     const dateColHeader = await page.$('th:has-text("Date B.C.")')
     if (dateColHeader) {
       const isVisible = await dateColHeader.isVisible()
-      if (!isVisible) {
-        pass('Date B.C. column hidden at 375px mobile viewport')
+      if (isVisible) {
+        pass('Date B.C. column visible at 375px mobile viewport (horizontal scroll)')
       } else {
-        fail('Date B.C. column hidden at 375px mobile viewport', 'column is still visible')
+        fail('Date B.C. column visible at 375px mobile viewport', 'column is hidden — should be visible with horizontal scroll')
       }
     } else {
-      // Column might not be rendered at all in DOM at this viewport — that's fine
-      pass('Date B.C. column not present in DOM at 375px (responsive hidden)')
+      fail('Date B.C. column visible at 375px mobile viewport', 'column not found in DOM')
     }
 
   } catch (err) {
