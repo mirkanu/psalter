@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 04.12 UI-SPEC approved
-last_updated: "2026-06-13T08:56:52.969Z"
-last_activity: 2026-06-13 -- Phase 04.12 planning complete
+last_updated: "2026-06-14T08:12:27.307Z"
+last_activity: 2026-06-14 -- Phase 04.12 execution started
 progress:
   total_phases: 9
   completed_phases: 5
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-07)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 04.9.12 — melisma-positions-as-tune-level-data
+**Current focus:** Phase 04.12 — explore-page-rebuild
 
 ## Current Position
 
-Phase: 04.9.12 (melisma-positions-as-tune-level-data) — EXECUTING
-Plan: 1 of 4
+Phase: 04.12 (explore-page-rebuild) — EXECUTING
+Plan: 1 of 5
 UI-SPEC: Phase 04.9.4 closed out. Singing-view chrome refined across 4 polish rounds (chrome-dedup, singing-chrome-polish, r3, r4); audio first-press bug fixed; tour redesigned (4 steps, per-element spotlights); mobile bar h-11 (44px); lyrics/solfège views get bigger font + padding + inline YouTube embed; "Ps 119:N-M" range titles.
-Status: Ready to execute
-Last activity: 2026-06-13 -- Phase 04.12 planning complete
+Status: Executing Phase 04.12
+Last activity: 2026-06-14 -- Phase 04.12 execution started
 
 Progress: [█████████░] 94%
 
