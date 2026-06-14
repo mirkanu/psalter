@@ -8,7 +8,7 @@ import { ChevronDown, ChevronUp, ExternalLink } from "lucide-react"
 
 interface CatechismRow {
   question_number: number
-  url: string
+  url: string | null
   verses: Array<{ psalmId: number; verseNumber: number | null }>
 }
 
@@ -51,7 +51,9 @@ export function HeidelbergCatechism({ rows }: { rows: CatechismRow[] }) {
             {row.verses.map((v) => (
               <a
                 key={`${v.psalmId}-${v.verseNumber}`}
-                href={row.url.startsWith('http') ? row.url : `https://${row.url}`}
+                href={row.url
+                  ? (row.url.startsWith('http') ? row.url : `https://${row.url}`)
+                  : '#'}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm hover:text-primary block"

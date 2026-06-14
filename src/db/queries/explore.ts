@@ -200,11 +200,12 @@ export const fetchPsalmsWithAuthorData = cache(async function fetchPsalmsWithAut
 })
 
 // Section 6: Heidelberg Catechism — 35 distinct question numbers with verse links
+// WR-02 fix: group only by question_number, use MIN(url) to avoid duplicate rows/keys
 export const fetchHeidelbergCatechism = cache(async function fetchHeidelbergCatechism() {
   const rows = await db.execute(sql`
     SELECT
       cr.question_number,
-      cr.url,
+      MIN(cr.url) AS url,
       json_agg(json_build_object(
         'psalmId', v.psalm_id,
         'verseNumber', v.verse_number
@@ -212,12 +213,12 @@ export const fetchHeidelbergCatechism = cache(async function fetchHeidelbergCate
     FROM creedal_references cr
     JOIN verses v ON v.id = cr.verse_id
     WHERE cr.creed = 'Heidelberg'
-    GROUP BY cr.question_number, cr.url
+    GROUP BY cr.question_number
     ORDER BY cr.question_number
   `)
   return rows as unknown as Array<{
     question_number: number
-    url: string
+    url: string | null
     verses: Array<{ psalmId: number; verseNumber: number | null }>
   }>
 })
