@@ -609,7 +609,7 @@ Plans:
 **Goal**: Rebuild /explore to match psalter.cprc.co.uk across all 6 sections — migrate missing schema fields, fetch new Airtable data, and redesign the page as a single scrollable layout with anchor sections. Users can browse psalms by theme, find NT quotations, explore Nave's topics with sub-topic drill-down, filter by author with historical metadata, and look up Heidelberg Catechism connections.
 **Requirements**: EXPLORE-01, EXPLORE-02, EXPLORE-03, EXPLORE-04, EXPLORE-05, EXPLORE-06
 **Depends on:** Phase 4.8
-**Plans:** 5 plans
+**Plans:** 5/5 plans complete
 **UI hint**: yes
 
 Plans:
