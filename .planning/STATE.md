@@ -29,7 +29,7 @@ Phase: 05
 Plan: Not started
 UI-SPEC: Phase 04.9.4 closed out. Singing-view chrome refined across 4 polish rounds (chrome-dedup, singing-chrome-polish, r3, r4); audio first-press bug fixed; tour redesigned (4 steps, per-element spotlights); mobile bar h-11 (44px); lyrics/solfège views get bigger font + padding + inline YouTube embed; "Ps 119:N-M" range titles.
 Status: Ready to plan
-Last activity: 2026-06-14 - Completed quick task 260614-k0h: Convert /explore from flat anchor-nav to tabbed layout with icons
+Last activity: 2026-06-14 - Completed quick task 260614-l60: Explore polish batch (a-j): Messianic tab, URL routing, card wrap, source credits, NT sort, verse dedup, topic search, Nave's collapsible
 
 Progress: [█████████░] 94%
 
@@ -169,6 +169,7 @@ None yet.
 | 260601-i5d | Fix Contemplation sharps-as-naturals: append trailing `\|` to splitMusicIntoSubLines emissions so abcjs synth resets accidental scope at phrase boundaries. Extracted splitMusicIntoSubLines to a sibling module + unit tests + UAT verifier (MIDI buggy-vs-fixed diff confirmed exactly one NoteOn divergence at idx=16: buggy=76, fixed=75). Regression sweep clean on Crimond/Martyrdom/Old-100th. | 2026-06-01 | 38a6093 | [260601-i5d-fix-contemplation-sharps-as-naturals-app](./quick/260601-i5d-fix-contemplation-sharps-as-naturals-app/) |
 | 260607-gju | Fix Dunfermline psalm 106 phrase 4 misalignment: double-strip Amen notes from solfège soprano string. Single-pass lastIndexOf('||') left "d \| d" Amen notes in cleaned string, inflating totalEvents 28→30 and giving phrase 4 eight note slots instead of six. Fix adds second-pass guard: strips tail after penultimate \|\| if it has no beat-colon (Amen notes never have :). Confirmed via Playwright: all 4 phrases render with correct lyric alignment. | 2026-06-07 | b99c7c2 | [260607-gju-dunfermline-psalm-106-rendering-wrong-de](./quick/260607-gju-dunfermline-psalm-106-rendering-wrong-de/) |
 | 260614-k0h | Convert /explore from flat anchor-nav to tabbed layout with icons — Themes/In the NT/Other Topics/Authors/Catechism tabs; Themes has sub-tabs Main Topic, Mood, Song Type, When you...; new ExploreTabShell client component | 2026-06-14 | 35bbd2d | [260614-k0h-convert-explore-from-flat-anchor-nav-to-](./quick/260614-k0h-convert-explore-from-flat-anchor-nav-to-/) |
+| 260614-l60 | Explore polish batch (a-j): Messianic own tab (Gem icon), URL-based tab routing (?tab=), card text wrap, Nave's source credits, tab-bar no vertical scroll, psalm row items-start, NT canonical sort, verse citation dedup, Other Topics search, Nave's collapsible sub-topics | 2026-06-14 | 176c46d | [260614-l60-explore-page-polish-batch-messianic-tab-](./quick/260614-l60-explore-page-polish-batch-messianic-tab-/) |
 
 - [04.9.8-05]: Character-level tokenizer for insertPhraseBreaks replaces text-line-granular Path NH — emits PHRASE_BREAK at exact note-head offsets independent of ABC text-line boundaries
 - [04.9.8-05]: NotationRenderer cleanedBody merges multi-text-line phrase bodies into single line to prevent phantom extra sub-staves from internal newlines
