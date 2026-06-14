@@ -44,7 +44,7 @@ export function AuthorsTable({ psalms }: { psalms: PsalmWithAuthorData[] }) {
   const sorted = [...filtered].sort((a, b) => {
     if (a.dateBC === null) return 1
     if (b.dateBC === null) return -1
-    return a.dateBC - b.dateBC
+    return b.dateBC - a.dateBC  // larger BC number = earlier in history = sort first
   })
 
   return (
