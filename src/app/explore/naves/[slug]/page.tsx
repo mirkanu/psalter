@@ -6,35 +6,10 @@ import {
   fetchNavesTopicsWithCounts,
   fetchNavesSubTopics,
 } from "@/db/queries/explore"
+import { slugify, buildNavesSlugMap } from "@/lib/naves-slugs"
 
 interface PageProps {
   params: Promise<{ slug: string }>
-}
-
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/['']/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '')
-    .replace(/-+/g, '-')
-    .replace(/^-+|-+$/g, '')
-}
-
-function buildNavesSlugMap(
-  topics: Array<{ id: number; name: string }>
-): Map<number, string> {
-  const slugCount = new Map<string, number>()
-  for (const t of topics) {
-    const base = slugify(t.name)
-    slugCount.set(base, (slugCount.get(base) ?? 0) + 1)
-  }
-  const result = new Map<number, string>()
-  for (const t of topics) {
-    const base = slugify(t.name)
-    result.set(t.id, (slugCount.get(base) ?? 1) > 1 ? `${base}-${t.id}` : base)
-  }
-  return result
 }
 
 export async function generateStaticParams() {

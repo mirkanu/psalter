@@ -19,37 +19,17 @@ import { QuotedInNT } from "@/components/QuotedInNT"
 import { MessianicByTopic } from "@/components/MessianicByTopic"
 import { AuthorsTable } from "@/components/AuthorsTable"
 import { HeidelbergCatechism } from "@/components/HeidelbergCatechism"
+import { slugify, buildNavesSlugMap } from "@/lib/naves-slugs"
 
 export const metadata: Metadata = {
   title: "Explore | CPRC Psalter",
   description: "Browse psalms by topic, theme, and category.",
 }
 
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/['']/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '')
-    .replace(/-+/g, '-')
-    .replace(/^-+|-+$/g, '')
-}
-
-function buildDisambiguatedSlugMap(
-  topics: Array<{ id: number; name: string }>
-): Map<number, string> {
-  const slugCount = new Map<string, number>()
-  for (const t of topics) {
-    const base = slugify(t.name)
-    slugCount.set(base, (slugCount.get(base) ?? 0) + 1)
-  }
-  const result = new Map<number, string>()
-  for (const t of topics) {
-    const base = slugify(t.name)
-    result.set(t.id, (slugCount.get(base) ?? 1) > 1 ? `${base}-${t.id}` : base)
-  }
-  return result
-}
+// buildDisambiguatedSlugMap is an alias for buildNavesSlugMap — used for
+// non-Nave's topic slugs (whenYou, mainTopics, mood, songType) which share
+// the same disambiguation algorithm.
+const buildDisambiguatedSlugMap = buildNavesSlugMap
 
 export default async function ExplorePage() {
   const [
