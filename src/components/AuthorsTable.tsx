@@ -52,14 +52,14 @@ export function AuthorsTable({ psalms }: { psalms: PsalmWithAuthorData[] }) {
       <p className="text-sm text-muted-foreground mb-4">
         Sorted from earliest date; some data is conjecture. Source: blueletterbible.org
       </p>
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
         {AUTHORS.map((author) => (
           <button
             key={author}
             onClick={() => setSelectedAuthor(selectedAuthor === author ? null : author)}
             className={selectedAuthor === author
-              ? "bg-primary text-primary-foreground rounded-full px-3 py-1 text-sm"
-              : "border border-border rounded-full px-3 py-1 text-sm bg-background hover:bg-muted"
+              ? "bg-primary text-primary-foreground rounded-full px-3 py-1 text-sm whitespace-nowrap shrink-0"
+              : "border border-border rounded-full px-3 py-1 text-sm bg-background hover:bg-muted whitespace-nowrap shrink-0"
             }
           >
             {author}
