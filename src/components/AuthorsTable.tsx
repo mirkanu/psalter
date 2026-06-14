@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { ChevronUp } from "lucide-react"
 
 interface PsalmWithAuthorData {
   id: number
@@ -71,8 +72,12 @@ export function AuthorsTable({ psalms }: { psalms: PsalmWithAuthorData[] }) {
             <tr className="border-b border-border">
               <th className="w-20 text-right px-3 py-2 font-semibold">Psalm</th>
               <th className="w-40 px-3 py-2 font-semibold">Author</th>
-              <th className="w-24 px-3 py-2 font-semibold hidden sm:table-cell">Date B.C.</th>
-              <th className="px-3 py-2 font-semibold hidden sm:table-cell">Occasion</th>
+              <th className="w-24 px-3 py-2 font-semibold">
+                <span className="inline-flex items-center gap-1">
+                  Date B.C. <ChevronUp className="h-3 w-3 text-muted-foreground" aria-label="sorted ascending" />
+                </span>
+              </th>
+              <th className="px-3 py-2 font-semibold">Occasion</th>
             </tr>
           </thead>
           <tbody>
@@ -88,11 +93,11 @@ export function AuthorsTable({ psalms }: { psalms: PsalmWithAuthorData[] }) {
                     {p.author ?? 'Unknown'}
                   </span>
                 </td>
-                <td className="w-24 px-3 py-2 hidden sm:table-cell text-muted-foreground">
+                <td className="w-24 px-3 py-2 text-muted-foreground">
                   {p.dateBC != null ? `~${p.dateBC} B.C.` : 'Unknown'}
                 </td>
                 <td
-                  className="px-3 py-2 hidden sm:table-cell text-muted-foreground truncate max-w-[300px]"
+                  className="px-3 py-2 text-muted-foreground truncate max-w-[300px]"
                   title={p.occasion ?? ''}
                 >
                   {p.occasion ? p.occasion.slice(0, 60) + (p.occasion.length > 60 ? '…' : '') : ''}
