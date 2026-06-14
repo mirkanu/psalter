@@ -59,12 +59,14 @@ export const fetchPsalmsByTopic = cache(async function fetchPsalmsByTopic(topicI
 // Join chain: naves_topics → verse_naves_topics → verses → psalm_id
 
 // WR-03: wrapped in cache() to deduplicate calls across generateStaticParams / generateMetadata / page
+// CR-04 fix: count through verse_naves_topic_entries (same junction as detail page) for consistency
 export const fetchNavesTopicsWithCounts = cache(async function fetchNavesTopicsWithCounts() {
   const rows = await db.execute(sql`
     SELECT nt.id, nt.name, COUNT(DISTINCT v.psalm_id)::integer AS psalm_count
     FROM naves_topics nt
-    JOIN verse_naves_topics vnt ON vnt.naves_topic_id = nt.id
-    JOIN verses v ON v.id = vnt.verse_id
+    JOIN naves_topic_entries nte ON nte.naves_topic_id = nt.id
+    JOIN verse_naves_topic_entries vnte ON vnte.entry_id = nte.id
+    JOIN verses v ON v.id = vnte.verse_id
     GROUP BY nt.id, nt.name
     ORDER BY psalm_count DESC
   `)
