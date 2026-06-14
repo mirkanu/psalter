@@ -118,4 +118,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-29 — Phase 04.9.10 complete: 150/150 psalms pass staff alignment sweep after Path NH PHRASE_BREAK re-annotation; RENDER-08 closed*
+*Last updated: 2026-06-14 — Phase 04.12 complete: /explore page rebuilt with 6 sections, anchor nav, authors table, NT quotations, Messianic by topic, Heidelberg catechism, sub-topic drill-down on Nave's detail route; Playwright UAT 11/11 GREEN*
