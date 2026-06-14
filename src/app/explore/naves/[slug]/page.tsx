@@ -4,9 +4,8 @@ import Link from "next/link"
 import type { Metadata } from "next"
 import {
   fetchNavesTopicsWithCounts,
-  fetchPsalmDetailsByNavesTopic,
+  fetchNavesSubTopics,
 } from "@/db/queries/explore"
-import { Badge } from "@/components/ui/badge"
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -65,7 +64,7 @@ export default async function NavesTopicPage({ params }: PageProps) {
   const topic = topics.find((t) => navesSlugMap.get(t.id) === slug)
   if (!topic) notFound()
 
-  const psalms = await fetchPsalmDetailsByNavesTopic(topic.id)
+  const entries = await fetchNavesSubTopics(topic.id)
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
@@ -75,39 +74,32 @@ export default async function NavesTopicPage({ params }: PageProps) {
         <span className="text-foreground">Nave&apos;s Topics</span>
       </div>
 
-      <h1 className="font-sans text-3xl md:text-4xl font-bold text-foreground mb-2">
+      <h1 className="font-sans text-3xl md:text-4xl font-semibold text-foreground mb-6">
         {topic.name}
       </h1>
-      <p className="text-sm text-muted-foreground mb-6">{psalms.length} psalms</p>
 
-      {psalms.length === 0 ? (
+      {entries.length === 0 ? (
         <div className="py-16 text-center space-y-3">
-          <h2 className="text-xl font-semibold">No psalms in this category</h2>
+          <h2 className="text-xl font-semibold">No entries in this category</h2>
           <p className="text-muted-foreground">
-            This topic has no psalms assigned in the current dataset.
+            This topic has no entries assigned in the current dataset.
           </p>
         </div>
       ) : (
-        <div className="divide-y divide-border">
-          {psalms.map((p) => (
-            <div
-              key={p.id}
-              className="py-3 flex items-center gap-4 hover:bg-muted rounded transition-colors min-h-[44px]"
-            >
-              <span className="w-10 shrink-0 font-mono text-sm tabular-nums text-muted-foreground">
-                {p.id}
-              </span>
-              <Link
-                href={`/psalms/${p.id}`}
-                className="flex-1 text-base hover:text-primary transition-colors"
-              >
-                {p.firstLine ?? `Psalm ${p.id}`}
-              </Link>
-              {p.meter && (
-                <Badge variant="secondary" className="shrink-0 text-xs">
-                  {p.meter}
-                </Badge>
-              )}
+        <div>
+          {entries.map((entry) => (
+            <div key={entry.id} className="mb-4">
+              <h2 className="text-xl font-semibold mb-2">{entry.sub_topic ?? 'General'}</h2>
+              {entry.verses.map((v) => (
+                <div key={`${v.psalmId}-${v.verseNumber}`} className="mb-1">
+                  <Link href={`/psalms/${v.psalmId}`} className="text-sm font-semibold hover:text-primary">
+                    Psalm {v.psalmId}{v.verseNumber != null ? `:${v.verseNumber}` : ''}
+                  </Link>
+                  {entry.quotation && (
+                    <p className="text-sm text-muted-foreground italic ml-4">{entry.quotation}</p>
+                  )}
+                </div>
+              ))}
             </div>
           ))}
         </div>
