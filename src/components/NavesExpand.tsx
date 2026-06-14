@@ -40,12 +40,12 @@ export function NavesExpand({ topics }: NavesExpandProps) {
           <Link
             key={topic.id}
             href={`/explore/naves/${topic.slug}`}
-            className="inline-flex items-start justify-between px-3 py-2 h-auto rounded-md border border-border text-sm hover:bg-muted hover:border-primary/30 transition-colors"
+            className="block px-3 py-2 rounded-md border border-border text-sm hover:bg-muted hover:border-primary/30 transition-colors"
           >
-            <span className="leading-snug">{topic.name}</span>
-            <Badge variant="secondary" className="ml-2 text-xs shrink-0">
+            <Badge variant="secondary" className="float-right ml-2 mt-0.5 text-xs shrink-0">
               {topic.psalm_count} psalms
             </Badge>
+            <span className="leading-snug">{topic.name}</span>
           </Link>
         ))}
       </div>
