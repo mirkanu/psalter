@@ -52,21 +52,24 @@ Exceptions:
 
 ## Typography
 
-Inherits from project globals (Geist Sans, --font-sans). Declare only roles used in this phase:
+Inherits from project globals (Geist Sans, --font-sans). Declare only roles used in this phase.
+
+Maximum 4 sizes, 2 weights:
 
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body / table cell | 14px (text-sm) | 400 (regular) | 1.5 |
-| Label / column header | 12px (text-xs) | 500 (medium) | 1.4 |
-| Heading (set title, modal title) | 20px (text-xl) | 600 (semibold) | 1.2 |
-| Display (psalm number in picker grid) | 28px (text-3xl) | 700 (bold) | 1.0 |
+| Label / column header / meter mismatch warning | 12px (text-xs) | 400 (regular) | 1.4 |
+| Heading (set title, page heading, modal title) | 20px (text-xl) | 600 (semibold) | 1.2 |
+| Display (psalm number in picker grid) | 28px (text-3xl) | 600 (semibold) | 1.0 |
 
 Rules:
-- All h1 elements use `font-semibold` (not `font-bold`) — inherited cross-phase rule from Phase 4.8 UI-SPEC.
+- All h1 elements use `font-semibold` — inherited cross-phase rule from Phase 4.8 UI-SPEC.
 - Page heading for `/precent`: `text-xl font-semibold` — "Precenting Sets".
-- Modal headings (Add Psalm, Select Tune): `text-lg font-semibold`.
-- Meter mismatch warning text: `text-xs font-medium` in amber.
-- Precenting mode position counter ("3/4"): `text-sm font-semibold` — tabular-nums.
+- Modal headings (Add Psalm, Select Tune): `text-xl font-semibold` — same role as page headings.
+- Meter mismatch warning text: `text-xs` (regular weight) in amber.
+- Precenting mode position counter ("3/4"): `text-sm font-semibold` — tabular-nums (semibold is the only bold weight in use).
+- Column headers and labels use `text-xs` at regular weight (400), not medium — no third weight is introduced.
 
 ---
 
@@ -162,20 +165,20 @@ Amber is NOT used for: general interactive states, hover effects on non-precenti
 - Verses column: free text or "All" if empty; click to open inline edit input.
 - Meter column: Badge `variant="secondary"` with meter string (CM, LM, SM etc.).
 - Tune column: tune name or "—" if not assigned; click opens TunePickerModal.
-- Actions column: Play icon (`PlayCircle`) → opens precenting mode at this position; Trash icon → opens delete confirmation Dialog.
+- Actions column: Play icon (`PlayCircle`) with `aria-label="Start precenting from this psalm"` + shadcn Tooltip "Start precenting from here" on desktop; Trash icon with `aria-label="Remove psalm from set"` + shadcn Tooltip "Remove from set" on desktop. Both icons: `min-h-11` touch target via padding.
 
 ### PsalmPickerModal
 
 - `Dialog` with `max-w-2xl` width, `max-h-[80vh]` height, overflow-y scroll.
-- Title: "Select Psalm".
+- Title: "Select Psalm" — `text-xl font-semibold`.
 - Body: `PsalmListingGrid` component embedded directly (full grid + search bar).
 - After psalm selected: verse range input slides in below the grid (`Input` with placeholder "Verses, e.g. 1–3 (leave blank for all)") + "Add to Set" button.
-- Close without selecting: "Cancel" text button.
+- Dismissal without selecting: rely on the Dialog's built-in close mechanism (X button in the Dialog header or Esc key). No separate text button for dismissal.
 
 ### TunePickerModal
 
 - `Dialog` with `max-w-3xl` width, `max-h-[85vh]`, overflow-y scroll.
-- Title: "Select Tune" — subtitle: "Meter pre-filtered to [CM] — you can change this".
+- Title: "Select Tune" — `text-xl font-semibold`; subtitle: "Meter pre-filtered to [CM] — you can change this".
 - Body: `TuneGrid` component with `initialMeter` prop set to psalm's meter.
 - Clicking a tune row confirms selection and closes modal.
 - No separate "Confirm" step — tune selection is immediate on row click.
@@ -192,8 +195,8 @@ Amber is NOT used for: general interactive states, hover effects on non-precenti
 
 - PrecentingBar: `h-10 bg-amber-100 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-700 flex items-center justify-between px-4`.
 - Counter format: `{pos} / {total}` in `text-sm font-semibold tabular-nums text-amber-900 dark:text-amber-200`.
-- "Precenting Mode" label: `text-xs font-medium text-amber-700 dark:text-amber-300 uppercase tracking-wide`.
-- Nav arrows: lucide `ChevronLeft` / `ChevronRight`, `h-5 w-5`, `text-amber-700`, min touch target 44px via padding.
+- "Precenting Mode" label: `text-xs text-amber-700 dark:text-amber-300 uppercase tracking-wide` — regular weight (400), no `font-medium`.
+- Nav arrows: lucide `ChevronLeft` / `ChevronRight`, `h-5 w-5`, `text-amber-700`, min touch target 44px via padding. `aria-label="Previous psalm"` / `aria-label="Next psalm"`.
 - Back arrow hidden (`invisible` not `hidden`) on `pos === 1` to preserve layout width.
 - Forward arrow hidden (`invisible`) on `pos === total`.
 - Navigating via arrows is a `next/link` client-side navigation to `/precent/[id]/sing/[pos±1]`.
@@ -256,6 +259,12 @@ Amber is NOT used for: general interactive states, hover effects on non-precenti
 | Note field placeholder | "Optional note for this service" |
 | Date field label | "Date" |
 | Type field label | "Service type" |
+| PlayCircle icon aria-label | "Start precenting from this psalm" |
+| Trash icon aria-label | "Remove psalm from set" |
+| PlayCircle Tooltip (desktop) | "Start precenting from here" |
+| Trash Tooltip (desktop) | "Remove from set" |
+| Nav arrow aria-label (back) | "Previous psalm" |
+| Nav arrow aria-label (forward) | "Next psalm" |
 
 ---
 
