@@ -111,7 +111,7 @@ async function migrateNavesTopicEntries(
         .insert(schema.navesTopicEntries)
         .values({ airtableId: r.id, navesTopicId, subTopic, quotation })
         .onConflictDoUpdate({
-          target: schema.navesTopicEntries.airtableId,
+          target: [schema.navesTopicEntries.airtableId, schema.navesTopicEntries.navesTopicId],
           set: {
             subTopic: sql`excluded.sub_topic`,
             quotation: sql`excluded.quotation`,

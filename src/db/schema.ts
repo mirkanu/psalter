@@ -8,6 +8,7 @@ import {
   timestamp,
   primaryKey,
   jsonb,
+  unique,
 } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 import type { StructuredLyrics } from '@/lib/lyrics-structured'
@@ -245,11 +246,11 @@ export const verseNavesTopics = pgTable('verse_naves_topics', {
  */
 export const navesTopicEntries = pgTable('naves_topic_entries', {
   id: serial('id').primaryKey(),
-  airtableId: text('airtable_id').notNull().unique(),
+  airtableId: text('airtable_id').notNull(),
   navesTopicId: integer('naves_topic_id').references(() => navesTopics.id),
   subTopic: text('sub_topic'),
   quotation: text('quotation'),
-})
+}, (t) => [unique('uq_entry_topic').on(t.airtableId, t.navesTopicId)])
 
 /**
  * verse_naves_topic_entries — many-to-many: verses ↔ naves_topic_entries
