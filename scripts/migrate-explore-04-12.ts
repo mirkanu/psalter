@@ -144,6 +144,9 @@ async function migrateCreedalReferences(verseMap: Map<string, number>) {
     const qnRaw = r.get('Creedal Reference')
     const questionNumber = qnRaw != null ? (parseInt(String(qnRaw), 10) || null) : null
     const url = str(r.get('URL'))
+    if (linkedVerses.length > 1) {
+      console.warn(`  [warn] creedal ref ${r.id} has ${linkedVerses.length} verses; only first stored`)
+    }
     const verseId = linkedVerses.length > 0 ? (verseMap.get(linkedVerses[0]) ?? null) : null
 
     await db
