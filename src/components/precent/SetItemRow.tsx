@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { GripVertical, PlayCircle, Trash2 } from 'lucide-react'
@@ -21,23 +20,28 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { SetItemView } from '@/components/precent/SetItemsSortableList'
+import type { PsalmRow } from '@/components/PsalmListingGrid'
 
 interface SetItemRowProps {
   item: SetItemView
   index: number
   setId: number
+  allPsalms: PsalmRow[]
   psalmMeter: string | null
   onDelete: (itemId: number) => void
   onTuneClick: (item: SetItemView) => void
+  onPsalmClick: (item: SetItemView) => void
 }
 
 export function SetItemRow({
   item,
   index,
   setId,
+  allPsalms: _allPsalms,
   psalmMeter,
   onDelete,
   onTuneClick,
+  onPsalmClick,
 }: SetItemRowProps) {
   const {
     attributes,
@@ -68,6 +72,7 @@ export function SetItemRow({
   const psalmLabel = item.psalm
     ? `Psalm ${item.psalm.id}${item.psalm.bibleTitle ? ` — ${item.psalm.bibleTitle}` : ''}`
     : `Psalm ${item.psalmId}`
+  const psalmNumber = item.psalmId
 
   return (
     <TooltipProvider>
@@ -96,13 +101,14 @@ export function SetItemRow({
 
         {/* Psalm */}
         <td className="pr-2">
-          <Link
-            href={`/psalms/${item.psalmId}`}
-            target="_blank"
-            className="text-sm font-medium hover:underline"
+          <button
+            type="button"
+            onClick={() => onPsalmClick(item)}
+            className="text-sm font-medium hover:underline text-left"
+            aria-label={`Change psalm (currently Psalm ${psalmNumber})`}
           >
-            {psalmLabel}
-          </Link>
+            {psalmNumber}
+          </button>
         </td>
 
         {/* Verses */}
