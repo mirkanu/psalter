@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Pencil, Check, X, Trash2, ChevronLeft } from 'lucide-react'
+import { Pencil, Check, X, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
@@ -61,6 +61,26 @@ interface SetDetailProps {
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00')
   return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function smartDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split('-').map(Number)
+  const target = new Date(year, month - 1, day)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const diffDays = Math.round((target.getTime() - today.getTime()) / 86400000)
+  if (diffDays === 0) return 'Today'
+  if (diffDays === 1) return 'Tomorrow'
+  if (diffDays === -1) return 'Yesterday'
+  if (diffDays > 1 && diffDays <= 7)
+    return target.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })
+  return target.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function shortType(type: string): string {
+  if (type === 'AM Service') return 'AM'
+  if (type === 'PM Service') return 'PM'
+  return type
 }
 
 function formatDateTime(isoStr: string): string {
@@ -181,18 +201,18 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
       {/* Breadcrumb */}
-      <Link
-        href="/precent"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
-      >
-        <ChevronLeft className="h-4 w-4" />
-        My Psalm Sets
-      </Link>
+      <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
+        <Link href="/precent" className="hover:text-foreground transition-colors">
+          Precent
+        </Link>
+        <span className="select-none">&rsaquo;</span>
+        <span className="text-foreground font-medium">Psalm Set</span>
+      </nav>
 
       {/* Header card */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold">Psalm Set for Precenting</h1>
+          <h1 className="text-xl font-semibold">{shortType(set.type)} — {smartDate(set.date)}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{set.type} — {formatDate(set.date)} · Precentor: {set.precentorName}</p>
           {!editing && (
             <p className="text-sm text-muted-foreground mt-1">

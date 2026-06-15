@@ -64,7 +64,7 @@ export function PrecentingSetList({ sets }: Props) {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Date</TableHead>
+          <TableHead>Date ↓</TableHead>
           <TableHead>Type</TableHead>
           <TableHead>Psalms</TableHead>
           <TableHead className="text-right">Actions</TableHead>
