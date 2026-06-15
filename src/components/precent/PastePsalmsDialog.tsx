@@ -11,31 +11,8 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import type { PsalmRow } from '@/components/PsalmListingGrid'
-
-interface ParsedEntry {
-  psalmNum: number
-  verseRange: string | null
-  psalm: PsalmRow | null
-}
-
-function parsePsalmList(input: string, psalms: PsalmRow[]): ParsedEntry[] {
-  const results: ParsedEntry[] = []
-  // Match psalm number optionally followed by :verse-range, e.g. 11:1-7 or 24
-  const regex = /\b(\d{1,3})(?::([0-9]+(?:-[0-9]+)?))?/g
-  let match: RegExpExecArray | null
-  while ((match = regex.exec(input)) !== null) {
-    const psalmNum = parseInt(match[1], 10)
-    if (psalmNum < 1 || psalmNum > 150) continue
-    const verseRange = match[2] ?? null
-    const numStr = String(psalmNum)
-    const psalm =
-      psalms.find((r) => r.displayLabel === numStr) ??
-      psalms.find((r) => r.displayLabel.startsWith(numStr + ':')) ??
-      null
-    results.push({ psalmNum, verseRange, psalm })
-  }
-  return results
-}
+import { parsePsalmList } from '@/lib/parse-psalm-list'
+import type { ParsedPsalmEntry as ParsedEntry } from '@/lib/parse-psalm-list'
 
 interface PastePsalmsDialogProps {
   open: boolean
