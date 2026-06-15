@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 5 UI-SPEC approved
-last_updated: "2026-06-14T23:58:26.487Z"
-last_activity: 2026-06-14 -- Phase 05 planning complete
+last_updated: "2026-06-15T07:06:45.898Z"
+last_activity: 2026-06-15
 progress:
   total_phases: 10
   completed_phases: 6
   total_plans: 41
-  completed_plans: 34
-  percent: 83
+  completed_plans: 35
+  percent: 85
 ---
 
 # Project State
@@ -21,17 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-07)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 04.12 — explore-page-rebuild
+**Current focus:** Phase 05 — precentor-portal
 
 ## Current Position
 
-Phase: 05
-Plan: Not started
+Phase: 05 (precentor-portal) — EXECUTING
+Plan: 2 of 5
 UI-SPEC: Phase 04.9.4 closed out. Singing-view chrome refined across 4 polish rounds (chrome-dedup, singing-chrome-polish, r3, r4); audio first-press bug fixed; tour redesigned (4 steps, per-element spotlights); mobile bar h-11 (44px); lyrics/solfège views get bigger font + padding + inline YouTube embed; "Ps 119:N-M" range titles.
 Status: Ready to execute
-Last activity: 2026-06-14 -- Phase 05 planning complete
+Last activity: 2026-06-15
 
-Progress: [█████████░] 94%
+Progress: [█████████░] 85%
 
 ## Performance Metrics
 
@@ -76,6 +76,7 @@ Progress: [█████████░] 94%
 | Phase 04.9.8 P05 | 41 | 3 tasks | 3 files |
 | Phase 04.11 P04 | 19m | 4 tasks | 5 files |
 | Phase 04.12 P05 | 25 | 2 tasks | 3 files |
+| Phase 05-precentor-portal P01 | 1015 | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -147,6 +148,7 @@ Recent decisions affecting current work:
 - [04.9.3-04]: FAB-side chrome built — AbcAudioControls (standalone Play/Key/BPM block with own off-DOM abcjs visualObj + synth, AbcPlayer.tsx untouched), MetadataPanel (About-this-psalm content with SheetClose-wrapped study link), PsalmActionsFAB (56x56 fixed FAB + bottom Sheet with View radiogroup / Audio / About sections, auto-closes 120ms after view select). shadcn Sheet is built on @base-ui/react/dialog (not Radix) — switched from `asChild` to base-ui `render={...}` slot prop on SheetClose + SheetTrigger; semantically equivalent. Audio section omitted silently when abcForAudio is null. data-singing-fab / data-singing-fab-sheet / data-view-option markers in place for Phase 06 UATs. Not yet wired into a route (Plan 05 composes).
 - [Phase 04.11]: 04.11-04: WAVE_B_THRESHOLD=20 and LOW_CONFIDENCE_THRESHOLD=0.85 (tunable constants in ocr-melisma-batch.ts)
 - [Phase 04.11]: 04.11-04: real DB lyrics_structured shape is Array<{index,lines:[{text}]}> NOT cycles/stanzas - syllabification at read-time via syllabifyForAbc
+- [Phase ?]: drizzle-kit not installed due to NODE_ENV=production suppressing devDependency installation; fixed by npm install --include=dev
 
 ### Pending Todos
 
@@ -195,9 +197,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-14T22:17:57.266Z
+Last session: 2026-06-15T07:06:26.617Z
 Stopped at: Phase 5 UI-SPEC approved
-Resume file: .planning/phases/05-precentor-portal/05-UI-SPEC.md
+Resume file: None
 
 ### Deferred from 04.9.4 polish (separate tickets when needed)
 

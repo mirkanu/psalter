@@ -661,7 +661,7 @@ Plans:
 
 Plans:
 **Wave 1** *(foundation — install deps, schema + DB push, nav, Wave 0 test stubs)*
-- [ ] 05-01-PLAN.md — Install dnd-kit + Calendar, add precenting_sets + set_items tables + [BLOCKING] drizzle-kit push, Precent nav item, all 6 Wave 0 test stubs (RED)
+- [x] 05-01-PLAN.md — Install dnd-kit + Calendar, add precenting_sets + set_items tables + [BLOCKING] drizzle-kit push, Precent nav item, all 6 Wave 0 test stubs (RED)
 
 **Wave 2** *(depends on Wave 1)*
 - [ ] 05-02-PLAN.md — Set CRUD API + /precent list page + CreateSetForm + PrecentingSetList + loading.tsx (PREC-01)
@@ -738,5 +738,5 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 5. Precentor Portal | 0/TBD | Not started | - |
+| 5. Precentor Portal | 1/5 | In Progress|  |
 | 6. Polish | 0/TBD | Not started | - |

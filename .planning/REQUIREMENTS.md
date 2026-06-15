@@ -68,12 +68,12 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 
 ### Precentor Portal
 
-- [ ] **PREC-01**: Precentor can create a service event (date + AM/PM)
-- [ ] **PREC-02**: Precentor can assign psalm + tune pairs to a service event, specifying verses/stanzas per slot
-- [ ] **PREC-03**: Precentor can edit and reorder psalm slots within a service event
-- [ ] **PREC-04**: Precentor can view a service set list overview before the service
-- [ ] **PREC-05**: Precentor service view shows all assigned psalms in sequence with notation pre-loaded on page entry (no per-psalm loading delay)
-- [ ] **PREC-06**: Precentor can preview a tune's melody via abcjs Web Audio API (requires user gesture)
+- [x] **PREC-01**: Precentor can create a service event (date + AM/PM)
+- [x] **PREC-02**: Precentor can assign psalm + tune pairs to a service event, specifying verses/stanzas per slot
+- [x] **PREC-03**: Precentor can edit and reorder psalm slots within a service event
+- [x] **PREC-04**: Precentor can view a service set list overview before the service
+- [x] **PREC-05**: Precentor service view shows all assigned psalms in sequence with notation pre-loaded on page entry (no per-psalm loading delay)
+- [x] **PREC-06**: Precentor can preview a tune's melody via abcjs Web Audio API (requires user gesture)
 
 ### Performance
 
@@ -173,12 +173,12 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 | PERF-01 | Phase 4.5 (partial) + Phase 6 | Pending |
 | AUTH-01 | Phase 5: Precentor Portal | Pending |
 | AUTH-02 | Phase 5: Precentor Portal | Pending |
-| PREC-01 | Phase 5: Precentor Portal | Pending |
-| PREC-02 | Phase 5: Precentor Portal | Pending |
-| PREC-03 | Phase 5: Precentor Portal | Pending |
-| PREC-04 | Phase 5: Precentor Portal | Pending |
-| PREC-05 | Phase 5: Precentor Portal | Pending |
-| PREC-06 | Phase 5: Precentor Portal | Pending |
+| PREC-01 | Phase 5: Precentor Portal | Complete |
+| PREC-02 | Phase 5: Precentor Portal | Complete |
+| PREC-03 | Phase 5: Precentor Portal | Complete |
+| PREC-04 | Phase 5: Precentor Portal | Complete |
+| PREC-05 | Phase 5: Precentor Portal | Complete |
+| PREC-06 | Phase 5: Precentor Portal | Complete |
 | PERF-02 | Phase 6: Polish | Pending |
 | NOTATION-01 | Phase 4.9.2: Dynamic ABC Polish | Complete |
 | NOTATION-02 | Phase 4.9.2: Dynamic ABC Polish | Complete |
