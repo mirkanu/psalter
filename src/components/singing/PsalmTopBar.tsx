@@ -16,6 +16,10 @@ interface Props {
   tuneName?: string | null
   onOpenPsalmSelector: () => void
   onOpenTuneSwitcher?: () => void
+  /** When in precenting mode, override the left arrow href. Null = disabled. */
+  precentingPrevHref?: string | null
+  /** When in precenting mode, override the right arrow href. Null = disabled. */
+  precentingNextHref?: string | null
 }
 
 function isEditableTarget(el: Element | null): boolean {
@@ -39,6 +43,8 @@ export function PsalmTopBar({
   tuneName,
   onOpenPsalmSelector,
   onOpenTuneSwitcher,
+  precentingPrevHref,
+  precentingNextHref,
 }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -57,15 +63,17 @@ export function PsalmTopBar({
       if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
       if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
       if (isEditableTarget(document.activeElement)) return
-      if (e.key === 'ArrowLeft' && prev) {
-        startTransition(() => router.push(`/psalms/${prev}`))
-      } else if (e.key === 'ArrowRight' && next) {
-        startTransition(() => router.push(`/psalms/${next}`))
+      if (e.key === 'ArrowLeft') {
+        const href = precentingPrevHref !== undefined ? precentingPrevHref : (prev ? `/psalms/${prev}` : null)
+        if (href) startTransition(() => router.push(href))
+      } else if (e.key === 'ArrowRight') {
+        const href = precentingNextHref !== undefined ? precentingNextHref : (next ? `/psalms/${next}` : null)
+        if (href) startTransition(() => router.push(href))
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [prev, next, router])
+  }, [prev, next, precentingPrevHref, precentingNextHref, router])
 
   // 260517-cm0 #3: when versePartLabel is provided, the title becomes "Ps {id}:{range}".
   // Long ranges (e.g. "Ps 119:105-123") downsize to text-sm to avoid wrapping.
@@ -85,32 +93,36 @@ export function PsalmTopBar({
         {isPending && (
           <div className="absolute inset-x-0 top-0 h-0.5 bg-foreground" aria-hidden />
         )}
-        {prev ? (
-          <Link
-            href={`/psalms/${prev}`}
-            rel="prev"
-            aria-label="Previous psalm"
-            data-tour-target="prev-next"
-            onClick={(e) => {
-              // Preserve modifier-key / middle-click "open in new tab" behavior.
-              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
-              e.preventDefault()
-              startTransition(() => router.push(`/psalms/${prev}`))
-            }}
-            className={ICON_BTN}
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </Link>
-        ) : (
-          <span
-            aria-disabled="true"
-            aria-label="Already at Psalm 1"
-            data-tour-target="prev-next"
-            className={cn(ICON_BTN, DISABLED)}
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </span>
-        )}
+        {(() => {
+          const isPrecenting = precentingPrevHref !== undefined
+          const href = isPrecenting ? precentingPrevHref : (prev ? `/psalms/${prev}` : null)
+          const amberClass = isPrecenting ? ' text-amber-600 dark:text-amber-400' : ''
+          return href ? (
+            <Link
+              href={href}
+              rel="prev"
+              aria-label="Previous psalm"
+              data-tour-target="prev-next"
+              onClick={(e) => {
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+                e.preventDefault()
+                startTransition(() => router.push(href))
+              }}
+              className={ICON_BTN + amberClass}
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Link>
+          ) : (
+            <span
+              aria-disabled="true"
+              aria-label={isPrecenting ? 'First item in set' : 'Already at Psalm 1'}
+              data-tour-target="prev-next"
+              className={cn(ICON_BTN, DISABLED) + amberClass}
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </span>
+          )
+        })()}
         <div className="flex-1 flex justify-center items-center gap-2 min-w-0">
           <button
             type="button"
@@ -146,32 +158,36 @@ export function PsalmTopBar({
             </span>
           )}
         </div>
-        {next ? (
-          <Link
-            href={`/psalms/${next}`}
-            rel="next"
-            aria-label="Next psalm"
-            data-tour-target="prev-next"
-            onClick={(e) => {
-              // Preserve modifier-key / middle-click "open in new tab" behavior.
-              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
-              e.preventDefault()
-              startTransition(() => router.push(`/psalms/${next}`))
-            }}
-            className={ICON_BTN}
-          >
-            <ChevronRight className="h-5 w-5" />
-          </Link>
-        ) : (
-          <span
-            aria-disabled="true"
-            aria-label="Already at Psalm 150"
-            data-tour-target="prev-next"
-            className={cn(ICON_BTN, DISABLED)}
-          >
-            <ChevronRight className="h-5 w-5" />
-          </span>
-        )}
+        {(() => {
+          const isPrecenting = precentingNextHref !== undefined
+          const href = isPrecenting ? precentingNextHref : (next ? `/psalms/${next}` : null)
+          const amberClass = isPrecenting ? ' text-amber-600 dark:text-amber-400' : ''
+          return href ? (
+            <Link
+              href={href}
+              rel="next"
+              aria-label="Next psalm"
+              data-tour-target="prev-next"
+              onClick={(e) => {
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+                e.preventDefault()
+                startTransition(() => router.push(href))
+              }}
+              className={ICON_BTN + amberClass}
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Link>
+          ) : (
+            <span
+              aria-disabled="true"
+              aria-label={isPrecenting ? 'Last item in set' : 'Already at Psalm 150'}
+              data-tour-target="prev-next"
+              className={cn(ICON_BTN, DISABLED) + amberClass}
+            >
+              <ChevronRight className="h-5 w-5" />
+            </span>
+          )
+        })()}
       </div>
     </header>
   )
