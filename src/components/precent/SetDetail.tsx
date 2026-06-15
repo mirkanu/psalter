@@ -46,6 +46,14 @@ function formatDate(dateStr: string): string {
 
 export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetDetailProps) {
   const router = useRouter()
+
+  // Build psalm → recommended tune name map for display fallback
+  const recommendedTuneByPsalmId: Record<number, string | null> = {}
+  for (const row of psalmListRows) {
+    if (!(row.id in recommendedTuneByPsalmId)) {
+      recommendedTuneByPsalmId[row.id] = row.recommendedTune ?? null
+    }
+  }
   const [psalmPickerOpen, setPsalmPickerOpen] = useState(false)
   const [psalmPickerMode, setPsalmPickerMode] = useState<'add' | 'change'>('add')
   const [psalmPickerItemId, setPsalmPickerItemId] = useState<number | null>(null)
@@ -195,6 +203,7 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
           allTunes={allTunes}
           allPsalms={psalmListRows}
           psalmMeterById={psalmMeterById}
+          recommendedTuneByPsalmId={recommendedTuneByPsalmId}
           onTuneClick={handleTuneClick}
           onPsalmClick={handlePsalmClick}
         />

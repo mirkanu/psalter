@@ -28,6 +28,7 @@ interface SetItemRowProps {
   setId: number
   allPsalms: PsalmRow[]
   psalmMeter: string | null
+  recommendedTune: string | null
   onDelete: (itemId: number) => void
   onTuneClick: (item: SetItemView) => void
   onPsalmClick: (item: SetItemView) => void
@@ -39,6 +40,7 @@ export function SetItemRow({
   setId,
   allPsalms: _allPsalms,
   psalmMeter,
+  recommendedTune,
   onDelete,
   onTuneClick,
   onPsalmClick,
@@ -130,7 +132,13 @@ export function SetItemRow({
             onClick={() => onTuneClick(item)}
             className="text-sm hover:underline text-left"
           >
-            {item.tune?.name ?? '—'}
+            {item.tune?.name ? (
+              item.tune.name
+            ) : recommendedTune ? (
+              <span className="text-muted-foreground italic">{recommendedTune}</span>
+            ) : (
+              '—'
+            )}
           </button>
           {isMismatch && (
             <Tooltip>
