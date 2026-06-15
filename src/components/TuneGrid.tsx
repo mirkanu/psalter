@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 
-interface TuneRow {
+export interface TuneRow {
   id: number
   name: string | null
   meter: string | null
@@ -18,13 +18,15 @@ interface TuneRow {
 
 interface TuneGridProps {
   tunes: TuneRow[]
+  initialMeter?: string
+  onSelectTune?: (tune: TuneRow) => void
 }
 
-export function TuneGrid({ tunes }: TuneGridProps) {
+export function TuneGrid({ tunes, initialMeter, onSelectTune }: TuneGridProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [selectedMeter, setSelectedMeter] = useState<string>(
-    searchParams.get('meter') ?? 'all'
+    initialMeter ?? searchParams.get('meter') ?? 'all'
   )
   const [selectedMood, setSelectedMood] = useState<string>(
     searchParams.get('mood') ?? 'all'
@@ -60,19 +62,19 @@ export function TuneGrid({ tunes }: TuneGridProps) {
   function handleMeterChange(v: string) {
     const val = v ?? 'all'
     setSelectedMeter(val)
-    router.replace(buildUrl(val, selectedMood), { scroll: false })
+    if (!onSelectTune) router.replace(buildUrl(val, selectedMood), { scroll: false })
   }
 
   function handleMoodChange(v: string) {
     const val = v ?? 'all'
     setSelectedMood(val)
-    router.replace(buildUrl(selectedMeter, val), { scroll: false })
+    if (!onSelectTune) router.replace(buildUrl(selectedMeter, val), { scroll: false })
   }
 
   function handleClear() {
     setSelectedMeter('all')
     setSelectedMood('all')
-    router.replace('/tunes', { scroll: false })
+    if (!onSelectTune) router.replace('/tunes', { scroll: false })
   }
 
   const hasActiveFilter = selectedMeter !== 'all' || selectedMood !== 'all'
@@ -123,12 +125,10 @@ export function TuneGrid({ tunes }: TuneGridProps) {
             ? tune.recommendedPsalmIds.slice(0, 6).join(', ') + ` +${tune.recommendedPsalmIds.length - 6} more`
             : tune.recommendedPsalmIds.join(', ')
 
-          return (
-            <Link
-              key={tune.id}
-              href={`/tunes/${tune.id}`}
-              className="block bg-card border border-border rounded-lg p-4 hover:border-primary hover:shadow-sm transition-all duration-200 group active:scale-[0.98]"
-            >
+          const cardClasses = "block bg-card border border-border rounded-lg p-4 hover:border-primary hover:shadow-sm transition-all duration-200 group active:scale-[0.98]"
+
+          const cardContent = (
+            <>
               <div className="flex items-start justify-between gap-2 mb-2">
                 <h2 className="text-base font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
                   {tune.name ?? `Tune ${tune.id}`}
@@ -153,6 +153,25 @@ export function TuneGrid({ tunes }: TuneGridProps) {
                   ))}
                 </div>
               )}
+            </>
+          )
+
+          return onSelectTune ? (
+            <button
+              key={tune.id}
+              type="button"
+              onClick={() => onSelectTune(tune)}
+              className={cardClasses}
+            >
+              {cardContent}
+            </button>
+          ) : (
+            <Link
+              key={tune.id}
+              href={`/tunes/${tune.id}`}
+              className={cardClasses}
+            >
+              {cardContent}
             </Link>
           )
         })}

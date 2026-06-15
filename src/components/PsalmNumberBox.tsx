@@ -18,6 +18,7 @@ interface PsalmNumberBoxProps {
   snippet: string | null
   query: string
   className?: string
+  onClick?: () => void
 }
 
 function formatLabel(label: string): string {
@@ -31,7 +32,7 @@ function labelSizeClass(label: string): string {
   return 'text-xs'
 }
 
-export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, showRecommendedTune, snippet, query, className }: PsalmNumberBoxProps) {
+export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, showRecommendedTune, snippet, query, className, onClick }: PsalmNumberBoxProps) {
   const hasContent = showFirstLine || showRecommendedTune || !!snippet
   const isHighlighted = isTopResult && query.length > 0
   const label = formatLabel(psalm.displayLabel)
@@ -49,6 +50,61 @@ export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, s
       : "bg-card border border-border",
   ].join(' ')
 
+  const inner = hasContent ? (
+    <>
+      <div className="flex items-start justify-between w-full">
+        <span className={`${sizeClass} font-semibold font-mono tabular-nums text-foreground leading-none`}>
+          {label}
+        </span>
+        {showMeter && psalm.meter && (
+          <span className="text-[10px] text-muted-foreground leading-none pt-0.5 pr-1 pl-1 shrink-0">
+            {psalm.meter}
+          </span>
+        )}
+      </div>
+      {snippet ? (
+        <span data-snippet className="text-xs text-muted-foreground mt-0.5 leading-snug self-start line-clamp-3">
+          {renderSnippet(snippet, query)}
+        </span>
+      ) : showFirstLine && psalm.firstLine ? (
+        <span className="text-xs text-muted-foreground mt-0.5 leading-snug self-start line-clamp-2">
+          {psalm.firstLine}
+        </span>
+      ) : null}
+      {showRecommendedTune && psalm.recommendedTune && (
+        <span className="text-[10px] text-primary/80 mt-1 leading-none self-start line-clamp-1">
+          {psalm.recommendedTune}
+        </span>
+      )}
+    </>
+  ) : (
+    <>
+      <span className={`${sizeClass} font-semibold font-mono tabular-nums text-foreground text-center leading-tight`}>
+        {label}
+      </span>
+      {showMeter && psalm.meter && (
+        <span className="absolute top-1 right-1.5 text-[10px] text-muted-foreground leading-none">
+          {psalm.meter}
+        </span>
+      )}
+    </>
+  )
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={baseClasses}
+        aria-label={`Psalm ${label}`}
+        aria-current={isHighlighted ? "true" : undefined}
+        data-psalm-box
+      >
+        {inner}
+      </button>
+    )
+  }
+
   return (
     <Link
       href={`/psalms/${psalm.slug}`}
@@ -57,45 +113,7 @@ export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, s
       aria-current={isHighlighted ? "true" : undefined}
       data-psalm-box
     >
-      {hasContent ? (
-        <>
-          <div className="flex items-start justify-between w-full">
-            <span className={`${sizeClass} font-semibold font-mono tabular-nums text-foreground leading-none`}>
-              {label}
-            </span>
-            {showMeter && psalm.meter && (
-              <span className="text-[10px] text-muted-foreground leading-none pt-0.5 pr-1 pl-1 shrink-0">
-                {psalm.meter}
-              </span>
-            )}
-          </div>
-          {snippet ? (
-            <span data-snippet className="text-xs text-muted-foreground mt-0.5 leading-snug self-start line-clamp-3">
-              {renderSnippet(snippet, query)}
-            </span>
-          ) : showFirstLine && psalm.firstLine ? (
-            <span className="text-xs text-muted-foreground mt-0.5 leading-snug self-start line-clamp-2">
-              {psalm.firstLine}
-            </span>
-          ) : null}
-          {showRecommendedTune && psalm.recommendedTune && (
-            <span className="text-[10px] text-primary/80 mt-1 leading-none self-start line-clamp-1">
-              {psalm.recommendedTune}
-            </span>
-          )}
-        </>
-      ) : (
-        <>
-          <span className={`${sizeClass} font-semibold font-mono tabular-nums text-foreground text-center leading-tight`}>
-            {label}
-          </span>
-          {showMeter && psalm.meter && (
-            <span className="absolute top-1 right-1.5 text-[10px] text-muted-foreground leading-none">
-              {psalm.meter}
-            </span>
-          )}
-        </>
-      )}
+      {inner}
     </Link>
   )
 }
