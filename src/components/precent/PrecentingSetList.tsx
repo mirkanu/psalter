@@ -1,6 +1,8 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { PlayCircle } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -22,16 +24,26 @@ interface Props {
   sets: PrecentingSetRow[]
 }
 
-function formatDate(dateStr: string): string {
-  // date column returns 'YYYY-MM-DD' — parse as local date to avoid UTC-shift
+function smartDate(dateStr: string): string {
   const [year, month, day] = dateStr.split('-').map(Number)
-  const d = new Date(year, month - 1, day)
-  return d.toLocaleDateString('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
+  const target = new Date(year, month - 1, day)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const diffDays = Math.round((target.getTime() - today.getTime()) / 86400000)
+
+  if (diffDays === 0) return 'Today'
+  if (diffDays === 1) return 'Tomorrow'
+  if (diffDays === -1) return 'Yesterday'
+  if (diffDays > 1 && diffDays <= 7) {
+    return target.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })
+  }
+  return target.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function shortType(type: string): string {
+  if (type === 'AM Service') return 'AM'
+  if (type === 'PM Service') return 'PM'
+  return type
 }
 
 export function PrecentingSetList({ sets }: Props) {
@@ -54,8 +66,8 @@ export function PrecentingSetList({ sets }: Props) {
         <TableRow>
           <TableHead>Date</TableHead>
           <TableHead>Type</TableHead>
-          <TableHead>Precentor</TableHead>
           <TableHead>Psalms</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -65,11 +77,22 @@ export function PrecentingSetList({ sets }: Props) {
             onClick={() => router.push('/precent/' + set.id)}
             className="cursor-pointer hover:bg-muted/50 active:scale-[0.99] transition-transform duration-75"
           >
-            <TableCell>{formatDate(set.date)}</TableCell>
-            <TableCell>{set.type}</TableCell>
-            <TableCell>{set.precentorName}</TableCell>
+            <TableCell className="font-medium">{smartDate(set.date)}</TableCell>
+            <TableCell className="text-muted-foreground">{shortType(set.type)}</TableCell>
             <TableCell className="text-muted-foreground text-sm">
               {set.psalmIds.length > 0 ? set.psalmIds.join(', ') : '—'}
+            </TableCell>
+            <TableCell className="text-right">
+              {set.psalmIds.length > 0 && (
+                <Link
+                  href={`/precent/${set.id}/sing/1`}
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label="Start precenting"
+                  className="inline-flex items-center justify-center p-1.5 rounded hover:bg-muted transition-colors"
+                >
+                  <PlayCircle className="h-4 w-4 text-amber-600" />
+                </Link>
+              )}
             </TableCell>
           </TableRow>
         ))}

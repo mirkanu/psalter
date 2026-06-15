@@ -13,6 +13,7 @@ interface TunePickerModalProps {
   onClose: () => void
   tunes: TuneRow[]
   psalmMeter?: string | null
+  psalmId?: number | null
   onSelect: (tune: TuneRow) => void | Promise<void>
 }
 
@@ -20,6 +21,8 @@ export function TunePickerModal({
   open,
   onClose,
   tunes,
+  psalmMeter,
+  psalmId,
   onSelect,
 }: TunePickerModalProps) {
   return (
@@ -33,6 +36,8 @@ export function TunePickerModal({
             tunes={tunes}
             onSelectTune={(t) => { onSelect(t); onClose() }}
             hideExport
+            initialMeter={psalmMeter}
+            psalmId={psalmId ?? undefined}
           />
         </div>
       </DialogContent>
