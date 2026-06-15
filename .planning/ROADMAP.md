@@ -673,7 +673,7 @@ Plans:
 - [x] 05-04-PLAN.md — Reorder API + /precent/[id] detail page + SetDetail + dnd-kit SetItemsSortableList/SetItemRow (mismatch/play/delete) (PREC-03, PREC-04)
 
 **Wave 5** *(depends on Wave 4)*
-- [ ] 05-05-PLAN.md — Precenting mode page + PrecentingBar + SingingView wrap + loading.tsx + Playwright UAT green (PREC-05, PREC-06)
+- [x] 05-05-PLAN.md — Precenting mode page + PrecentingBar + SingingView wrap + loading.tsx + Playwright UAT green (PREC-05, PREC-06)
 
 ### Phase 05.1: Auth Gate (INSERTED)
 
