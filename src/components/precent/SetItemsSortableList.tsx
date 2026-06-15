@@ -17,6 +17,7 @@ import {
 import { toast } from 'sonner'
 import { SetItemRow } from '@/components/precent/SetItemRow'
 import type { TuneRow } from '@/components/TuneGrid'
+import type { PsalmRow } from '@/components/PsalmListingGrid'
 
 export interface SetItemView {
   id: number
@@ -33,15 +34,19 @@ interface SetItemsSortableListProps {
   setId: number
   items: SetItemView[]
   allTunes: TuneRow[]
+  allPsalms: PsalmRow[]
   psalmMeterById: Record<number, string | null>
   onTuneClick: (item: SetItemView) => void
+  onPsalmClick: (item: SetItemView) => void
 }
 
 export function SetItemsSortableList({
   setId,
   items,
+  allPsalms,
   psalmMeterById,
   onTuneClick,
+  onPsalmClick,
 }: SetItemsSortableListProps) {
   const [optimisticItems, setOptimisticItems] = useState<SetItemView[]>(items)
   const [, startTransition] = useTransition()
@@ -110,9 +115,11 @@ export function SetItemsSortableList({
                 item={item}
                 index={index}
                 setId={setId}
+                allPsalms={allPsalms}
                 psalmMeter={psalmMeterById[item.psalmId] ?? null}
                 onDelete={handleDelete}
                 onTuneClick={onTuneClick}
+                onPsalmClick={onPsalmClick}
               />
             ))}
           </tbody>
