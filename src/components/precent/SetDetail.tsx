@@ -346,6 +346,8 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
                     mode="single"
                     selected={editDate}
                     onSelect={(d) => setEditDate(d ?? undefined)}
+                    modifiers={{ sunday: (d) => d.getDay() === 0 }}
+                    modifiersClassNames={{ sunday: 'text-red-600 font-semibold' }}
                   />
                 </PopoverContent>
               </Popover>

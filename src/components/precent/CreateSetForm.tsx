@@ -157,6 +157,8 @@ export function CreateSetForm({ psalms }: CreateSetFormProps) {
                     setDate(d)
                     setCalOpen(false)
                   }}
+                  modifiers={{ sunday: (d) => d.getDay() === 0 }}
+                  modifiersClassNames={{ sunday: 'text-red-600 font-semibold' }}
                 />
               </PopoverContent>
             </Popover>
