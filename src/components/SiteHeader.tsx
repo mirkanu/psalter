@@ -11,6 +11,7 @@ const navLinks = [
   { href: "/tunes", label: "Tunes" },
   { href: "/explore", label: "Explore" },
   { href: "/daily", label: "Daily Plan" },
+  { href: "/precent", label: "Precent" },
 ]
 
 // UAT v6 reversal: user explicitly wants the global SiteHeader visible on the
