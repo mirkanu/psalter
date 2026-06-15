@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/select'
 import { PsalmPickerModal } from '@/components/precent/PsalmPickerModal'
 import { TunePickerModal } from '@/components/precent/TunePickerModal'
+import { PastePsalmsDialog } from '@/components/precent/PastePsalmsDialog'
 import { SetItemsSortableList } from '@/components/precent/SetItemsSortableList'
 import type { PsalmRow } from '@/components/PsalmListingGrid'
 import type { TuneRow } from '@/components/TuneTable'
@@ -124,6 +125,9 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
+  // Paste psalm list dialog
+  const [pasteOpen, setPasteOpen] = useState(false)
+
   async function handleAddPsalm({ psalmId, verseRange }: { psalmId: number; verseRange: string | null }) {
     if (psalmPickerMode === 'change' && psalmPickerItemId != null) {
       await fetch(`/api/precent/${set.id}/items/${psalmPickerItemId}`, {
@@ -198,6 +202,17 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
     router.push('/precent')
   }
 
+  async function handleAddBatch(items: Array<{ psalmId: number; verseRange: string | null }>) {
+    for (const item of items) {
+      await fetch(`/api/precent/${set.id}/items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item),
+      })
+    }
+    router.refresh()
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
       {/* Breadcrumb */}
@@ -242,13 +257,22 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
 
       {/* Action bar */}
       <div className="flex items-center justify-between mb-4">
-        <Button
-          variant="outline"
-          onClick={() => { setPsalmPickerMode('add'); setPsalmPickerItemId(null); setPsalmPickerOpen(true) }}
-          className="active:scale-[0.97] transition-transform duration-75"
-        >
-          Add Psalm
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => { setPsalmPickerMode('add'); setPsalmPickerItemId(null); setPsalmPickerOpen(true) }}
+            className="active:scale-[0.97] transition-transform duration-75"
+          >
+            Add Psalm
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => setPasteOpen(true)}
+            className="active:scale-[0.97] transition-transform duration-75 text-muted-foreground"
+          >
+            Paste List
+          </Button>
+        </div>
         <Button
           disabled={set.setItems.length === 0}
           onClick={() => router.push(`/precent/${set.id}/sing/1`)}
@@ -291,6 +315,13 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
         psalmMeter={tunePickerPsalmMeter}
         psalmId={tunePickerPsalmId}
         onSelect={handleSelectTune}
+      />
+
+      <PastePsalmsDialog
+        open={pasteOpen}
+        onClose={() => setPasteOpen(false)}
+        psalms={psalmListRows}
+        onAddBatch={handleAddBatch}
       />
 
       {/* Edit Date & Type Dialog */}
