@@ -1,8 +1,8 @@
 export const dynamic = 'force-dynamic'
 
 import { db } from '@/db'
-import { precentingSets } from '@/db/schema'
-import { desc } from 'drizzle-orm'
+import { precentingSets, setItems } from '@/db/schema'
+import { desc, asc } from 'drizzle-orm'
 import { Separator } from '@/components/ui/separator'
 import { PrecentingSetList } from '@/components/precent/PrecentingSetList'
 import { CreateSetForm } from '@/components/precent/CreateSetForm'
@@ -10,6 +10,12 @@ import { CreateSetForm } from '@/components/precent/CreateSetForm'
 export default async function PrecentPage() {
   const sets = await db.query.precentingSets.findMany({
     orderBy: [desc(precentingSets.date)],
+    with: {
+      setItems: {
+        columns: { psalmId: true, position: true },
+        orderBy: [asc(setItems.position)],
+      },
+    },
   })
 
   // Serialize: date column returns string from postgres.js (DATE type → 'YYYY-MM-DD')
@@ -18,6 +24,7 @@ export default async function PrecentPage() {
     date: String(s.date),
     type: s.type,
     precentorName: s.precentorName,
+    psalmIds: s.setItems.map((i) => i.psalmId),
   }))
 
   return (

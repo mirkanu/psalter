@@ -15,6 +15,7 @@ interface PrecentingSetRow {
   date: string
   type: string
   precentorName: string
+  psalmIds: number[]
 }
 
 interface Props {
@@ -54,6 +55,7 @@ export function PrecentingSetList({ sets }: Props) {
           <TableHead>Date</TableHead>
           <TableHead>Type</TableHead>
           <TableHead>Precentor</TableHead>
+          <TableHead>Psalms</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -66,6 +68,9 @@ export function PrecentingSetList({ sets }: Props) {
             <TableCell>{formatDate(set.date)}</TableCell>
             <TableCell>{set.type}</TableCell>
             <TableCell>{set.precentorName}</TableCell>
+            <TableCell className="text-muted-foreground text-sm">
+              {set.psalmIds.length > 0 ? set.psalmIds.join(', ') : '—'}
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>
