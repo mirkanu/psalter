@@ -1,0 +1,66 @@
+import { NextResponse } from 'next/server'
+import { db } from '@/db'
+import { setItems } from '@/db/schema'
+import { eq, and } from 'drizzle-orm'
+
+export const dynamic = 'force-dynamic'
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string; itemId: string }> },
+) {
+  const { id, itemId } = await params
+  const setId = parseInt(id)
+  const itemIdNum = parseInt(itemId)
+  if (isNaN(setId) || isNaN(itemIdNum)) {
+    return NextResponse.json({ error: 'invalid id' }, { status: 400 })
+  }
+
+  let body: { tuneId?: unknown; verseRange?: unknown }
+  try {
+    body = (await req.json()) as typeof body
+  } catch {
+    return NextResponse.json({ error: 'invalid JSON body' }, { status: 400 })
+  }
+
+  const updateSet: { tuneId?: number | null; verseRange?: string | null } = {}
+  if ('tuneId' in body) {
+    updateSet.tuneId = typeof body.tuneId === 'number' ? body.tuneId : null
+  }
+  if ('verseRange' in body) {
+    updateSet.verseRange =
+      typeof body.verseRange === 'string' && body.verseRange.length <= 20
+        ? body.verseRange
+        : null
+  }
+
+  const result = await db
+    .update(setItems)
+    .set(updateSet)
+    .where(and(eq(setItems.id, itemIdNum), eq(setItems.setId, setId)))
+    .returning({ id: setItems.id })
+
+  if (result.length !== 1) {
+    return NextResponse.json({ error: 'item not found' }, { status: 404 })
+  }
+
+  return NextResponse.json({ ok: true })
+}
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string; itemId: string }> },
+) {
+  const { id, itemId } = await params
+  const setId = parseInt(id)
+  const itemIdNum = parseInt(itemId)
+  if (isNaN(setId) || isNaN(itemIdNum)) {
+    return NextResponse.json({ error: 'invalid id' }, { status: 400 })
+  }
+
+  await db
+    .delete(setItems)
+    .where(and(eq(setItems.id, itemIdNum), eq(setItems.setId, setId)))
+
+  return NextResponse.json({ ok: true })
+}
