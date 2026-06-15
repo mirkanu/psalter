@@ -28,6 +28,8 @@ export interface TuneRow {
 
 interface TuneTableProps {
   tunes: TuneRow[]
+  onSelectTune?: (tune: TuneRow) => void
+  hideExport?: boolean
 }
 
 type SortBy = 'psalms' | 'name' | 'meter' | 'rp' | 'prca' | 'recording'
@@ -58,7 +60,7 @@ function exportCsv(allTunes: TuneRow[]) {
   URL.revokeObjectURL(url)
 }
 
-export function TuneTable({ tunes }: TuneTableProps) {
+export function TuneTable({ tunes, onSelectTune, hideExport }: TuneTableProps) {
   const router = useRouter()
   const [query, setQuery] = useState('')
 const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', false)
@@ -398,15 +400,17 @@ const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', fa
           {filtered.length} {filtered.length === 1 ? 'tune' : 'tunes'}
           {hasFilter && ` (filtered from ${tunes.length})`}
         </p>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => exportCsv(tunes)}
-          className="gap-1.5 text-sm"
-        >
-          <Download className="h-3.5 w-3.5" />
-          Download CSV
-        </Button>
+        {!hideExport && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportCsv(tunes)}
+            className="gap-1.5 text-sm"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Download CSV
+          </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -455,7 +459,8 @@ const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', fa
                 return (
                   <tr
                     key={tune.id}
-                    className="hover:bg-muted/30 transition-colors group"
+                    className={`hover:bg-muted/30 transition-colors group${onSelectTune ? ' cursor-pointer hover:bg-muted/50' : ''}`}
+                    onClick={onSelectTune ? () => onSelectTune(tune) : undefined}
                   >
                     <td className="px-3 py-2.5 font-medium">
                       <Link

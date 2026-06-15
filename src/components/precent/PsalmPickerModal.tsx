@@ -46,13 +46,13 @@ export function PsalmPickerModal({
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose() }}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col gap-4">
+      <DialogContent className="max-w-5xl w-full max-h-[90vh] flex flex-col gap-4">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">Select Psalm</DialogTitle>
         </DialogHeader>
 
         {selected === null ? (
-          <div className="overflow-y-auto flex-1">
+          <div className="overflow-y-auto flex-1 min-h-0">
             <PsalmListingGrid psalms={psalms} onSelect={(p) => setSelected(p)} />
           </div>
         ) : (
