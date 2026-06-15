@@ -117,7 +117,6 @@ export function SetItemsSortableList({
           <thead>
             <tr className="text-left text-xs text-muted-foreground border-b">
               <th className="w-8 pb-2" aria-label="Drag handle" />
-              <th className="pb-2 w-6">#</th>
               <th className="pb-2">Psalm</th>
               <th className="pb-2 w-16">Verses</th>
               <th className="pb-2 w-20">Meter</th>

@@ -95,7 +95,7 @@ export default async function PrecentSingPage({ params }: PageProps) {
 
   return (
     <>
-      <PrecentingBar pos={position + 1} total={total} />
+      <PrecentingBar setId={setId} pos={position + 1} total={total} />
       <SingingView
         psalm={psalm}
         currentSlug={String(psalm.id)}
