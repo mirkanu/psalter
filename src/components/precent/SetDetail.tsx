@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Pencil, Check, X, Trash2 } from 'lucide-react'
+import Link from 'next/link'
+import { Pencil, Check, X, Trash2, ChevronLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
@@ -83,6 +84,7 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
   const [tunePickerOpen, setTunePickerOpen] = useState(false)
   const [tunePickerItemId, setTunePickerItemId] = useState<number | null>(null)
   const [tunePickerPsalmMeter, setTunePickerPsalmMeter] = useState<string | null>(null)
+  const [tunePickerPsalmId, setTunePickerPsalmId] = useState<number | null>(null)
 
   // Inline note edit state
   const [editing, setEditing] = useState(false)
@@ -128,6 +130,7 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
   function handleTuneClick(item: SetItemView) {
     setTunePickerItemId(item.id)
     setTunePickerPsalmMeter(psalmMeterById[item.psalmId] ?? null)
+    setTunePickerPsalmId(item.psalmId)
     setTunePickerOpen(true)
   }
 
@@ -177,6 +180,15 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
+      {/* Breadcrumb */}
+      <Link
+        href="/precent"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        My Psalm Sets
+      </Link>
+
       {/* Header card */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -293,6 +305,7 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
         onClose={() => setTunePickerOpen(false)}
         tunes={allTunes}
         psalmMeter={tunePickerPsalmMeter}
+        psalmId={tunePickerPsalmId}
         onSelect={handleSelectTune}
       />
 

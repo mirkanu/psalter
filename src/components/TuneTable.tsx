@@ -4,7 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useRouter } from "next/navigation"
 import { useLocalStorage } from "@/hooks/useLocalStorage"
 import Link from "next/link"
-import { Search, X, ChevronDown, ChevronUp, Download, Music } from "lucide-react"
+import { Search, X, ChevronDown, ChevronUp, Download, Music, Star } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
@@ -30,6 +30,8 @@ interface TuneTableProps {
   tunes: TuneRow[]
   onSelectTune?: (tune: TuneRow) => void
   hideExport?: boolean
+  initialMeter?: string | null  // pre-filter to psalm's meter in modal mode
+  psalmId?: number              // highlight recommended tunes for this psalm
 }
 
 type SortBy = 'psalms' | 'name' | 'meter' | 'rp' | 'prca' | 'recording'
@@ -60,11 +62,19 @@ function exportCsv(allTunes: TuneRow[]) {
   URL.revokeObjectURL(url)
 }
 
-export function TuneTable({ tunes, onSelectTune, hideExport }: TuneTableProps) {
+export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, psalmId }: TuneTableProps) {
   const router = useRouter()
   const [query, setQuery] = useState('')
-const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', false)
-  const [selectedMeter, setSelectedMeter] = useLocalStorage('tunes.selectedMeter', 'all')
+  const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', false)
+  // When initialMeter is provided (modal mode), use local state to avoid polluting localStorage
+  const [savedMeter, setSavedMeter] = useLocalStorage('tunes.selectedMeter', 'all')
+  const [localMeter, setLocalMeter] = useState(initialMeter ?? 'all')
+  const selectedMeter = initialMeter !== undefined ? localMeter : savedMeter
+  const setSelectedMeter = initialMeter !== undefined ? setLocalMeter : setSavedMeter
+  // Reset local meter when initialMeter changes (new psalm selected in modal)
+  useEffect(() => {
+    if (initialMeter !== undefined) setLocalMeter(initialMeter ?? 'all')
+  }, [initialMeter])
   const [selectedMood, setSelectedMood] = useLocalStorage('tunes.selectedMood', 'all')
   const [onlyPrca, setOnlyPrca] = useLocalStorage('tunes.onlyPrca', false)
   const [onlyFamous, setOnlyFamous] = useLocalStorage('tunes.onlyFamous', false)
@@ -84,11 +94,20 @@ const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', fa
 
   const inputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => { inputRef.current?.focus() }, [])
+  // Only auto-focus on desktop — avoids keyboard popup on mobile when modal opens
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+      inputRef.current?.focus()
+    }
+  }, [])
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter' && filtered.length > 0) {
-      router.push(`/tunes/${filtered[0].id}`)
+      if (onSelectTune) {
+        onSelectTune(filtered[0])
+      } else {
+        router.push(`/tunes/${filtered[0].id}`)
+      }
     }
   }
 
@@ -138,7 +157,7 @@ const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', fa
         (t.famousHymn ?? '').toLowerCase().includes(q)
     })
 
-    return [...base].sort((a, b) => {
+    const sorted = [...base].sort((a, b) => {
       switch (sortBy) {
         case 'name':
           return (a.name ?? '').localeCompare(b.name ?? '')
@@ -149,7 +168,6 @@ const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', fa
         case 'prca':
           return (a.numInPrcaPsalter ?? 9999) - (b.numInPrcaPsalter ?? 9999)
         case 'recording':
-          // tunes with recording first
           if (!!a.soundcloudUrl === !!b.soundcloudUrl) return (a.name ?? '').localeCompare(b.name ?? '')
           return a.soundcloudUrl ? -1 : 1
         case 'psalms':
@@ -157,7 +175,16 @@ const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', fa
           return b.recommendedPsalmIds.length - a.recommendedPsalmIds.length || (a.name ?? '').localeCompare(b.name ?? '')
       }
     })
-  }, [tunes, query, selectedMeter, selectedMood, onlyPrca, onlyFamous, sortBy])
+    // In modal mode: float recommended tunes for this psalm to the top
+    if (psalmId != null) {
+      sorted.sort((a, b) => {
+        const aRec = a.recommendedPsalmIds.includes(psalmId) ? 0 : 1
+        const bRec = b.recommendedPsalmIds.includes(psalmId) ? 0 : 1
+        return aRec - bRec
+      })
+    }
+    return sorted
+  }, [tunes, query, selectedMeter, selectedMood, onlyPrca, onlyFamous, sortBy, psalmId])
 
   const hasFilter = query || selectedMeter !== 'all' || selectedMood !== 'all' || onlyPrca || onlyFamous
   const hasAdvancedFilter = selectedMeter !== 'all' || selectedMood !== 'all' || onlyPrca || onlyFamous
@@ -177,21 +204,23 @@ const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', fa
 
   return (
     <div className="space-y-4">
-      {/* SoundCloud hero box */}
-      <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/50 px-4 py-3">
-        <Music className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-        <div className="text-sm">
-          <span className="font-medium">Listen to all the tune recordings to learn them — </span>
-          <a
-            href="https://soundcloud.com/manuel-kuhs/sets/cprc-psalm-tunes"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary underline underline-offset-2 hover:text-primary/80"
-          >
-            complete CPRC playlist on SoundCloud
-          </a>
+      {/* SoundCloud hero box — hidden in modal/picker mode */}
+      {!onSelectTune && (
+        <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/50 px-4 py-3">
+          <Music className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+          <div className="text-sm">
+            <span className="font-medium">Listen to all the tune recordings to learn them — </span>
+            <a
+              href="https://soundcloud.com/manuel-kuhs/sets/cprc-psalm-tunes"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline underline-offset-2 hover:text-primary/80"
+            >
+              complete CPRC playlist on SoundCloud
+            </a>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Search + filters — sticky below nav */}
       <div className="sticky top-14 z-20 bg-background py-2 -mx-4 px-4 space-y-2">
@@ -446,7 +475,7 @@ const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', fa
                 {colInPrca && (
                   <th className="text-center px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">In PRCA</th>
                 )}
-                {colRecording && (
+                {colRecording && !onSelectTune && (
                   <th className="text-center px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Recording</th>
                 )}
               </tr>
@@ -463,12 +492,23 @@ const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', fa
                     onClick={onSelectTune ? () => onSelectTune(tune) : undefined}
                   >
                     <td className="px-3 py-2.5 font-medium">
-                      <Link
-                        href={`/tunes/${tune.id}`}
-                        className="hover:text-primary transition-colors group-hover:underline underline-offset-2"
-                      >
-                        {tune.name ?? `Tune ${tune.id}`}
-                      </Link>
+                      <span className="inline-flex items-center gap-1.5">
+                        {psalmId != null && tune.recommendedPsalmIds.includes(psalmId) && (
+                          <Star className="h-3.5 w-3.5 text-amber-500 shrink-0" aria-label="Recommended for this psalm" />
+                        )}
+                        {onSelectTune ? (
+                          <span className="group-hover:underline underline-offset-2">
+                            {tune.name ?? `Tune ${tune.id}`}
+                          </span>
+                        ) : (
+                          <Link
+                            href={`/tunes/${tune.id}`}
+                            className="hover:text-primary transition-colors group-hover:underline underline-offset-2"
+                          >
+                            {tune.name ?? `Tune ${tune.id}`}
+                          </Link>
+                        )}
+                      </span>
                     </td>
                     {colMeter && (
                       <td className="px-3 py-2.5 text-muted-foreground w-12 max-w-[3rem] overflow-hidden">
@@ -523,7 +563,7 @@ const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', fa
                         {tune.inPrcaPsalter ? 'Yes' : '—'}
                       </td>
                     )}
-                    {colRecording && (
+                    {colRecording && !onSelectTune && (
                       <td className="px-3 py-2.5 text-center">
                         {tune.soundcloudUrl ? (
                           <a

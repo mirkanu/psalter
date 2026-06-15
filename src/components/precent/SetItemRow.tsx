@@ -69,7 +69,7 @@ export function SetItemRow({
     psalmMeter.trim().toUpperCase() !== item.tune.meter.trim().toUpperCase()
 
   const mismatchRowClass = isMismatch
-    ? 'bg-amber-50 dark:bg-amber-900/20 border-l-2 border-amber-400'
+    ? 'bg-red-50 dark:bg-red-900/20 border-l-2 border-red-400'
     : ''
 
   const psalmLabel = item.psalm
@@ -95,11 +95,6 @@ export function SetItemRow({
           >
             <GripVertical className="h-4 w-4 text-muted-foreground" />
           </button>
-        </td>
-
-        {/* # */}
-        <td className="text-xs text-muted-foreground tabular-nums w-6">
-          {index + 1}
         </td>
 
         {/* Psalm */}
@@ -145,7 +140,7 @@ export function SetItemRow({
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <span className="bg-amber-100 text-amber-800 text-xs rounded px-1.5 py-0.5 ml-1 cursor-default inline-block">
+                  <span className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 text-xs rounded px-1.5 py-0.5 ml-1 cursor-default inline-block">
                     Meter mismatch
                   </span>
                 }
