@@ -35,6 +35,10 @@ interface Props {
   studyHref: string
   /** Verse range for individual Psalm 119 (etc) versifications, e.g. "45-85". */
   versePartLabel?: string | null
+  /** Precenting mode: override left arrow href. Null = disabled, undefined = not precenting. */
+  precentingPrevHref?: string | null
+  /** Precenting mode: override right arrow href. Null = disabled, undefined = not precenting. */
+  precentingNextHref?: string | null
 }
 
 function readStoredViewMode(showLyrics: boolean): ViewMode {
@@ -74,6 +78,8 @@ export function SingingView({
   psalmListRows,
   studyHref,
   versePartLabel = null,
+  precentingPrevHref,
+  precentingNextHref,
 }: Props) {
   const searchParams = useSearchParams()
   const tuneParam = searchParams?.get('tune') ?? null
@@ -308,6 +314,8 @@ export function SingingView({
         tuneName={tuneName || null}
         onOpenPsalmSelector={() => setPsalmSelectorOpen(true)}
         onOpenTuneSwitcher={() => setTuneSwitcherOpen(true)}
+        precentingPrevHref={precentingPrevHref}
+        precentingNextHref={precentingNextHref}
       />
 
       {/* Body — single scroll container, hard horizontal clamp.
