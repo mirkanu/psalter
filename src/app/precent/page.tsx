@@ -9,7 +9,7 @@ import { CreateSetForm } from '@/components/precent/CreateSetForm'
 
 export default async function PrecentPage() {
   const sets = await db.query.precentingSets.findMany({
-    orderBy: [desc(precentingSets.date)],
+    orderBy: [desc(precentingSets.date), desc(precentingSets.id)],
     with: {
       setItems: {
         columns: { psalmId: true, position: true },

@@ -185,7 +185,7 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
     await fetch(`/api/precent/${set.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date: `${yyyy}-${mm}-${dd}`, type: editType }),
+      body: JSON.stringify({ date: `${yyyy}-${mm}-${dd}`, type: editType, note: editNote.trim() || null }),
     })
     setSavingMeta(false)
     setEditMetaOpen(false)
@@ -213,47 +213,12 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold">{shortType(set.type)} — {smartDate(set.date)}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{set.type} — {formatDate(set.date)} · Precentor: {set.precentorName}</p>
-          {!editing && (
-            <p className="text-sm text-muted-foreground mt-1">
-              {set.note ?? <span className="italic">No notes</span>}
-            </p>
+          <p className="text-sm text-muted-foreground mt-0.5">Precentor: {set.precentorName}</p>
+          {set.note && (
+            <p className="text-sm text-muted-foreground mt-1">{set.note}</p>
           )}
-          {editing && (
-            <div className="flex items-center gap-2 mt-2">
-              <Input
-                value={editNote}
-                onChange={(e) => setEditNote(e.target.value)}
-                placeholder="Add a note for this set…"
-                className="max-w-xs text-sm"
-                maxLength={500}
-              />
-              <Button
-                size="sm"
-                variant="default"
-                onClick={handleSaveNote}
-                disabled={saving}
-                aria-label="Save note"
-              >
-                <Check className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => { setEditing(false); setEditNote(set.note ?? '') }}
-                aria-label="Cancel edit"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-          {/* Metadata */}
-          <p className="text-xs text-muted-foreground mt-2">
-            Created: {formatDateTime(set.createdAt)} · Last modified: {formatDateTime(set.updatedAt)}
-          </p>
         </div>
-        {!editing && (
-          <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => setEditMetaOpen(true)}
@@ -271,7 +236,6 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
               <Trash2 className="h-4 w-4" />
             </button>
           </div>
-        )}
       </div>
 
       <Separator className="mt-6 mb-4" />
@@ -367,6 +331,17 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
                   <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium">Notes</label>
+              <textarea
+                value={editNote}
+                onChange={(e) => setEditNote(e.target.value)}
+                placeholder="Add a note for this set…"
+                maxLength={500}
+                rows={3}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+              />
             </div>
           </div>
           <DialogFooter>
