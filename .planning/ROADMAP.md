@@ -664,7 +664,7 @@ Plans:
 - [x] 05-01-PLAN.md — Install dnd-kit + Calendar, add precenting_sets + set_items tables + [BLOCKING] drizzle-kit push, Precent nav item, all 6 Wave 0 test stubs (RED)
 
 **Wave 2** *(depends on Wave 1)*
-- [ ] 05-02-PLAN.md — Set CRUD API + /precent list page + CreateSetForm + PrecentingSetList + loading.tsx (PREC-01)
+- [x] 05-02-PLAN.md — Set CRUD API + /precent list page + CreateSetForm + PrecentingSetList + loading.tsx (PREC-01)
 
 **Wave 3** *(depends on Wave 2)*
 - [ ] 05-03-PLAN.md — Item API routes + PsalmListingGrid/TuneGrid reuse props + PsalmPickerModal + TunePickerModal (PREC-02)
