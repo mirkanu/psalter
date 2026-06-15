@@ -90,7 +90,7 @@ export function PrecentingSetList({ sets }: Props) {
                   aria-label="Start precenting"
                   className="inline-flex items-center justify-center p-1.5 rounded hover:bg-muted transition-colors"
                 >
-                  <PlayCircle className="h-4 w-4 text-amber-600" />
+                  <PlayCircle className="h-4 w-4 text-green-600" />
                 </Link>
               )}
             </TableCell>

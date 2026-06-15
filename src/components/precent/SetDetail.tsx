@@ -276,7 +276,7 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
         <Button
           disabled={set.setItems.length === 0}
           onClick={() => router.push(`/precent/${set.id}/sing/1`)}
-          className="bg-amber-100 text-amber-900 hover:bg-amber-200 border border-amber-300 active:scale-[0.97] transition-transform duration-75 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-green-100 text-green-900 hover:bg-green-200 border border-green-300 active:scale-[0.97] transition-transform duration-75 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Start Precenting
         </Button>
