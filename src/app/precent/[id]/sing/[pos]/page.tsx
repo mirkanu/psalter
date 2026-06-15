@@ -90,9 +90,12 @@ export default async function PrecentSingPage({ params }: PageProps) {
   const rangeMatch = activeVersion?.psalterNumber?.match(/^\d+:(\d+(?:-\d+)?)/) ?? null
   const versePartLabel = rangeMatch ? rangeMatch[1] : null
 
+  const precentingPrevHref = position > 0 ? `/precent/${setId}/sing/${position}` : null
+  const precentingNextHref = position + 1 < total ? `/precent/${setId}/sing/${position + 2}` : null
+
   return (
     <>
-      <PrecentingBar setId={setId} pos={position + 1} total={total} />
+      <PrecentingBar pos={position + 1} total={total} />
       <SingingView
         psalm={psalm}
         currentSlug={String(psalm.id)}
@@ -108,6 +111,8 @@ export default async function PrecentSingPage({ params }: PageProps) {
         psalmListRows={psalmListRows}
         studyHref={`/psalms/${psalm.id}/study`}
         versePartLabel={versePartLabel}
+        precentingPrevHref={precentingPrevHref}
+        precentingNextHref={precentingNextHref}
       />
     </>
   )

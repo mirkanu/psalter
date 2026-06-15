@@ -26,7 +26,7 @@ import { PsalmPickerModal } from '@/components/precent/PsalmPickerModal'
 import { TunePickerModal } from '@/components/precent/TunePickerModal'
 import { SetItemsSortableList } from '@/components/precent/SetItemsSortableList'
 import type { PsalmRow } from '@/components/PsalmListingGrid'
-import type { TuneRow } from '@/components/TuneGrid'
+import type { TuneRow } from '@/components/TuneTable'
 
 export interface SetItemView {
   id: number
@@ -318,14 +318,13 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
                     mode="single"
                     selected={editDate}
                     onSelect={(d) => setEditDate(d ?? undefined)}
-                    initialFocus
                   />
                 </PopoverContent>
               </Popover>
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium">Type</label>
-              <Select value={editType} onValueChange={setEditType}>
+              <Select value={editType} onValueChange={(v) => setEditType(v ?? set.type)}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>

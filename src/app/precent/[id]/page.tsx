@@ -8,7 +8,7 @@ import { fetchPsalmListRows } from '@/db/queries/psalms'
 import { fetchAllTunes } from '@/db/queries/tunes'
 import { SetDetail } from '@/components/precent/SetDetail'
 import type { PsalmRow } from '@/components/PsalmListingGrid'
-import type { TuneRow } from '@/components/TuneGrid'
+import type { TuneRow } from '@/components/TuneTable'
 
 export default async function PrecentSetPage({
   params,

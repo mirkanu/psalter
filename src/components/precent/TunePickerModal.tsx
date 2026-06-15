@@ -6,8 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { TuneTable } from '@/components/TuneTable'
-import type { TuneRow } from '@/components/TuneGrid'
+import { TuneTable, type TuneRow } from '@/components/TuneTable'
 
 interface TunePickerModalProps {
   open: boolean
