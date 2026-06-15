@@ -1,37 +1,31 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-01T12:33:50Z",
-  "phase": "04.11",
-  "phase_name": "solfege-underline-ocr-melisma",
-  "phase_dir": ".planning/phases/04.11-solfege-underline-ocr-melisma",
-  "plan": 5,
-  "task": 5,
-  "total_tasks": 5,
-  "status": "paused-mid-iteration",
+  "timestamp": "2026-06-15T13:15:17.602Z",
+  "phase": "05",
+  "phase_name": "precentor-portal",
+  "phase_dir": ".planning/phases/05-precentor-portal",
+  "plan": "post-execution-uat-polish",
+  "task": "round-3-not-started",
+  "status": "paused",
   "completed_tasks": [
-    {"id": 1, "name": "Wave A automated dry-run (original Task 1)", "status": "superseded", "note": "Blocked by Haiku Vision OCR underline-detection failure; pivoted to manual /dev/melisma-editor workflow"},
-    {"id": 2, "name": "Manual /dev/melisma-editor with decision log + raw-solfège persistence", "status": "done", "commit": "76221fb,28a7b88"},
-    {"id": 3, "name": "Editor enhancements: re-edit saved tunes, navigator modal, auto-fix syllables, OCR-key grid labels, DCM support, delete-note, unsaved-change guard, persist history toggle, Browse psalm col + scroll", "status": "done", "commit": "657f46c,f8de9a7,3eac8e4,b787711,a146c12"},
-    {"id": 4, "name": "Bulk DB migrations (syllable force-match, structured lyrics population, OCR _1-misread fix, z-rest ABC re-render, Effingham re-OCR via Sonnet)", "status": "done", "commit": "fc45567,a5750b7,d11afeb"},
-    {"id": 5, "name": "WAVE-A-SIGNOFF.md gating Plan 06 (original Task 5)", "status": "deferred", "note": "Original mechanical gate; replaced by per-tune manual signoff via tune_melisma_decisions log"}
+    {"id": 1, "name": "Phase 05 core execution (5 plans)", "status": "done", "commit": "12f6c72"},
+    {"id": 2, "name": "UAT Batch 1: titles, psalm numbers, tune default, reactivity", "status": "done", "commit": "0537161"},
+    {"id": 3, "name": "UAT Batch 2: edit/delete, TuneTable modal, amber precenting arrows", "status": "done", "commit": "04fca41"}
   ],
   "remaining_tasks": [
-    {"id": 29, "name": "Contemplation audio: sharps play as naturals", "status": "deferred", "note": "User-deferred. May be abcjs key-signature config issue."},
-    {"id": "structured-lyrics-residual", "name": "2 psalm_versions still failed bulk-populate-structured-lyrics", "status": "not_started", "note": "4 of 6 succeeded. Failing 2 can be revisited if those psalms are needed."},
-    {"id": "user-uat", "name": "User UAT of latest fixes", "status": "pending-user", "note": "add-note in Note Grid >8 notes per phrase; Darwall prod render; Ballerma combined Amen-trim + melisma-mark workflow"}
+    {"id": 4, "name": "UAT Round 3 — set list: smart dates, short type, action columns", "status": "not_started"},
+    {"id": 5, "name": "UAT Round 3 — set detail: remove # col, red mismatch, breadcrumb heading", "status": "not_started"},
+    {"id": 6, "name": "UAT Round 3 — tune modal: hide SoundCloud, pre-filter meter, recommended display, mobile focus fix, navigation regression fix", "status": "not_started"},
+    {"id": 7, "name": "UAT Round 3 — precenting bar 3-column layout (Back / Mode / counter)", "status": "not_started"}
   ],
   "blockers": [],
-  "human_actions_pending": [
-    {"action": "Verify latest UI fixes in browser", "context": "Commit d11afeb shipped 2 functional changes (#35 Darwall prod / #36 add-note in Note Grid). Playwright was used for structural verification but a human eye on the live editor is still useful before declaring 04.11-05 done.", "blocking": false}
-  ],
+  "human_actions_pending": [],
   "decisions": [
-    {"decision": "Plan 05 pivoted from automated Wave A push to manual /dev/melisma-editor with per-tune decision log", "rationale": "Haiku 4.5 Vision OCR could not reliably detect underlines at quality threshold; gate would never have passed", "phase": "04.11"},
-    {"decision": "Bulk syllable overrides written into existing lyrics_structured.lines[].syllables — NOT a new column", "rationale": "stanza-cycles.ts already reads Line.syllables → propagates everywhere (public renderer + editor + audio) without new wiring", "phase": "04.11"},
-    {"decision": "Per-tune raw-solfège edits stored in new tunes.solfege_soprano_edited column (not via lyrics_structured)", "rationale": "Solfège source is per-tune music data, not per-psalm lyrics. Editor needs separate storage from immutable OCR for Revert-to-OCR.", "phase": "04.11"},
-    {"decision": "Effingham re-OCR uses Sonnet 4.6, not the standard Haiku 4.5", "rationale": "Haiku missed the second music system on multi-system pages. Sonnet captured cleanly. Future improvement: auto-retry with Sonnet when Haiku output looks truncated relative to meter.", "phase": "04.11"},
-    {"decision": "Edit ops use effectiveAbc (with auto-injected PHRASE_BREAKs) as base, not tune.abcNotation", "rationale": "phraseIdx in the rendered grid must match phraseIdx in the operation target. Bare ABC has no breaks → all tokens parse as phraseIdx=0 → inserts land at end of piece.", "phase": "04.11"}
+    {"decision": "TunePickerModal wraps TuneTable (not TuneGrid)", "rationale": "User requested same experience as /tunes page", "phase": "05"},
+    {"decision": "Auth deferred to Phase 05.1", "rationale": "Explicit design decision D-10 in all Phase 5 plans", "phase": "05"},
+    {"decision": "PsalmTopBar amber arrows navigate between precenting items", "rationale": "User requested remove arrows from PrecentingBar, use top bar instead", "phase": "05"}
   ],
   "uncommitted_files": [],
-  "next_action": "When user returns: (1) confirm UI fixes work in their browser, (2) decide whether Task #29 (Contemplation audio) is worth investigating now or stays deferred, (3) optionally close Plan 05 with a SUMMARY.md and route to Plan 06 (which existed but was on hold pending Plan 05 signoff).",
-  "context_notes": "Long-running interactive session under /gsd-execute-phase 04.11 --plan 05 --interactive. Plan 05 has effectively been replaced by an emergent manual workflow centered on /dev/melisma-editor. All commits tagged `04.11-05` and committed atomically (one feature/fix per commit). Database has been mutated multiple times — backups stored in backups/ as pg_dump column-inserts SQL (Lancaster was restored once after a curl test inadvertently clobbered it). Service runs via PM2 (id 4) on port 3005. Production URL: psalter.gsdlabs.dev/dev/melisma-editor. Cloudflare Access service token configured (PSALTER_CF_ACCESS_CLIENT_ID/SECRET in /data/home/psalter/.env) — must be explicitly passed to Node subprocesses for Playwright verification."
+  "next_action": "Fix tune selection navigation regression (3e) first — clicking tune opens /tunes/[id] because Link inside tr conflicts with onSelectTune. Then remaining Round 3 items in order: tune modal (3a-d), set list (1a-b), set detail (2a-c), precenting bar (4).",
+  "context_notes": "Paused at 85% context. Round 3 is entirely well-specified UI polish. The tune navigation regression is the most critical fix."
 }
