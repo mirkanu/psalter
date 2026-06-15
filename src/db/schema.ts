@@ -318,6 +318,39 @@ export const tuneMelismaDecisions = pgTable('tune_melisma_decisions', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
+/**
+ * precenting_sets — precentor-built service sets (Phase 5)
+ * Replaces manual paper preparation; auth (precentor_name from session) added in Phase 05.1
+ */
+export const precentingSets = pgTable('precenting_sets', {
+  id: serial('id').primaryKey(),
+  date: date('date').notNull(),
+  type: text('type').notNull(),          // 'AM Service' | 'PM Service' | 'Other'
+  note: text('note'),                    // nullable
+  precentorName: text('precentor_name').notNull().default('Manuel'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+export const setItems = pgTable('set_items', {
+  id: serial('id').primaryKey(),
+  setId: integer('set_id').notNull().references(() => precentingSets.id, { onDelete: 'cascade' }),
+  psalmId: integer('psalm_id').notNull().references(() => psalms.id),
+  tuneId: integer('tune_id').references(() => tunes.id),    // nullable
+  verseRange: text('verse_range'),                           // nullable free text
+  position: integer('position').notNull(),
+})
+
+export const precentingSetsRelations = relations(precentingSets, ({ many }) => ({
+  setItems: many(setItems),
+}))
+
+export const setItemsRelations = relations(setItems, ({ one }) => ({
+  set: one(precentingSets, { fields: [setItems.setId], references: [precentingSets.id] }),
+  psalm: one(psalms, { fields: [setItems.psalmId], references: [psalms.id] }),
+  tune: one(tunes, { fields: [setItems.tuneId], references: [tunes.id] }),
+}))
+
 // ─── Relations (Drizzle Relational API) ──────────────────────────────────────
 
 export const psalmsRelations = relations(psalms, ({ many }) => ({
