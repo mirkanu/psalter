@@ -96,7 +96,7 @@ export function PsalmTopBar({
         {(() => {
           const isPrecenting = precentingPrevHref !== undefined
           const href = isPrecenting ? precentingPrevHref : (prev ? `/psalms/${prev}` : null)
-          const amberClass = isPrecenting ? ' text-amber-600 dark:text-amber-400' : ''
+          const amberClass = isPrecenting ? ' text-green-600 dark:text-green-400' : ''
           return href ? (
             <Link
               href={href}
@@ -161,7 +161,7 @@ export function PsalmTopBar({
         {(() => {
           const isPrecenting = precentingNextHref !== undefined
           const href = isPrecenting ? precentingNextHref : (next ? `/psalms/${next}` : null)
-          const amberClass = isPrecenting ? ' text-amber-600 dark:text-amber-400' : ''
+          const amberClass = isPrecenting ? ' text-green-600 dark:text-green-400' : ''
           return href ? (
             <Link
               href={href}

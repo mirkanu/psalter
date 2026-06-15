@@ -130,6 +130,13 @@
   }
 }
 
+/* Prevent iOS Safari from zooming on input focus — triggered when font-size < 16px */
+@media screen and (max-width: 768px) {
+  input, textarea, select {
+    font-size: max(16px, 1em);
+  }
+}
+
 /* Search result snippet — scope ts_headline <b>/<strong> tags to avoid polluting other bold elements */
 [data-snippet] b,
 [data-snippet] strong {

@@ -4,7 +4,7 @@ export default function PrecentSingLoading() {
   return (
     <div className="relative">
       {/* PrecentingBar skeleton — amber tint */}
-      <div className="h-10 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-700 animate-pulse" />
+      <div className="h-10 bg-green-50 dark:bg-green-900/20 border-b border-green-200 dark:border-green-700 animate-pulse" />
       {/* Top bar skeleton — single row */}
       <header className="sticky top-14 z-30 h-12 md:h-14 bg-background/95 backdrop-blur border-b">
         <div className="flex items-center justify-between gap-2 px-2 h-full">
