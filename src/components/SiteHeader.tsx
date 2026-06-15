@@ -1,8 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu, Search } from 'lucide-react'
+import { Menu, Search, Moon, Sun } from 'lucide-react'
+import { useTheme } from 'next-themes'
 import { Sheet, SheetTrigger, SheetContent, SheetClose } from '@/components/ui/sheet'
 import { GlobalSearch } from '@/components/GlobalSearch'
 
@@ -18,6 +19,23 @@ const navLinks = [
 // singing view (overrides UI-SPEC §"Page anatomy"). PsalmTopBar sticks below
 // it (offset adjusted in that component). Body height in SingingView subtracts
 // SiteHeader height (~56px) accordingly. (TuneSubBar removed in 04.9.4-02.)
+
+function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  if (!mounted) return <div className="size-8" />
+  return (
+    <button
+      type="button"
+      onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+      aria-label="Toggle dark mode"
+      className="p-2 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+    >
+      {resolvedTheme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
+    </button>
+  )
+}
 
 export function SiteHeader() {
   const pathname = usePathname()
@@ -62,9 +80,10 @@ export function SiteHeader() {
             >
               <Search className="size-4" />
             </button>
+            <ThemeToggle />
           </nav>
 
-          {/* Mobile: search icon + hamburger */}
+          {/* Mobile: search icon + dark mode + hamburger */}
           <div className="flex items-center gap-1 md:hidden">
             <button
               type="button"
@@ -74,6 +93,7 @@ export function SiteHeader() {
             >
               <Search className="size-4" />
             </button>
+            <ThemeToggle />
             <Sheet>
               <SheetTrigger
                 aria-label="Open navigation menu"
