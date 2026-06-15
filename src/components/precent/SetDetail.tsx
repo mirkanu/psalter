@@ -98,8 +98,8 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
       {/* Header card */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold">{set.type} — {formatDate(set.date)}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Precentor: {set.precentorName}</p>
+          <h1 className="text-xl font-semibold">Psalm Set for Precenting</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{set.type} — {formatDate(set.date)} · Precentor: {set.precentorName}</p>
           {!editing && (
             <p className="text-sm text-muted-foreground mt-1">
               {set.note ?? <span className="italic">No notes</span>}
