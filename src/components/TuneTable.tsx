@@ -65,7 +65,11 @@ function exportCsv(allTunes: TuneRow[]) {
 export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, psalmId }: TuneTableProps) {
   const router = useRouter()
   const [query, setQuery] = useState('')
-  const [advancedOpen, setAdvancedOpen] = useLocalStorage('tunes.advancedOpen', false)
+  // In modal mode, always start collapsed and don't persist to localStorage
+  const [savedAdvancedOpen, setSavedAdvancedOpen] = useLocalStorage('tunes.advancedOpen', false)
+  const [localAdvancedOpen, setLocalAdvancedOpen] = useState(false)
+  const advancedOpen = onSelectTune ? localAdvancedOpen : savedAdvancedOpen
+  const setAdvancedOpen = onSelectTune ? setLocalAdvancedOpen : setSavedAdvancedOpen
   // When initialMeter is provided (modal mode), use local state to avoid polluting localStorage
   const [savedMeter, setSavedMeter] = useLocalStorage('tunes.selectedMeter', 'all')
   const [localMeter, setLocalMeter] = useState(initialMeter ?? 'all')
@@ -189,8 +193,9 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, psalm
   const hasFilter = query || selectedMeter !== 'all' || selectedMood !== 'all' || onlyPrca || onlyFamous
   const hasAdvancedFilter = selectedMeter !== 'all' || selectedMood !== 'all' || onlyPrca || onlyFamous
 
+  // In modal mode, don't auto-open the filter panel even when meter is pre-filtered
   useEffect(() => {
-    if (hasAdvancedFilter) setAdvancedOpen(true)
+    if (hasAdvancedFilter && !onSelectTune) setAdvancedOpen(true)
   }, [hasAdvancedFilter]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function clearAdvanced() {
@@ -222,8 +227,8 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, psalm
         </div>
       )}
 
-      {/* Search + filters — sticky below nav */}
-      <div className="sticky top-14 z-20 bg-background py-2 -mx-4 px-4 space-y-2">
+      {/* Search + filters — sticky in page context, plain in modal */}
+      <div className={onSelectTune ? "space-y-2" : "sticky top-14 z-20 bg-background py-2 -mx-4 px-4 space-y-2"}>
       {/* Search bar */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
