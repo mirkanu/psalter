@@ -36,6 +36,7 @@ interface SetItemsSortableListProps {
   allTunes: TuneRow[]
   allPsalms: PsalmRow[]
   psalmMeterById: Record<number, string | null>
+  recommendedTuneByPsalmId: Record<number, string | null>
   onTuneClick: (item: SetItemView) => void
   onPsalmClick: (item: SetItemView) => void
 }
@@ -45,6 +46,7 @@ export function SetItemsSortableList({
   items,
   allPsalms,
   psalmMeterById,
+  recommendedTuneByPsalmId,
   onTuneClick,
   onPsalmClick,
 }: SetItemsSortableListProps) {
@@ -117,6 +119,7 @@ export function SetItemsSortableList({
                 setId={setId}
                 allPsalms={allPsalms}
                 psalmMeter={psalmMeterById[item.psalmId] ?? null}
+                recommendedTune={recommendedTuneByPsalmId[item.psalmId] ?? null}
                 onDelete={handleDelete}
                 onTuneClick={onTuneClick}
                 onPsalmClick={onPsalmClick}
