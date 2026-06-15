@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   DndContext,
   closestCenter,
@@ -50,11 +51,22 @@ export function SetItemsSortableList({
   onTuneClick,
   onPsalmClick,
 }: SetItemsSortableListProps) {
+  const router = useRouter()
   const [optimisticItems, setOptimisticItems] = useState<SetItemView[]>(items)
   const [, startTransition] = useTransition()
+  const isDragging = useRef(false)
   const sensors = useSensors(useSensor(PointerSensor))
 
+  // Sync optimistic state when server data refreshes (router.refresh() causes new props)
+  // Skip sync while a drag is in progress to avoid flickering mid-gesture
+  useEffect(() => {
+    if (!isDragging.current) {
+      setOptimisticItems(items)
+    }
+  }, [items])
+
   function handleDragEnd(event: DragEndEvent) {
+    isDragging.current = false
     const { active, over } = event
     if (!over || active.id === over.id) return
 
@@ -85,6 +97,8 @@ export function SetItemsSortableList({
     if (!res.ok) {
       setOptimisticItems(prev)
       toast.error("Couldn't remove the psalm. Try again.")
+    } else {
+      router.refresh()
     }
   }
 
@@ -92,6 +106,7 @@ export function SetItemsSortableList({
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      onDragStart={() => { isDragging.current = true }}
       onDragEnd={handleDragEnd}
     >
       <SortableContext
