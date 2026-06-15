@@ -667,10 +667,10 @@ Plans:
 - [x] 05-02-PLAN.md — Set CRUD API + /precent list page + CreateSetForm + PrecentingSetList + loading.tsx (PREC-01)
 
 **Wave 3** *(depends on Wave 2)*
-- [ ] 05-03-PLAN.md — Item API routes + PsalmListingGrid/TuneGrid reuse props + PsalmPickerModal + TunePickerModal (PREC-02)
+- [x] 05-03-PLAN.md — Item API routes + PsalmListingGrid/TuneGrid reuse props + PsalmPickerModal + TunePickerModal (PREC-02)
 
 **Wave 4** *(depends on Wave 3)*
-- [ ] 05-04-PLAN.md — Reorder API + /precent/[id] detail page + SetDetail + dnd-kit SetItemsSortableList/SetItemRow (mismatch/play/delete) (PREC-03, PREC-04)
+- [x] 05-04-PLAN.md — Reorder API + /precent/[id] detail page + SetDetail + dnd-kit SetItemsSortableList/SetItemRow (mismatch/play/delete) (PREC-03, PREC-04)
 
 **Wave 5** *(depends on Wave 4)*
 - [ ] 05-05-PLAN.md — Precenting mode page + PrecentingBar + SingingView wrap + loading.tsx + Playwright UAT green (PREC-05, PREC-06)
@@ -738,5 +738,5 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 5. Precentor Portal | 1/5 | In Progress|  |
+| 5. Precentor Portal | 4/5 | In Progress|  |
 | 6. Polish | 0/TBD | Not started | - |
