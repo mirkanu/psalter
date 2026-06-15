@@ -2,10 +2,26 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Pencil, Check, X } from 'lucide-react'
+import { Pencil, Check, X, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { PsalmPickerModal } from '@/components/precent/PsalmPickerModal'
 import { TunePickerModal } from '@/components/precent/TunePickerModal'
 import { SetItemsSortableList } from '@/components/precent/SetItemsSortableList'
@@ -29,6 +45,8 @@ interface SerializedSet {
   type: string
   note: string | null
   precentorName: string
+  createdAt: string
+  updatedAt: string
   setItems: SetItemView[]
 }
 
@@ -42,6 +60,11 @@ interface SetDetailProps {
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00')
   return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function formatDateTime(isoStr: string): string {
+  const d = new Date(isoStr)
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetDetailProps) {
@@ -61,10 +84,23 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
   const [tunePickerItemId, setTunePickerItemId] = useState<number | null>(null)
   const [tunePickerPsalmMeter, setTunePickerPsalmMeter] = useState<string | null>(null)
 
-  // Inline edit state
+  // Inline note edit state
   const [editing, setEditing] = useState(false)
   const [editNote, setEditNote] = useState(set.note ?? '')
   const [saving, setSaving] = useState(false)
+
+  // Edit date/type dialog state
+  const [editMetaOpen, setEditMetaOpen] = useState(false)
+  const [editDate, setEditDate] = useState<Date | undefined>(() => {
+    const d = new Date(set.date + 'T00:00:00')
+    return isNaN(d.getTime()) ? undefined : d
+  })
+  const [editType, setEditType] = useState<string>(set.type)
+  const [savingMeta, setSavingMeta] = useState(false)
+
+  // Delete dialog state
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   async function handleAddPsalm({ psalmId, verseRange }: { psalmId: number; verseRange: string | null }) {
     if (psalmPickerMode === 'change' && psalmPickerItemId != null) {
@@ -117,6 +153,28 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
     router.refresh()
   }
 
+  async function handleSaveMeta() {
+    if (!editDate) return
+    setSavingMeta(true)
+    const yyyy = editDate.getFullYear()
+    const mm = String(editDate.getMonth() + 1).padStart(2, '0')
+    const dd = String(editDate.getDate()).padStart(2, '0')
+    await fetch(`/api/precent/${set.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: `${yyyy}-${mm}-${dd}`, type: editType }),
+    })
+    setSavingMeta(false)
+    setEditMetaOpen(false)
+    router.refresh()
+  }
+
+  async function handleDeleteSet() {
+    setDeleting(true)
+    await fetch(`/api/precent/${set.id}`, { method: 'DELETE' })
+    router.push('/precent')
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
       {/* Header card */}
@@ -157,16 +215,30 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
               </Button>
             </div>
           )}
+          {/* Metadata */}
+          <p className="text-xs text-muted-foreground mt-2">
+            Created: {formatDateTime(set.createdAt)} · Last modified: {formatDateTime(set.updatedAt)}
+          </p>
         </div>
         {!editing && (
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
-            aria-label="Edit note"
-          >
-            <Pencil className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setEditMetaOpen(true)}
+              className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
+              aria-label="Edit date and type"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setDeleteOpen(true)}
+              className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded"
+              aria-label="Delete set"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
         )}
       </div>
 
@@ -223,6 +295,74 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
         psalmMeter={tunePickerPsalmMeter}
         onSelect={handleSelectTune}
       />
+
+      {/* Edit Date & Type Dialog */}
+      <Dialog open={editMetaOpen} onOpenChange={(o) => { if (!o) setEditMetaOpen(false) }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Edit Set Details</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-2">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium">Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                    {editDate
+                      ? editDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+                      : 'Pick a date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={editDate}
+                    onSelect={(d) => setEditDate(d ?? undefined)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium">Type</label>
+              <Select value={editType} onValueChange={setEditType}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="AM Service">AM Service</SelectItem>
+                  <SelectItem value="PM Service">PM Service</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditMetaOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveMeta} disabled={savingMeta || !editDate}>
+              {savingMeta ? 'Saving…' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteOpen} onOpenChange={(o) => { if (!o) setDeleteOpen(false) }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete this set?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            This will permanently remove all items in this precenting set. This action cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDeleteOpen(false)} disabled={deleting}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteSet} disabled={deleting}>
+              {deleting ? 'Deleting…' : 'Delete Set'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
