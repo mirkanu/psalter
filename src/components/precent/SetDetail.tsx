@@ -47,6 +47,8 @@ function formatDate(dateStr: string): string {
 export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetDetailProps) {
   const router = useRouter()
   const [psalmPickerOpen, setPsalmPickerOpen] = useState(false)
+  const [psalmPickerMode, setPsalmPickerMode] = useState<'add' | 'change'>('add')
+  const [psalmPickerItemId, setPsalmPickerItemId] = useState<number | null>(null)
   const [tunePickerOpen, setTunePickerOpen] = useState(false)
   const [tunePickerItemId, setTunePickerItemId] = useState<number | null>(null)
   const [tunePickerPsalmMeter, setTunePickerPsalmMeter] = useState<string | null>(null)
@@ -57,12 +59,26 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
   const [saving, setSaving] = useState(false)
 
   async function handleAddPsalm({ psalmId, verseRange }: { psalmId: number; verseRange: string | null }) {
-    await fetch(`/api/precent/${set.id}/items`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ psalmId, verseRange }),
-    })
+    if (psalmPickerMode === 'change' && psalmPickerItemId != null) {
+      await fetch(`/api/precent/${set.id}/items/${psalmPickerItemId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ psalmId }),
+      })
+    } else {
+      await fetch(`/api/precent/${set.id}/items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ psalmId, verseRange }),
+      })
+    }
     router.refresh()
+  }
+
+  function handlePsalmClick(item: SetItemView) {
+    setPsalmPickerMode('change')
+    setPsalmPickerItemId(item.id)
+    setPsalmPickerOpen(true)
   }
 
   function handleTuneClick(item: SetItemView) {
@@ -152,7 +168,7 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
       <div className="flex items-center justify-between mb-4">
         <Button
           variant="outline"
-          onClick={() => setPsalmPickerOpen(true)}
+          onClick={() => { setPsalmPickerMode('add'); setPsalmPickerItemId(null); setPsalmPickerOpen(true) }}
           className="active:scale-[0.97] transition-transform duration-75"
         >
           Add Psalm
@@ -177,8 +193,10 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
           setId={set.id}
           items={set.setItems}
           allTunes={allTunes}
+          allPsalms={psalmListRows}
           psalmMeterById={psalmMeterById}
           onTuneClick={handleTuneClick}
+          onPsalmClick={handlePsalmClick}
         />
       )}
 

@@ -16,14 +16,14 @@ export async function PATCH(
     return NextResponse.json({ error: 'invalid id' }, { status: 400 })
   }
 
-  let body: { tuneId?: unknown; verseRange?: unknown }
+  let body: { tuneId?: unknown; verseRange?: unknown; psalmId?: unknown }
   try {
     body = (await req.json()) as typeof body
   } catch {
     return NextResponse.json({ error: 'invalid JSON body' }, { status: 400 })
   }
 
-  const updateSet: { tuneId?: number | null; verseRange?: string | null } = {}
+  const updateSet: { tuneId?: number | null; verseRange?: string | null; psalmId?: number } = {}
   if ('tuneId' in body) {
     updateSet.tuneId = typeof body.tuneId === 'number' ? body.tuneId : null
   }
@@ -32,6 +32,12 @@ export async function PATCH(
       typeof body.verseRange === 'string' && body.verseRange.length <= 20
         ? body.verseRange
         : null
+  }
+  if ('psalmId' in body) {
+    if (typeof body.psalmId !== 'number' || !Number.isInteger(body.psalmId) || body.psalmId < 1 || body.psalmId > 150) {
+      return NextResponse.json({ error: 'invalid psalmId' }, { status: 400 })
+    }
+    updateSet.psalmId = body.psalmId
   }
 
   const result = await db
