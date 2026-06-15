@@ -50,9 +50,10 @@ function exportCsv(psalms: PsalmRow[]) {
 
 interface PsalmListingGridProps {
   psalms: PsalmRow[]
+  onSelect?: (psalm: PsalmRow) => void
 }
 
-export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
+export function PsalmListingGrid({ psalms, onSelect }: PsalmListingGridProps) {
   const [query, setQuery] = useState('')
   const [advancedOpen, setAdvancedOpen] = useLocalStorage('psalms.advancedOpen', false)
   const [showFirstLine, setShowFirstLine] = useLocalStorage('psalms.showFirstLine', false)
@@ -117,6 +118,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter' && selectedPsalm) {
+      if (onSelect) { onSelect(selectedPsalm); return }
       router.push(`/psalms/${selectedPsalm.slug}`)
     } else if (e.key === 'ArrowDown') {
       e.preventDefault()
@@ -162,6 +164,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
             showRecommendedTune={showRecommendedTune}
             snippet={psalm.snippet ?? null}
             query={trimmedQuery}
+            onClick={onSelect ? () => onSelect(psalm) : undefined}
           />
         ))}
       </div>
@@ -194,6 +197,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
             showRecommendedTune={showRecommendedTune}
             snippet={entries[0].snippet ?? null}
             query={trimmedQuery}
+            onClick={onSelect ? () => onSelect(entries[0]) : undefined}
           />
         )
       } else {
@@ -237,6 +241,7 @@ export function PsalmListingGrid({ psalms }: PsalmListingGridProps) {
                     showRecommendedTune={showRecommendedTune}
                     snippet={psalm.snippet ?? null}
                     query={trimmedQuery}
+                    onClick={onSelect ? () => onSelect(psalm) : undefined}
                   />
                 ))}
               </div>
