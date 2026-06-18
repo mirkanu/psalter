@@ -685,8 +685,24 @@ Plans:
   2. All /precent/* routes redirect unauthenticated users to the login page; no precentor data is accessible without a valid session
   3. The Precentor field on Precenting Sets is automatically populated from the logged-in user's display name (no manual entry)
   4. An admin can create precentor accounts via a CLI script or minimal admin UI; no self-registration route exists
-**Plans**: TBD (2-3 plans)
+**Plans**: 5 plans
 **UI hint**: yes
+
+Plans:
+**Wave 1**
+- [ ] 05.1-01-PLAN.md — Install better-auth, auth tables + push, auth.ts/client/route handler, seed admin account, Wave 0 test stubs
+
+**Wave 2** *(depends on Wave 1)*
+- [ ] 05.1-02-PLAN.md — [BLOCKING] precenting_sets user_id FK migration (backfill to admin, drop precentor_name) + middleware route protection + /login page + LoginForm
+
+**Wave 3** *(depends on Wave 2)*
+- [ ] 05.1-03-PLAN.md — Ownership/admin guards on all 5 precent API routes + shared precent-auth helper (D-22)
+
+**Wave 4** *(depends on Wave 3)*
+- [ ] 05.1-04-PLAN.md — Session-filtered /precent pages (precentor name via JOIN) + admin viewing-as dropdown + /dev/accounts admin UI
+
+**Wave 5** *(depends on Wave 4)*
+- [ ] 05.1-05-PLAN.md — Playwright UAT across all 4 success criteria + human verify checkpoint (autonomous=false)
 
 ### Phase 6: Polish
 **Goal**: OG images in place for social sharing; Lighthouse 90+ on key pages; bundle clean; every remaining route transition shows a skeleton; all clickable elements give immediate visual feedback
