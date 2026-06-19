@@ -21,6 +21,9 @@ export default async function PrecentSetPage({
   const setId = parseInt(id)
   if (isNaN(setId)) notFound()
 
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) redirect('/login')
+
   const set = await db.query.precentingSets.findFirst({
     where: eq(precentingSets.id, setId),
     with: {
@@ -37,8 +40,6 @@ export default async function PrecentSetPage({
 
   if (!set) notFound()
 
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) redirect('/login')
   if (set.userId !== session.user.id && session.user.role !== 'admin') notFound()
 
   const psalmListRows: PsalmRow[] = await fetchPsalmListRows()

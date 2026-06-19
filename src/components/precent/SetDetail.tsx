@@ -229,7 +229,9 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold">{shortType(set.type)} — {smartDate(set.date)}</h1>
-          {/* precentorName removed (D-18) — name resolved via user JOIN in Plan 03 */}
+          {set.precentorName && (
+            <p className="text-sm text-muted-foreground mt-0.5">Precentor: {set.precentorName}</p>
+          )}
           {set.note && (
             <p className="text-sm text-muted-foreground mt-1">{set.note}</p>
           )}
