@@ -51,7 +51,7 @@ export default async function PrecentSetPage({
     date: String(set.date),
     type: set.type,
     note: set.note ?? null,
-    precentorName: set.precentorName,
+    userId: set.userId,
     createdAt: set.createdAt.toISOString(),
     updatedAt: set.updatedAt.toISOString(),
     setItems: set.setItems.map((item) => ({
