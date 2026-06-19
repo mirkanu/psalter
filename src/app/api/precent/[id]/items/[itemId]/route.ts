@@ -46,6 +46,10 @@ export async function PATCH(
     updateSet.psalmId = body.psalmId
   }
 
+  if (Object.keys(updateSet).length === 0) {
+    return NextResponse.json({ error: 'no fields to update' }, { status: 400 })
+  }
+
   const result = await db
     .update(setItems)
     .set(updateSet)
