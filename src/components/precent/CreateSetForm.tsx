@@ -35,9 +35,10 @@ type ServiceType = 'AM Service' | 'PM Service' | 'Other'
 
 interface CreateSetFormProps {
   psalms: PsalmRow[]
+  targetUserId?: string   // D-15: admin viewing-as — set is owned by this user
 }
 
-export function CreateSetForm({ psalms }: CreateSetFormProps) {
+export function CreateSetForm({ psalms, targetUserId }: CreateSetFormProps) {
   const router = useRouter()
   const [lastType, setLastType] = useLocalStorage<ServiceType>('psalter_last_service_type', 'AM Service')
   const [open, setOpen] = useState(false)
@@ -69,7 +70,7 @@ export function CreateSetForm({ psalms }: CreateSetFormProps) {
         const res = await fetch('/api/precent', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ date: isoDate, type, note: note || null }),
+          body: JSON.stringify({ date: isoDate, type, note: note || null, ...(targetUserId ? { userId: targetUserId } : {}) }),
         })
 
         if (!res.ok) {
