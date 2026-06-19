@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { precentingSets } from '@/db/schema'
 import { eq } from 'drizzle-orm'
+import { getSessionOr401, loadSetWithAccess } from '@/lib/precent-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,6 +15,11 @@ export async function PATCH(
   if (isNaN(setId)) {
     return NextResponse.json({ error: 'invalid id' }, { status: 400 })
   }
+
+  const { session, res: authRes } = await getSessionOr401()
+  if (authRes) return authRes
+  const access = await loadSetWithAccess(setId, session)
+  if (access.res) return access.res
 
   let body: Record<string, unknown>
   try {
@@ -78,6 +84,11 @@ export async function DELETE(
   if (isNaN(setId)) {
     return NextResponse.json({ error: 'invalid id' }, { status: 400 })
   }
+
+  const { session, res: authRes } = await getSessionOr401()
+  if (authRes) return authRes
+  const access = await loadSetWithAccess(setId, session)
+  if (access.res) return access.res
 
   await db.delete(precentingSets).where(eq(precentingSets.id, setId))
 

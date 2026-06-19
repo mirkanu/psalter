@@ -1,20 +1,20 @@
 import { describe, it, expect } from 'vitest'
-
-// Guard predicate mirrors src/app/api/precent guards (Plan 03 wires routes).
-function canMutate(set: { userId: string }, session: { user: { id: string; role: string } }) {
-  return set.userId === session.user.id || session.user.role === 'admin'
-}
+import { canAccessSet } from '@/lib/precent-auth'
 
 describe('D-22 ownership guard predicate', () => {
   it('owner can mutate', () => {
-    expect(canMutate({ userId: 'u1' }, { user: { id: 'u1', role: 'precentor' } })).toBe(true)
+    expect(canAccessSet({ userId: 'u1' }, { user: { id: 'u1', role: 'precentor' } })).toBe(true)
   })
   it('admin can mutate any set', () => {
-    expect(canMutate({ userId: 'u1' }, { user: { id: 'u2', role: 'admin' } })).toBe(true)
+    expect(canAccessSet({ userId: 'u1' }, { user: { id: 'u2', role: 'admin' } })).toBe(true)
   })
   it('non-owner precentor cannot mutate', () => {
-    expect(canMutate({ userId: 'u1' }, { user: { id: 'u2', role: 'precentor' } })).toBe(false)
+    expect(canAccessSet({ userId: 'u1' }, { user: { id: 'u2', role: 'precentor' } })).toBe(false)
   })
-  it.todo('PATCH /api/precent/[id] by non-owner returns 403')
-  it.todo('DELETE /api/precent/[id] by non-owner returns 403')
+  it('foreign precentor cannot mutate — 403 condition', () => {
+    expect(canAccessSet({ userId: 'owner-id' }, { user: { id: 'other-id', role: 'precentor' } })).toBe(false)
+  })
+  it('visitor role cannot mutate — 403 condition (extensibility check)', () => {
+    expect(canAccessSet({ userId: 'u1' }, { user: { id: 'u2', role: 'visitor' } })).toBe(false)
+  })
 })
