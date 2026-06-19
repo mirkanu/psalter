@@ -37,7 +37,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 ### Milestone 2 — Precentor Portal & Polish
 
 - [ ] **Phase 5: Precentor Portal** - Precenting Sets (Date/Type/Note), psalm+tune table with meter mismatch checker, dnd-kit reordering, TunePickerModal, precenting mode with amber bar and position counter
-- [ ] **Phase 05.1 (INSERTED): Auth Gate** - Better Auth login, /precent/* route protection, admin-created accounts, auto-populate Precentor from session
+- [x] **Phase 05.1 (INSERTED): Auth Gate** - Better Auth login, /precent/* route protection, admin-created accounts, auto-populate Precentor from session (completed 2026-06-19)
 - [ ] **Phase 6: Polish** - OG images, Lighthouse 90+, bundle analysis, click feedback, loading skeletons on remaining routes
 
 ## Phase Details
@@ -690,19 +690,19 @@ Plans:
 
 Plans:
 **Wave 1**
-- [ ] 05.1-01-PLAN.md — Install better-auth, auth tables + push, auth.ts/client/route handler, seed admin account, Wave 0 test stubs
+- [x] 05.1-01-PLAN.md — Install better-auth, auth tables + push, auth.ts/client/route handler, seed admin account, Wave 0 test stubs
 
 **Wave 2** *(depends on Wave 1)*
-- [ ] 05.1-02-PLAN.md — [BLOCKING] precenting_sets user_id FK migration (backfill to admin, drop precentor_name) + middleware route protection + /login page + LoginForm
+- [x] 05.1-02-PLAN.md — [BLOCKING] precenting_sets user_id FK migration (backfill to admin, drop precentor_name) + middleware route protection + /login page + LoginForm
 
 **Wave 3** *(depends on Wave 2)*
-- [ ] 05.1-03-PLAN.md — Ownership/admin guards on all 5 precent API routes + shared precent-auth helper (D-22)
+- [x] 05.1-03-PLAN.md — Ownership/admin guards on all 5 precent API routes + shared precent-auth helper (D-22)
 
 **Wave 4** *(depends on Wave 3)*
-- [ ] 05.1-04-PLAN.md — Session-filtered /precent pages (precentor name via JOIN) + admin viewing-as dropdown + /dev/accounts admin UI
+- [x] 05.1-04-PLAN.md — Session-filtered /precent pages (precentor name via JOIN) + admin viewing-as dropdown + /dev/accounts admin UI
 
 **Wave 5** *(depends on Wave 4)*
-- [ ] 05.1-05-PLAN.md — Playwright UAT across all 4 success criteria + human verify checkpoint (autonomous=false)
+- [x] 05.1-05-PLAN.md — Playwright UAT across all 4 success criteria + human verify checkpoint (autonomous=false)
 
 ### Phase 6: Polish
 **Goal**: OG images in place for social sharing; Lighthouse 90+ on key pages; bundle clean; every remaining route transition shows a skeleton; all clickable elements give immediate visual feedback

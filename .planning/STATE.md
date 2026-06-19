@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
+status: ready_to_plan
 stopped_at: Phase 05.1 context gathered
-last_updated: "2026-06-18T20:09:55.823Z"
-last_activity: 2026-06-18 -- Phase 05.1 planning complete
+last_updated: "2026-06-19T08:32:43.081Z"
+last_activity: 2026-06-19 -- Phase 05.1 execution started
 progress:
   total_phases: 10
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 46
   completed_plans: 41
-  percent: 89
+  percent: 80
 ---
 
 # Project State
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-07)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 05 — precentor-portal
+**Current focus:** Phase 05.1 — auth-gate
 
 ## Current Position
 
-Phase: 05 (precentor-portal) — EXECUTING
-Plan: 5 of 5
+Phase: 6
+Plan: Not started
 UI-SPEC: Phase 04.9.4 closed out. Singing-view chrome refined across 4 polish rounds (chrome-dedup, singing-chrome-polish, r3, r4); audio first-press bug fixed; tour redesigned (4 steps, per-element spotlights); mobile bar h-11 (44px); lyrics/solfège views get bigger font + padding + inline YouTube embed; "Ps 119:N-M" range titles.
-Status: Ready to execute
-Last activity: 2026-06-18 -- Phase 05.1 planning complete
+Status: Ready to plan
+Last activity: 2026-06-19
 
 Progress: [██████████] 95%
 
@@ -37,7 +37,7 @@ Progress: [██████████] 95%
 
 **Velocity:**
 
-- Total plans completed: 34
+- Total plans completed: 39
 - Average duration: 22 min
 - Total execution time: ~1.9 hours
 
@@ -52,6 +52,7 @@ Progress: [██████████] 95%
 | 04.9.4 | 5 | - | - |
 | 04.9.10 | 2 | - | - |
 | 04.12 | 5 | - | - |
+| 05.1 | 5 | - | - |
 
 **Recent Trend:**
 
