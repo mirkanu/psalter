@@ -327,7 +327,8 @@ export const precentingSets = pgTable('precenting_sets', {
   date: date('date').notNull(),
   type: text('type').notNull(),          // 'AM Service' | 'PM Service' | 'Other'
   note: text('note'),                    // nullable
-  precentorName: text('precentor_name').notNull().default('Manuel'),
+  userId: text('user_id').notNull().references(() => users.id),   // D-17
+  // precentorName removed (D-18) — display name derived at query time via JOIN
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
