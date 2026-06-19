@@ -395,8 +395,9 @@ export const verifications = pgTable('verification', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
-export const precentingSetsRelations = relations(precentingSets, ({ many }) => ({
+export const precentingSetsRelations = relations(precentingSets, ({ many, one }) => ({
   setItems: many(setItems),
+  user: one(users, { fields: [precentingSets.userId], references: [users.id] }),
 }))
 
 export const setItemsRelations = relations(setItems, ({ one }) => ({

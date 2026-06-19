@@ -47,6 +47,7 @@ interface SerializedSet {
   type: string
   note: string | null
   userId: string
+  precentorName: string   // D-18: derived via user JOIN in page.tsx
   createdAt: string
   updatedAt: string
   setItems: SetItemView[]
