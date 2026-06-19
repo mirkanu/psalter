@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
+import { headers } from 'next/headers'
 import { db } from '@/db'
 import { precentingSets } from '@/db/schema'
 import { desc } from 'drizzle-orm'
+import { auth } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,6 +17,11 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   let body: Record<string, unknown>
   try {
     body = await req.json()
@@ -46,6 +53,7 @@ export async function POST(req: Request) {
       date: body.date as string,
       type: body.type as (typeof VALID_TYPES)[number],
       note: (body.note as string | null | undefined) ?? null,
+      userId: session.user.id,
     })
     .returning({ id: precentingSets.id })
 

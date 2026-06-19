@@ -16,7 +16,6 @@ interface PrecentingSetRow {
   id: number
   date: string
   type: string
-  precentorName: string
   psalmIds: number[]
 }
 

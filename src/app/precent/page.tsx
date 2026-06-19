@@ -26,7 +26,6 @@ export default async function PrecentPage() {
     id: s.id,
     date: String(s.date),
     type: s.type,
-    precentorName: s.precentorName,
     psalmIds: s.setItems.map((i) => i.psalmId),
   }))
 

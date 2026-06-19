@@ -41,6 +41,9 @@ export function SiteHeader() {
   const pathname = usePathname()
   const [searchOpen, setSearchOpen] = useState(false)
 
+  // D-04: no site nav shown on the login page
+  if (pathname === '/login') return null
+
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
 
