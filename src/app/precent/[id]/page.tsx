@@ -1,6 +1,8 @@
 export const dynamic = 'force-dynamic'
 
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
+import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
 import { db } from '@/db'
 import { precentingSets, setItems } from '@/db/schema'
 import { eq, asc } from 'drizzle-orm'
@@ -22,6 +24,7 @@ export default async function PrecentSetPage({
   const set = await db.query.precentingSets.findFirst({
     where: eq(precentingSets.id, setId),
     with: {
+      user: { columns: { name: true } },
       setItems: {
         orderBy: [asc(setItems.position)],
         with: {
@@ -33,6 +36,10 @@ export default async function PrecentSetPage({
   })
 
   if (!set) notFound()
+
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) redirect('/login')
+  if (set.userId !== session.user.id && session.user.role !== 'admin') notFound()
 
   const psalmListRows: PsalmRow[] = await fetchPsalmListRows()
   const allTunes: TuneRow[] = (await fetchAllTunes()) as TuneRow[]
@@ -52,6 +59,7 @@ export default async function PrecentSetPage({
     type: set.type,
     note: set.note ?? null,
     userId: set.userId,
+    precentorName: set.user?.name ?? '',   // D-18: derived via JOIN
     createdAt: set.createdAt.toISOString(),
     updatedAt: set.updatedAt.toISOString(),
     setItems: set.setItems.map((item) => ({
