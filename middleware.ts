@@ -23,7 +23,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(`/login?callbackUrl=${callbackUrl}`, request.url))
     }
     if (session.user.role !== 'admin') {
-      return NextResponse.redirect(new URL('/login', request.url))
+      return NextResponse.redirect(new URL('/admin-only', request.url))
     }
     return NextResponse.next()
   }
