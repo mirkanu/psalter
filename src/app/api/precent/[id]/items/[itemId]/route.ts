@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { setItems } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
+import { getSessionOr401, loadSetWithAccess } from '@/lib/precent-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,6 +16,11 @@ export async function PATCH(
   if (isNaN(setId) || isNaN(itemIdNum)) {
     return NextResponse.json({ error: 'invalid id' }, { status: 400 })
   }
+
+  const { session, res: authRes } = await getSessionOr401()
+  if (authRes) return authRes
+  const access = await loadSetWithAccess(setId, session)
+  if (access.res) return access.res
 
   let body: { tuneId?: unknown; verseRange?: unknown; psalmId?: unknown }
   try {
@@ -63,6 +69,11 @@ export async function DELETE(
   if (isNaN(setId) || isNaN(itemIdNum)) {
     return NextResponse.json({ error: 'invalid id' }, { status: 400 })
   }
+
+  const { session, res: authRes } = await getSessionOr401()
+  if (authRes) return authRes
+  const access = await loadSetWithAccess(setId, session)
+  if (access.res) return access.res
 
   await db
     .delete(setItems)
