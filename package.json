@@ -23,6 +23,7 @@
     "@radix-ui/react-popover": "^1.1.15",
     "abcjs": "6.6.3",
     "airtable": "0.12.2",
+    "better-auth": "^1.6.19",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
