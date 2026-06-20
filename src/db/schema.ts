@@ -511,3 +511,18 @@ export const verseNavesTopicEntriesRelations = relations(verseNavesTopicEntries,
 export const creedalReferencesRelations = relations(creedalReferences, ({ one }) => ({
   verse: one(verses, { fields: [creedalReferences.verseId], references: [verses.id] }),
 }))
+
+// ─── Feedback ────────────────────────────────────────────────────────────────
+
+/**
+ * feedback_submissions — user-submitted feedback from the SiteFooter form.
+ * Unauthenticated public form; no FK references.
+ */
+export const feedbackSubmissions = pgTable('feedback_submissions', {
+  id: serial('id').primaryKey(),
+  message: text('message').notNull(),
+  name: text('name'),
+  email: text('email'),
+  pageUrl: text('page_url'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
