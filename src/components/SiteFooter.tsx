@@ -20,31 +20,35 @@ export function SiteFooter() {
         </div>
       </footer>
 
-      <Dialog open={open === 'about'} onOpenChange={(v) => !v && setOpen(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>About this Psalter</DialogTitle></DialogHeader>
-          <div className="space-y-3 text-sm text-muted-foreground">
-            <p>This small website provides practical resources for the psalm singing of the <a href="https://cprc.co.uk/" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Covenant Protestant Reformed Church of Ballymena</a>, Northern Ireland. For more information on the theology behind singing the psalms, see the &ldquo;Psalm Singing&rdquo; section <a href="https://cprc.co.uk/resources-on-psalm-singing/" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">here</a>.</p>
-            <p>I&apos;m a member of the CPRC and will be adding more resources to this site over time.</p>
-            <p>Feedback and suggestions welcome! You can submit it using the Feedback button below – or contact me directly if you know who I am 😉</p>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {open === 'about' && (
+        <Dialog open onOpenChange={(v) => !v && setOpen(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>About this Psalter</DialogTitle></DialogHeader>
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <p>This small website provides practical resources for the psalm singing of the <a href="https://cprc.co.uk/" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Covenant Protestant Reformed Church of Ballymena</a>, Northern Ireland. For more information on the theology behind singing the psalms, see the &ldquo;Psalm Singing&rdquo; section <a href="https://cprc.co.uk/resources-on-psalm-singing/" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">here</a>.</p>
+              <p>I&apos;m a member of the CPRC and will be adding more resources to this site over time.</p>
+              <p>Feedback and suggestions welcome! You can submit it using the Feedback button below – or contact me directly if you know who I am 😉</p>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
-      <Dialog open={open === 'copyright'} onOpenChange={(v) => !v && setOpen(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Copyright Notice</DialogTitle></DialogHeader>
-          <div className="space-y-3 text-sm text-muted-foreground">
-            <p>Public Domain: King James Version, Scottish Psalter 1650, Haddington&apos;s Commentary, Nave&apos;s Topical Bible</p>
-            <p className="font-medium text-foreground">Tunes:</p>
-            <ol className="list-decimal pl-5 space-y-2">
-              <li>Tunes: most are &gt;100 years old: public domain. Remainder are covered under Fair Use</li>
-              <li>Images/scores of tunes: Copyright 1979 Reformed Presb. Church Ireland. Copyright expired in 2004 (25 years after publication under &ldquo;<a href="https://assets.publishing.service.gov.uk/media/5a801e5140f0b623026919f9/Copyright_Notice_Printed_Music.pdf" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Typographical Arrangement</a>&rdquo;).</li>
-            </ol>
-            <p>All other sources explicitly acknowledged</p>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {open === 'copyright' && (
+        <Dialog open onOpenChange={(v) => !v && setOpen(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader><DialogTitle>Copyright Notice</DialogTitle></DialogHeader>
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <p>Public Domain: King James Version, Scottish Psalter 1650, Haddington&apos;s Commentary, Nave&apos;s Topical Bible</p>
+              <p className="font-medium text-foreground">Tunes:</p>
+              <ol className="list-decimal pl-5 space-y-2">
+                <li>Tunes: most are &gt;100 years old: public domain. Remainder are covered under Fair Use</li>
+                <li>Images/scores of tunes: Copyright 1979 Reformed Presb. Church Ireland. Copyright expired in 2004 (25 years after publication under &ldquo;<a href="https://assets.publishing.service.gov.uk/media/5a801e5140f0b623026919f9/Copyright_Notice_Printed_Music.pdf" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Typographical Arrangement</a>&rdquo;).</li>
+              </ol>
+              <p>All other sources explicitly acknowledged</p>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <FeedbackModal open={open === 'feedback'} onClose={() => setOpen(null)} />
     </>
