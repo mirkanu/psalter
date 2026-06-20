@@ -716,8 +716,18 @@ Plans:
   4. The Feedback modal shows: a free-text "Suggestions, feedback, or corrections?" textarea; optional Name field; optional Email field; a checkbox "Include current page URL" checked by default; Submit button; submissions are stored in the database
   5. An admin-gated `/admin/feedback` page lists all feedback submissions with name, email, message, page URL, and timestamp
   6. The Umami tracking snippet is present in the root layout and pageviews are visible in the Umami dashboard
-**Plans**: TBD (2-3 plans)
+**Plans**: 3 plans
 **UI hint**: yes
+
+Plans:
+**Wave 1** *(foundation — provision Umami, install Textarea, schema + push, RED UAT stub)*
+- [ ] 05.2-01-PLAN.md — Provision Umami website ID + install Textarea + feedback_submissions schema + [BLOCKING] drizzle-kit push + RED Playwright UAT stub
+
+**Wave 2** *(depends on Wave 1)*
+- [ ] 05.2-02-PLAN.md — SiteFooter + FeedbackModal + unauthenticated /api/feedback route + wire SiteFooter & Umami Script into layout.tsx
+
+**Wave 3** *(depends on Wave 1 + Wave 2)*
+- [ ] 05.2-03-PLAN.md — Admin /admin-only/feedback list page + build + pm2 restart + Playwright UAT GREEN + human verify (autonomous=false)
 
 ### Phase 05.3: /daily Calendar View (INSERTED)
 
