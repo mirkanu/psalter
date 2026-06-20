@@ -4,6 +4,9 @@ import { feedbackSubmissions } from '@/db/schema'
 
 export const dynamic = 'force-dynamic'
 
+const MAX_MESSAGE = 5000
+const MAX_SHORT = 200
+
 export async function POST(req: Request) {
   let body: Record<string, unknown>
   try {
@@ -16,13 +19,26 @@ export async function POST(req: Request) {
   if (!message) {
     return NextResponse.json({ error: 'message is required' }, { status: 400 })
   }
+  if (message.length > MAX_MESSAGE) {
+    return NextResponse.json({ error: 'message too long' }, { status: 400 })
+  }
 
-  await db.insert(feedbackSubmissions).values({
-    message,
-    name: typeof body.name === 'string' ? body.name.trim() || null : null,
-    email: typeof body.email === 'string' ? body.email.trim() || null : null,
-    pageUrl: typeof body.pageUrl === 'string' ? body.pageUrl.trim() || null : null,
-  })
+  const nameRaw = typeof body.name === 'string' ? body.name.trim().slice(0, MAX_SHORT) : ''
+  const name = nameRaw || null
+
+  const pageUrlRaw = typeof body.pageUrl === 'string' ? body.pageUrl.trim().slice(0, MAX_SHORT) : ''
+  const pageUrl = pageUrlRaw || null
+
+  const emailRaw = typeof body.email === 'string' ? body.email.trim() : ''
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)
+  const email = emailRaw && emailValid ? emailRaw.slice(0, MAX_SHORT) : null
+
+  try {
+    await db.insert(feedbackSubmissions).values({ message, name, email, pageUrl })
+  } catch (err) {
+    console.error('[feedback] DB insert failed:', err)
+    return NextResponse.json({ error: 'internal error' }, { status: 500 })
+  }
 
   return NextResponse.json({ ok: true })
 }
