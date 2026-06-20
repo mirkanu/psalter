@@ -721,13 +721,13 @@ Plans:
 
 Plans:
 **Wave 1** *(foundation — provision Umami, install Textarea, schema + push, RED UAT stub)*
-- [ ] 05.2-01-PLAN.md — Provision Umami website ID + install Textarea + feedback_submissions schema + [BLOCKING] drizzle-kit push + RED Playwright UAT stub
+- [x] 05.2-01-PLAN.md — Provision Umami website ID + install Textarea + feedback_submissions schema + [BLOCKING] drizzle-kit push + RED Playwright UAT stub
 
 **Wave 2** *(depends on Wave 1)*
-- [ ] 05.2-02-PLAN.md — SiteFooter + FeedbackModal + unauthenticated /api/feedback route + wire SiteFooter & Umami Script into layout.tsx
+- [x] 05.2-02-PLAN.md — SiteFooter + FeedbackModal + unauthenticated /api/feedback route + wire SiteFooter & Umami Script into layout.tsx
 
 **Wave 3** *(depends on Wave 1 + Wave 2)*
-- [ ] 05.2-03-PLAN.md — Admin /admin-only/feedback list page + build + pm2 restart + Playwright UAT GREEN + human verify (autonomous=false)
+- [x] 05.2-03-PLAN.md — Admin /admin-only/feedback list page + build + pm2 restart + Playwright UAT GREEN + human verify (autonomous=false)
 
 ### Phase 05.3: /daily Calendar View (INSERTED)
 
@@ -809,7 +809,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 5. Precentor Portal | 4/5 | In Progress|  |
 | 05.1. Auth Gate | 5/5 | Complete | 2026-06-15 |
-| 05.2. Footer, Feedback & Analytics | 0/TBD | Not started | - |
+| 05.2. Footer, Feedback & Analytics | 3/3 | Complete | 2026-06-20 |
 | 05.3. /daily Calendar View | 0/TBD | Not started | - |
 | 05.4. Airtable Exit Verification | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
