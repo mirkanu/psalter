@@ -44,7 +44,8 @@ export function FeedbackModal({ open, onClose }: FeedbackModalProps) {
       })
       if (!res.ok) throw new Error('server error')
       setStatus('success')
-    } catch {
+    } catch (err) {
+      console.error('[FeedbackModal] submission failed:', err)
       setStatus('error')
     }
   }
