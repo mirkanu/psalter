@@ -37,7 +37,7 @@ export default async function FeedbackPage() {
             </TableRow>
           ) : submissions.map((row) => (
             <TableRow key={row.id}>
-              <TableCell>{row.createdAt.toLocaleString('en-GB')}</TableCell>
+              <TableCell>{row.createdAt instanceof Date ? row.createdAt.toLocaleString('en-GB') : new Date(row.createdAt).toLocaleString('en-GB')}</TableCell>
               <TableCell>{row.name ?? '—'}</TableCell>
               <TableCell>{row.email ?? '—'}</TableCell>
               <TableCell title={row.pageUrl ?? undefined}>{row.pageUrl ? row.pageUrl.slice(0, 40) : '—'}</TableCell>
