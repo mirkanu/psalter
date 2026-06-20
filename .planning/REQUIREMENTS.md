@@ -119,15 +119,15 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 
 ### Footer & Feedback (Phase 05.2)
 
-- [ ] **FOOT-01**: A site footer is present on every page (public and authenticated); it contains: About link, Copyright link, Feedback link, and "Made by GSD Labs" linking to gsdlabs.dev
-- [ ] **FOOT-02**: The About link opens a modal with a short project description (consistent with the old site's tone: personal project, CPRC Ballymena, resources for psalm singing)
-- [ ] **FOOT-03**: The Copyright link opens a modal with a copyright notice
-- [ ] **FOOT-04**: The Feedback link opens a modal form with: free-text "Suggestions, feedback, or corrections?" textarea; optional Name field; optional Email field; "Include current page URL" checkbox (checked by default); submissions stored in the database
-- [ ] **FOOT-05**: An admin-gated `/admin-only/feedback` page lists all feedback submissions with name, email, message, page URL, and timestamp
+- [x] **FOOT-01**: A site footer is present on every page (public and authenticated); it contains: About link, Copyright link, Feedback link, and "Made by GSD Labs" linking to gsdlabs.dev
+- [x] **FOOT-02**: The About link opens a modal with a short project description (consistent with the old site's tone: personal project, CPRC Ballymena, resources for psalm singing)
+- [x] **FOOT-03**: The Copyright link opens a modal with a copyright notice
+- [x] **FOOT-04**: The Feedback link opens a modal form with: free-text "Suggestions, feedback, or corrections?" textarea; optional Name field; optional Email field; "Include current page URL" checkbox (checked by default); submissions stored in the database
+- [x] **FOOT-05**: An admin-gated `/admin-only/feedback` page lists all feedback submissions with name, email, message, page URL, and timestamp
 
 ### Analytics (Phase 05.2)
 
-- [ ] **UMAMI-01**: The Umami tracking snippet is present in the root layout; the psalter site appears in the Umami dashboard and pageviews are recorded
+- [x] **UMAMI-01**: The Umami tracking snippet is present in the root layout; the psalter site appears in the Umami dashboard and pageviews are recorded
 
 ### Daily Reading Plan (Phase 05.3)
 
@@ -207,12 +207,12 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 | PREC-05 | Phase 5: Precentor Portal | Complete |
 | PREC-06 | Phase 5: Precentor Portal | Complete |
 | PERF-02 | Phase 6: Polish | Pending |
-| FOOT-01 | Phase 05.2: Footer, Feedback & Analytics | Pending |
-| FOOT-02 | Phase 05.2: Footer, Feedback & Analytics | Pending |
-| FOOT-03 | Phase 05.2: Footer, Feedback & Analytics | Pending |
-| FOOT-04 | Phase 05.2: Footer, Feedback & Analytics | Pending |
-| FOOT-05 | Phase 05.2: Footer, Feedback & Analytics | Pending |
-| UMAMI-01 | Phase 05.2: Footer, Feedback & Analytics | Pending |
+| FOOT-01 | Phase 05.2: Footer, Feedback & Analytics | Complete |
+| FOOT-02 | Phase 05.2: Footer, Feedback & Analytics | Complete |
+| FOOT-03 | Phase 05.2: Footer, Feedback & Analytics | Complete |
+| FOOT-04 | Phase 05.2: Footer, Feedback & Analytics | Complete |
+| FOOT-05 | Phase 05.2: Footer, Feedback & Analytics | Complete |
+| UMAMI-01 | Phase 05.2: Footer, Feedback & Analytics | Complete |
 | DAILY-02 | Phase 05.3: /daily Calendar View | Pending |
 | DAILY-03 | Phase 05.3: /daily Calendar View | Pending |
 | ADMIN-01 | Phase 05.4: Airtable Exit Verification | Pending |
