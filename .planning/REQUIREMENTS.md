@@ -123,7 +123,7 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 - [ ] **FOOT-02**: The About link opens a modal with a short project description (consistent with the old site's tone: personal project, CPRC Ballymena, resources for psalm singing)
 - [ ] **FOOT-03**: The Copyright link opens a modal with a copyright notice
 - [ ] **FOOT-04**: The Feedback link opens a modal form with: free-text "Suggestions, feedback, or corrections?" textarea; optional Name field; optional Email field; "Include current page URL" checkbox (checked by default); submissions stored in the database
-- [ ] **FOOT-05**: An admin-gated `/admin/feedback` page lists all feedback submissions with name, email, message, page URL, and timestamp
+- [ ] **FOOT-05**: An admin-gated `/admin-only/feedback` page lists all feedback submissions with name, email, message, page URL, and timestamp
 
 ### Analytics (Phase 05.2)
 

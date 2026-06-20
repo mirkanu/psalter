@@ -714,7 +714,7 @@ Plans:
   2. The About modal contains a short project description blurb consistent with the old site's tone
   3. The Copyright modal contains a copyright notice
   4. The Feedback modal shows: a free-text "Suggestions, feedback, or corrections?" textarea; optional Name field; optional Email field; a checkbox "Include current page URL" checked by default; Submit button; submissions are stored in the database
-  5. An admin-gated `/admin/feedback` page lists all feedback submissions with name, email, message, page URL, and timestamp
+  5. An admin-gated `/admin-only/feedback` page lists all feedback submissions with name, email, message, page URL, and timestamp
   6. The Umami tracking snippet is present in the root layout and pageviews are visible in the Umami dashboard
 **Plans**: 3 plans
 **UI hint**: yes
