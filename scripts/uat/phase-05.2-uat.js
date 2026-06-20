@@ -310,7 +310,7 @@ async function main() {
     try {
       results.push(await check())
     } catch (e) {
-      const name = check.name.replace(/^check/, '').replace(/([A-Z])/g, ' $1').trim()
+      const name = check.name.replace(/^check/, '')
       results.push({ name, pass: false, detail: `Exception: ${e.message}` })
     }
   }
