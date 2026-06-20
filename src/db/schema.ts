@@ -105,6 +105,9 @@ export const dailyReadings = pgTable('daily_readings', {
   psalmId: integer('psalm_id').references(() => psalms.id),
   readingDate: date('reading_date'),             // optional fixed calendar date
   notes: text('notes'),
+  // Phase 05.3 additions:
+  startingVerse: integer('starting_verse'),   // nullable — null means no verse range
+  endingVerse: integer('ending_verse'),       // nullable — null means no verse range
 })
 
 /**

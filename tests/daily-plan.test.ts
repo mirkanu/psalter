@@ -46,3 +46,11 @@ describe('Daily Reading Plan (PLAN-01)', () => {
     expect(reading).toBeDefined()
   })
 })
+
+describe('Verse ranges (DAILY-02 backfill)', () => {
+  it('a majority of readings have a non-null startingVerse after backfill', async () => {
+    const readings = await fetchAllDailyReadings()
+    const withRange = readings.filter((r) => r.startingVerse !== null)
+    expect(withRange.length).toBeGreaterThan(100)
+  })
+})
