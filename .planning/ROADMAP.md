@@ -738,8 +738,18 @@ Plans:
   1. Opening /daily shows today's reading entry prominently at the top of the page — visually distinct (highlighted card with today's date, day number, psalm reference, and notes); no scrolling required to find it
   2. Below the today card, a monthly calendar grid replaces the flat 365-row list; each day cell shows the day number and psalm reference; the current day is highlighted; prev/next month navigation buttons are present
   3. Clicking a day cell navigates to or reveals that day's full reading entry
-**Plans**: TBD (2 plans)
+**Plans**: 3 plans
 **UI hint**: yes
+
+Plans:
+**Wave 1**
+- [ ] 05.3-01-PLAN.md — Add starting_verse/ending_verse columns + [BLOCKING] drizzle-kit push + Airtable backfill script + Wave 0 test scaffolds
+
+**Wave 2** *(depends on Wave 1)*
+- [ ] 05.3-02-PLAN.md — formatPsalmRef/calendarDateToDayOfYear helpers + query type + DailyTodayCard server component (DAILY-02)
+
+**Wave 3** *(depends on Wave 2)*
+- [ ] 05.3-03-PLAN.md — DailyCalendarClient grid + /daily page rewrite + loading.tsx + delete DailyPlanClient + Playwright UAT (DAILY-03, human checkpoint)
 
 ### Phase 05.4: Airtable Exit Verification (INSERTED)
 
