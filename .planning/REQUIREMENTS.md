@@ -63,8 +63,8 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 
 ### Authentication
 
-- [ ] **AUTH-01**: Precentor can log in with email and password
-- [ ] **AUTH-02**: Precentor accounts are admin-created only (no public self-registration)
+- [x] **AUTH-01**: Precentor can log in with email and password
+- [x] **AUTH-02**: Precentor accounts are admin-created only (no public self-registration)
 
 ### Precentor Portal
 
@@ -116,6 +116,33 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 ### Staff View Word Alignment (Phase 4.9.8)
 
 - [x] **RENDER-08**: Staff view renders every metrical line on its own sub-staff with words aligned to every note position (no trailing empty notes). All CM/LM/SM tunes are migrated to carry 3 `% PHRASE_BREAK` markers (DCM/DLM/DSM carry 7); `phrasesForMeter` returns 4 for CM/LM/SM/8.7.8.7/7.6.7.6 and 8 for DCM/DLM/DSM; `splitMusicIntoSubLines` defensively filters bare-rest pseudo-bars (z2 trailing rest bug). Verified across all 150 psalms via Playwright sweep. — Verified 04.9.10: 150/150 pass post-Path-NH re-annotation (final clean run 2026-05-29T17:41Z).
+
+### Footer & Feedback (Phase 05.2)
+
+- [ ] **FOOT-01**: A site footer is present on every page (public and authenticated); it contains: About link, Copyright link, Feedback link, and "Made by GSD Labs" linking to gsdlabs.dev
+- [ ] **FOOT-02**: The About link opens a modal with a short project description (consistent with the old site's tone: personal project, CPRC Ballymena, resources for psalm singing)
+- [ ] **FOOT-03**: The Copyright link opens a modal with a copyright notice
+- [ ] **FOOT-04**: The Feedback link opens a modal form with: free-text "Suggestions, feedback, or corrections?" textarea; optional Name field; optional Email field; "Include current page URL" checkbox (checked by default); submissions stored in the database
+- [ ] **FOOT-05**: An admin-gated `/admin/feedback` page lists all feedback submissions with name, email, message, page URL, and timestamp
+
+### Analytics (Phase 05.2)
+
+- [ ] **UMAMI-01**: The Umami tracking snippet is present in the root layout; the psalter site appears in the Umami dashboard and pageviews are recorded
+
+### Daily Reading Plan (Phase 05.3)
+
+- [ ] **DAILY-02**: Opening /daily shows today's reading entry at the top of the page in a visually distinct highlighted card (today's date, day number, psalm reference, notes); no scrolling required to find it
+- [ ] **DAILY-03**: Below the today card, a monthly calendar grid replaces the flat 365-row list; each day cell shows the day number and psalm reference; the current day is highlighted; prev/next month navigation is present; clicking a day reveals that day's full reading entry
+
+### Airtable Exit Verification (Phase 05.4)
+
+- [ ] **ADMIN-01**: A gap audit script compares every Airtable table's schema and row count against PostgreSQL and produces a written gap report before any data changes occur
+- [ ] **ADMIN-02**: All gaps from the audit are filled surgically: missing columns added to existing tables, missing rows inserted — no existing correct data is duplicated or overwritten
+- [ ] **ADMIN-03**: Every Airtable attachment is verified to exist in R2; any missing attachments are downloaded to R2 before Airtable is cancelled
+- [ ] **ADMIN-04**: All Airtable formula and lookup field definitions are fetched from the Airtable Metadata API and stored in a permanent reference file (`.planning/research/airtable-formula-fields.md`) before Airtable is cancelled
+- [ ] **ADMIN-05**: A `pg_dump` compressed backup (`psalter-full-YYYYMMDD.sql.gz`) is stored in `/home/services/psalter/backups/` before Airtable is cancelled
+- [ ] **ADMIN-06**: pgweb is deployed in read-only mode connected to the existing psalter PostgreSQL database, accessible behind Cloudflare Access, showing all tables (Airtable-migrated and site-native)
+- [ ] **ADMIN-07**: A written "safe to cancel Airtable" checklist is produced with all items verified before the subscription is cancelled
 
 ---
 
@@ -171,8 +198,8 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 | TUNE-06 | Phase 4.5: Psalm Detail Overhaul | Pending |
 | TUNE-07 | Phase 4.5: Psalm Detail Overhaul | Pending |
 | PERF-01 | Phase 4.5 (partial) + Phase 6 | Pending |
-| AUTH-01 | Phase 5: Precentor Portal | Pending |
-| AUTH-02 | Phase 5: Precentor Portal | Pending |
+| AUTH-01 | Phase 5: Precentor Portal | Complete |
+| AUTH-02 | Phase 5: Precentor Portal | Complete |
 | PREC-01 | Phase 5: Precentor Portal | Complete |
 | PREC-02 | Phase 5: Precentor Portal | Complete |
 | PREC-03 | Phase 5: Precentor Portal | Complete |
@@ -180,6 +207,21 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 | PREC-05 | Phase 5: Precentor Portal | Complete |
 | PREC-06 | Phase 5: Precentor Portal | Complete |
 | PERF-02 | Phase 6: Polish | Pending |
+| FOOT-01 | Phase 05.2: Footer, Feedback & Analytics | Pending |
+| FOOT-02 | Phase 05.2: Footer, Feedback & Analytics | Pending |
+| FOOT-03 | Phase 05.2: Footer, Feedback & Analytics | Pending |
+| FOOT-04 | Phase 05.2: Footer, Feedback & Analytics | Pending |
+| FOOT-05 | Phase 05.2: Footer, Feedback & Analytics | Pending |
+| UMAMI-01 | Phase 05.2: Footer, Feedback & Analytics | Pending |
+| DAILY-02 | Phase 05.3: /daily Calendar View | Pending |
+| DAILY-03 | Phase 05.3: /daily Calendar View | Pending |
+| ADMIN-01 | Phase 05.4: Airtable Exit Verification | Pending |
+| ADMIN-02 | Phase 05.4: Airtable Exit Verification | Pending |
+| ADMIN-03 | Phase 05.4: Airtable Exit Verification | Pending |
+| ADMIN-04 | Phase 05.4: Airtable Exit Verification | Pending |
+| ADMIN-05 | Phase 05.4: Airtable Exit Verification | Pending |
+| ADMIN-06 | Phase 05.4: Airtable Exit Verification | Pending |
+| ADMIN-07 | Phase 05.4: Airtable Exit Verification | Pending |
 | NOTATION-01 | Phase 4.9.2: Dynamic ABC Polish | Complete |
 | NOTATION-02 | Phase 4.9.2: Dynamic ABC Polish | Complete |
 | NOTATION-03 | Phase 4.9.2: Dynamic ABC Polish | Complete |

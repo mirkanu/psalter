@@ -704,9 +704,52 @@ Plans:
 **Wave 5** *(depends on Wave 4)*
 - [x] 05.1-05-PLAN.md — Playwright UAT across all 4 success criteria + human verify checkpoint (autonomous=false)
 
+### Phase 05.2: Footer, Feedback & Analytics (INSERTED)
+
+**Goal**: Every page has a site footer with project context, a working feedback form, and Umami analytics tracking in place
+**Depends on**: Phase 05.1
+**Requirements**: FOOT-01, FOOT-02, FOOT-03, FOOT-04, FOOT-05, UMAMI-01
+**Success Criteria** (what must be TRUE):
+  1. A site footer appears on every public and authenticated page; it contains: About link (opens modal), Copyright link (opens modal), Feedback link (opens modal), and "Made by GSD Labs" linking to gsdlabs.dev
+  2. The About modal contains a short project description blurb consistent with the old site's tone
+  3. The Copyright modal contains a copyright notice
+  4. The Feedback modal shows: a free-text "Suggestions, feedback, or corrections?" textarea; optional Name field; optional Email field; a checkbox "Include current page URL" checked by default; Submit button; submissions are stored in the database
+  5. An admin-gated `/admin/feedback` page lists all feedback submissions with name, email, message, page URL, and timestamp
+  6. The Umami tracking snippet is present in the root layout and pageviews are visible in the Umami dashboard
+**Plans**: TBD (2-3 plans)
+**UI hint**: yes
+
+### Phase 05.3: /daily Calendar View (INSERTED)
+
+**Goal**: The daily reading plan page is genuinely useful day-to-day — today's reading is immediately visible and the full 365-day plan is browsable by month rather than as a flat list
+**Depends on**: Phase 05.2
+**Requirements**: DAILY-02, DAILY-03
+**Success Criteria** (what must be TRUE):
+  1. Opening /daily shows today's reading entry prominently at the top of the page — visually distinct (highlighted card with today's date, day number, psalm reference, and notes); no scrolling required to find it
+  2. Below the today card, a monthly calendar grid replaces the flat 365-row list; each day cell shows the day number and psalm reference; the current day is highlighted; prev/next month navigation buttons are present
+  3. Clicking a day cell navigates to or reveals that day's full reading entry
+**Plans**: TBD (2 plans)
+**UI hint**: yes
+
+### Phase 05.4: Airtable Exit Verification (INSERTED)
+
+**Goal**: Every byte of Airtable data is accounted for in PostgreSQL and R2 before the Airtable subscription is cancelled; a permanent backup and read-only DB viewer are in place
+**Depends on**: Phase 05.1
+**Requirements**: ADMIN-01, ADMIN-02, ADMIN-03, ADMIN-04, ADMIN-05, ADMIN-06, ADMIN-07
+**Success Criteria** (what must be TRUE):
+  1. A gap audit script compares every Airtable table's schema and row count against PostgreSQL and produces a written gap report — no data changes happen before this report is reviewed
+  2. All gaps identified in the report are filled: missing columns added to existing tables, missing rows inserted, no existing rows duplicated
+  3. Every Airtable attachment is verified to exist in R2; any missing attachments are downloaded before Airtable is cancelled
+  4. Airtable Metadata API has been queried and all formula and lookup field definitions are stored in a permanent reference file on Hetzner (`.planning/research/airtable-formula-fields.md` or similar)
+  5. A `pg_dump` compressed backup (`psalter-full-YYYYMMDD.sql.gz`) is stored in `/home/services/psalter/backups/` on Hetzner before Airtable is cancelled
+  6. pgweb is deployed read-only (connected to the existing psalter PostgreSQL database), accessible at a Cloudflare Access-gated URL, and shows all tables including both Airtable-migrated and site-native tables
+  7. A written "safe to cancel Airtable" checklist is produced and all items are checked off before the subscription is cancelled
+**Plans**: TBD (3-4 plans)
+**UI hint**: no
+
 ### Phase 6: Polish
 **Goal**: OG images in place for social sharing; Lighthouse 90+ on key pages; bundle clean; every remaining route transition shows a skeleton; all clickable elements give immediate visual feedback
-**Depends on**: Phase 5
+**Depends on**: Phase 05.4
 **Requirements**: PERF-02, OG images (next/og), Lighthouse 90+
 **Success Criteria** (what must be TRUE):
   1. Each psalm and tune page generates a dynamic OG image (next/og) visible when the URL is shared on social platforms
@@ -722,7 +765,7 @@ Plans:
 1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 4.9.5 → 4.9.6 → 4.9.7 → 4.9.8 → 4.9.9 → 4.9.10 → 4.9.11 → 4.9.12
 
 **Milestone 2 Execution Order:**
-5 → 05.1 → 6
+5 → 05.1 → 05.2 → 05.3 → 05.4 → 6
 
 ### Milestone 1 — Public Psalter
 
@@ -755,4 +798,8 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 5. Precentor Portal | 4/5 | In Progress|  |
+| 05.1. Auth Gate | 5/5 | Complete | 2026-06-15 |
+| 05.2. Footer, Feedback & Analytics | 0/TBD | Not started | - |
+| 05.3. /daily Calendar View | 0/TBD | Not started | - |
+| 05.4. Airtable Exit Verification | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
