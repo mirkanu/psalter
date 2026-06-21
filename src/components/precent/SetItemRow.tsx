@@ -30,6 +30,7 @@ interface SetItemRowProps {
   allPsalms: PsalmRow[]
   psalmMeter: string | null
   recommendedTune: string | null
+  versionLabel: string
   onDelete: (itemId: number) => void
   onTuneClick: (item: SetItemView) => void
   onPsalmClick: (item: SetItemView) => void
@@ -42,6 +43,7 @@ export function SetItemRow({
   allPsalms: _allPsalms,
   psalmMeter,
   recommendedTune,
+  versionLabel,
   onDelete,
   onTuneClick,
   onPsalmClick,
@@ -103,9 +105,9 @@ export function SetItemRow({
             type="button"
             onClick={() => onPsalmClick(item)}
             className="text-sm font-medium hover:underline text-left"
-            aria-label={`Change psalm (currently Psalm ${psalmNumber})`}
+            aria-label={`Change psalm (currently Psalm ${versionLabel})`}
           >
-            {psalmNumber}
+            {versionLabel}
           </button>
         </td>
 

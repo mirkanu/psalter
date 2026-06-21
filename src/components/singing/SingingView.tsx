@@ -39,6 +39,8 @@ interface Props {
   precentingPrevHref?: string | null
   /** Precenting mode: override right arrow href. Null = disabled, undefined = not precenting. */
   precentingNextHref?: string | null
+  /** For multi-version psalms (a/b), the full list of versions with slugs and current marker. */
+  versionSiblings?: { slug: string; displayLabel: string; isCurrent: boolean }[]
 }
 
 function readStoredViewMode(showLyrics: boolean): ViewMode {
@@ -80,6 +82,7 @@ export function SingingView({
   versePartLabel = null,
   precentingPrevHref,
   precentingNextHref,
+  versionSiblings,
 }: Props) {
   const searchParams = useSearchParams()
   const tuneParam = searchParams?.get('tune') ?? null
@@ -316,6 +319,7 @@ export function SingingView({
         onOpenTuneSwitcher={() => setTuneSwitcherOpen(true)}
         precentingPrevHref={precentingPrevHref}
         precentingNextHref={precentingNextHref}
+        versionSiblings={versionSiblings}
       />
 
       {/* Body — single scroll container, hard horizontal clamp.

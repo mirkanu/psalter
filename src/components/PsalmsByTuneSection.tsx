@@ -9,6 +9,8 @@ interface PsalmEntry {
   id: number
   bibleTitle: string | null
   firstLine: string | null
+  slug?: string
+  displayLabel?: string
 }
 
 interface PsalmsByTuneSectionProps {
@@ -20,14 +22,16 @@ interface PsalmsByTuneSectionProps {
 }
 
 function PsalmCard({ psalm }: { psalm: PsalmEntry }) {
+  const href = psalm.slug ? `/psalms/${psalm.slug}` : `/psalms/${psalm.id}`
+  const label = psalm.displayLabel ?? String(psalm.id)
   return (
     <Link
-      href={`/psalms/${psalm.id}`}
+      href={href}
       className="flex flex-col py-2 px-2 min-h-[44px] rounded-lg border border-border bg-card hover:border-primary transition-colors duration-200 active:scale-[0.97]"
-      aria-label={`Psalm ${psalm.id}`}
+      aria-label={`Psalm ${label}`}
     >
       <span className="text-xs font-semibold font-mono tabular-nums text-foreground leading-none">
-        {psalm.id}
+        {label}
       </span>
       {psalm.firstLine && (
         <span className="text-xs text-muted-foreground mt-0.5 leading-snug line-clamp-2">

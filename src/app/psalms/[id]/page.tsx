@@ -134,6 +134,27 @@ export default async function PsalmPage({ params }: PageProps) {
       })()
     : null
 
+  // Compute sibling version slugs (only for a/b psalms, not Psalm 119 range sections)
+  const allVersionsSorted = psalm.psalmVersions.slice().sort((a, b) => a.id - b.id)
+  const hasABVersions = allVersionsSorted.some((v) => v.psalterNumber?.includes('First')) &&
+    allVersionsSorted.some((v) => v.psalterNumber?.includes('Second'))
+  const versionSiblings: { slug: string; displayLabel: string; isCurrent: boolean }[] =
+    hasABVersions
+      ? allVersionsSorted
+          .map((v) => {
+            const rawLabel = deriveVersionSlug(psalmId, v.psalterNumber, true)
+            const siblingSlug = stripStar(rawLabel)
+            const letter = siblingSlug.replace(String(psalmId), '')
+            if (letter !== 'a' && letter !== 'b') return null
+            return {
+              slug: siblingSlug,
+              displayLabel: rawLabel, // e.g. "55a*" or "55b"
+              isCurrent: siblingSlug === slug,
+            }
+          })
+          .filter((x): x is { slug: string; displayLabel: string; isCurrent: boolean } => x !== null)
+      : []
+
   const editorialSet = await getEditoriallyLinkedTuneIdsForPsalm(psalmId)
   const psalmListRows = await fetchPsalmListRows()
   const { prev, next } = await getPsalmNeighbors(slug)
@@ -166,6 +187,7 @@ export default async function PsalmPage({ params }: PageProps) {
       psalmListRows={psalmListRows}
       studyHref={`/psalms/${slug}/study`}
       versePartLabel={versePartLabel}
+      versionSiblings={versionSiblings}
     />
   )
 }

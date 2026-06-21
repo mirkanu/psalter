@@ -20,6 +20,8 @@ interface Props {
   precentingPrevHref?: string | null
   /** When in precenting mode, override the right arrow href. Null = disabled. */
   precentingNextHref?: string | null
+  /** For multi-version psalms (a/b), all versions with slugs and current marker. */
+  versionSiblings?: { slug: string; displayLabel: string; isCurrent: boolean }[]
 }
 
 function isEditableTarget(el: Element | null): boolean {
@@ -45,6 +47,7 @@ export function PsalmTopBar({
   onOpenTuneSwitcher,
   precentingPrevHref,
   precentingNextHref,
+  versionSiblings,
 }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -77,12 +80,15 @@ export function PsalmTopBar({
 
   // 260517-cm0 #3: when versePartLabel is provided, the title becomes "Ps {id}:{range}".
   // Long ranges (e.g. "Ps 119:105-123") downsize to text-sm to avoid wrapping.
+  const currentVersion = versionSiblings?.find((v) => v.isCurrent)
+  const versionSuffix = currentVersion ? currentVersion.displayLabel.replace(String(psalmId), '') : ''
   const label = versePartLabel
     ? `Ps ${psalmId}:${versePartLabel}`
     : narrow && psalmId >= 100
-      ? `Ps ${psalmId}`
-      : `Psalm ${psalmId}`
+      ? `Ps ${psalmId}${versionSuffix}`
+      : `Psalm ${psalmId}${versionSuffix}`
   const labelSizeClass = label.length >= 12 ? 'text-sm' : 'text-base'
+  const siblingLinks = versionSiblings?.filter((v) => !v.isCurrent) ?? []
 
   return (
     <header
@@ -136,6 +142,17 @@ export function PsalmTopBar({
           >
             {label}
           </button>
+          {siblingLinks.map((v) => (
+            <span key={v.slug} className="flex items-center gap-1">
+              <span className="text-muted-foreground text-sm select-none">·</span>
+              <Link
+                href={`/psalms/${v.slug}`}
+                className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+              >
+                {v.displayLabel}
+              </Link>
+            </span>
+          ))}
           {onOpenTuneSwitcher ? (
             <button
               type="button"
