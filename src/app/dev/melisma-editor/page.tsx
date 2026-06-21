@@ -57,6 +57,9 @@ export interface TuneOption {
    *  melisma data. Used by the editor to restore underline state without parsing
    *  embedded w: lines (post-migration path). */
   melismaPositions: number[][] | null
+  /** True for DCM tunes (CM + doubleLength) — editor uses this to auto-inject
+   *  8 PHRASE_BREAKs even when the stored ABC already has some breaks. */
+  doubleLength: boolean
 }
 
 function slugify(name: string): string {
@@ -316,6 +319,7 @@ async function loadTunes(): Promise<TuneOption[]> {
       solfegeSopranoEdited: r.solfegeSopranoEdited,
       phraseShapeOverride: r.phraseShapeOverride ?? null,
       melismaPositions: r.melismaPositions ?? null,
+      doubleLength: r.doubleLength ?? false,
       solfegeJpgUrls: findSolfegeJpgs(slugify(r.name)),
       stanza1Syllables,
       stanza1SyllablesPerLine,

@@ -115,10 +115,24 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
   // wrote via the existing Save-to-DB path.
   const effectiveAbc = useMemo(() => {
     if (!rawEffectiveAbc) return ''
-    if (/^\s*%\s*PHRASE_BREAK\s*$/m.test(rawEffectiveAbc)) return rawEffectiveAbc
+    const isDoubled = tune?.doubleLength ?? false
+    const isAlreadyDoubled = /\bD\b/.test(tune?.meter ?? '')
     const expected = expectedSyllablesByLine(tune?.meter ?? null)
-    if (!expected || expected.length <= 1) return rawEffectiveAbc
-    const injected = injectPhraseBreaksAtCounts(rawEffectiveAbc, expected)
+    // For DCM tunes (doubleLength=true, meter not already doubled via " D"):
+    // use the doubled shape so all 8 phrases get PHRASE_BREAKs.
+    const effectiveExpected =
+      isDoubled && !isAlreadyDoubled && expected ? [...expected, ...expected] : expected
+
+    if (/^\s*%\s*PHRASE_BREAK\s*$/m.test(rawEffectiveAbc)) {
+      // Already has breaks — only re-inject if tune is doubled and has fewer
+      // breaks than expected (DCM tunes with only 3 explicit breaks need 7).
+      if (!isDoubled || !effectiveExpected) return rawEffectiveAbc
+      const existingBreakCount = (rawEffectiveAbc.match(/^\s*%\s*PHRASE_BREAK\s*$/gm) ?? []).length
+      if (existingBreakCount >= effectiveExpected.length - 1) return rawEffectiveAbc
+      // Fall through to inject remaining breaks
+    }
+    if (!effectiveExpected || effectiveExpected.length <= 1) return rawEffectiveAbc
+    const injected = injectPhraseBreaksAtCounts(rawEffectiveAbc, effectiveExpected)
     return injected.inserted > 0 ? injected.abc : rawEffectiveAbc
   }, [rawEffectiveAbc, tune])
 
