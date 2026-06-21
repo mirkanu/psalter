@@ -16,4 +16,7 @@ export async function fetchDailyReading(dayNumber: number) {
   })
 }
 
+// After Phase 05.3 schema change, this type includes:
+//   startingVerse: number | null
+//   endingVerse: number | null
 export type DailyReadingWithPsalm = NonNullable<Awaited<ReturnType<typeof fetchDailyReading>>>
