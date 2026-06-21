@@ -70,7 +70,7 @@ export const fetchTuneDetail = cache(async function fetchTuneDetail(id: number) 
         columns: { isPrimary: true },
         with: {
           psalmVersion: {
-            columns: { id: true, lyricsImportedRaw: true, lyricsStructured: true, firstLine: true, meter: true },
+            columns: { id: true, lyricsImportedRaw: true, lyricsStructured: true, firstLine: true, meter: true, psalterNumber: true },
             with: { psalm: true },
           },
         },
