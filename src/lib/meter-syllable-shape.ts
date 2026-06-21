@@ -26,7 +26,9 @@ export function expectedSyllablesByLine(meter: string | null | undefined): numbe
   if (groups.length > 0) {
     let nums: number[]
     const allMultiDigit = groups.every(g => g.length >= 2)
-    if (allMultiDigit && groups.every(g => g.length === 2)) {
+    // Only use run-together split when no group contains '0' — otherwise
+    // "10 10 10 10 10" would be wrongly split into [1,0,1,0,...].
+    if (allMultiDigit && groups.every(g => g.length === 2) && !groups.some(g => g.includes('0'))) {
       // Run-together — split every group into individual digits.
       nums = groups.flatMap(g => g.split('').map(Number))
     } else {
