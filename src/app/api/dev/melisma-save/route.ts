@@ -27,8 +27,9 @@
  */
 
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { db } from '@/db'
-import { tunes } from '@/db/schema'
+import { tunes, psalmVersionTunes, psalmVersions } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { expectedSyllablesByLine } from '@/lib/meter-syllable-shape'
 
@@ -166,6 +167,17 @@ export async function POST(req: Request) {
       { error: `expected 1 row update, got ${result.length}` },
       { status: 500 },
     )
+  }
+
+  // Revalidate statically-generated psalm pages that display this tune,
+  // so prod reflects the saved melisma/ABC changes immediately.
+  const linkedPsalms = await db
+    .select({ psalmId: psalmVersions.psalmId })
+    .from(psalmVersionTunes)
+    .innerJoin(psalmVersions, eq(psalmVersionTunes.psalmVersionId, psalmVersions.id))
+    .where(eq(psalmVersionTunes.tuneId, body.tuneId))
+  for (const { psalmId } of linkedPsalms) {
+    if (psalmId) revalidatePath(`/psalms/${psalmId}`)
   }
 
   return NextResponse.json({
