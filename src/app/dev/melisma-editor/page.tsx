@@ -91,6 +91,14 @@ async function loadTunes(): Promise<TuneOption[]> {
     .where(isNotNull(tunes.abcNotation))
     .orderBy(asc(tunes.name))
 
+  // Fetch Psalm 23 once as a fallback lyric source for tunes with no psalm link.
+  const ps23Rows = await db
+    .select({ lyricsStructured: psalmVersions.lyricsStructured, lyricsImportedRaw: psalmVersions.lyricsImportedRaw })
+    .from(psalmVersions)
+    .where(eq(psalmVersions.psalmId, 23))
+    .limit(1)
+  const ps23 = ps23Rows[0] ?? null
+
   // Fetch ALL decisions in one query, then derive per-tune currentStatus +
   // latest non-empty comment in JS. Cheaper than N round-trips.
   const allDecisions = await db
@@ -212,6 +220,30 @@ async function loadTunes(): Promise<TuneOption[]> {
         // psalms.id IS the psalm number (1-150) per schema comment
         psalmNumber = pvRows[0].psalmId ?? null
       }
+    } else if (ps23) {
+      // No psalm linked — use Psalm 23 stanza 1 as a sample lyric so the
+      // melisma editor is usable (syllable grid, note alignment) even for
+      // tunes that haven't been assigned a psalm yet.
+      const ls = ps23.lyricsStructured as unknown as Array<{ lines?: Array<{ text?: string; syllables?: string[] }> }> | null
+      let stanzaLineTexts: string[] = []
+      if (Array.isArray(ls) && Array.isArray(ls[0]?.lines)) {
+        ls[0].lines!.forEach((l) => {
+          const text = (l?.text ?? '').trim()
+          if (text.length > 0) stanzaLineTexts.push(text)
+        })
+      } else if (ps23.lyricsImportedRaw) {
+        const allLines = ps23.lyricsImportedRaw.split('\n').map(l => l.replace(/^\d+/, '').trim())
+        const firstBlank = allLines.findIndex(l => l.length === 0)
+        stanzaLineTexts = (firstBlank === -1 ? allLines : allLines.slice(0, firstBlank)).filter(l => l.length > 0)
+      }
+      if (stanzaLineTexts.length > 0) {
+        stanza1SyllablesPerLine = stanzaLineTexts.map(t => syllabifyForAbc(t).split(/\s+/).filter(Boolean))
+        const expectedForRegroup = expectedSyllablesByLine(r.meter)
+        const regroup = regroupLinesToMeter(stanza1SyllablesPerLine, expectedForRegroup)
+        if (regroup.merged) stanza1SyllablesPerLine = regroup.regrouped
+        stanza1Syllables = stanza1SyllablesPerLine.flat()
+      }
+      // psalmNumber stays null — Ps 23 is a sample, not a real link
     }
 
     // Apply phrase_shape_override if it requires more lines than the lyrics
