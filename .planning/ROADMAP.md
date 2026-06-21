@@ -749,7 +749,7 @@ Plans:
 - [x] 05.3-02-PLAN.md — formatPsalmRef/calendarDateToDayOfYear helpers + query type + DailyTodayCard server component (DAILY-02)
 
 **Wave 3** *(depends on Wave 2)*
-- [ ] 05.3-03-PLAN.md — DailyCalendarClient grid + /daily page rewrite + loading.tsx + delete DailyPlanClient + Playwright UAT (DAILY-03, human checkpoint)
+- [x] 05.3-03-PLAN.md — DailyCalendarClient grid + /daily page rewrite + loading.tsx + delete DailyPlanClient + Playwright UAT (DAILY-03, human checkpoint)
 
 ### Phase 05.4: Airtable Exit Verification (INSERTED)
 
@@ -820,6 +820,6 @@ Plans:
 | 5. Precentor Portal | 4/5 | In Progress|  |
 | 05.1. Auth Gate | 5/5 | Complete | 2026-06-15 |
 | 05.2. Footer, Feedback & Analytics | 3/3 | Complete    | 2026-06-20 |
-| 05.3. /daily Calendar View | 2/3 | In Progress|  |
+| 05.3. /daily Calendar View | 3/3 | Complete   | 2026-06-21 |
 | 05.4. Airtable Exit Verification | 0/TBD | Not started | - |
 | 6. Polish | 0/TBD | Not started | - |
