@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { fetchTuneDetail, fetchTuneIds } from "@/db/queries/tunes"
 import { fetchPsalmsByMeter } from "@/db/queries/psalms"
+import { deriveVersionSlug, stripStar } from "@/lib/psalm-slugs"
 import { Badge } from "@/components/ui/badge"
 import { NotationRendererClient } from "@/components/notation/NotationRendererClient"
 import { TuneDetailClient } from "@/components/TuneDetailClient"
@@ -36,30 +37,40 @@ export default async function TunePage({ params }: PageProps) {
   const tune = await fetchTuneDetail(tuneId)
   if (!tune) notFound()
 
-  // Deduplicate psalms using this tune, collecting firstLine from any linked version
-  const psalmsMap = new Map<number, { bibleTitle: string | null; firstLine: string | null }>()
-  for (const pvt of tune.psalmVersionTunes) {
-    const p = pvt.psalmVersion?.psalm
-    if (p?.id != null && !psalmsMap.has(p.id)) {
-      psalmsMap.set(p.id, {
-        bibleTitle: p.bibleTitle ?? null,
-        firstLine: pvt.psalmVersion?.firstLine ?? null,
-      })
-    }
+  // Deduplicate by psalmVersion (not psalm) so 55a and 55b appear as separate cards
+  interface VersionEntry {
+    psalmVersionId: number
+    id: number
+    bibleTitle: string | null
+    firstLine: string | null
+    slug: string
+    displayLabel: string
+    isPrimary: boolean
   }
-  const recommendedPsalms = Array.from(psalmsMap.entries())
-    .filter(([id]) =>
-      tune.psalmVersionTunes.some(
-        (pvt) => pvt.psalmVersion?.psalm?.id === id && pvt.isPrimary
-      )
-    )
-    .sort(([a], [b]) => a - b)
-    .map(([id, data]) => ({ id, ...data }))
+  const seenVersionIds = new Set<number>()
+  const versionEntries: VersionEntry[] = []
+  for (const pvt of tune.psalmVersionTunes) {
+    const pv = pvt.psalmVersion
+    const p = pv?.psalm
+    if (!pv || p?.id == null || seenVersionIds.has(pv.id)) continue
+    seenVersionIds.add(pv.id)
+    const pn = pv.psalterNumber ?? ''
+    const isMultiVersion = !!(pn.includes('First') || pn.includes('Second') || /\d+:\d+/.test(pn))
+    const rawLabel = deriveVersionSlug(p.id, pv.psalterNumber ?? null, isMultiVersion)
+    versionEntries.push({
+      psalmVersionId: pv.id,
+      id: p.id,
+      bibleTitle: p.bibleTitle ?? null,
+      firstLine: pv.firstLine ?? null,
+      slug: stripStar(rawLabel),
+      displayLabel: rawLabel,
+      isPrimary: pvt.isPrimary ?? false,
+    })
+  }
+  versionEntries.sort((a, b) => a.id - b.id || a.psalmVersionId - b.psalmVersionId)
 
-  const otherPsalms = Array.from(psalmsMap.entries())
-    .filter(([id]) => !recommendedPsalms.some((p) => p.id === id))
-    .sort(([a], [b]) => a - b)
-    .map(([id, data]) => ({ id, ...data }))
+  const recommendedPsalms = versionEntries.filter((e) => e.isPrimary)
+  const otherPsalms = versionEntries.filter((e) => !e.isPrimary)
 
   // Derive staff and solfège JPEG pages from filesystem (DB columns are NULL for all tunes)
   const { staffPages, solfegePages } = deriveTuneJpgPages(tune.name)
