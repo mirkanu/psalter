@@ -131,18 +131,18 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
   // Paste psalm list dialog
   const [pasteOpen, setPasteOpen] = useState(false)
 
-  async function handleAddPsalm({ psalmId, verseRange }: { psalmId: number; verseRange: string | null }) {
+  async function handleAddPsalm({ psalmId, verseRange, psalmVersionId }: { psalmId: number; verseRange: string | null; psalmVersionId: number | null }) {
     if (psalmPickerMode === 'change' && psalmPickerItemId != null) {
       await fetch(`/api/precent/${set.id}/items/${psalmPickerItemId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ psalmId }),
+        body: JSON.stringify({ psalmId, psalmVersionId }),
       })
     } else {
       await fetch(`/api/precent/${set.id}/items`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ psalmId, verseRange }),
+        body: JSON.stringify({ psalmId, verseRange, psalmVersionId }),
       })
     }
     router.refresh()
