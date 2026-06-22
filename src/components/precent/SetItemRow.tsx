@@ -39,7 +39,7 @@ export function SetItemRow({
   item,
   index,
   setId,
-  allPsalms: _allPsalms,
+  allPsalms,
   psalmMeter,
   recommendedTune,
   onDelete,
@@ -105,7 +105,9 @@ export function SetItemRow({
             className="text-sm font-medium hover:underline text-left"
             aria-label={`Change psalm (currently Psalm ${item.psalmId})`}
           >
-            {item.psalmId}
+            {item.psalmVersionId
+              ? (allPsalms.find((r) => r.versionId === item.psalmVersionId)?.slug ?? String(item.psalmId))
+              : item.psalmId}
           </button>
         </td>
 
