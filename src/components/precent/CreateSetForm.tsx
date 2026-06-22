@@ -88,7 +88,7 @@ export function CreateSetForm({ psalms, targetUserId }: CreateSetFormProps) {
           await fetch(`/api/precent/${id}/items`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ psalmId: entry.psalm.id, verseRange: entry.verseRange }),
+            body: JSON.stringify({ psalmId: entry.psalm.id, verseRange: entry.verseRange, psalmVersionId: entry.psalmVersionId }),
           })
         }
 
@@ -207,6 +207,7 @@ export function CreateSetForm({ psalms, targetUserId }: CreateSetFormProps) {
                     )}
                     <span className={entry.psalm ? 'text-foreground' : 'text-destructive'}>
                       Psalm {entry.psalmNum}
+                      {entry.psalm && entry.psalmVersionId && ` (${entry.psalm.displayLabel})`}
                       {entry.verseRange && ` vv. ${entry.verseRange}`}
                       {!entry.psalm && ' — not found'}
                     </span>
