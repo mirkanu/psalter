@@ -12,6 +12,7 @@ import { fetchTunesByMeter, type AlternateTune } from '@/db/queries/tunes'
 import { SingingView } from '@/components/singing/SingingView'
 import { PrecentingBar } from '@/components/precent/PrecentingBar'
 import { deriveTuneJpgPages } from '@/lib/tune-jpg-urls'
+import { deriveVersionSlug, stripStar } from '@/lib/psalm-slugs'
 
 interface PageProps {
   params: Promise<{ id: string; pos: string }>
@@ -92,6 +93,26 @@ export default async function PrecentSingPage({ params }: PageProps) {
   const rangeMatch = activeVersion?.psalterNumber?.match(/^\d+:(\d+(?:-\d+)?)/) ?? null
   const versePartLabel = rangeMatch ? rangeMatch[1] : null
 
+  const allVersionsSorted = psalm.psalmVersions.slice().sort((a, b) => a.id - b.id)
+  const hasABVersions = allVersionsSorted.some((v) => v.psalterNumber?.includes('First')) &&
+    allVersionsSorted.some((v) => v.psalterNumber?.includes('Second'))
+  const versionSiblings: { slug: string; displayLabel: string; isCurrent: boolean }[] =
+    hasABVersions
+      ? allVersionsSorted
+          .map((v) => {
+            const rawLabel = deriveVersionSlug(psalm.id, v.psalterNumber, true)
+            const siblingSlug = stripStar(rawLabel)
+            const letter = siblingSlug.replace(String(psalm.id), '')
+            if (letter !== 'a' && letter !== 'b') return null
+            return {
+              slug: siblingSlug,
+              displayLabel: rawLabel,
+              isCurrent: v.id === activeVersion?.id,
+            }
+          })
+          .filter((x): x is { slug: string; displayLabel: string; isCurrent: boolean } => x !== null)
+      : []
+
   const precentingPrevHref = position > 0 ? `/precent/${setId}/sing/${position}` : null
   const precentingNextHref = position + 1 < total ? `/precent/${setId}/sing/${position + 2}` : null
 
@@ -116,6 +137,7 @@ export default async function PrecentSingPage({ params }: PageProps) {
         precentingPrevHref={precentingPrevHref}
         precentingNextHref={precentingNextHref}
         precentingVerseRange={item.verseRange ?? null}
+        versionSiblings={versionSiblings}
       />
     </>
   )
