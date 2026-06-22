@@ -16,7 +16,7 @@ interface PsalmPickerModalProps {
   open: boolean
   onClose: () => void
   psalms: PsalmRow[]
-  onAdd: (args: { psalmId: number; verseRange: string | null }) => void | Promise<void>
+  onAdd: (args: { psalmId: number; verseRange: string | null; psalmVersionId: number | null }) => void | Promise<void>
 }
 
 export function PsalmPickerModal({
@@ -40,7 +40,7 @@ export function PsalmPickerModal({
 
   async function handleAdd() {
     if (!selected) return
-    await onAdd({ psalmId: selected.id, verseRange: verseRange.trim() || null })
+    await onAdd({ psalmId: selected.id, verseRange: verseRange.trim() || null, psalmVersionId: selected.versionId ?? null })
     handleClose()
   }
 
