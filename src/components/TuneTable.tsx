@@ -31,6 +31,7 @@ interface TuneTableProps {
   onSelectTune?: (tune: TuneRow) => void
   hideExport?: boolean
   initialMeter?: string | null  // pre-filter to psalm's meter in modal mode
+  hideMeterFilter?: boolean     // hide the meter filter select (modal mode with locked meter)
   psalmId?: number              // highlight recommended tunes for this psalm
 }
 
@@ -62,7 +63,7 @@ function exportCsv(allTunes: TuneRow[]) {
   URL.revokeObjectURL(url)
 }
 
-export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, psalmId }: TuneTableProps) {
+export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideMeterFilter, psalmId }: TuneTableProps) {
   const router = useRouter()
   const [query, setQuery] = useState('')
   // In modal mode, always start collapsed and don't persist to localStorage
@@ -275,17 +276,19 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, psalm
           >
             {/* Filters row */}
             <div className="flex flex-wrap gap-6 items-center">
-              <Select value={selectedMeter} onValueChange={(v) => setSelectedMeter(v ?? 'all')}>
-                <SelectTrigger className="w-44" aria-label="Filter by meter">
-                  <span className="truncate">
-                    {selectedMeter === 'all' ? 'All Meters' : selectedMeter}
-                  </span>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Meters</SelectItem>
-                  {meters.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              {!hideMeterFilter && (
+                <Select value={selectedMeter} onValueChange={(v) => setSelectedMeter(v ?? 'all')}>
+                  <SelectTrigger className="w-44" aria-label="Filter by meter">
+                    <span className="truncate">
+                      {selectedMeter === 'all' ? 'All Meters' : selectedMeter}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Meters</SelectItem>
+                    {meters.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              )}
 
               <Select value={selectedMood} onValueChange={(v) => setSelectedMood(v ?? 'all')}>
                 <SelectTrigger className="w-44" aria-label="Filter by mood">

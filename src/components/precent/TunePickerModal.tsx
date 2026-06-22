@@ -37,6 +37,7 @@ export function TunePickerModal({
             onSelectTune={(t) => { onSelect(t); onClose() }}
             hideExport
             initialMeter={psalmMeter}
+            hideMeterFilter
             psalmId={psalmId ?? undefined}
           />
         </div>
