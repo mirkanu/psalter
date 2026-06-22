@@ -25,6 +25,7 @@ export interface SetItemView {
   setId: number
   psalmId: number
   tuneId: number | null
+  psalmVersionId: number | null
   verseRange: string | null
   position: number
   psalm: { id: number; bibleTitle: string | null } | null

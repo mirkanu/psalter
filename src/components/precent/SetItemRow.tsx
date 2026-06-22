@@ -117,7 +117,7 @@ export function SetItemRow({
         {/* Meter */}
         <td className="pr-2 w-20">
           <Badge variant="secondary" className="text-xs">
-            {psalmMeter ?? '—'}
+            {psalmMeter ? psalmMeter.replace(/\(.*\)/, '').trim() : '—'}
           </Badge>
         </td>
 

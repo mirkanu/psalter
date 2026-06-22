@@ -167,6 +167,7 @@ export async function fetchPsalmListRows(): Promise<PsalmRow[]> {
     const slug = stripStar(rawLabel)
     return {
       id: row.id,
+      versionId: row.versionId,
       displayLabel: rawLabel.replace(/^(\d+)-(\d+-\d+)$/, '$1:$2'),
       slug,
       firstLine: row.firstLine,

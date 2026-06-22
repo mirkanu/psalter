@@ -21,7 +21,7 @@ export async function POST(
   const access = await loadSetWithAccess(setId, session)
   if (access.res) return access.res
 
-  let body: { psalmId?: unknown; tuneId?: unknown; verseRange?: unknown }
+  let body: { psalmId?: unknown; tuneId?: unknown; verseRange?: unknown; psalmVersionId?: unknown }
   try {
     body = (await req.json()) as typeof body
   } catch {
@@ -38,6 +38,8 @@ export async function POST(
   const psalmId = body.psalmId
   const tuneId =
     typeof body.tuneId === 'number' ? body.tuneId : null
+  const psalmVersionId =
+    typeof body.psalmVersionId === 'number' ? body.psalmVersionId : null
   const verseRange =
     typeof body.verseRange === 'string' && body.verseRange.length <= 20
       ? body.verseRange
@@ -51,7 +53,7 @@ export async function POST(
     const nextPos = rows.length ? Math.max(...rows.map((r) => r.position)) + 1 : 0
     const [inserted] = await tx
       .insert(setItems)
-      .values({ setId, psalmId, tuneId, verseRange, position: nextPos })
+      .values({ setId, psalmId, tuneId, psalmVersionId, verseRange, position: nextPos })
       .returning({ id: setItems.id, position: setItems.position })
     return inserted
   })

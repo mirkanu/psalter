@@ -20,6 +20,8 @@ interface Props {
   precentingPrevHref?: string | null
   /** When in precenting mode, override the right arrow href. Null = disabled. */
   precentingNextHref?: string | null
+  /** Precenting mode: verse range from the set item (e.g. "1-6"), shown between psalm label and tune. */
+  precentingVerseRange?: string | null
   /** For multi-version psalms (a/b), all versions with slugs and current marker. */
   versionSiblings?: { slug: string; displayLabel: string; isCurrent: boolean }[]
 }
@@ -47,6 +49,7 @@ export function PsalmTopBar({
   onOpenTuneSwitcher,
   precentingPrevHref,
   precentingNextHref,
+  precentingVerseRange,
   versionSiblings,
 }: Props) {
   const router = useRouter()
@@ -141,6 +144,11 @@ export function PsalmTopBar({
           >
             {label}
           </button>
+          {precentingVerseRange && (
+            <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
+              vv.&thinsp;{precentingVerseRange}
+            </span>
+          )}
           {onOpenTuneSwitcher ? (
             <button
               type="button"

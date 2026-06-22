@@ -340,8 +340,9 @@ export const setItems = pgTable('set_items', {
   id: serial('id').primaryKey(),
   setId: integer('set_id').notNull().references(() => precentingSets.id, { onDelete: 'cascade' }),
   psalmId: integer('psalm_id').notNull().references(() => psalms.id),
-  tuneId: integer('tune_id').references(() => tunes.id),    // nullable
-  verseRange: text('verse_range'),                           // nullable free text
+  tuneId: integer('tune_id').references(() => tunes.id),                            // nullable
+  psalmVersionId: integer('psalm_version_id').references(() => psalmVersions.id),  // nullable — explicit version selection (a/b)
+  verseRange: text('verse_range'),                                                  // nullable free text
   position: integer('position').notNull(),
 })
 
@@ -407,6 +408,7 @@ export const setItemsRelations = relations(setItems, ({ one }) => ({
   set: one(precentingSets, { fields: [setItems.setId], references: [precentingSets.id] }),
   psalm: one(psalms, { fields: [setItems.psalmId], references: [psalms.id] }),
   tune: one(tunes, { fields: [setItems.tuneId], references: [tunes.id] }),
+  psalmVersion: one(psalmVersions, { fields: [setItems.psalmVersionId], references: [psalmVersions.id] }),
 }))
 
 // ─── Relations (Drizzle Relational API) ──────────────────────────────────────
