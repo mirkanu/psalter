@@ -163,9 +163,11 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
 
   function handleTuneClick(item: SetItemView) {
     setTunePickerItemId(item.id)
-    const meter = item.psalmVersionId != null
+    const rawMeter = item.psalmVersionId != null
       ? (meterByVersionId[item.psalmVersionId] ?? psalmMeterById[item.psalmId] ?? null)
       : (psalmMeterById[item.psalmId] ?? null)
+    // Strip "D" (Double) suffix so "66 66 D" matches tunes stored as "66 66"
+    const meter = rawMeter?.replace(/\s+D$/i, '') ?? null
     setTunePickerPsalmMeter(meter)
     setTunePickerPsalmId(item.psalmId)
     setTunePickerOpen(true)
