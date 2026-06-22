@@ -88,7 +88,6 @@ export function PsalmTopBar({
       ? `Ps ${psalmId}${versionSuffix}`
       : `Psalm ${psalmId}${versionSuffix}`
   const labelSizeClass = label.length >= 12 ? 'text-sm' : 'text-base'
-  const siblingLinks = versionSiblings?.filter((v) => !v.isCurrent) ?? []
 
   return (
     <header
@@ -142,17 +141,6 @@ export function PsalmTopBar({
           >
             {label}
           </button>
-          {siblingLinks.map((v) => (
-            <span key={v.slug} className="flex items-center gap-1">
-              <span className="text-muted-foreground text-sm select-none">·</span>
-              <Link
-                href={`/psalms/${v.slug}`}
-                className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
-              >
-                {v.displayLabel}
-              </Link>
-            </span>
-          ))}
           {onOpenTuneSwitcher ? (
             <button
               type="button"

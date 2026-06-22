@@ -101,15 +101,6 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
     }
   }
 
-  // Build psalm → version label map (e.g. 55 → "55a" for multi-version psalms)
-  const psalmVersionLabelById: Record<number, string> = {}
-  for (const row of psalmListRows) {
-    if (!(row.id in psalmVersionLabelById)) {
-      // Only use the version slug if it has an a/b suffix; range versions (119-1-8) fall back to plain number
-      const isAB = /^\d+[ab]$/.test(row.slug)
-      psalmVersionLabelById[row.id] = isAB ? row.slug : String(row.id)
-    }
-  }
   const [psalmPickerOpen, setPsalmPickerOpen] = useState(false)
   const [psalmPickerMode, setPsalmPickerMode] = useState<'add' | 'change'>('add')
   const [psalmPickerItemId, setPsalmPickerItemId] = useState<number | null>(null)
@@ -309,7 +300,6 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
           allPsalms={psalmListRows}
           psalmMeterById={psalmMeterById}
           recommendedTuneByPsalmId={recommendedTuneByPsalmId}
-          psalmVersionLabelById={psalmVersionLabelById}
           onTuneClick={handleTuneClick}
           onPsalmClick={handlePsalmClick}
         />
