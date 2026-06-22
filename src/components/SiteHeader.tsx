@@ -132,14 +132,6 @@ export function SiteHeader() {
                     >
                       Feedback
                     </SheetClose>
-                    <a
-                      href="https://gsdlabs.dev"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-muted-foreground hover:text-foreground px-3 py-2 transition-colors"
-                    >
-                      Made by GSD Labs
-                    </a>
                   </div>
                 </SheetContent>
               </Sheet>
