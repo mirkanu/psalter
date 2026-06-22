@@ -154,9 +154,19 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
     setPsalmPickerOpen(true)
   }
 
+  const meterByVersionId: Record<number, string | null> = {}
+  for (const row of psalmListRows) {
+    if (row.versionId != null) {
+      meterByVersionId[row.versionId] = row.meter ?? null
+    }
+  }
+
   function handleTuneClick(item: SetItemView) {
     setTunePickerItemId(item.id)
-    setTunePickerPsalmMeter(psalmMeterById[item.psalmId] ?? null)
+    const meter = item.psalmVersionId != null
+      ? (meterByVersionId[item.psalmVersionId] ?? psalmMeterById[item.psalmId] ?? null)
+      : (psalmMeterById[item.psalmId] ?? null)
+    setTunePickerPsalmMeter(meter)
     setTunePickerPsalmId(item.psalmId)
     setTunePickerOpen(true)
   }
