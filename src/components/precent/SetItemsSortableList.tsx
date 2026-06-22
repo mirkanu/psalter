@@ -52,6 +52,16 @@ export function SetItemsSortableList({
   onTuneClick,
   onPsalmClick,
 }: SetItemsSortableListProps) {
+  // Version-keyed lookups so items with psalmVersionId get the correct meter/tune
+  const meterByVersionId: Record<number, string | null> = {}
+  const tuneByVersionId: Record<number, string | null> = {}
+  for (const row of allPsalms) {
+    if (row.versionId != null) {
+      meterByVersionId[row.versionId] = row.meter ?? null
+      tuneByVersionId[row.versionId] = row.recommendedTune ?? null
+    }
+  }
+
   const router = useRouter()
   const [optimisticItems, setOptimisticItems] = useState<SetItemView[]>(items)
   const [, startTransition] = useTransition()
@@ -133,8 +143,8 @@ export function SetItemsSortableList({
                 index={index}
                 setId={setId}
                 allPsalms={allPsalms}
-                psalmMeter={psalmMeterById[item.psalmId] ?? null}
-                recommendedTune={recommendedTuneByPsalmId[item.psalmId] ?? null}
+                psalmMeter={item.psalmVersionId != null ? (meterByVersionId[item.psalmVersionId] ?? psalmMeterById[item.psalmId] ?? null) : (psalmMeterById[item.psalmId] ?? null)}
+                recommendedTune={item.psalmVersionId != null ? (tuneByVersionId[item.psalmVersionId] ?? recommendedTuneByPsalmId[item.psalmId] ?? null) : (recommendedTuneByPsalmId[item.psalmId] ?? null)}
                 onDelete={handleDelete}
                 onTuneClick={onTuneClick}
                 onPsalmClick={onPsalmClick}
