@@ -22,14 +22,14 @@ export async function PATCH(
   const access = await loadSetWithAccess(setId, session)
   if (access.res) return access.res
 
-  let body: { tuneId?: unknown; verseRange?: unknown; psalmId?: unknown }
+  let body: { tuneId?: unknown; verseRange?: unknown; psalmId?: unknown; psalmVersionId?: unknown }
   try {
     body = (await req.json()) as typeof body
   } catch {
     return NextResponse.json({ error: 'invalid JSON body' }, { status: 400 })
   }
 
-  const updateSet: { tuneId?: number | null; verseRange?: string | null; psalmId?: number } = {}
+  const updateSet: { tuneId?: number | null; verseRange?: string | null; psalmId?: number; psalmVersionId?: number | null } = {}
   if ('tuneId' in body) {
     updateSet.tuneId = typeof body.tuneId === 'number' ? body.tuneId : null
   }
@@ -44,6 +44,9 @@ export async function PATCH(
       return NextResponse.json({ error: 'invalid psalmId' }, { status: 400 })
     }
     updateSet.psalmId = body.psalmId
+  }
+  if ('psalmVersionId' in body) {
+    updateSet.psalmVersionId = typeof body.psalmVersionId === 'number' ? body.psalmVersionId : null
   }
 
   if (Object.keys(updateSet).length === 0) {
