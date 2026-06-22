@@ -4,22 +4,55 @@ export interface ParsedPsalmEntry {
   psalmNum: number
   verseRange: string | null
   psalm: PsalmRow | null
+  /** Non-null when a specific version (e.g. version b via "(AOTS)") was detected. */
+  psalmVersionId: number | null
 }
 
+/**
+ * Parses a freeform psalm list into entries. Supports:
+ *   "23:1-6; 74 (AOTS); 119:1-8"
+ *
+ * "(AOTS)" or any parenthetical after a psalm number (not a verse range) is
+ * treated as a version-b indicator — maps to the second PsalmRow for that psalm.
+ */
 export function parsePsalmList(input: string, psalms: PsalmRow[]): ParsedPsalmEntry[] {
   const results: ParsedPsalmEntry[] = []
-  const regex = /\b(\d{1,3})(?::([0-9]+(?:-[0-9]+)?))?/g
+  // Match: optional whitespace, psalm number, optional ":verses", optional "(anything)"
+  const regex = /\b(\d{1,3})(?::([0-9]+(?:-[0-9]+)?))?(?:\s*\(([^)]+)\))?/g
   let match: RegExpExecArray | null
   while ((match = regex.exec(input)) !== null) {
     const psalmNum = parseInt(match[1], 10)
     if (psalmNum < 1 || psalmNum > 150) continue
     const verseRange = match[2] ?? null
+    const parenthetical = match[3] ?? null   // e.g. "AOTS", "Second Version"
     const numStr = String(psalmNum)
-    const psalm =
-      psalms.find((r) => r.displayLabel === numStr) ??
-      psalms.find((r) => r.displayLabel.startsWith(numStr + ':')) ??
-      null
-    results.push({ psalmNum, verseRange, psalm })
+
+    // All rows for this psalm number (may include multi-version rows like "55a", "55b")
+    const allForPsalm = psalms.filter(
+      (r) => r.id === psalmNum
+    )
+
+    let psalm: PsalmRow | null = null
+    let psalmVersionId: number | null = null
+
+    if (parenthetical) {
+      // "(AOTS)" or any tune/version hint → pick the second (b) version if available
+      const secondVersion = allForPsalm[1] ?? null
+      if (secondVersion) {
+        psalm = secondVersion
+        psalmVersionId = secondVersion.versionId ?? null
+      } else {
+        // Fall back to first version
+        psalm = allForPsalm[0] ?? null
+      }
+    } else {
+      psalm =
+        psalms.find((r) => r.displayLabel === numStr) ??
+        psalms.find((r) => r.displayLabel.startsWith(numStr + ':')) ??
+        null
+    }
+
+    results.push({ psalmNum, verseRange, psalm, psalmVersionId })
   }
   return results
 }

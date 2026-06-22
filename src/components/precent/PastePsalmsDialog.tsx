@@ -18,7 +18,7 @@ interface PastePsalmsDialogProps {
   open: boolean
   onClose: () => void
   psalms: PsalmRow[]
-  onAddBatch: (items: Array<{ psalmId: number; verseRange: string | null }>) => Promise<void>
+  onAddBatch: (items: Array<{ psalmId: number; verseRange: string | null; psalmVersionId: number | null }>) => Promise<void>
 }
 
 export function PastePsalmsDialog({ open, onClose, psalms, onAddBatch }: PastePsalmsDialogProps) {
@@ -33,7 +33,7 @@ export function PastePsalmsDialog({ open, onClose, psalms, onAddBatch }: PastePs
     if (validEntries.length === 0) return
     setAdding(true)
     await onAddBatch(
-      validEntries.map((e) => ({ psalmId: e.psalm!.id, verseRange: e.verseRange })),
+      validEntries.map((e) => ({ psalmId: e.psalm!.id, verseRange: e.verseRange, psalmVersionId: e.psalmVersionId })),
     )
     setAdding(false)
     setText('')
@@ -57,10 +57,11 @@ export function PastePsalmsDialog({ open, onClose, psalms, onAddBatch }: PastePs
 
         <div className="flex flex-col gap-3">
           <p className="text-sm text-muted-foreground">
-            Paste a list of psalms with verse ranges, e.g.{' '}
+            Paste a list of psalms, e.g.{' '}
             <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">
-              11:1-7; 24:1-5; 55:4-11
+              11:1-7; 74 (AOTS); 55:4-11
             </span>
+            . Use <span className="font-mono text-xs">(AOTS)</span> to select the second version of a psalm.
           </p>
 
           <textarea
@@ -83,6 +84,7 @@ export function PastePsalmsDialog({ open, onClose, psalms, onAddBatch }: PastePs
                   )}
                   <span className={entry.psalm ? 'text-foreground' : 'text-destructive'}>
                     Psalm {entry.psalmNum}
+                    {entry.psalm && entry.psalmVersionId && ` (${entry.psalm.displayLabel})`}
                     {entry.verseRange && ` vv. ${entry.verseRange}`}
                     {!entry.psalm && ' — not found'}
                   </span>

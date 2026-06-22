@@ -35,6 +35,7 @@ export interface SetItemView {
   setId: number
   psalmId: number
   tuneId: number | null
+  psalmVersionId: number | null
   verseRange: string | null
   position: number
   psalm: { id: number; bibleTitle: string | null } | null
@@ -204,7 +205,7 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
     router.push('/precent')
   }
 
-  async function handleAddBatch(items: Array<{ psalmId: number; verseRange: string | null }>) {
+  async function handleAddBatch(items: Array<{ psalmId: number; verseRange: string | null; psalmVersionId: number | null }>) {
     for (const item of items) {
       await fetch(`/api/precent/${set.id}/items`, {
         method: 'POST',

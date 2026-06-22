@@ -37,9 +37,11 @@ export default async function PrecentSingPage({ params }: PageProps) {
   const psalm = await fetchPsalmDetail(item.psalmId)
   if (!psalm) notFound()
 
-  // Active version selection — use first/primary version in precenting mode (no slug versioning)
+  // Active version selection — prefer psalmVersionId if set (e.g. version b from paste), else first
   const sortedVersions = psalm.psalmVersions.slice().sort((a, b) => a.id - b.id)
-  const activeVersion = sortedVersions[0] ?? null
+  const activeVersion = (item.psalmVersionId
+    ? sortedVersions.find((v) => v.id === item.psalmVersionId) ?? sortedVersions[0]
+    : sortedVersions[0]) ?? null
 
   // Derive primary tune from the active version
   const rawTune =
@@ -113,6 +115,7 @@ export default async function PrecentSingPage({ params }: PageProps) {
         versePartLabel={versePartLabel}
         precentingPrevHref={precentingPrevHref}
         precentingNextHref={precentingNextHref}
+        precentingVerseRange={item.verseRange ?? null}
       />
     </>
   )

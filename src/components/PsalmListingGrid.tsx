@@ -12,6 +12,7 @@ import { buildSnippet } from "@/lib/search-utils"
 
 export interface PsalmRow {
   id: number
+  versionId: number | null
   displayLabel: string
   slug: string
   firstLine: string | null

@@ -68,6 +68,7 @@ export default async function PrecentSetPage({
       setId: item.setId,
       psalmId: item.psalmId,
       tuneId: item.tuneId ?? null,
+      psalmVersionId: item.psalmVersionId ?? null,
       verseRange: item.verseRange ?? null,
       position: item.position,
       psalm: item.psalm
