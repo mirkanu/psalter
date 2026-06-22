@@ -16,7 +16,7 @@ export function SiteFooter() {
             <button onClick={() => setOpen('copyright')} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Copyright</button>
             <button onClick={() => setOpen('feedback')} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Feedback</button>
           </div>
-          <a href="https://gsdlabs.dev" target="_blank" rel="noopener noreferrer" className="hidden sm:block text-xs text-muted-foreground hover:text-foreground transition-colors">Made by GSD Labs</a>
+          <a href="https://gsdlabs.dev" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Made by GSD Labs</a>
         </div>
       </footer>
 
