@@ -40,7 +40,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 **Wave 1**
-- [ ] 04.9.13-01-PLAN.md — GearPopover replaces GearDrawer; layout state added to SingingView
+- [x] 04.9.13-01-PLAN.md — GearPopover replaces GearDrawer; layout state added to SingingView
 
 **Wave 2** *(depends on Wave 1)*
 - [ ] 04.9.13-02-PLAN.md — PlayMiniBar desktop right-align + abc/SoundCloud toggle; remove redundant TuneAudioPlayer
