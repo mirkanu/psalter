@@ -31,8 +31,8 @@ interface Props {
  * Layout (post 260517-bmz polish):
  *   [A-/A+] · [< Stanza N/M >] · [Play] · [Gear]
  *
- * View-mode selection (Staff/Lyrics/Solfège) lives exclusively in GearDrawer to
- * keep the bottom bar narrow on mobile (375px).
+ * View-mode selection (Staff/Lyrics/Solfège) lives exclusively in GearPopover
+ * (rendered via the `gear` slot) to keep the bottom bar narrow on mobile (375px).
  */
 export function GlassBottomBar({
   baseSize,
