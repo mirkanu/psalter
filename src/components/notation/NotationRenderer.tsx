@@ -23,7 +23,6 @@ import AbcPlayer from '@/components/AbcPlayer'
 import { FullscreenOverlay } from './FullscreenOverlay'
 import { StanzaList } from './StanzaList'
 import { BackToNotationButton } from './BackToNotationButton'
-import { TuneAudioPlayer } from '@/components/TuneAudioPlayer'
 import { splitOnPhraseBreaks, countNoteHeads } from '@/lib/abc-phrases'
 import { syllabifyForAbc } from '@/lib/lyrics'
 import { buildWLineFromSolfa } from '@/lib/abc-melisma'
@@ -1036,14 +1035,6 @@ export function NotationRenderer({
         {!chromeless && (
           <BackToNotationButton onClick={() => setViewMode('staff')} />
         )}
-        {/* 260517-cm0 #1f: inline recording player for chromeless (singing) view */}
-        {chromeless && (youtubeUrl || soundcloudUrl) && (
-          <TuneAudioPlayer
-            youtubeUrl={youtubeUrl}
-            soundcloudUrl={soundcloudUrl}
-            tuneName={tuneName}
-          />
-        )}
         {solfegeJpgUrl ? (
           // R2-hosted JPG with unknown intrinsic dimensions — next/image
           // requires either width/height or fill+sized parent, which the
@@ -1077,13 +1068,6 @@ export function NotationRenderer({
         <p className="text-sm text-muted-foreground italic">No lyrics available.</p>
       ) : (
         <div className={chromeless ? 'px-4 pt-4 space-y-4' : ''}>
-          {chromeless && (youtubeUrl || soundcloudUrl) && (
-            <TuneAudioPlayer
-              youtubeUrl={youtubeUrl}
-              soundcloudUrl={soundcloudUrl}
-              tuneName={tuneName}
-            />
-          )}
           <StanzaList stanzas={stanzas} />
         </div>
       )
