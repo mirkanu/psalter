@@ -171,23 +171,34 @@ export default async function PsalmPage({ params }: PageProps) {
   const rangeMatch = activeVersion?.psalterNumber?.match(/^\d+:(\d+(?:-\d+)?)/) ?? null
   const versePartLabel = rangeMatch ? rangeMatch[1] : null
 
+  // Compute the active tune's full image-page arrays (server-side only — deriveTuneJpgPages uses fs).
+  // This drives multi-page thumbnail nav in split-leaf view; forwarded through SingingView (never derived there).
+  // Uses primaryTune (page-level); client-side ?tune= override is handled in SingingView.
+  const activeTunePages = primaryTune
+    ? deriveTuneJpgPages(primaryTune.name)
+    : { staffPages: [] as string[], solfegePages: [] as string[] }
+
   return (
-    <SingingView
-      psalm={psalm}
-      currentSlug={slug}
-      prevSlug={prev}
-      nextSlug={next}
-      primaryTune={primaryTune}
-      alternateTunes={alternateTunes}
-      editoriallyLinkedTuneIds={Array.from(editorialSet)}
-      meter={primaryMeter}
-      stanzaMeter={stanzaMeter}
-      lyrics={lyrics}
-      lyricsStructured={lyricsStructured}
-      psalmListRows={psalmListRows}
-      studyHref={`/psalms/${slug}/study`}
-      versePartLabel={versePartLabel}
-      versionSiblings={versionSiblings}
-    />
+    <div className="max-w-4xl mx-auto">
+      <SingingView
+        psalm={psalm}
+        currentSlug={slug}
+        prevSlug={prev}
+        nextSlug={next}
+        primaryTune={primaryTune}
+        alternateTunes={alternateTunes}
+        editoriallyLinkedTuneIds={Array.from(editorialSet)}
+        meter={primaryMeter}
+        stanzaMeter={stanzaMeter}
+        lyrics={lyrics}
+        lyricsStructured={lyricsStructured}
+        psalmListRows={psalmListRows}
+        studyHref={`/psalms/${slug}/study`}
+        versePartLabel={versePartLabel}
+        versionSiblings={versionSiblings}
+        staffPages={activeTunePages.staffPages}
+        solfegePages={activeTunePages.solfegePages}
+      />
+    </div>
   )
 }

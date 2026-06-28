@@ -161,6 +161,8 @@ export default async function TunePage({ params }: PageProps) {
               lyricsStructured={(firstLinkedPsalmVersion?.lyricsStructured ?? null) as import('@/lib/lyrics-structured').StructuredLyrics | null}
               doubleLength={tune.doubleLength ?? false}
               showLyrics={false}
+              staffPages={staffPages}
+              solfegePages={solfegePages}
             />
             <TuneMiniBarSection
               abc={bestAbc!}
