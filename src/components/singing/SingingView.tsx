@@ -5,7 +5,7 @@ import { NotationRendererClient } from '@/components/notation/NotationRendererCl
 import { PsalmTopBar } from './PsalmTopBar'
 import { GlassBottomBar } from './GlassBottomBar'
 import { PlayMiniBar } from './PlayMiniBar'
-import { GearDrawer } from './GearDrawer'
+import { GearPopover } from './GearPopover'
 import { OnboardingTour } from './OnboardingTour'
 import { PsalmSelectorSheet } from './PsalmSelectorSheet'
 import { TuneSwitcherSheet } from './TuneSwitcherSheet'
@@ -228,6 +228,7 @@ export function SingingView({
   // 04.9.4-02 lifted state: audio + gear drawer + stanza indicator
   const [isPlaying, setIsPlaying] = useState(false)
   const [gearOpen, setGearOpen] = useState(false)
+  const [layout, setLayout] = useState<'split-leaf' | 'inline'>('inline')
   const [miniBarMounted, setMiniBarMounted] = useState(false)
   const [miniBarVisible, setMiniBarVisible] = useState(false)
   const [currentStanza, setCurrentStanza] = useState<number | null>(null)
@@ -400,6 +401,20 @@ export function SingingView({
         onPlayToggle={handlePlayToggle}
         onGearOpen={() => setGearOpen(true)}
         showLyricsOption={!!showLyrics}
+        gear={
+          <GearPopover
+            open={gearOpen}
+            onOpenChange={setGearOpen}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            layout={layout}
+            onLayoutChange={setLayout}
+            studyHref={studyHref}
+            onRestartTour={handleRestartTour}
+            showLayoutToggle={true}
+            showLyricsOption={!!showLyrics}
+          />
+        }
       />
       {abc && (
         <PlayMiniBar
@@ -411,17 +426,7 @@ export function SingingView({
           onPlayingChange={handlePlayingChange}
         />
       )}
-      <GearDrawer
-        open={gearOpen}
-        onOpenChange={setGearOpen}
-        psalm={psalm}
-        meter={meter}
-        studyHref={studyHref}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        showLyricsOption={!!showLyrics}
-        onRestartTour={handleRestartTour}
-      />
+      {/* GearDrawer removed — settings now via GearPopover rendered in GlassBottomBar gear slot */}
       <OnboardingTour key={tourKey} />
     </div>
   )
