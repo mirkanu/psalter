@@ -52,7 +52,7 @@ interface Props {
 function readStoredViewMode(showLyrics: boolean): ViewMode {
   try {
     const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_MODE_KEY) : null
-    if (raw === 'staff' || raw === 'solfege' || raw === 'lyrics') {
+    if (raw === 'staff' || raw === 'solfege' || raw === 'staff-split' || raw === 'solfege-split' || raw === 'lyrics') {
       if (raw === 'lyrics' && !showLyrics) return 'staff'
       return raw
     }
@@ -161,21 +161,29 @@ export function SingingView({
     baseSizeRef.current = baseSize
   }, [baseSize])
 
-  // 260517-ht8 #4: when switching away from Staff, auto-close the mini-bar and
-  // reset to paused state. Audio belongs to the Staff context — once the user
-  // is reading Lyrics or Solfège the abcjs synth is no longer the active player
-  // (TuneAudioPlayer handles the recording there).
+  // When switching to lyrics-only, auto-close the mini-bar and reset playback.
+  // Split-leaf and solfege modes still use the abcjs synth, so the mini-bar stays.
   const prevViewModeRef = useRef<ViewMode>(viewMode)
   useEffect(() => {
     const prev = prevViewModeRef.current
     prevViewModeRef.current = viewMode
     if (prev === viewMode) return
-    if (viewMode !== 'staff') {
-      // Reset playback + collapse mini-bar
+    if (viewMode === 'lyrics') {
       setIsPlaying(false)
       setMiniBarVisible(false)
     }
   }, [viewMode])
+
+  // Fetch melisma approval status for the active tune (drives GearPopover gray-out)
+  useEffect(() => {
+    if (!activeTune?.id) { setMelismaStatus(null); return }
+    let cancelled = false
+    fetch(`/api/dev/melisma-decision?tuneId=${activeTune.id}`)
+      .then((r) => r.json())
+      .then((data) => { if (!cancelled) setMelismaStatus(data.status ?? null) })
+      .catch(() => { if (!cancelled) setMelismaStatus(null) })
+    return () => { cancelled = true }
+  }, [activeTune?.id])
 
   // 04.9.4-03: Proportional zoom heuristic.
   // On viewport width change (resize / orientation flip / visualViewport),
@@ -234,7 +242,7 @@ export function SingingView({
   // 04.9.4-02 lifted state: audio + gear drawer + stanza indicator
   const [isPlaying, setIsPlaying] = useState(false)
   const [gearOpen, setGearOpen] = useState(false)
-  const [layout, setLayout] = useState<'split-leaf' | 'inline'>('inline')
+  const [melismaStatus, setMelismaStatus] = useState<'approved' | 'not_approved' | null>(null)
   const [miniBarMounted, setMiniBarMounted] = useState(false)
   const [miniBarVisible, setMiniBarVisible] = useState(false)
   const [currentStanza, setCurrentStanza] = useState<number | null>(null)
@@ -374,7 +382,6 @@ export function SingingView({
             onStanzaPageChange={setStanzaPage}
             youtubeUrl={youtubeUrl}
             soundcloudUrl={soundcloudUrl}
-            layout={layout}
             staffPages={staffPages}
             solfegePages={solfegePages}
           />
@@ -416,12 +423,11 @@ export function SingingView({
             onOpenChange={setGearOpen}
             viewMode={viewMode}
             onViewModeChange={setViewMode}
-            layout={layout}
-            onLayoutChange={setLayout}
             studyHref={studyHref}
             onRestartTour={handleRestartTour}
-            showLayoutToggle={true}
             showLyricsOption={!!showLyrics}
+            staffAvailable={!!(activeTune?.abcNotation || activeTune?.abcSatb) && melismaStatus === 'approved'}
+            solfegeAvailable={!!(activeTune?.solfegeOcrText || (activeTune as { solfegeSopranoEdited?: string | null })?.solfegeSopranoEdited) && melismaStatus === 'approved'}
           />
         }
       />

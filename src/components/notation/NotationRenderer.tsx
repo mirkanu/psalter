@@ -124,15 +124,13 @@ export interface NotationRendererProps {
    * a melisma continuation (w: `_` token). NULL/undefined = use heuristic path.
    */
   melismaPositions?: number[][] | null
-  /** UI-SPEC §3: 'split-leaf' renders notation left + stanza list right (desktop); 'inline' stacks them. */
-  layout?: 'split-leaf' | 'inline'
   /** Full ordered list of staff-score image paths for the active tune (server-derived). Enables multi-page thumbnail nav. */
   staffPages?: string[]
   /** Full ordered list of solfège image paths for the active tune (server-derived). Enables multi-page thumbnail nav. */
   solfegePages?: string[]
 }
 
-export type ViewMode = 'staff' | 'solfege' | 'lyrics'
+export type ViewMode = 'staff' | 'solfege' | 'staff-split' | 'solfege-split' | 'lyrics'
 type BaseSize = number
 
 const MIN_SIZE = 4
@@ -153,7 +151,7 @@ function isBaseSize(n: number): n is BaseSize {
 }
 
 function isViewMode(s: string): s is ViewMode {
-  return s === 'staff' || s === 'solfege' || s === 'lyrics'
+  return s === 'staff' || s === 'solfege' || s === 'staff-split' || s === 'solfege-split' || s === 'lyrics'
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -199,8 +197,16 @@ function isViewMode(s: string): s is ViewMode {
  * Persistence keys: 'psalter-staff-size' (BaseSize), 'psalter-score-mode' (ViewMode).
  */
 function activePages(viewMode: ViewMode, staffPages?: string[], solfegePages?: string[]): string[] {
-  if (viewMode === 'solfege') return solfegePages ?? []
+  if (viewMode === 'solfege' || viewMode === 'solfege-split') return solfegePages ?? []
   return staffPages ?? []
+}
+
+function isSplitMode(viewMode: ViewMode): boolean {
+  return viewMode === 'staff-split' || viewMode === 'solfege-split'
+}
+
+function isSolfegeMode(viewMode: ViewMode): boolean {
+  return viewMode === 'solfege' || viewMode === 'solfege-split'
 }
 
 export function NotationRenderer({
@@ -227,7 +233,6 @@ export function NotationRenderer({
   doubleLength,
   solfegeOcrText = null,
   melismaPositions = null,
-  layout = 'inline',
   staffPages = [],
   solfegePages = [],
 }: NotationRendererProps) {
@@ -1002,6 +1007,12 @@ export function NotationRenderer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [split, visiblePhraseIndices, visibleCycles, tuneMeter, showLyrics, phraseSubdivisions, chromeless, solfegeVoices, melismaPositions])
 
+  // Split-leaf staff view needs ABC without inline w: lyrics (lyrics render in separate column).
+  const unifiedAbcNoLyrics = useMemo(
+    () => unifiedAbc.split('\n').filter((l) => !/^w:\s/.test(l.trim())).join('\n'),
+    [unifiedAbc],
+  )
+
   // ── View area ─────────────────────────────────────────────────────────────
   // Item 2: Play plays once — no chain/repeat. We deliberately do NOT pass
   // autoPlayToken / onPlayStart / onPlaybackComplete so playback stops at end
@@ -1016,44 +1027,61 @@ export function NotationRenderer({
     ) : null
 
   let viewArea: ReactNode
-  if (viewMode === 'staff') {
+  const isSplit = isSplitMode(viewMode)
+  const usesSolfege = isSolfegeMode(viewMode)
+
+  if (viewMode === 'staff' || viewMode === 'staff-split') {
+    // Staff ABC: inline (with w: lyrics) or split-leaf (no w: lyrics, StanzaList below)
     const isPartialPage = visibleCycles.length < CYCLES_PER_PAGE
-    // In chromeless staff mode the parent flex-1 + max-h-full SVG already
-    // pins layout to the viewport — applying a measured min-height would
-    // force vertical scroll back. Only apply minStaffHeight outside chromeless.
     const applyMinHeight = !chromeless && isPartialPage && minStaffHeight > 0
-    viewArea = (
-      <div
-        ref={staffRef}
-        style={applyMinHeight ? { minHeight: minStaffHeight } : undefined}
-      >
+    const abcForView = isSplit ? unifiedAbcNoLyrics : unifiedAbc
+
+    const notationBlock = (
+      <div ref={staffRef} style={applyMinHeight ? { minHeight: minStaffHeight } : undefined}>
         <AbcPlayer
-          abc={unifiedAbc}
+          abc={abcForView}
           scale={scale}
           tuneName={tuneName}
           staffJpgUrl={scoreJpgUrl}
           solfegeJpgUrl={solfegeJpgUrl}
-          renderLyricsBelow={lyricsBelow}
+          renderLyricsBelow={isSplit ? undefined : lyricsBelow}
           showOriginal={showOriginal}
           onShowOriginalChange={setShowOriginal}
-          renderAboveOriginal={
-            <BackToNotationButton onClick={() => setShowOriginal(false)} />
-          }
+          renderAboveOriginal={<BackToNotationButton onClick={() => setShowOriginal(false)} />}
           hidePlayerControls={isFullscreen || chromeless}
           staffWidthFactor={staffWidthFactor}
         />
       </div>
     )
-  } else if (viewMode === 'solfege') {
-    // ── UI-SPEC §3: split-leaf + multi-page thumbnails + flush image + independent stanza scroll ──
+
+    if (isSplit) {
+      const stanzaBlock = showLyrics && stanzas.length > 0 ? (
+        <div className="min-h-[60vh] max-h-[80vh] overflow-y-auto">
+          <StanzaList stanzas={stanzas} />
+        </div>
+      ) : null
+      viewArea = (
+        <div className={chromeless ? 'space-y-4 px-4 pt-4' : 'space-y-4'}>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="md:col-span-3 space-y-2 md:sticky md:top-0 md:self-start">
+              {notationBlock}
+            </div>
+            <div className="md:col-span-2">
+              {stanzaBlock}
+            </div>
+          </div>
+        </div>
+      )
+    } else {
+      viewArea = notationBlock
+    }
+  } else if (viewMode === 'solfege' || viewMode === 'solfege-split') {
+    // Solfege: JPEG image inline or split-leaf. (Solfege-as-ABC is future work.)
     const pages = activePages(viewMode, staffPages, solfegePages)
     const hasMultiPages = pages.length > 1
     const currentSrc = pages[pageIndex] ?? solfegeJpgUrl ?? null
-    const isSplit = layout === 'split-leaf'
-    const solfegeImgScale = chromeless ? Math.max(0.5, Math.min(1.0, baseSize / 20)) : 1.0
 
     const mainImageBlock = currentSrc ? (
-      // -mx-4 counteracts the parent px-4 so the image sits flush to screen edges (mobile)
       <div className={chromeless ? '-mx-4' : ''}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -1062,7 +1090,6 @@ export function NotationRenderer({
           className="w-full h-auto rounded-md border border-border"
           style={chromeless ? { maxWidth: '100%' } : undefined}
         />
-        <p className={cn('text-xs text-muted-foreground text-center mt-1', chromeless ? 'px-4' : '')}>Solfège score</p>
       </div>
     ) : (
       <p className="text-sm text-muted-foreground italic">Score image not available</p>
@@ -1101,7 +1128,7 @@ export function NotationRenderer({
     ) : null
 
     const stanzaBlock = showLyrics && stanzas.length > 0 ? (
-      <div className={isSplit ? 'max-h-[60vh] overflow-y-auto' : (chromeless ? '' : 'max-h-[60vh] overflow-y-auto')}>
+      <div className={isSplit ? 'min-h-[60vh] max-h-[80vh] overflow-y-auto' : (chromeless ? '' : 'max-h-[60vh] overflow-y-auto')}>
         <StanzaList stanzas={stanzas} />
       </div>
     ) : null
@@ -1113,12 +1140,10 @@ export function NotationRenderer({
         )}
         {isSplit ? (
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            {/* notation/image column — 60% on desktop = 3/5 cols */}
-            <div className="md:col-span-3 space-y-2">
+            <div className="md:col-span-3 space-y-2 md:sticky md:top-0 md:self-start">
               {mainImageBlock}
               {thumbnailStrip}
             </div>
-            {/* stanza column — 40% on desktop = 2/5 cols */}
             <div className="md:col-span-2">
               {stanzaBlock}
             </div>
