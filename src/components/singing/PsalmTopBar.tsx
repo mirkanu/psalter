@@ -97,7 +97,7 @@ export function PsalmTopBar({
       data-singing-topbar
       className="sticky top-14 z-30 bg-background/95 backdrop-blur border-b"
     >
-      <div className="relative flex items-center justify-between gap-2 px-2 h-12 md:h-14 landscape:h-10">
+      <div className="max-w-4xl mx-auto relative flex items-center justify-between gap-2 px-2 h-12 md:h-14 landscape:h-10">
         {isPending && (
           <div className="absolute inset-x-0 top-0 h-0.5 bg-foreground" aria-hidden />
         )}
