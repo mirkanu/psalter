@@ -46,7 +46,7 @@ Plans:
 - [x] 04.9.13-02-PLAN.md — PlayMiniBar desktop right-align + abc/SoundCloud toggle; remove redundant TuneAudioPlayer
 
 **Wave 3** *(depends on Wave 2)*
-- [ ] 04.9.13-03-PLAN.md — Split-leaf view overhaul + desktop max-width constraint on /psalms/[id]
+- [x] 04.9.13-03-PLAN.md — Split-leaf view overhaul + desktop max-width constraint on /psalms/[id]
 
 ### Milestone 2 — Precentor Portal & Polish
 
