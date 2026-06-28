@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { NotationRendererClient } from "@/components/notation/NotationRendererClient"
 import { TuneDetailClient } from "@/components/TuneDetailClient"
 import { PsalmsByTuneSection } from "@/components/PsalmsByTuneSection"
+import { TuneMiniBarSection } from "@/components/TuneMiniBarSection"
 import { deriveTuneJpgPages } from "@/lib/tune-jpg-urls"
 import { sopranoOnly, pickAbcWithMarkers } from "@/lib/utils"
 
@@ -160,6 +161,11 @@ export default async function TunePage({ params }: PageProps) {
               lyricsStructured={(firstLinkedPsalmVersion?.lyricsStructured ?? null) as import('@/lib/lyrics-structured').StructuredLyrics | null}
               doubleLength={tune.doubleLength ?? false}
               showLyrics={false}
+            />
+            <TuneMiniBarSection
+              abc={bestAbc!}
+              soundcloudUrl={tune.soundcloudUrl ?? null}
+              tuneName={tune.name ?? `Tune ${tune.id}`}
             />
           </section>
         )
