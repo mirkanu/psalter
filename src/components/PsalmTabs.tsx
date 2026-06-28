@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Pencil } from 'lucide-react'
 import { NotationRendererClient } from '@/components/notation/NotationRendererClient'
+import type { ViewMode } from '@/components/notation/NotationRenderer'
 import { ChangeTuneDialog } from '@/components/ChangeTuneDialog'
 import type { PsalmDetail } from '@/db/queries/psalms'
 import type { AlternateTune } from '@/db/queries/tunes'
@@ -344,7 +345,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
   const [changeTuneOpen, setChangeTuneOpen] = useState(false)
   // Tracks the active notation view mode so the desktop layout can switch
   // between stacked (Staff/Solfège) and 2-column (Lyrics only).
-  const [notationViewMode, setNotationViewMode] = useState<'staff' | 'solfege' | 'lyrics'>('staff')
+  const [notationViewMode, setNotationViewMode] = useState<ViewMode>('staff')
   // Preserve the active desktop tab when the layout mode switches.
   const [desktopTab, setDesktopTab] = useState('overview')
 
