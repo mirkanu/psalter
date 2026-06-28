@@ -9,13 +9,13 @@ import {
 import { Separator } from '@/components/ui/separator'
 import {
   Music,
-  FileImage,
   Columns2,
   Rows2,
   BookOpen,
   HelpCircle,
   Settings,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
 
 interface Props {
@@ -23,14 +23,13 @@ interface Props {
   onOpenChange: (open: boolean) => void
   viewMode: ViewMode
   onViewModeChange: (m: ViewMode) => void
-  /** Current layout flag ('split-leaf' | 'inline'); defaults to 'inline'. */
-  layout: 'split-leaf' | 'inline'
-  onLayoutChange: (l: 'split-leaf' | 'inline') => void
   studyHref: string
   onRestartTour: () => void
-  /** True ONLY on psalm pages. When false the Layout sub-toggle is hidden. */
-  showLayoutToggle: boolean
   showLyricsOption: boolean
+  /** Whether Staff notation is available (has approved ABC). */
+  staffAvailable: boolean
+  /** Whether Solfege notation is available (has approved solfege data). */
+  solfegeAvailable: boolean
 }
 
 export function GearPopover({
@@ -38,24 +37,53 @@ export function GearPopover({
   onOpenChange,
   viewMode,
   onViewModeChange,
-  layout,
-  onLayoutChange,
   studyHref,
   onRestartTour,
-  showLayoutToggle,
   showLyricsOption,
+  staffAvailable,
+  solfegeAvailable,
 }: Props) {
   const router = useRouter()
 
-  const isMusicNotes = viewMode === 'staff' || viewMode === 'solfege'
+  const isMusicNotes = viewMode !== 'lyrics'
+  const isStaff = viewMode === 'staff' || viewMode === 'staff-split'
+  const isSplit = viewMode === 'staff-split' || viewMode === 'solfege-split'
 
-  const applyMainMusicNotes = () => {
-    if (!isMusicNotes) onViewModeChange('staff')
+  const handleNotationChange = (notation: 'staff' | 'solfege') => {
+    if (notation === 'staff' && !staffAvailable) {
+      toast('Coming soon', { description: 'Staff notation for this tune is not yet available' })
+      return
+    }
+    if (notation === 'solfege' && !solfegeAvailable) {
+      toast('Coming soon', { description: 'Solfege notation for this tune is not yet available' })
+      return
+    }
+    const newMode: ViewMode = isSplit
+      ? (notation === 'staff' ? 'staff-split' : 'solfege-split')
+      : (notation === 'staff' ? 'staff' : 'solfege')
+    onViewModeChange(newMode)
+  }
+
+  const handleLayoutChange = (layout: 'inline' | 'split-leaf') => {
+    const newMode: ViewMode = isStaff
+      ? (layout === 'split-leaf' ? 'staff-split' : 'staff')
+      : (layout === 'split-leaf' ? 'solfege-split' : 'solfege')
+    onViewModeChange(newMode)
+  }
+
+  const handleMainMusicNotes = () => {
+    if (isMusicNotes) return
+    // Restore last music mode — default to staff if nothing saved
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('psalter-score-mode') : null
+    if (stored === 'staff-split' || stored === 'solfege' || stored === 'solfege-split') {
+      onViewModeChange(stored as ViewMode)
+    } else {
+      onViewModeChange('staff')
+    }
   }
 
   const handleRestartTour = () => {
     onOpenChange(false)
-    // Small delay so the popover close animation completes before the tour overlay paints.
     setTimeout(onRestartTour, 160)
   }
 
@@ -83,14 +111,14 @@ export function GearPopover({
         sideOffset={8}
         className="w-72 p-4 space-y-2"
       >
-        {/* Main toggle (radio, mutually exclusive) */}
+        {/* Main toggle */}
         <div role="radiogroup" aria-label="View type" className="grid grid-cols-2 gap-1">
           <button
             type="button"
             role="radio"
             aria-checked={isMusicNotes}
             data-settings-main="music-notes"
-            onClick={applyMainMusicNotes}
+            onClick={handleMainMusicNotes}
             className={[
               'h-10 rounded-md text-sm font-semibold active:scale-[0.95] transition-[transform,background,color] duration-75 motion-reduce:transition-none',
               isMusicNotes
@@ -117,95 +145,95 @@ export function GearPopover({
           </button>
         </div>
 
-        {/* Sub-toggles (conditional, only in Music Notes) */}
-        <div
-          className="transition-opacity duration-100 motion-reduce:transition-none"
-          style={{
-            opacity: isMusicNotes ? 1 : 0,
-            pointerEvents: isMusicNotes ? 'auto' : 'none',
-          }}
-        >
-          {/* Sub-toggle A: Notation type */}
-          <div role="radiogroup" aria-label="Notation type" data-settings-sub="notation">
-            <span className="text-xs text-muted-foreground">Notation:</span>
-            <div className="flex items-center gap-1 mt-1">
-              <button
-                type="button"
-                role="radio"
-                aria-checked={viewMode === 'staff'}
-                aria-label="Staff"
-                onClick={() => onViewModeChange('staff')}
-                className={[
-                  'h-8 w-8 inline-flex items-center justify-center rounded-md active:scale-[0.90] transition-transform duration-75',
-                  viewMode === 'staff'
-                    ? 'bg-foreground text-background'
-                    : 'text-muted-foreground hover:bg-muted',
-                ].join(' ')}
-              >
-                <Music className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={viewMode === 'solfege'}
-                aria-label="Solfège"
-                onClick={() => onViewModeChange('solfege')}
-                className={[
-                  'h-8 w-8 inline-flex items-center justify-center rounded-md active:scale-[0.90] transition-transform duration-75',
-                  viewMode === 'solfege'
-                    ? 'bg-foreground text-background'
-                    : 'text-muted-foreground hover:bg-muted',
-                ].join(' ')}
-              >
-                <FileImage className="h-4 w-4" />
-              </button>
+        {/* Sub-toggles — only rendered when Music Notes is active (A1: no gap) */}
+        {isMusicNotes && (
+          <>
+            {/* Sub-toggle A: Notation type */}
+            <div role="radiogroup" aria-label="Notation type" data-settings-sub="notation">
+              <span className="text-xs text-muted-foreground">Notation:</span>
+              <div className="flex items-center gap-1 mt-1">
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={isStaff}
+                  aria-label="Staff"
+                  onClick={() => handleNotationChange('staff')}
+                  disabled={!staffAvailable}
+                  className={[
+                    'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
+                    !staffAvailable && 'opacity-40 cursor-not-allowed',
+                    isStaff && staffAvailable
+                      ? 'bg-foreground text-background'
+                      : 'text-muted-foreground hover:bg-muted',
+                  ].join(' ')}
+                >
+                  <Music className="h-4 w-4" />
+                  <span className="text-xs font-medium">Staff</span>
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={!isStaff}
+                  aria-label="Solfege"
+                  onClick={() => handleNotationChange('solfege')}
+                  disabled={!solfegeAvailable}
+                  className={[
+                    'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
+                    !solfegeAvailable && 'opacity-40 cursor-not-allowed',
+                    !isStaff && solfegeAvailable
+                      ? 'bg-foreground text-background'
+                      : 'text-muted-foreground hover:bg-muted',
+                  ].join(' ')}
+                >
+                  <span className="text-[10px] font-mono tracking-tight leading-none">d r m</span>
+                  <span className="text-xs font-medium">Solfege</span>
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Sub-toggle B: Layout (psalm pages only) */}
-          {showLayoutToggle && (
-            <div role="radiogroup" aria-label="Layout" data-settings-sub="layout" className="mt-2">
+            {/* Sub-toggle B: Layout */}
+            <div role="radiogroup" aria-label="Layout" data-settings-sub="layout">
               <span className="text-xs text-muted-foreground">Layout:</span>
               <div className="flex items-center gap-1 mt-1">
                 <button
                   type="button"
                   role="radio"
-                  aria-checked={layout === 'split-leaf'}
-                  aria-label="Split-leaf"
-                  onClick={() => onLayoutChange('split-leaf')}
-                  className={[
-                    'h-8 w-8 inline-flex items-center justify-center rounded-md active:scale-[0.90] transition-transform duration-75',
-                    layout === 'split-leaf'
-                      ? 'bg-foreground text-background'
-                      : 'text-muted-foreground hover:bg-muted',
-                  ].join(' ')}
-                >
-                  <Columns2 className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={layout === 'inline'}
+                  aria-checked={!isSplit}
                   aria-label="Inline"
-                  onClick={() => onLayoutChange('inline')}
+                  onClick={() => handleLayoutChange('inline')}
                   className={[
-                    'h-8 w-8 inline-flex items-center justify-center rounded-md active:scale-[0.90] transition-transform duration-75',
-                    layout === 'inline'
+                    'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
+                    !isSplit
                       ? 'bg-foreground text-background'
                       : 'text-muted-foreground hover:bg-muted',
                   ].join(' ')}
                 >
                   <Rows2 className="h-4 w-4" />
+                  <span className="text-xs font-medium">Inline</span>
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={isSplit}
+                  aria-label="Split-Leaf"
+                  onClick={() => handleLayoutChange('split-leaf')}
+                  className={[
+                    'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
+                    isSplit
+                      ? 'bg-foreground text-background'
+                      : 'text-muted-foreground hover:bg-muted',
+                  ].join(' ')}
+                >
+                  <Columns2 className="h-4 w-4" />
+                  <span className="text-xs font-medium">Split-Leaf</span>
                 </button>
               </div>
             </div>
-          )}
-        </div>
+          </>
+        )}
 
-        {/* Separator between toggle block and action buttons */}
         <Separator className="my-2" />
 
-        {/* Study button */}
         <button
           type="button"
           data-settings-study
@@ -218,7 +246,6 @@ export function GearPopover({
           <span>Study</span>
         </button>
 
-        {/* Restart tour button */}
         <button
           type="button"
           data-restart-tour
