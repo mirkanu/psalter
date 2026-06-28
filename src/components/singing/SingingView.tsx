@@ -424,6 +424,8 @@ export function SingingView({
           onCollapse={() => setMiniBarVisible(false)}
           isPlaying={isPlaying}
           onPlayingChange={handlePlayingChange}
+          soundcloudUrl={soundcloudUrl}
+          tuneName={tuneName}
         />
       )}
       {/* GearDrawer removed — settings now via GearPopover rendered in GlassBottomBar gear slot */}
