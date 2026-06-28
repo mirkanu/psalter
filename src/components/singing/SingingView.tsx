@@ -441,6 +441,7 @@ export function SingingView({
           onPlayingChange={handlePlayingChange}
           soundcloudUrl={soundcloudUrl}
           tuneName={tuneName}
+          variant="inline"
         />
       )}
       {/* GearDrawer removed — settings now via GearPopover rendered in GlassBottomBar gear slot */}
