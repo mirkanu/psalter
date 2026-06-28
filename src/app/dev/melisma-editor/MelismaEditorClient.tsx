@@ -295,11 +295,25 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
     setDecisionSaving(true)
     setDecisionMsg(null)
     try {
-      const body: { tuneId: number; status?: MelismaStatus | null; comment?: string } = {
+      const melismaPositionsPayload =
+        hasStatusChange && currentStatus === 'approved'
+          ? (() => {
+              const phraseIdxSet = [...new Set(tokens.map(t => t.phraseIdx))].sort((a, b) => a - b)
+              return phraseIdxSet.map(pIdx => {
+                const phraseToks = tokens.filter(t => t.phraseIdx === pIdx)
+                return phraseToks.reduce<number[]>((acc, tok, intraIdx) => {
+                  if (underlined[tok.globalIdx]) acc.push(intraIdx)
+                  return acc
+                }, [])
+              })
+            })()
+          : undefined
+      const body: { tuneId: number; status?: MelismaStatus | null; comment?: string; melismaPositions?: number[][] } = {
         tuneId: tune.id,
       }
       if (hasStatusChange) body.status = currentStatus === '' ? null : currentStatus
       if (hasComment) body.comment = trimmedComment
+      if (melismaPositionsPayload !== undefined) body.melismaPositions = melismaPositionsPayload
       const res = await fetch('/api/dev/melisma-decision', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -340,7 +354,7 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
     } finally {
       setDecisionSaving(false)
     }
-  }, [tune, statusDirty, currentStatus, pendingComment])
+  }, [tune, statusDirty, currentStatus, pendingComment, tokens, underlined])
 
   const toggle = useCallback((globalIdx: number) => {
     setUnderlined(u => ({ ...u, [globalIdx]: !u[globalIdx] }))
