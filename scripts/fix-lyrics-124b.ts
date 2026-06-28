@@ -109,7 +109,7 @@ async function main() {
   if (!process.argv.includes('--apply')) {
     console.log('DRY RUN');
     console.log(`Psalm 124b: ${psalm124b.length} stanzas`);
-    console.log(`Psalm 148b: ${psalm148b.length} stanzas');
+    console.log(`Psalm 148b: ${psalm148b.length} stanzas`);
     return;
   }
   await db.update(psalmVersions).set({ lyricsStructured: psalm124b }).where(eq(psalmVersions.id, 138));
