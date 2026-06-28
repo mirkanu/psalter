@@ -3,16 +3,19 @@
  *   → { currentStatus: 'approved'|'not_approved'|null, history: DecisionEntry[] }
  *
  * POST /api/dev/melisma-decision
- *   body: { tuneId: number, status?: 'approved'|'not_approved'|null, comment?: string }
+ *   body: { tuneId: number, status?, comment?, melismaPositions? }
  *   At least one of status/comment must be present. Appends a new history row.
  *   `status: null` means "no status change" — used when only logging a comment.
+ *   `melismaPositions` is persisted to tunes.melisma_positions whenever provided
+ *   (including [] for zero-melisma approvals), so the positions branch in
+ *   NotationRenderer runs on prod for confirmed tunes.
  *
  * Gated by Cloudflare Access on /dev/* (psalter-dev-tools app).
  */
 
 import { NextResponse } from 'next/server'
 import { db } from '@/db'
-import { tuneMelismaDecisions } from '@/db/schema'
+import { tuneMelismaDecisions, tunes } from '@/db/schema'
 import { eq, desc, and, isNotNull } from 'drizzle-orm'
 
 export const dynamic = 'force-dynamic'
@@ -61,6 +64,7 @@ interface PostBody {
   tuneId: number
   status?: MelismaStatus | null
   comment?: string
+  melismaPositions?: number[][] | null
 }
 
 export async function POST(req: Request) {
@@ -100,6 +104,13 @@ export async function POST(req: Request) {
       comment: hasComment ? body.comment!.trim() : null,
     })
     .returning()
+
+  if (body.melismaPositions !== undefined) {
+    await db
+      .update(tunes)
+      .set({ melismaPositions: body.melismaPositions })
+      .where(eq(tunes.id, body.tuneId))
+  }
 
   // Recompute current status (latest non-null) — cheap, single tune
   const latestStatusRow = await db
