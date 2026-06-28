@@ -43,7 +43,7 @@ Plans:
 - [x] 04.9.13-01-PLAN.md — GearPopover replaces GearDrawer; layout state added to SingingView
 
 **Wave 2** *(depends on Wave 1)*
-- [ ] 04.9.13-02-PLAN.md — PlayMiniBar desktop right-align + abc/SoundCloud toggle; remove redundant TuneAudioPlayer
+- [x] 04.9.13-02-PLAN.md — PlayMiniBar desktop right-align + abc/SoundCloud toggle; remove redundant TuneAudioPlayer
 
 **Wave 3** *(depends on Wave 2)*
 - [ ] 04.9.13-03-PLAN.md — Split-leaf view overhaul + desktop max-width constraint on /psalms/[id]
