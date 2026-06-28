@@ -33,6 +33,18 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 4.9.9 (INSERTED): Staff Alignment — Melisma Support** - Fix the remaining 84 failing psalms in staff view by implementing `_` hold tokens for passing notes. Use solfège OCR text already in DB to detect dot-pair passing notes; apply duration heuristic for residual mismatches.
 - [x] **Phase 4.9.10 (INSERTED): Staff Alignment — PHRASE_BREAK Re-annotation** - Re-run annotate-phrase-breaks.ts with Path NH tokenizer; 150/150 psalms pass staff alignment sweep; RENDER-08 closed. (completed 2026-05-29)
 - [x] **Phase 04.12 (INSERTED): Explore Page Rebuild** - Full /explore rebuild to match psalter.cprc.co.uk: schema migrations (psalms.date_bc/occasion, naves_topics.messianic, verse_naves_topics.sub_topic/quotation, new creedal_references table); UI rebuilds for all 6 sections (Themes split by topic_type, Messianic By Topic view, Quoted in NT, Other Topics with sub-topic drill-down, Authors filterable table, Creeds/Heidelberg Catechism) (completed 2026-06-14)
+- [ ] **Phase 4.9.13 (INSERTED): Single Psalm UI Streamlining** - Redesign the Single Psalm page for clarity and compactness: (1) Gear menu becomes a compact popover with main toggle (Music Notes / Lyrics Only) + conditional Staff/Solfege and Split-leaf/Inline sub-toggles; "Restart tour" retained; "About this Psalm" collapsed into "Study" button reusing the existing full-study panel; (2) Player bar narrows and right-aligns on desktop; abc ↔ SoundCloud toggle with localStorage persistence + "lyrics may not match" disclaimer; applied to both /psalms/[id] and /tunes/[id]; (3) Split-leaf view overhaul — full-width mobile image, multi-page thumbnail + arrow navigation, separate no-scroll stanza browser, abc/jpeg toggle between image and lyrics, remove redundant "Play recording" button; (4) Desktop max-width constraint matching /tunes/[id]
+**Plans:** 3 plans
+
+Plans:
+**Wave 1**
+- [ ] 04.9.13-01-PLAN.md — GearPopover replaces GearDrawer; layout state added to SingingView
+
+**Wave 2** *(depends on Wave 1)*
+- [ ] 04.9.13-02-PLAN.md — PlayMiniBar desktop right-align + abc/SoundCloud toggle; remove redundant TuneAudioPlayer
+
+**Wave 3** *(depends on Wave 2)*
+- [ ] 04.9.13-03-PLAN.md — Split-leaf view overhaul + desktop max-width constraint on /psalms/[id]
 
 ### Milestone 2 — Precentor Portal & Polish
 
@@ -782,7 +794,7 @@ Plans:
 ## Progress
 
 **Milestone 1 Execution Order:**
-1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 4.9.5 → 4.9.6 → 4.9.7 → 4.9.8 → 4.9.9 → 4.9.10 → 4.9.11 → 4.9.12
+1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 4.9.5 → 4.9.6 → 4.9.7 → 4.9.8 → 4.9.9 → 4.9.10 → 4.9.11 → 4.9.12 → 4.9.13
 
 **Milestone 2 Execution Order:**
 5 → 05.1 → 05.2 → 05.3 → 05.4 → 6
@@ -812,6 +824,7 @@ Plans:
 | 4.9.10. PHRASE_BREAK Re-annotation | 2/2 | Complete | 2026-05-29 |
 | 4.9.11. Lyric-Count False Positive Fix | 0/TBD | Not started | - |
 | 4.9.12. Melisma positions as tune-level data | 0/TBD | Not started | - |
+| 4.9.13. Single Psalm UI Streamlining | 0/TBD | Not started | - |
 
 ### Milestone 2 — Precentor Portal & Polish
 
