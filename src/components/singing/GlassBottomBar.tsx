@@ -1,9 +1,10 @@
 'use client'
+import type { ReactNode } from 'react'
 import { Settings, Play, Pause, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
 
 interface Props {
-  /** Retained for prop compatibility with SingingView; view selection now lives in GearDrawer. */
+  /** Retained for prop compatibility with SingingView; view selection now lives in GearPopover. */
   viewMode?: ViewMode
   onViewModeChange?: (mode: ViewMode) => void
   baseSize: number
@@ -20,6 +21,8 @@ interface Props {
   onGearOpen: () => void
   /** Retained for prop compatibility; no longer rendered here. */
   showLyricsOption?: boolean
+  /** Gear popover slot — when provided, replaces the default Settings button. */
+  gear?: ReactNode
 }
 
 /**
@@ -28,8 +31,8 @@ interface Props {
  * Layout (post 260517-bmz polish):
  *   [A-/A+] · [< Stanza N/M >] · [Play] · [Gear]
  *
- * View-mode selection (Staff/Lyrics/Solfège) lives exclusively in GearDrawer to
- * keep the bottom bar narrow on mobile (375px).
+ * View-mode selection (Staff/Lyrics/Solfège) lives exclusively in GearPopover
+ * (rendered via the `gear` slot) to keep the bottom bar narrow on mobile (375px).
  */
 export function GlassBottomBar({
   baseSize,
@@ -41,6 +44,7 @@ export function GlassBottomBar({
   isPlaying,
   onPlayToggle,
   onGearOpen,
+  gear,
 }: Props) {
   const showStanza =
     currentStanza != null && totalStanzas != null && currentStanza > 0 && totalStanzas > 1
@@ -118,17 +122,19 @@ export function GlassBottomBar({
         {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
       </button>
 
-      {/* Gear — far right */}
-      <button
-        type="button"
-        aria-label="Settings"
-        data-singing-gear
-        data-tour-target="view-controls"
-        onClick={onGearOpen}
-        className="min-h-10 min-w-11 inline-flex items-center justify-center text-muted-foreground active:scale-[0.90] transition-transform duration-75 shrink-0"
-      >
-        <Settings className="h-5 w-5" />
-      </button>
+      {/* Gear — far right (slot or default button) */}
+      {gear ?? (
+        <button
+          type="button"
+          aria-label="Settings"
+          data-singing-gear
+          data-tour-target="view-controls"
+          onClick={onGearOpen}
+          className="min-h-10 min-w-11 inline-flex items-center justify-center text-muted-foreground active:scale-[0.90] transition-transform duration-75 shrink-0"
+        >
+          <Settings className="h-5 w-5" />
+        </button>
+      )}
     </nav>
   )
 }
