@@ -19,6 +19,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import AbcPlayer from '@/components/AbcPlayer'
 import { FullscreenOverlay } from './FullscreenOverlay'
 import { StanzaList } from './StanzaList'
@@ -123,6 +124,12 @@ export interface NotationRendererProps {
    * a melisma continuation (w: `_` token). NULL/undefined = use heuristic path.
    */
   melismaPositions?: number[][] | null
+  /** UI-SPEC §3: 'split-leaf' renders notation left + stanza list right (desktop); 'inline' stacks them. */
+  layout?: 'split-leaf' | 'inline'
+  /** Full ordered list of staff-score image paths for the active tune (server-derived). Enables multi-page thumbnail nav. */
+  staffPages?: string[]
+  /** Full ordered list of solfège image paths for the active tune (server-derived). Enables multi-page thumbnail nav. */
+  solfegePages?: string[]
 }
 
 export type ViewMode = 'staff' | 'solfege' | 'lyrics'
@@ -191,6 +198,11 @@ function isViewMode(s: string): s is ViewMode {
  *
  * Persistence keys: 'psalter-staff-size' (BaseSize), 'psalter-score-mode' (ViewMode).
  */
+function activePages(viewMode: ViewMode, staffPages?: string[], solfegePages?: string[]): string[] {
+  if (viewMode === 'solfege') return solfegePages ?? []
+  return staffPages ?? []
+}
+
 export function NotationRenderer({
   abc,
   lyrics,
@@ -215,6 +227,9 @@ export function NotationRenderer({
   doubleLength,
   solfegeOcrText = null,
   melismaPositions = null,
+  layout = 'inline',
+  staffPages = [],
+  solfegePages = [],
 }: NotationRendererProps) {
   // chromeless mode permanently disables the FS overlay; the singing view IS the fullscreen.
   const allowFullscreen = !chromeless
@@ -314,6 +329,10 @@ export function NotationRenderer({
   useEffect(() => {
     if (!showLyrics && viewMode === 'lyrics') setViewMode('staff')
   }, [showLyrics, viewMode])
+  // UI-SPEC §3: multi-page solfège — selected image page. Reset when the
+  // active page-array identity changes (tune switch / legacy URL change).
+  const [pageIndex, setPageIndex] = useState(0)
+  useEffect(() => { setPageIndex(0) }, [staffPages?.[0], solfegePages?.[0]])
   const [isFullscreen, setIsFullscreen] = useState(false)
   // Lifted from AbcPlayer so NotationRenderer knows when the legacy JPG is
   // shown (and can therefore hide the stanza-pagination row, which is
@@ -1026,36 +1045,90 @@ export function NotationRenderer({
       </div>
     )
   } else if (viewMode === 'solfege') {
-    // 260517-cm0 #4c: solfège JPG scales with --staff-base-size so A+/A− re-flows.
-    // Default scale at baseSize=14 lands at ~0.7 (75% of available width), giving
-    // room for lyrics below the image while still being legible.
+    // ── UI-SPEC §3: split-leaf + multi-page thumbnails + flush image + independent stanza scroll ──
+    const pages = activePages(viewMode, staffPages, solfegePages)
+    const hasMultiPages = pages.length > 1
+    const currentSrc = pages[pageIndex] ?? solfegeJpgUrl ?? null
+    const isSplit = layout === 'split-leaf'
     const solfegeImgScale = chromeless ? Math.max(0.5, Math.min(1.0, baseSize / 20)) : 1.0
+
+    const mainImageBlock = currentSrc ? (
+      // -mx-4 counteracts the parent px-4 so the image sits flush to screen edges (mobile)
+      <div className={chromeless ? '-mx-4' : ''}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={currentSrc}
+          alt={`Solfège for ${tuneName}`}
+          className="w-full h-auto rounded-md border border-border"
+          style={chromeless ? { maxWidth: '100%' } : undefined}
+        />
+        <p className={cn('text-xs text-muted-foreground text-center mt-1', chromeless ? 'px-4' : '')}>Solfège score</p>
+      </div>
+    ) : (
+      <p className="text-sm text-muted-foreground italic">Score image not available</p>
+    )
+
+    const thumbnailStrip = hasMultiPages ? (
+      <div className="flex items-center gap-2 py-2">
+        <button type="button" aria-label="Previous page" data-page-prev
+          onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
+          disabled={pageIndex === 0}
+          className="h-11 w-11 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none">
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <div className="flex gap-2 overflow-x-auto flex-1 min-w-0">
+          {pages.map((src, idx) => (
+            <button key={src} type="button"
+              aria-label={`Page ${idx + 1} of ${pages.length}`}
+              aria-current={idx === pageIndex ? 'true' : undefined}
+              onClick={() => setPageIndex(idx)}
+              className={cn(
+                'shrink-0 w-20 h-[100px] rounded border overflow-hidden transition-[border,box-shadow] duration-100',
+                idx === pageIndex ? 'ring-2 ring-foreground border-foreground' : 'border-border hover:border-foreground/60',
+              )}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={src} alt="" loading="lazy" className="w-full h-full object-cover" />
+            </button>
+          ))}
+        </div>
+        <button type="button" aria-label="Next page" data-page-next
+          onClick={() => setPageIndex((i) => Math.min(pages.length - 1, i + 1))}
+          disabled={pageIndex === pages.length - 1}
+          className="h-11 w-11 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none">
+          <ChevronRight className="h-5 w-5" />
+        </button>
+      </div>
+    ) : null
+
+    const stanzaBlock = showLyrics && stanzas.length > 0 ? (
+      <div className={isSplit ? 'max-h-[60vh] overflow-y-auto' : (chromeless ? '' : 'max-h-[60vh] overflow-y-auto')}>
+        <StanzaList stanzas={stanzas} />
+      </div>
+    ) : null
+
     viewArea = (
       <div className={chromeless ? 'space-y-4 px-4 pt-4' : 'space-y-4'}>
         {!chromeless && (
           <BackToNotationButton onClick={() => setViewMode('staff')} />
         )}
-        {solfegeJpgUrl ? (
-          // R2-hosted JPG with unknown intrinsic dimensions — next/image
-          // requires either width/height or fill+sized parent, which the
-          // surrounding aspect-fitting layout doesn't provide. Match the
-          // disable used elsewhere (SiteHeader.tsx). (WR-09)
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={solfegeJpgUrl}
-            alt={`Solfège for ${tuneName}`}
-            style={chromeless ? { width: `${solfegeImgScale * 100}%`, maxWidth: '100%' } : undefined}
-            className={chromeless ? 'h-auto rounded-md border border-border' : 'w-full h-auto rounded-md border border-border'}
-          />
-        ) : (
-          <p className="text-sm text-muted-foreground italic">
-            Solfège not available for this tune.
-          </p>
-        )}
-        {showLyrics && stanzas.length > 0 && (
-          <div className={chromeless ? '' : 'max-h-[60vh] overflow-y-auto'}>
-            <StanzaList stanzas={stanzas} />
+        {isSplit ? (
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {/* notation/image column — 60% on desktop = 3/5 cols */}
+            <div className="md:col-span-3 space-y-2">
+              {mainImageBlock}
+              {thumbnailStrip}
+            </div>
+            {/* stanza column — 40% on desktop = 2/5 cols */}
+            <div className="md:col-span-2">
+              {stanzaBlock}
+            </div>
           </div>
+        ) : (
+          <>
+            {mainImageBlock}
+            {thumbnailStrip}
+            {stanzaBlock}
+          </>
         )}
       </div>
     )
