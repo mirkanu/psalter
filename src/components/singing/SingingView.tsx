@@ -426,8 +426,8 @@ export function SingingView({
             studyHref={studyHref}
             onRestartTour={handleRestartTour}
             showLyricsOption={!!showLyrics}
-            staffAvailable={!!(activeTune?.abcNotation || activeTune?.abcSatb) && melismaStatus === 'approved'}
-            solfegeAvailable={!!(activeTune?.solfegeOcrText || (activeTune as { solfegeSopranoEdited?: string | null })?.solfegeSopranoEdited) && melismaStatus === 'approved'}
+            staffAvailable={!!(activeTune?.abcNotation || activeTune?.abcSatb) && melismaStatus !== 'not_approved'}
+            solfegeAvailable={!!(activeTune?.solfegeOcrText || (activeTune as { solfegeSopranoEdited?: string | null })?.solfegeSopranoEdited) && melismaStatus !== 'not_approved'}
           />
         }
       />
