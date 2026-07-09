@@ -109,6 +109,11 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 - [ ] **RENDER-05**: Alternate-meter psalms (e.g. Psalm 124 Second Version + Old 124th `10.10.10.10.10`) align syllable-to-note correctly via structured `Line[]` count matching ABC phrase boundaries (per D-14)
 - [ ] **RENDER-06**: Psalm 23 + Crimond regression canary: automated test asserts the `w:` syllable lines match a recorded golden, and no synthesised Amen tail appears (per D-13, D-16)
 
+### Single Psalm UI Streamlining (Phase 04.9.13)
+
+- [ ] **UI-04**: The single psalm UI is streamlined — the Gear menu becomes a compact anchored Popover (main toggle Music Notes / Lyrics Only, with conditional Staff/Solfege and psalm-only Split-leaf/Inline sub-toggles, Study button replacing the 'About this psalm' section, Restart tour retained); the split-leaf view renders a 5-col desktop grid (notation 60% / stanzas 40%) with an independently-scrolling stanza list and a full-width mobile solfège image (flush to screen edges); multi-page tunes render a ChevronLeft/ChevronRight thumbnail strip with the current page highlighted `ring-2 ring-foreground`. Redundant 'Play recording' button removed.
+- [ ] **UI-05**: The player bar narrows and right-aligns into a floating card on desktop (mobile unchanged), with an abc ↔ SoundCloud toggle (localStorage-persisted `psalter-audio-source`) and a 'Lyrics shown are metrical; recording may use a different text.' disclaimer in SC mode. Available on both /psalms/[id] (fixed bar in SingingView) and /tunes/[id] (static page-flow instance). The psalm page is constrained to max-w-4xl mx-auto matching /tunes/[id], with fixed PsalmTopBar + GlassBottomBar content constrained via an inner max-w-4xl wrapper (bars remain full-width fixed).
+
 ### Staff-View Metrical-Line Hotfix (Phase 4.9.7)
 
 - [x] **RENDER-07**: Staff view renders ALL metrical lines of each stanza in the visible cycle, not just the first `phrasesPerCycle` lines. `mapCycleToPhraseSyllableLines` groups `linesPerStanza / phrasesPerCycle` metrical lines into each phrase slot, preserving the `string[][]` B1 contract.

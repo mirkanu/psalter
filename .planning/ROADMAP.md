@@ -33,14 +33,31 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 4.9.9 (INSERTED): Staff Alignment — Melisma Support** - Fix the remaining 84 failing psalms in staff view by implementing `_` hold tokens for passing notes. Use solfège OCR text already in DB to detect dot-pair passing notes; apply duration heuristic for residual mismatches.
 - [x] **Phase 4.9.10 (INSERTED): Staff Alignment — PHRASE_BREAK Re-annotation** - Re-run annotate-phrase-breaks.ts with Path NH tokenizer; 150/150 psalms pass staff alignment sweep; RENDER-08 closed. (completed 2026-05-29)
 - [x] **Phase 04.12 (INSERTED): Explore Page Rebuild** - Full /explore rebuild to match psalter.cprc.co.uk: schema migrations (psalms.date_bc/occasion, naves_topics.messianic, verse_naves_topics.sub_topic/quotation, new creedal_references table); UI rebuilds for all 6 sections (Themes split by topic_type, Messianic By Topic view, Quoted in NT, Other Topics with sub-topic drill-down, Authors filterable table, Creeds/Heidelberg Catechism) (completed 2026-06-14)
-- [ ] **Phase 4.9.13 (INSERTED): Single Psalm UI Streamlining** - Redesign the Single Psalm page for clarity and compactness: (1) Gear menu becomes a compact popover with main toggle (Music Notes / Lyrics Only) + conditional Staff/Solfege and Split-leaf/Inline sub-toggles; "Restart tour" retained; "About this Psalm" collapsed into "Study" button reusing the existing full-study panel; (2) Player bar narrows and right-aligns on desktop; abc ↔ SoundCloud toggle with localStorage persistence + "lyrics may not match" disclaimer; applied to both /psalms/[id] and /tunes/[id]; (3) Split-leaf view overhaul — full-width mobile image, multi-page thumbnail + arrow navigation, separate no-scroll stanza browser, abc/jpeg toggle between image and lyrics, remove redundant "Play recording" button; (4) Desktop max-width constraint matching /tunes/[id]
+- [x] **Phase 4.9.13 (INSERTED): Single Psalm UI Streamlining** - Redesign the Single Psalm page for clarity and compactness: (1) Gear menu becomes a compact popover with main toggle (Music Notes / Lyrics Only) + conditional Staff/Solfege and Split-leaf/Inline sub-toggles; "Restart tour" retained; "About this Psalm" collapsed into "Study" button reusing the existing full-study panel; (2) Player bar narrows and right-aligns on desktop; abc ↔ SoundCloud toggle with localStorage persistence + "lyrics may not match" disclaimer; applied to both /psalms/[id] and /tunes/[id]; (3) Split-leaf view overhaul — full-width mobile image, multi-page thumbnail + arrow navigation, separate no-scroll stanza browser, abc/jpeg toggle between image and lyrics, remove redundant "Play recording" button; (4) Desktop max-width constraint matching /tunes/[id]
 **Requirements:** UI-04 (gear popover + split-leaf view flag + split-leaf 2-col layout + multi-page solfège thumbnails on /psalms/[id]), UI-05 (PlayMiniBar desktop floating card + abc/SoundCloud toggle + psalm max-w-4xl + fixed-bar inner-wrapper constraint). Inherits PSLT-01/02 (psalm below-tabs baseline, retained) and TUNE-01 (tune detail, retained).
 **Scope note:** GearPopover + Layout sub-toggle are psalm-only (tune route does not mount SingingView/GlassBottomBar); the "both routes" play-bar and multi-page-tuning coverage is realised by Plan 02 Task 3 (static PlayMiniBar on /tunes/[id]) and Plan 03 Task 3 (staffPages/solfege-pages threaded to /tunes/[id] NotationRendererClient).
 **Plans:** 3 plans
+**Completed:** 2026-06-28
+
+- [ ] **Phase 4.9.14 (INSERTED): Single Psalm View - Fix Phase 4.9.13 Issues** - Address regressions and missing features from Phase 4.9.13:
+  (a) Split-Leaf view fixes:
+  (i) On desktop, lyrics currently appear beside notation; they should appear under it (stacked layout)
+  (ii) On mobile, notation should take ≤50% vertical height (lyrics get the other half); works for JPG but abc rendering sometimes takes full height
+  (iii) On mobile, implement scroll-hide navigation: top bar and bottom bar hide when scrolling down, show when scrolling up; add onboarding tour for first-time users
+  (iv) Zoom buttons (A-/A+) should only change lyrics font size, NOT abc/jpeg size (which is constrained by ii)
+  (v) For tunes >4 lines (double CM, some non-CM), allow pagination of notation in split-leaf; use bottom area (where "< Stanza x/y >" was removed) for "< Tune x/y >" pagination
+  (b) Inline view:
+  (i) Use abc to render solfege with inline lyrics (like staff view does)
+  (ii) Disable Inline view for tunes not "Approved" in melisma editor
+  (c) PlayMiniBar positioning: tune player (Play button left of Gear) wrongly sits at bottom of page requiring scroll; should permanently sit above bottom control bar (GlassBottomBar) as a vertical extension
+**Requirements:** UI-06 (split-leaf stacked desktop + mobile 50/50 + scroll-hide + lyrics-only zoom + tune pagination), UI-07 (inline solfege abc + approval gate), UI-08 (PlayMiniBar fixed above GlassBottomBar)
+**Depends on:** Phase 4.9.13
 
 Plans:
 **Wave 1**
-- [x] 04.9.13-01-PLAN.md — GearPopover replaces GearDrawer; layout state added to SingingView
+- [ ] 04.9.14-01-PLAN.md — Split-leaf layout: desktop stacked, mobile 50/50, scroll-hide nav, zoom decoupling, onboarding tour
+- [ ] 04.9.14-02-PLAN.md — Inline solfege: abcjs rendering + approval gate from melisma editor
+- [ ] 04.9.14-03-PLAN.md — PlayMiniBar: reposition above GlassBottomBar, auto-hide on scroll
 
 **Wave 2** *(depends on Wave 1)*
 - [x] 04.9.13-02-PLAN.md — PlayMiniBar desktop right-align + abc/SoundCloud toggle; remove redundant TuneAudioPlayer
@@ -796,7 +813,7 @@ Plans:
 ## Progress
 
 **Milestone 1 Execution Order:**
-1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 4.9.5 → 4.9.6 → 4.9.7 → 4.9.8 → 4.9.9 → 4.9.10 → 4.9.11 → 4.9.12 → 4.9.13
+1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 4.9.5 → 4.9.6 → 4.9.7 → 4.9.8 → 4.9.9 → 4.9.10 → 4.9.11 → 4.9.12 → 4.9.13 → 4.9.14
 
 **Milestone 2 Execution Order:**
 5 → 05.1 → 05.2 → 05.3 → 05.4 → 6
@@ -826,7 +843,8 @@ Plans:
 | 4.9.10. PHRASE_BREAK Re-annotation | 2/2 | Complete | 2026-05-29 |
 | 4.9.11. Lyric-Count False Positive Fix | 0/TBD | Not started | - |
 | 4.9.12. Melisma positions as tune-level data | 0/TBD | Not started | - |
-| 4.9.13. Single Psalm UI Streamlining | 0/TBD | Not started | - |
+| 4.9.13. Single Psalm UI Streamlining | 3/3 | Complete | 2026-06-28 |
+| 4.9.14. Single Psalm View - Fix Phase 4.9.13 Issues | 3/3 | Planned | - |
 
 ### Milestone 2 — Precentor Portal & Polish
 
