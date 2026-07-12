@@ -28,8 +28,8 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 Phase: 04.9.14 (single-psalm-view-fixes) — EXECUTING
 Plan: 3 of 3
 UI-SPEC: Phase 04.9.4 closed out. Singing-view chrome refined across 4 polish rounds (chrome-dedup, singing-chrome-polish, r3, r4); audio first-press bug fixed; tour redesigned (4 steps, per-element spotlights); mobile bar h-11 (44px); lyrics/solfège views get bigger font + padding + inline YouTube embed; "Ps 119:N-M" range titles.
-Status: Phase complete — ready for verification
-Last activity: 2026-07-12
+Status: Phase complete — 4 post-deploy UAT bug-fix quick tasks completed (260712-kd1/kov/lcg/lp9), 3 pending human verification after rebuild
+Last activity: 2026-07-12 - Completed quick tasks 260712-kd1, 260712-kov, 260712-lcg, 260712-lp9 (scroll-hide, split-leaf staff, solfège revert, PlayMiniBar)
 
 Progress: [██████████] 100%
 
@@ -194,6 +194,10 @@ None yet.
 | 260614-qkc | Explore polish batch 2: first-line fully wraps (stacked meter below), verse dedup (quotation shown once per psalm group not once per verse), float-right badge so card text wraps below it, Nave's collapsibles closed by default, authors filter single horizontal scroll row | 2026-06-14 | 9b870b0 | [260614-qkc-explore-polish-batch-2-first-line-wrap-v](./quick/260614-qkc-explore-polish-batch-2-first-line-wrap-v/) |
 | 260616-drk | Dark mode toggle: next-themes ThemeProvider, Moon/Sun button in desktop nav + mobile bar (next to Search, outside hamburger); logo PNG adapted with invert+hue-rotate(180deg) filter in dark mode | 2026-06-16 | aab6fba | — |
 | 260628-betterstack-monitor | Add BetterStack uptime monitor for psalter.gsdlabs.dev (monitor id 4599638, 180s check frequency, email alerts) | 2026-06-28 | — | [betterstack-monitor](./quick/20260628-betterstack-monitor/) |
+| 260712-kd1 | Fix scroll-hide UAT bugs: full off-screen translate (was only fading inner text), site-wide SiteHeader now hides via new chrome-hidden-store, capture-phase scroll listener fixes split-leaf (previously never fired) | 2026-07-12 | 929e0d1 | [260712-kd1-fix-scroll-hide-navigation-bugs-in-singi](./quick/260712-kd1-fix-scroll-hide-navigation-bugs-in-singi/) — pending human verification |
+| 260712-kov | Fix split-leaf Staff notation rendering: root cause was sizing (staffWidthFactor over-narrowed split-leaf staffwidth), not structural corruption; added Playwright diagnostic to measure systems/notes/viewBox divergence | 2026-07-12 | 6e19a28 | [260712-kov-fix-split-leaf-staff-notation-rendering-](./quick/260712-kov-fix-split-leaf-staff-notation-rendering-/) — pending human verification |
+| 260712-lcg | Revert inline Solfège to JPG-only: abcjs has no tonic sol-fa support, the 04.9.14-02 abcjs branch just rendered soprano-only staff notation indistinguishable from Staff view; removed approval gate, melismaStatus fetch, and orphaned /api/melisma-status route | 2026-07-12 | 0b71bf1 | [260712-lcg-revert-inline-solfege-view-to-jpg-only-r](./quick/260712-lcg-revert-inline-solfege-view-to-jpg-only-r/) |
+| 260712-lp9 | Fix PlayMiniBar: restored allow-same-origin on SoundCloud iframe sandbox (WR-03 code-review fix had broken playback — widget needs localStorage on init), aligned desktop right edge to content column via calc() (md:-only, mobile untouched) | 2026-07-12 | 12b4b26 | [260712-lp9-fix-playminibar-soundcloud-playback-and-](./quick/260712-lp9-fix-playminibar-soundcloud-playback-and-/) — pending human verification |
 
 - [04.9.8-05]: Character-level tokenizer for insertPhraseBreaks replaces text-line-granular Path NH — emits PHRASE_BREAK at exact note-head offsets independent of ABC text-line boundaries
 - [04.9.8-05]: NotationRenderer cleanedBody merges multi-text-line phrase bodies into single line to prevent phantom extra sub-staves from internal newlines
