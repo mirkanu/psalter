@@ -380,6 +380,15 @@ export function SingingView({
   // retrying via rAF until the dynamically-imported NotationRenderer mounts.
   useEffect(() => {
     if (!abc) return
+    // CR-03 fix: reset the scroll-hide flags whenever this effect (re)attaches
+    // — e.g. on a tune switch, which changes `abc` and detaches/reattaches
+    // the listener on a fresh scroll container. Without this, hidden chrome
+    // from the previous tune's scroll position could stay hidden after
+    // switching, since the container starts at scrollTop 0 and may never
+    // produce the upward-scroll delta needed to reveal it again.
+    setTopBarHidden(false)
+    setBottomBarHidden(false)
+    setMiniBarAutoHidden(false)
     let container: HTMLElement | null = null
     let handleScroll: (() => void) | null = null
     let lastScrollTop = 0
