@@ -38,6 +38,30 @@ function parseBpmFromAbc(abc: string): number {
   return m ? Math.max(40, Math.min(200, parseInt(m[1], 10))) : 100
 }
 
+/**
+ * 260712-szw: mobile-only compact split-leaf fix (Task 2, follow-up to
+ * 260712-kov). Root-cause diagnostic (tests/diagnostics/split-leaf-staff-diff.mjs
+ * Part B) found abcjs's JS-level `options.format` object is routed through
+ * `globalFormatting`, which only recognizes a small allowlist (font
+ * directives, scale, stretchlast, fontboxpadding, stafftopmargin) —
+ * `topmargin`/`botmargin`/`staffsep`/`systemsep` are silently ignored there.
+ * Those keys ARE honored, but only as `%%directive value` lines written
+ * INSIDE the ABC text itself (the per-line directive parser). This inserts
+ * them right after the `K:` (key) header line so split-leaf mobile reserves
+ * no space for the absent inline lyrics and inter-system gaps are tight —
+ * the exact values the diagnostic's VERDICT proved reduce a 4-system CM
+ * tune from 434px to 299px (spacing-tighter sweep).
+ */
+function injectCompactSpacingDirectives(abc: string): string {
+  const DIRECTIVES = ['%%topmargin 0', '%%botmargin 0', '%%staffsep 10', '%%systemsep 10']
+  const lines = abc.split('\n')
+  const kIdx = lines.findIndex((l) => l.indexOf('K:') === 0)
+  if (kIdx === -1) return DIRECTIVES.concat(lines).join('\n')
+  const before = lines.slice(0, kIdx + 1)
+  const after = lines.slice(kIdx + 1)
+  return before.concat(DIRECTIVES, after).join('\n')
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface AbcPlayerProps {
@@ -93,6 +117,19 @@ interface AbcPlayerProps {
    * behavior (fill container width).
    */
   staffWidthFactor?: number
+  /**
+   * 260712-szw: mobile-only compact split-leaf fix. When true, applies (a)
+   * compact vertical spacing via `%%` ABC directive prepend (no topmargin/
+   * botmargin, tight staffsep/systemsep — see injectCompactSpacingDirectives)
+   * and (b) a post-render CSS height-fit scale so the whole tune's systems
+   * fit within the `[data-notation-slot]` ancestor's clientHeight without
+   * scrolling. Gated by the caller to chromeless && split-leaf && <768px
+   * (NotationRenderer's `compactSplitMobile`) — default false preserves
+   * existing behaviour everywhere else (desktop split-leaf stays
+   * byte-identical to inline per the 260712-kov guarantee; inline Staff,
+   * inline Solfège, and split-leaf Solfège are all unaffected).
+   */
+  compactSplitMobile?: boolean
 }
 
 const STORAGE_BPM_KEY = 'psalter-bpm'
@@ -130,6 +167,7 @@ export default function AbcPlayer({
   renderAboveOriginal,
   hidePlayerControls = false,
   staffWidthFactor = 1,
+  compactSplitMobile = false,
 }: AbcPlayerProps) {
   const baseKeySemitone = useMemo(() => parseKeyFromAbc(abc), [abc])
   const defaultBpm = useMemo(() => parseBpmFromAbc(abc), [abc])
@@ -177,6 +215,10 @@ export default function AbcPlayer({
   const [audioError, setAudioError] = useState<string | null>(null)
 
   const containerRef = useRef<HTMLDivElement>(null)
+  // 260712-szw: static (never transformed) clipping viewport that wraps
+  // containerRef — see the height-fit pass below for why this must be a
+  // separate element from the one that receives `transform:scale`.
+  const fitWrapRef = useRef<HTMLDivElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const visualObjRef = useRef<any>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -234,6 +276,28 @@ export default function AbcPlayer({
       window.visualViewport?.removeEventListener('resize', debounced)
     }
   }, [staffWidth])
+
+  // 260712-szw: mobile split-leaf compact fix — observe the ancestor
+  // `[data-notation-slot]` region's height (NotationRenderer's chromeless
+  // notation-slot cap, ≤50% viewport) so the height-fit pass below knows the
+  // true available space. Self-contained: no prop threading from
+  // NotationRenderer beyond the `compactSplitMobile` boolean. No-op when the
+  // flag is false (desktop split-leaf / inline Staff / inline Solfège /
+  // split-leaf Solfège never observe or apply this).
+  const [slotHeight, setSlotHeight] = useState(0)
+  useEffect(() => {
+    if (!compactSplitMobile) {
+      setSlotHeight(0)
+      return
+    }
+    const slotEl = outerRef.current?.closest('[data-notation-slot]') as HTMLElement | null
+    if (!slotEl) return
+    const update = () => setSlotHeight(slotEl.clientHeight)
+    update()
+    const obs = new ResizeObserver(update)
+    obs.observe(slotEl)
+    return () => obs.disconnect()
+  }, [compactSplitMobile])
 
   // ── Note highlight callback ────────────────────────────────────────────────
   const highlightEvent = useCallback(
@@ -355,7 +419,14 @@ export default function AbcPlayer({
       //   SVG.
       const targetStaffwidth = (containerWidth * staffWidthFactor) / effectiveScale
       const effectiveStaffWidth = Math.max(120, Math.floor(targetStaffwidth))
-      const visualObjs = abcjs.renderAbc(el, abc, {
+      // 260712-szw: mobile split-leaf only — compact vertical spacing via
+      // %% ABC directive prepend (see injectCompactSpacingDirectives; abcjs's
+      // JS-level `format` option does not honor topmargin/botmargin/
+      // staffsep/systemsep). No-op (abc unchanged) when compactSplitMobile
+      // is false, so desktop split-leaf / inline Staff / inline Solfège /
+      // split-leaf Solfège render exactly as before.
+      const abcForRender = compactSplitMobile ? injectCompactSpacingDirectives(abc) : abc
+      const visualObjs = abcjs.renderAbc(el, abcForRender, {
         add_classes: true,
         visualTranspose: transpose,
         defaultTempo: { duration: 0.25, bpm },
@@ -373,7 +444,54 @@ export default function AbcPlayer({
       setAudioError('Could not render notation.')
       visualObjRef.current = null
     }
-  }, [abc, transpose, bpm, scale, showOriginal, stopAudio, staffWidth, staffWidthFactor])
+  }, [abc, transpose, bpm, scale, showOriginal, stopAudio, staffWidth, staffWidthFactor, compactSplitMobile])
+
+  // ── Height-fit pass (260712-szw) ──────────────────────────────────────────
+  // Mobile split-leaf only: the width-only responsive fit above (MOBILE-03)
+  // has no height counterpart, so even with compact spacing a 4-system CM
+  // tune can still exceed the ~50%-viewport notation-slot height (Task 1
+  // diagnostic VERDICT: spacing-only is NOT sufficient — needs-fit-scale
+  // =yes). After the SVG renders, if it's taller than the observed
+  // `[data-notation-slot]` height, apply a uniform CSS transform:scale
+  // (preserves note aspect ratio — no distortion) to fit all systems without
+  // scrolling.
+  //
+  // IMPORTANT: `overflow:hidden` + a reduced `height` must be applied to a
+  // DIFFERENT (static, untransformed) element than the one being scaled.
+  // Overflow clipping happens in an element's own untransformed coordinate
+  // space, THEN the transform paints the (already-clipped) result — so
+  // setting both on the SAME element would clip the tune down to the
+  // available height's worth of UNSCALED content (a crop showing only the
+  // first ~system or two) and then shrink that crop further, instead of
+  // shrinking the WHOLE tune to fit. `fitWrapRef` (static) gets the
+  // height+overflow; `containerRef` (the actual abcjs mount, nested inside
+  // fitWrapRef) gets the transform. Because fitScale is computed so that
+  // naturalHeight * fitScale === slotHeight, the scaled content fills
+  // fitWrapRef's clipped viewport with no visible cropping.
+  //
+  // Declared AFTER the render effect so it always runs following a render in
+  // the same commit (superset of that effect's deps plus
+  // compactSplitMobile/slotHeight); always resets first since both elements
+  // persist across renders (only containerRef's innerHTML is replaced above).
+  useEffect(() => {
+    const el = containerRef.current
+    const wrap = fitWrapRef.current
+    if (!el || !wrap) return
+    el.style.transform = ''
+    el.style.transformOrigin = ''
+    wrap.style.height = ''
+    wrap.style.overflow = ''
+    if (!compactSplitMobile || !slotHeight) return
+    const svg = el.querySelector('svg')
+    if (!svg) return
+    const naturalHeight = svg.getBoundingClientRect().height
+    if (naturalHeight <= 0 || naturalHeight <= slotHeight) return
+    const fitScale = slotHeight / naturalHeight
+    el.style.transformOrigin = 'top center'
+    el.style.transform = `scale(${fitScale})`
+    wrap.style.height = `${slotHeight}px`
+    wrap.style.overflow = 'hidden'
+  }, [abc, transpose, bpm, scale, showOriginal, staffWidth, staffWidthFactor, compactSplitMobile, slotHeight])
 
   // ── Cleanup on unmount ────────────────────────────────────────────────────
   useEffect(() => {
@@ -533,12 +651,24 @@ export default function AbcPlayer({
         </div>
       ) : (
         <>
-          <div
-            ref={containerRef}
-            role="img"
-            aria-label={title ? `Music notation for ${title}` : 'Music notation'}
-            className="w-full max-w-full overflow-x-hidden [&_svg]:max-w-full [&_svg]:h-auto"
-          />
+          {/* 260712-szw: fitWrapRef is a STATIC (never transformed) clipping
+              viewport — its height/overflow are set imperatively by the
+              height-fit effect below. containerRef (the actual abcjs mount +
+              scaled element) is nested inside it. This two-layer split is
+              required: applying `overflow:hidden` + a reduced height to the
+              SAME element that also gets `transform:scale` would clip the
+              content at the UNTRANSFORMED box edge before the scale runs
+              (cropping the tune instead of shrinking it). Only active when
+              compactSplitMobile fits the SVG down; otherwise both layers are
+              inert (no height/overflow/transform set). */}
+          <div ref={fitWrapRef} className="w-full">
+            <div
+              ref={containerRef}
+              role="img"
+              aria-label={title ? `Music notation for ${title}` : 'Music notation'}
+              className="w-full max-w-full overflow-x-hidden [&_svg]:max-w-full [&_svg]:h-auto"
+            />
+          </div>
           {/* Lyrics text block — shown below notation in interactive mode */}
           {lyricsText && lyricsText.trim() && (
             <pre
