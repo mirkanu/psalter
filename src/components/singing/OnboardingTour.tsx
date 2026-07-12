@@ -1,9 +1,12 @@
 'use client'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
+import type { ViewMode } from '@/components/notation/NotationRenderer'
 
-const TOUR_KEY = 'psalter_tour_v1'
+// Task 5 (04.9.14-01): bumped v1 → v2 to re-trigger the tour for existing
+// users now that it includes the new scroll-hide steps below.
+const TOUR_KEY = 'psalter_tour_v2'
 
 interface Step {
   target: string // data-tour-target value
@@ -16,6 +19,18 @@ const STEPS: Step[] = [
   { target: 'psalm-label', copy: 'Tap to quickly switch to any psalm' },
   { target: 'tune-name', copy: 'Tap to switch to a different tune' },
   { target: 'view-controls', copy: 'Open settings to change views (e.g. lyrics only) and access the study guide' },
+]
+
+// Task 5 (04.9.14-01): scroll-hide navigation steps — only shown when the
+// user is in split-leaf mode on mobile (<768px), where the new hide-on-scroll
+// top/bottom bars are most relevant. Deviation from the plan's literal
+// 3-target list: 'scroll-up' has no dedicated DOM element to spotlight (it
+// describes an action, not a UI control), so its step reuses the 'top-bar'
+// target — the same bar the user just watched hide is the one that reappears.
+const SCROLL_HIDE_STEPS: Step[] = [
+  { target: 'top-bar', copy: 'Scroll down to hide the top navigation and see more of the tune' },
+  { target: 'scroll-area', copy: 'Keep scrolling to hide the bottom controls too' },
+  { target: 'top-bar', copy: 'Scroll back up anytime to bring the bars back' },
 ]
 
 interface Rect {
@@ -54,13 +69,36 @@ function unionBbox(rects: Rect[]): Rect {
   return { top: minTop, left: minLeft, width: maxRight - minLeft, height: maxBottom - minTop }
 }
 
-export function OnboardingTour() {
+interface Props {
+  /** Task 5 (04.9.14-01): current NotationRenderer view mode. Used to gate
+   *  the scroll-hide steps to split-leaf mode. Optional for backward
+   *  compatibility with any other caller that doesn't track view mode. */
+  viewMode?: ViewMode
+}
+
+export function OnboardingTour({ viewMode }: Props = {}) {
   // SSR-safe: render nothing until mounted; assume seen=true to suppress
   // first-paint flash for returning visitors (hydration reads the real value).
   const [mounted, setMounted] = useState(false)
   const [tourSeen, setTourSeen] = useState(true)
   const [step, setStep] = useState(0)
   const [rects, setRects] = useState<Rect[] | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const update = () => setIsMobile(window.innerWidth < 768)
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+
+  // Task 5: gate scroll-hide steps to split-leaf mode on mobile.
+  const isSplitLeafMobile =
+    isMobile && (viewMode === 'staff-split' || viewMode === 'solfege-split')
+  const steps = useMemo<Step[]>(
+    () => (isSplitLeafMobile ? [...STEPS, ...SCROLL_HIDE_STEPS] : STEPS),
+    [isSplitLeafMobile],
+  )
 
   // Hydrate from localStorage AFTER mount
   useEffect(() => {
@@ -88,7 +126,7 @@ export function OnboardingTour() {
   useEffect(() => {
     if (!mounted || tourSeen) return
     const update = () => {
-      const rs = measure(STEPS[step].target)
+      const rs = measure(steps[step].target)
       if (!rs || rs.length === 0) {
         // Target missing — dismiss gracefully (mitigates T-04.9.4.04-03 DoS).
         dismiss()
@@ -117,7 +155,7 @@ export function OnboardingTour() {
 
   if (!mounted || tourSeen || !rects || rects.length === 0) return null
 
-  const isLast = step === STEPS.length - 1
+  const isLast = step === steps.length - 1
   const padding = 8
 
   // Bubble placement is based on the union bbox so it never overlaps any spotlight.
@@ -165,15 +203,15 @@ export function OnboardingTour() {
       <div
         role="dialog"
         aria-live="polite"
-        aria-label={`Onboarding step ${step + 1} of ${STEPS.length}`}
+        aria-label={`Onboarding step ${step + 1} of ${steps.length}`}
         tabIndex={-1}
         className="absolute z-[202] bg-background border border-border rounded-lg shadow-lg p-4"
         style={{ ...bubbleStyle, width: 'min(320px, 90vw)' }}
       >
         <p className="text-xs text-muted-foreground text-center mb-2">
-          Step {step + 1} of {STEPS.length}
+          Step {step + 1} of {steps.length}
         </p>
-        <p className="text-sm font-normal mb-4">{STEPS[step].copy}</p>
+        <p className="text-sm font-normal mb-4">{steps[step].copy}</p>
         <div className="flex items-center justify-between gap-2">
           <Button variant="ghost" size="sm" onClick={dismiss}>
             Skip tour
