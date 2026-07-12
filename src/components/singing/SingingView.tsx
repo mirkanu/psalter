@@ -250,9 +250,19 @@ export function SingingView({
   const [stanzaPage, setStanzaPage] = useState<number>(1)
   const [tourKey, setTourKey] = useState<number>(0)
 
+  // Task 3 (04.9.14-01): scroll-hide navigation state + ref. See the effect
+  // below (after `abc` is derived) for the scroll-listener wiring.
+  const mainRef = useRef<HTMLElement | null>(null)
+  const [topBarHidden, setTopBarHidden] = useState(false)
+  const [bottomBarHidden, setBottomBarHidden] = useState(false)
+
   const handleRestartTour = useCallback(() => {
     try {
       localStorage.removeItem('psalter_tour_v1')
+      // Task 5 (04.9.14-01): tour version bumped to v2 (scroll-hide steps
+      // added) — clear both keys so restart works regardless of which
+      // version a given browser last completed.
+      localStorage.removeItem('psalter_tour_v2')
     } catch {
       /* ignore */
     }
@@ -324,6 +334,44 @@ export function SingingView({
   const youtubeUrl = activeTune?.youtubeUrl ?? null
   const soundcloudUrl = activeTune?.soundcloudUrl ?? null
 
+  // Task 3 (04.9.14-01): scroll-hide navigation. Top bar hides past 40px of
+  // scroll (while scrolling down), bottom bar past 100px. Both reappear
+  // immediately on any upward scroll. The actual scrollable region is the
+  // NotationRenderer chromeless viewarea (`[data-notation-viewarea]`) — the
+  // page itself does not scroll at the window level (fixed-height flex
+  // layout), so `window.scrollY` (as sketched in CONTEXT) never fires here.
+  // We locate that element inside `mainRef` and attach a passive listener,
+  // retrying via rAF until the dynamically-imported NotationRenderer mounts.
+  useEffect(() => {
+    if (!abc) return
+    let container: HTMLElement | null = null
+    let handleScroll: (() => void) | null = null
+    let lastScrollTop = 0
+    let rafId: number | null = null
+
+    const attach = () => {
+      container = mainRef.current?.querySelector('[data-notation-viewarea]') ?? null
+      if (!container) {
+        rafId = requestAnimationFrame(attach)
+        return
+      }
+      handleScroll = () => {
+        const scrollTop = container!.scrollTop
+        const scrollingDown = scrollTop > lastScrollTop
+        setTopBarHidden(scrollTop > 40 && scrollingDown)
+        setBottomBarHidden(scrollTop > 100 && scrollingDown)
+        lastScrollTop = scrollTop
+      }
+      container.addEventListener('scroll', handleScroll, { passive: true })
+    }
+    attach()
+
+    return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId)
+      if (container && handleScroll) container.removeEventListener('scroll', handleScroll)
+    }
+  }, [abc])
+
   return (
     <div data-singing-view className="relative">
       <PsalmTopBar
@@ -339,6 +387,7 @@ export function SingingView({
         precentingNextHref={precentingNextHref}
         precentingVerseRange={precentingVerseRange}
         versionSiblings={versionSiblings}
+        hidden={topBarHidden}
       />
 
       {/* Body — single scroll container, hard horizontal clamp.
@@ -354,7 +403,9 @@ export function SingingView({
          overflow-y is controlled by NotationRenderer's chromeless wrapper.
       */}
       <main
+        ref={mainRef}
         data-notation-region
+        data-tour-target="scroll-area"
         className="overflow-x-hidden flex flex-col h-[calc(100dvh-104px)] md:h-[calc(100dvh-116px)] pb-11 md:pb-13"
       >
         {abc ? (
@@ -417,6 +468,7 @@ export function SingingView({
         onPlayToggle={handlePlayToggle}
         onGearOpen={() => setGearOpen(true)}
         showLyricsOption={!!showLyrics}
+        hidden={bottomBarHidden}
         gear={
           <GearPopover
             open={gearOpen}
@@ -445,7 +497,7 @@ export function SingingView({
         />
       )}
       {/* GearDrawer removed — settings now via GearPopover rendered in GlassBottomBar gear slot */}
-      <OnboardingTour key={tourKey} />
+      <OnboardingTour key={tourKey} viewMode={viewMode} />
     </div>
   )
 }
