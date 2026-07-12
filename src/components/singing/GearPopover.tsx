@@ -26,17 +26,10 @@ interface Props {
   studyHref: string
   onRestartTour: () => void
   showLyricsOption: boolean
-  /** Whether Staff notation is available (has approved ABC). */
+  /** Whether Staff notation is available (ABC exists for this tune). */
   staffAvailable: boolean
-  /** CR-04 fix: split availability by layout — the melisma approval gate
-   *  applies ONLY to inline Solfège (viewMode 'solfege'); split-leaf
-   *  Solfège (JPG-based, 'solfege-split') is unaffected by approval status
-   *  per NotationRenderer's documented gating (CONTEXT "Approval Gate
-   *  Decision" — locked). A single shared boolean here disabled the
-   *  Solfège button entirely for unapproved tunes, blocking split-leaf too. */
-  solfegeInlineAvailable: boolean
-  /** Whether split-leaf Solfège (JPG) is available — ungated by approval. */
-  solfegeSplitAvailable: boolean
+  /** Whether Solfège is available — a solfège JPG exists. */
+  solfegeAvailable: boolean
 }
 
 export function GearPopover({
@@ -48,18 +41,13 @@ export function GearPopover({
   onRestartTour,
   showLyricsOption,
   staffAvailable,
-  solfegeInlineAvailable,
-  solfegeSplitAvailable,
+  solfegeAvailable,
 }: Props) {
   const router = useRouter()
 
   const isMusicNotes = viewMode !== 'lyrics'
   const isStaff = viewMode === 'staff' || viewMode === 'staff-split'
   const isSplit = viewMode === 'staff-split' || viewMode === 'solfege-split'
-  // CR-04 fix: the Solfège button switches notation for the CURRENT layout
-  // (isSplit already reflects the active viewMode), so gate it with the
-  // availability signal that matches that layout.
-  const solfegeAvailable = isSplit ? solfegeSplitAvailable : solfegeInlineAvailable
 
   const handleNotationChange = (notation: 'staff' | 'solfege') => {
     if (notation === 'staff' && !staffAvailable) {
@@ -67,9 +55,7 @@ export function GearPopover({
       return
     }
     if (notation === 'solfege' && !solfegeAvailable) {
-      toast('Notation not yet approved', {
-        description: "This tune's melisma positions haven't been approved. Approve in the melisma editor to enable solfège view.",
-      })
+      toast('Coming soon', { description: 'Solfège notation for this tune is not yet available' })
       return
     }
     const newMode: ViewMode = isSplit
@@ -189,7 +175,6 @@ export function GearPopover({
                   role="radio"
                   aria-checked={!isStaff}
                   aria-label="Solfege"
-                  title={!solfegeAvailable ? 'Notation not yet approved — use melisma editor to approve' : undefined}
                   onClick={() => handleNotationChange('solfege')}
                   disabled={!solfegeAvailable}
                   className={[
