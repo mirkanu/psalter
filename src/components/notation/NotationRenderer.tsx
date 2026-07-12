@@ -128,22 +128,6 @@ export interface NotationRendererProps {
   staffPages?: string[]
   /** Full ordered list of solfège image paths for the active tune (server-derived). Enables multi-page thumbnail nav. */
   solfegePages?: string[]
-  /**
-   * Plan 04.9.14-02 (Task 2): pre-derived ABC source for the INLINE solfège
-   * view — `sopranoOnly(pickAbcWithMarkers(abcSatb, abcNotation))`, computed
-   * by the parent (SingingView). Renders via the same abcjs pipeline as
-   * Staff view when present. Falls back to `abc` when omitted/empty, then to
-   * the JPG fallback (`solfegeJpgUrl`) when no ABC is available at all.
-   */
-  solfegeAbc?: string
-  /**
-   * Plan 04.9.14-02 (Task 3): whether this tune's melisma positions have been
-   * approved (`melismaStatus === 'approved'`) in the melisma editor. Gates
-   * the INLINE solfège view only — Staff view and split-leaf solfège (JPG)
-   * are unaffected. Defaults to `true` for callers that don't pass it (e.g.
-   * /tunes/[id], /study) so those routes see no behavior change.
-   */
-  isTuneApproved?: boolean
 }
 
 export type ViewMode = 'staff' | 'solfege' | 'staff-split' | 'solfege-split' | 'lyrics'
@@ -251,8 +235,6 @@ export function NotationRenderer({
   melismaPositions = null,
   staffPages = [],
   solfegePages = [],
-  solfegeAbc = '',
-  isTuneApproved = true,
 }: NotationRendererProps) {
   // chromeless mode permanently disables the FS overlay; the singing view IS the fullscreen.
   const allowFullscreen = !chromeless
@@ -767,16 +749,9 @@ export function NotationRenderer({
   // emit its body line followed by one `w:` line per stanza-portion. This
   // gives the visual effect of N stacked phrase rows while remaining a single
   // tune for the synth (Play traverses end-to-end naturally).
-  // Plan 04.9.14-02 (Task 1/2): extracted to a factory so the same pipeline can
-  // build TWO independent ABC bodies — the Staff view's (`abc`) and the
-  // inline Solfège view's (`solfegeAbc`) — without duplicating ~250 lines of
-  // w:-line / melisma-position logic. Each caller computes its OWN local
-  // `split`/`visiblePhraseIndices` from its own source string, since the two
-  // sources may have different phrase counts (e.g. SATB carries markers the
-  // monophonic column lacks). Everything else (visibleCycles, tuneMeter,
-  // showLyrics, phraseSubdivisions, chromeless, solfegeVoices,
-  // melismaPositions, phraseShapeOverride, wLinesForPhrase) is identical
-  // regardless of source, since both represent the same tune/stanza data.
+  // Builds the single Staff view `unifiedAbc` body from `abc`, composing
+  // header → for each visible phrase, its music line followed by one `w:`
+  // line per stanza-portion (~250 lines of w:-line / melisma-position logic).
   function buildUnifiedAbc(sourceAbc: string): string {
     const localSplit = splitOnPhraseBreaks(sourceAbc)
     const localT = localSplit.phrases.length
@@ -1065,14 +1040,6 @@ export function NotationRenderer({
     [abc, phraseShapeOverride, visibleCycles, tuneMeter, showLyrics, phraseSubdivisions, chromeless, solfegeVoices, melismaPositions],
   )
 
-  // Plan 04.9.14-02 (Task 1/2): inline Solfège view's ABC body — same pipeline,
-  // sourced from `solfegeAbc` (falls back to `abc` when the parent hasn't
-  // supplied one, e.g. /tunes/[id] or /study, which don't pass solfegeAbc).
-  const unifiedSolfegeAbc = useMemo(
-    () => buildUnifiedAbc(solfegeAbc || abc),
-    [solfegeAbc, abc, phraseShapeOverride, visibleCycles, tuneMeter, showLyrics, phraseSubdivisions, chromeless, solfegeVoices, melismaPositions],
-  )
-
   // Split-leaf staff view needs ABC without inline w: lyrics (lyrics render in separate column).
   const unifiedAbcNoLyrics = useMemo(
     () => unifiedAbc.split('\n').filter((l) => !/^w:\s/.test(l.trim())).join('\n'),
@@ -1161,41 +1128,10 @@ export function NotationRenderer({
     } else {
       viewArea = notationBlock
     }
-  } else if (viewMode === 'solfege' && !isTuneApproved) {
-    // Plan 04.9.14-02 (Task 3): approval gate. Inline solfège only — Staff
-    // view and split-leaf solfège (JPG) are unaffected by melisma approval
-    // status (CONTEXT "Approval Gate Decision").
-    viewArea = (
-      <div className="p-4 text-center text-muted-foreground">
-        This tune&apos;s notation hasn&apos;t been approved yet. Please check the melisma editor.
-      </div>
-    )
-  } else if (viewMode === 'solfege' && (solfegeAbc.trim() || abc.trim())) {
-    // Plan 04.9.14-02 (Task 1/2): inline solfège renders abcjs SVG — same
-    // pipeline as Staff view — using `unifiedSolfegeAbc` (derived from
-    // `solfegeAbc`, falling back to `abc`). Split-leaf solfège keeps the JPG
-    // + thumbnail behavior below (unchanged).
-    const notationBlock = (
-      <div ref={staffRef}>
-        <AbcPlayer
-          abc={unifiedSolfegeAbc}
-          scale={scale}
-          tuneName={tuneName}
-          staffJpgUrl={scoreJpgUrl}
-          solfegeJpgUrl={solfegeJpgUrl}
-          renderLyricsBelow={lyricsBelow}
-          showOriginal={showOriginal}
-          onShowOriginalChange={setShowOriginal}
-          renderAboveOriginal={<BackToNotationButton onClick={() => setShowOriginal(false)} />}
-          hidePlayerControls={isFullscreen || chromeless}
-          staffWidthFactor={staffWidthFactor}
-        />
-      </div>
-    )
-    viewArea = notationBlock
   } else if (viewMode === 'solfege' || viewMode === 'solfege-split') {
-    // Solfege: JPEG image inline (no ABC available — legacy fallback) or
-    // split-leaf (JPG + thumbnails, always).
+    // Solfège: inline and split-leaf both render the scanned solfège JPG
+    // (+ thumbnails/pagination) — abcjs has no tonic sol-fa support, so this
+    // is the only Solfège view mode (04.9.14-lcg revert).
     const pages = activePages(viewMode, staffPages, solfegePages)
     const hasMultiPages = pages.length > 1
     const currentSrc = pages[pageIndex] ?? solfegeJpgUrl ?? null
