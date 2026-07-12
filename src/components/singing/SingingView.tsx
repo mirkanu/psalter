@@ -14,6 +14,7 @@ import type { PsalmDetail } from '@/db/queries/psalms'
 import type { PsalmRow } from '@/components/PsalmListingGrid'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
 import { pickAbcWithMarkers, sopranoOnly } from '@/lib/utils'
+import { setChromeHidden } from '@/lib/chrome-hidden-store'
 
 const STORAGE_MODE_KEY = 'psalter-score-mode'
 const STORAGE_SIZE_KEY = 'psalter-staff-size'
@@ -428,6 +429,22 @@ export function SingingView({
       main.removeEventListener('scroll', handleScroll, { capture: true } as EventListenerOptions)
     }
   }, [abc])
+
+  // Quick task 260712-kd1 (bug b fix): drive the shared chrome-hidden store
+  // from the top-bar hidden flag so the root-layout SiteHeader hides together
+  // with the singing view's own top bar. The tune-switch reset above already
+  // sets topBarHidden(false), which propagates here on the next commit — no
+  // extra call needed there.
+  useEffect(() => {
+    setChromeHidden(topBarHidden)
+  }, [topBarHidden])
+
+  // Always restore the global header on unmount (e.g. navigating away from
+  // the singing view while scrolled down/hidden) so it never gets stuck
+  // hidden on a non-singing page.
+  useEffect(() => {
+    return () => setChromeHidden(false)
+  }, [])
 
   return (
     <div data-singing-view className="relative">
