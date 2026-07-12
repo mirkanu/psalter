@@ -459,7 +459,12 @@ export function SingingView({
         ref={mainRef}
         data-notation-region
         data-tour-target="scroll-area"
-        className="overflow-x-hidden flex flex-col h-[calc(100dvh-104px)] md:h-[calc(100dvh-116px)] pb-11 md:pb-13"
+        className="overflow-x-hidden flex flex-col h-[calc(100dvh-104px)] md:h-[calc(100dvh-116px)] pb-11 md:pb-13 transition-[height,margin-top,padding-bottom] duration-200 ease-out motion-reduce:transition-none"
+        style={{
+          height: topBarHidden ? '100dvh' : undefined,
+          marginTop: topBarHidden ? '-104px' : undefined,
+          paddingBottom: bottomBarHidden ? '0px' : undefined,
+        }}
       >
         {abc ? (
           <NotationRendererClient
