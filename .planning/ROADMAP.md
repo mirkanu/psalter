@@ -57,7 +57,7 @@ Plans:
 **Wave 1**
 - [x] 04.9.14-01-PLAN.md — Split-leaf layout: desktop stacked, mobile 50/50, scroll-hide nav, zoom decoupling, onboarding tour
 - [x] 04.9.14-02-PLAN.md — Inline solfege: abcjs rendering + approval gate from melisma editor
-- [ ] 04.9.14-03-PLAN.md — PlayMiniBar: reposition above GlassBottomBar, auto-hide on scroll
+- [x] 04.9.14-03-PLAN.md — PlayMiniBar: reposition above GlassBottomBar, auto-hide on scroll
 
 **Wave 2** *(depends on Wave 1)*
 - [x] 04.9.13-02-PLAN.md — PlayMiniBar desktop right-align + abc/SoundCloud toggle; remove redundant TuneAudioPlayer

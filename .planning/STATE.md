@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 04.9.14-02-PLAN.md
-last_updated: "2026-07-12T09:48:28.699Z"
+status: verifying
+stopped_at: Completed 04.9.14-03-PLAN.md
+last_updated: "2026-07-12T10:09:19.462Z"
 last_activity: 2026-07-12
 progress:
   total_phases: 13
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 Phase: 04.9.14 (single-psalm-view-fixes) — EXECUTING
 Plan: 3 of 3
 UI-SPEC: Phase 04.9.4 closed out. Singing-view chrome refined across 4 polish rounds (chrome-dedup, singing-chrome-polish, r3, r4); audio first-press bug fixed; tour redesigned (4 steps, per-element spotlights); mobile bar h-11 (44px); lyrics/solfège views get bigger font + padding + inline YouTube embed; "Ps 119:N-M" range titles.
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-12
 
 Progress: [██████████] 100%
@@ -83,6 +83,7 @@ Progress: [██████████] 100%
 | Phase 05 P04 | 900 | 3 tasks | 7 files |
 | Phase 04.9.14 P01 | 45 | 6 tasks | 6 files |
 | Phase 04.9.14 P02 | 35 | 4 tasks | 3 files |
+| Phase 04.9.14 P03 | 30 min | 5 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -162,6 +163,9 @@ Recent decisions affecting current work:
 - [Phase 04.9.14-02]: Inline solfège renders via same abcjs pipeline as Staff view (buildUnifiedAbc factory shared between abc and solfegeAbc sources); split-leaf solfège stays JPG-only, unaffected by approval
 - [Phase 04.9.14-02]: isTuneApproved (melismaStatus === 'approved') gates ONLY inline solfège; Staff view and split-leaf solfège are never gated per CONTEXT locked decision
 - [Phase 04.9.14-02]: Fixed melisma-decision GET response field bug (currentStatus not status) that left melismaStatus permanently null
+- [Phase 04.9.14-03]: PlayMiniBar inline variant switched to fixed positioning (bottom offset matches GlassBottomBar h-11/h-13 + safe-area formula) instead of document flow, which had placed it below the fixed bottom bar requiring scroll
+- [Phase 04.9.14-03]: PlayMiniBar reports its own height via ResizeObserver (onHeightChange) so SingingView reserves exact dynamic bottom padding instead of a static guess, correctly handling both 44px compact and 80px SoundCloud-mode profiles
+- [Phase 04.9.14-03]: PlayMiniBar auto-hide reuses Plan 01's scroll listener; effectiveMiniBarVisible = miniBarVisible && !miniBarAutoHidden ensures manual collapse is never restored by scrolling up
 
 ### Pending Todos
 
@@ -213,8 +217,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-12T09:48:28.644Z
-Stopped at: Completed 04.9.14-02-PLAN.md
+Last session: 2026-07-12T10:09:19.423Z
+Stopped at: Completed 04.9.14-03-PLAN.md
 Resume file: None
 
 ### Deferred from 04.9.4 polish (separate tickets when needed)
