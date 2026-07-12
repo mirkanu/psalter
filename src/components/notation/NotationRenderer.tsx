@@ -1077,7 +1077,10 @@ export function NotationRenderer({
     if (chromeless) {
       return (
         <div className="flex flex-col h-full gap-4 px-4 pt-4 md:h-auto md:gap-4">
-          <div className="flex-1 min-h-0 max-h-[50%] overflow-y-auto md:max-h-none md:overflow-visible md:flex-none">
+          {/* 260712-szw: data-notation-slot is a measurement hook for
+              tests/diagnostics/split-leaf-staff-diff.mjs (clientHeight vs
+              scrollHeight overflow check) — no behaviour change. */}
+          <div data-notation-slot className="flex-1 min-h-0 max-h-[50%] overflow-y-auto md:max-h-none md:overflow-visible md:flex-none">
             {notationSlot}
           </div>
           <div className="flex-1 min-h-0 max-h-[50%] overflow-y-auto md:max-h-none md:overflow-visible md:flex-none">
