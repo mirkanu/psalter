@@ -8,6 +8,8 @@ import { Sheet, SheetTrigger, SheetContent, SheetClose } from '@/components/ui/s
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { GlobalSearch } from '@/components/GlobalSearch'
 import { FeedbackModal } from '@/components/FeedbackModal'
+import { cn } from '@/lib/utils'
+import { useChromeHidden } from '@/lib/chrome-hidden-store'
 
 const navLinks = [
   { href: "/psalms", label: "Psalms" },
@@ -43,6 +45,10 @@ export function SiteHeader() {
   const pathname = usePathname()
   const [searchOpen, setSearchOpen] = useState(false)
   const [footerOpen, setFooterOpen] = useState<'about' | 'copyright' | 'feedback' | null>(null)
+  // Quick task 260712-kd1 (bug b fix): subscribed to the shared chrome-hidden
+  // store, which only SingingView ever writes to. Defaults false (visible)
+  // everywhere else, so this has zero effect on non-singing pages.
+  const chromeHidden = useChromeHidden()
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
@@ -54,7 +60,15 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border">
+      <header
+        data-scroll-hidden={chromeHidden ? '' : undefined}
+        className={cn(
+          'sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border',
+          'transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none',
+          chromeHidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100',
+        )}
+      >
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
             <Link href="/" className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
