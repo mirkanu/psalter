@@ -204,7 +204,12 @@ export function PlayMiniBar({
               width="100%"
               height="56"
               allow="autoplay"
-              sandbox="allow-scripts allow-same-origin"
+              // WR-03 fix: dropped allow-same-origin — combining it with
+              // allow-scripts lets the framed document script its way out of
+              // the sandbox (e.g. `iframe.sandbox = ''` self-mutation).
+              // SoundCloud's embed player does not require same-origin
+              // storage access to function.
+              sandbox="allow-scripts"
               src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(soundcloudUrl!)}&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false`}
               className="rounded-md border border-border shrink-0"
             />
