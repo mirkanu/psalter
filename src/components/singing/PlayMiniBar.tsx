@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, type TransitionEvent } from 'react'
+import { useEffect, useRef, useState, type TransitionEvent } from 'react'
 import { ChevronDown, Music, Film } from 'lucide-react'
 import { AbcAudioControls } from './AbcAudioControls'
 import { cn } from '@/lib/utils'
@@ -16,6 +16,11 @@ interface Props {
   tuneName?: string
   /** 'fixed' = floating viewport bar (tune page); 'inline' = inside max-w-4xl container (psalm page). */
   variant?: 'fixed' | 'inline'
+  /** Plan 04.9.14-03 (Task 4): reports the bar's rendered height (0 when
+   *  effectively hidden) so callers can reserve matching bottom padding in
+   *  the scrollable content area — avoids a hardcoded height guess that
+   *  would be wrong in SoundCloud mode (h-[80px] vs h-[44px]). */
+  onHeightChange?: (heightPx: number) => void
 }
 
 export function PlayMiniBar({
@@ -28,8 +33,10 @@ export function PlayMiniBar({
   soundcloudUrl,
   tuneName,
   variant = 'fixed',
+  onHeightChange,
 }: Props) {
   const [hidden, setHidden] = useState(!visible)
+  const rootRef = useRef<HTMLDivElement | null>(null)
 
   const hasSc = !!soundcloudUrl && soundcloudUrl.startsWith('http')
   const [audioSource, setAudioSource] = useState<'abc' | 'soundcloud'>('abc')
@@ -79,6 +86,27 @@ export function PlayMiniBar({
   const isScMode = audioSource === 'soundcloud'
   const barHeight = isScMode ? 'h-[80px]' : 'h-[44px]'
 
+  // Plan 04.9.14-03 (Task 4): report actual rendered height to the caller so
+  // the scrollable content area can reserve exactly enough bottom padding
+  // (handles both the compact h-[44px] and SoundCloud h-[80px] profiles).
+  // Reports 0 when the bar is not mounted/visible so callers don't reserve
+  // space for a collapsed/auto-hidden bar.
+  useEffect(() => {
+    if (!onHeightChange) return
+    if (!mounted || hidden) {
+      onHeightChange(0)
+      return
+    }
+    const el = rootRef.current
+    if (!el) return
+    const report = () => onHeightChange(visible ? el.offsetHeight : 0)
+    report()
+    const ro = new ResizeObserver(report)
+    ro.observe(el)
+    return () => ro.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, hidden, visible, isScMode])
+
   const handleEnd = (e: TransitionEvent) => {
     if (e.propertyName !== 'transform' && e.propertyName !== 'opacity') return
     if (!visible) setHidden(true)
@@ -87,9 +115,11 @@ export function PlayMiniBar({
   if (!mounted) return null
 
   const isFixed = variant === 'fixed'
+  const isInline = variant === 'inline'
 
   return (
     <div
+      ref={rootRef}
       data-play-mini-bar
       aria-hidden={!visible}
       onTransitionEnd={handleEnd}
@@ -99,7 +129,14 @@ export function PlayMiniBar({
         isFixed && 'fixed',
         isFixed && 'inset-x-0 bottom-[44px] px-1.5 border-t border-border/40 bg-background/90 backdrop-blur-sm',
         isFixed && 'md:ml-auto md:max-w-md md:w-auto md:bottom-[56px] md:right-4 md:rounded-lg md:border md:border-border/40 md:shadow-lg md:px-2',
-        !isFixed && 'ml-auto rounded-lg border border-border/40 shadow-lg px-2 bg-background/90 backdrop-blur-sm max-w-full',
+        // Plan 04.9.14-03 (Task 2): "inline" variant is used inside SingingView,
+        // where it must sit fixed directly ABOVE GlassBottomBar (h-11/h-13 +
+        // safe-area padding) rather than flow inline in the document (the old
+        // behavior placed it at the true bottom of the page, requiring scroll).
+        isInline && 'fixed inset-x-0 px-1.5 border-t border-border/40 bg-background/90 backdrop-blur-md',
+        isInline && 'bottom-[calc(2.75rem+max(env(safe-area-inset-bottom)-12px,0px))]',
+        isInline && 'md:bottom-[calc(3.25rem+max(env(safe-area-inset-bottom)-12px,0px))]',
+        isInline && 'md:inset-x-auto md:right-4 md:max-w-md md:w-auto md:rounded-lg md:border md:border-border/40 md:shadow-lg md:px-2',
         'transition-all duration-200 ease-out',
         'motion-reduce:translate-y-0 motion-reduce:!transition-opacity motion-reduce:duration-100',
         visible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0',
