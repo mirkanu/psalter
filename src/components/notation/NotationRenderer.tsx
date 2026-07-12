@@ -524,8 +524,31 @@ export function NotationRenderer({
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
+  // Quick 260712-kov fix: the sub-1 narrowing factor above exists to force
+  // abcjs to WRAP a single long phrase into more systems (more notes fit per
+  // requested staffwidth than the viewport can show, so a narrower target
+  // makes abcjs break earlier). That wrap-forcing only matters for the
+  // splitMusicIntoSubLines code path. SingingView always supplies
+  // melismaPositions, so buildUnifiedAbc takes the Phase 04.9.12
+  // melisma-positions branch instead, which emits ONE already-fixed music
+  // line per phrase (never auto-wrapped) — the narrowing factor no longer
+  // controls system count there, it just compresses note spacing.
+  // Diagnosed via tests/diagnostics/split-leaf-staff-diff.mjs: inline Staff
+  // (with w: lyric lines) ends up compensating for this compression because
+  // abcjs widens note spacing to fit long lyric syllables under a compressed
+  // staffwidth ("MOBILE-03" behaviour, see AbcPlayer.tsx) — an accidental
+  // side effect of lyrics being present. Split-leaf Staff has NO lyrics to
+  // trigger that compensation, so the SAME narrow factor renders it visibly
+  // smaller/differently-proportioned than inline (viewBox width diverged
+  // ~2x at mobile in the diagnostic). Fix: split-leaf renders at the full
+  // (uncompressed) factor — there is no wrap-count reason to narrow it, and
+  // this restores parity with inline's effective geometry. Inline Staff,
+  // inline Solfège, and split-leaf Solfège (JPG) are unaffected.
+  const isSplitForWidth = isSplitMode(viewMode)
   const staffWidthFactor = chromeless
-    ? viewportW < 768
+    ? isSplitForWidth
+      ? 1
+      : viewportW < 768
       ? 0.55
       : 0.85
     : 1
