@@ -44,10 +44,6 @@ interface Props {
   precentingVerseRange?: string | null
   /** For multi-version psalms (a/b), the full list of versions with slugs and current marker. */
   versionSiblings?: { slug: string; displayLabel: string; isCurrent: boolean }[]
-  /** Full ordered list of staff-score image paths for the active tune (server-derived in page.tsx via deriveTuneJpgPages — NOT derived here). Enables multi-page thumbnail nav in split-leaf view. */
-  staffPages?: string[]
-  /** Full ordered list of solfège image paths for the active tune (server-derived in page.tsx via deriveTuneJpgPages — NOT derived here). Enables multi-page thumbnail nav in split-leaf view. */
-  solfegePages?: string[]
 }
 
 function readStoredViewMode(showLyrics: boolean): ViewMode {
@@ -91,8 +87,6 @@ export function SingingView({
   precentingNextHref,
   precentingVerseRange,
   versionSiblings,
-  staffPages = [],
-  solfegePages = [],
 }: Props) {
   const searchParams = useSearchParams()
   const tuneParam = searchParams?.get('tune') ?? null
@@ -115,6 +109,12 @@ export function SingingView({
   }, [tuneParam, allTuneOptions])
 
   const activeTune: TuneOption | null = overrideTune ?? primaryTune
+
+  // 260712-tmm bug (b): page arrays now travel WITH each tune (server-derived
+  // in fetchTunesByMeter / page.tsx builders), so a client-side tune switch
+  // always reflects the ACTIVE tune's own arrays instead of stale page props.
+  const activeStaffPages = activeTune?.staffPages ?? []
+  const activeSolfegePages = activeTune?.solfegePages ?? []
 
   // ViewMode + baseSize state (owned here; passed controlled to NotationRenderer)
   const showLyrics = !!lyrics
@@ -491,8 +491,8 @@ export function SingingView({
             onStanzaPageChange={setStanzaPage}
             youtubeUrl={youtubeUrl}
             soundcloudUrl={soundcloudUrl}
-            staffPages={staffPages}
-            solfegePages={solfegePages}
+            staffPages={activeStaffPages}
+            solfegePages={activeSolfegePages}
           />
         ) : (
           <div className="p-6 text-sm text-muted-foreground italic">
@@ -548,7 +548,7 @@ export function SingingView({
             // inline and split-leaf Solfège render the same scanned image
             // (04.9.14-lcg revert), so a single ungated boolean covers both.
             staffAvailable={!!(activeTune?.abcNotation || activeTune?.abcSatb)}
-            solfegeAvailable={!!(solfegeJpgUrl || solfegePages.length > 0)}
+            solfegeAvailable={!!(solfegeJpgUrl || activeSolfegePages.length > 0)}
           />
         }
       />

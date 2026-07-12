@@ -54,14 +54,11 @@ export default async function PrecentSingPage({ params }: PageProps) {
 
   const primaryMeter = activeVersion?.meter ?? rawTune?.meter ?? null
   const rawAlternateTunes = primaryMeter ? await fetchTunesByMeter(primaryMeter) : []
-  const alternateTunes = rawAlternateTunes.map((t) => {
-    const { staffPages, solfegePages } = deriveTuneJpgPages(t.name)
-    return {
-      ...t,
-      scoreJpgUrl: staffPages[0] ?? t.scoreJpgUrl,
-      solfegeJpgUrl: solfegePages[0] ?? t.solfegeJpgUrl,
-    }
-  })
+  const alternateTunes = rawAlternateTunes.map((t) => ({
+    ...t,
+    scoreJpgUrl: t.staffPages[0] ?? t.scoreJpgUrl,
+    solfegeJpgUrl: t.solfegePages[0] ?? t.solfegeJpgUrl,
+  }))
 
   // Tune override: if item.tuneId is set, prefer the assigned tune as primaryTune
   let primaryTune: AlternateTune | null = null
@@ -161,5 +158,7 @@ function buildTuneOption(tune: Record<string, any>): AlternateTune {
     melismaPositions: (tune.melismaPositions ?? null) as number[][] | null,
     // WR-04: phraseShapeOverride added to the shared AlternateTune type.
     phraseShapeOverride: (tune.phraseShapeOverride ?? null) as number[] | null,
+    staffPages,
+    solfegePages,
   }
 }

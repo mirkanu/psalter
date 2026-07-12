@@ -103,14 +103,11 @@ export default async function PsalmPage({ params }: PageProps) {
 
   const primaryMeter = activeVersion?.meter ?? rawTune?.meter ?? null
   const rawAlternateTunes = primaryMeter ? await fetchTunesByMeter(primaryMeter) : []
-  const alternateTunes = rawAlternateTunes.map((t) => {
-    const { staffPages, solfegePages } = deriveTuneJpgPages(t.name)
-    return {
-      ...t,
-      scoreJpgUrl: staffPages[0] ?? t.scoreJpgUrl,
-      solfegeJpgUrl: solfegePages[0] ?? t.solfegeJpgUrl,
-    }
-  })
+  const alternateTunes = rawAlternateTunes.map((t) => ({
+    ...t,
+    scoreJpgUrl: t.staffPages[0] ?? t.scoreJpgUrl,
+    solfegeJpgUrl: t.solfegePages[0] ?? t.solfegeJpgUrl,
+  }))
 
   // Wrap primaryTune in TuneOption (AlternateTune) shape — used uniformly by SingingView
   const primaryTune = primaryTuneRow
@@ -130,6 +127,8 @@ export default async function PsalmPage({ params }: PageProps) {
           solfegeOcrText: (primaryTuneRow as { solfegeOcrText?: string | null }).solfegeOcrText ?? null,
           phraseShapeOverride: (primaryTuneRow as { phraseShapeOverride?: number[] | null }).phraseShapeOverride ?? null,
           melismaPositions: (primaryTuneRow as { melismaPositions?: number[][] | null }).melismaPositions ?? null,
+          staffPages,
+          solfegePages,
         }
       })()
     : null
@@ -171,13 +170,6 @@ export default async function PsalmPage({ params }: PageProps) {
   const rangeMatch = activeVersion?.psalterNumber?.match(/^\d+:(\d+(?:-\d+)?)/) ?? null
   const versePartLabel = rangeMatch ? rangeMatch[1] : null
 
-  // Compute the active tune's full image-page arrays (server-side only — deriveTuneJpgPages uses fs).
-  // This drives multi-page thumbnail nav in split-leaf view; forwarded through SingingView (never derived there).
-  // Uses primaryTune (page-level); client-side ?tune= override is handled in SingingView.
-  const activeTunePages = primaryTune
-    ? deriveTuneJpgPages(primaryTune.name)
-    : { staffPages: [] as string[], solfegePages: [] as string[] }
-
   return (
     <div className="max-w-4xl mx-auto">
       <SingingView
@@ -196,8 +188,6 @@ export default async function PsalmPage({ params }: PageProps) {
         studyHref={`/psalms/${slug}/study`}
         versePartLabel={versePartLabel}
         versionSiblings={versionSiblings}
-        staffPages={activeTunePages.staffPages}
-        solfegePages={activeTunePages.solfegePages}
       />
     </div>
   )
