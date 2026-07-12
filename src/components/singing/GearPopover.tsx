@@ -28,8 +28,15 @@ interface Props {
   showLyricsOption: boolean
   /** Whether Staff notation is available (has approved ABC). */
   staffAvailable: boolean
-  /** Whether Solfege notation is available (has approved solfege data). */
-  solfegeAvailable: boolean
+  /** CR-04 fix: split availability by layout — the melisma approval gate
+   *  applies ONLY to inline Solfège (viewMode 'solfege'); split-leaf
+   *  Solfège (JPG-based, 'solfege-split') is unaffected by approval status
+   *  per NotationRenderer's documented gating (CONTEXT "Approval Gate
+   *  Decision" — locked). A single shared boolean here disabled the
+   *  Solfège button entirely for unapproved tunes, blocking split-leaf too. */
+  solfegeInlineAvailable: boolean
+  /** Whether split-leaf Solfège (JPG) is available — ungated by approval. */
+  solfegeSplitAvailable: boolean
 }
 
 export function GearPopover({
@@ -41,13 +48,18 @@ export function GearPopover({
   onRestartTour,
   showLyricsOption,
   staffAvailable,
-  solfegeAvailable,
+  solfegeInlineAvailable,
+  solfegeSplitAvailable,
 }: Props) {
   const router = useRouter()
 
   const isMusicNotes = viewMode !== 'lyrics'
   const isStaff = viewMode === 'staff' || viewMode === 'staff-split'
   const isSplit = viewMode === 'staff-split' || viewMode === 'solfege-split'
+  // CR-04 fix: the Solfège button switches notation for the CURRENT layout
+  // (isSplit already reflects the active viewMode), so gate it with the
+  // availability signal that matches that layout.
+  const solfegeAvailable = isSplit ? solfegeSplitAvailable : solfegeInlineAvailable
 
   const handleNotationChange = (notation: 'staff' | 'solfege') => {
     if (notation === 'staff' && !staffAvailable) {
