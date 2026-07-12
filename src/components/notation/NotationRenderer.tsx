@@ -535,6 +535,18 @@ export function NotationRenderer({
       : 0.85
     : 1
 
+  // 260712-szw: mobile-only compact spacing + height-fit for split-leaf
+  // Staff. UAT on Ps 78 (Azmon/Denfield, CM) found mobile split-leaf has too
+  // much whitespace above/below the staff (no lyrics reserve space for) and
+  // the 4th system requires scrolling. Diagnostic VERDICT
+  // (tests/diagnostics/split-leaf-staff-diff.mjs): spacing reduction alone
+  // is NOT sufficient (434px -> 299px, still above the ~260px mobile
+  // notation-slot budget) — both compact spacing AND a height-fit scale are
+  // required. Gated to chromeless && split-leaf && <768px so desktop
+  // split-leaf stays byte-identical to inline (260712-kov guarantee) and
+  // inline Staff / inline Solfège / split-leaf Solfège are unaffected.
+  const compactSplitMobile = chromeless && isSplitForWidth && viewportW < 768
+
   // How many sub-systems to break each source phrase into. abcjs only wraps
   // music where the ABC source contains an explicit newline; staffwidth alone
   // does not split a single music-line. For the chromeless singing view we
@@ -1117,6 +1129,7 @@ export function NotationRenderer({
           renderAboveOriginal={<BackToNotationButton onClick={() => setShowOriginal(false)} />}
           hidePlayerControls={isFullscreen || chromeless}
           staffWidthFactor={staffWidthFactor}
+          compactSplitMobile={compactSplitMobile}
         />
       </div>
     )
