@@ -374,14 +374,24 @@ export function SingingView({
   // never gated (CONTEXT "Approval Gate Decision" — locked).
   const isTuneApproved = melismaStatus === 'approved'
 
-  // Task 3 (04.9.14-01): scroll-hide navigation. Top bar hides past 40px of
-  // scroll (while scrolling down), bottom bar past 100px. Both reappear
-  // immediately on any upward scroll. The actual scrollable region is the
-  // NotationRenderer chromeless viewarea (`[data-notation-viewarea]`) — the
-  // page itself does not scroll at the window level (fixed-height flex
-  // layout), so `window.scrollY` (as sketched in CONTEXT) never fires here.
-  // We locate that element inside `mainRef` and attach a passive listener,
-  // retrying via rAF until the dynamically-imported NotationRenderer mounts.
+  // Task 3 (04.9.14-01, hardened in quick task 260712-kd1): scroll-hide
+  // navigation. Top bar hides past 40px of scroll (while scrolling down),
+  // bottom bar past 100px. Both reappear immediately on any upward scroll.
+  // The actual scrollable region is the NotationRenderer chromeless viewarea
+  // (`[data-notation-viewarea]`) in non-split modes, OR one of the two
+  // independent split-leaf inner scroll regions — the page itself never
+  // scrolls at the window level (fixed-height flex layout), so
+  // `window.scrollY` never fires here.
+  //
+  // 260712-kd1 fix: attach a single CAPTURE-phase listener directly on
+  // `mainRef` instead of querySelector-ing a single target. Capture phase
+  // catches `scroll` events bubbling (in capture terms, trickling down then
+  // triggered) from ANY descendant scroll container — the non-split
+  // `[data-notation-viewarea]` AND both split-leaf inner `overflow-y-auto`
+  // regions — which is why the previous single-target listener never fired
+  // in split-leaf modes. A WeakMap tracks last scrollTop per scrolling
+  // element since split-leaf has two independent regions; a single scalar
+  // would corrupt direction detection when the user alternates between them.
   useEffect(() => {
     if (!abc) return
     // CR-03 fix: reset the scroll-hide flags whenever this effect (re)attaches
@@ -393,36 +403,29 @@ export function SingingView({
     setTopBarHidden(false)
     setBottomBarHidden(false)
     setMiniBarAutoHidden(false)
-    let container: HTMLElement | null = null
-    let handleScroll: (() => void) | null = null
-    let lastScrollTop = 0
-    let rafId: number | null = null
 
-    const attach = () => {
-      container = mainRef.current?.querySelector('[data-notation-viewarea]') ?? null
-      if (!container) {
-        rafId = requestAnimationFrame(attach)
-        return
-      }
-      handleScroll = () => {
-        const scrollTop = container!.scrollTop
-        const scrollingDown = scrollTop > lastScrollTop
-        setTopBarHidden(scrollTop > 40 && scrollingDown)
-        setBottomBarHidden(scrollTop > 100 && scrollingDown)
-        // Task 3 (04.9.14-03): PlayMiniBar auto-hides on scroll down (same
-        // 100px threshold as the bottom bar, since it sits directly above
-        // it) and reappears on any upward scroll — independent of the
-        // manual collapse state (see `effectiveMiniBarVisible`).
-        setMiniBarAutoHidden(scrollTop > 100 && scrollingDown)
-        lastScrollTop = scrollTop
-      }
-      container.addEventListener('scroll', handleScroll, { passive: true })
+    const main = mainRef.current
+    if (!main) return
+
+    const lastByEl = new WeakMap<EventTarget, number>()
+    const handleScroll = (e: Event) => {
+      const el = e.target as HTMLElement | null
+      if (!el || typeof el.scrollTop !== 'number') return
+      const scrollTop = el.scrollTop
+      const scrollingDown = scrollTop > (lastByEl.get(el) ?? 0)
+      setTopBarHidden(scrollTop > 40 && scrollingDown)
+      setBottomBarHidden(scrollTop > 100 && scrollingDown)
+      // Task 3 (04.9.14-03): PlayMiniBar auto-hides on scroll down (same
+      // 100px threshold as the bottom bar, since it sits directly above
+      // it) and reappears on any upward scroll — independent of the
+      // manual collapse state (see `effectiveMiniBarVisible`).
+      setMiniBarAutoHidden(scrollTop > 100 && scrollingDown)
+      lastByEl.set(el, scrollTop)
     }
-    attach()
 
+    main.addEventListener('scroll', handleScroll, { capture: true, passive: true })
     return () => {
-      if (rafId !== null) cancelAnimationFrame(rafId)
-      if (container && handleScroll) container.removeEventListener('scroll', handleScroll)
+      main.removeEventListener('scroll', handleScroll, { capture: true } as EventListenerOptions)
     }
   }, [abc])
 

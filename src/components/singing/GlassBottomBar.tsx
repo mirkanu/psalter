@@ -56,7 +56,7 @@ export function GlassBottomBar({
       data-scroll-hidden={hidden ? '' : undefined}
       className={cn(
         'fixed bottom-0 inset-x-0 z-40 bg-background/70 backdrop-blur-md border-t border-border/50 pb-[max(env(safe-area-inset-bottom)-12px,0px)]',
-        'transition-transform transition-opacity duration-200 ease-out motion-reduce:transition-none',
+        'transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none',
         hidden ? 'translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100',
       )}
       aria-label="Psalm view controls"
