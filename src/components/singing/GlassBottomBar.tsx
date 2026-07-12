@@ -1,6 +1,7 @@
 'use client'
 import type { ReactNode } from 'react'
 import { Settings, Play, Pause, ChevronLeft, ChevronRight } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
 
 interface Props {
@@ -23,6 +24,9 @@ interface Props {
   showLyricsOption?: boolean
   /** Gear popover slot — when provided, replaces the default Settings button. */
   gear?: ReactNode
+  /** Task 3 (04.9.14-01): scroll-hide navigation. When true, slides down and
+   *  fades out; scrolling back up restores it. */
+  hidden?: boolean
 }
 
 /**
@@ -45,6 +49,7 @@ export function GlassBottomBar({
   onPlayToggle,
   onGearOpen,
   gear,
+  hidden = false,
 }: Props) {
   const showStanza =
     currentStanza != null && totalStanzas != null && currentStanza > 0 && totalStanzas > 1
@@ -53,7 +58,13 @@ export function GlassBottomBar({
   return (
     <nav
       data-glass-bottom-bar
-      className="fixed bottom-0 inset-x-0 z-40 bg-background/70 backdrop-blur-md border-t border-border/50 pb-[max(env(safe-area-inset-bottom)-12px,0px)]"
+      data-tour-target="bottom-bar"
+      data-scroll-hidden={hidden ? '' : undefined}
+      className={cn(
+        'fixed bottom-0 inset-x-0 z-40 bg-background/70 backdrop-blur-md border-t border-border/50 pb-[max(env(safe-area-inset-bottom)-12px,0px)]',
+        'transition-transform transition-opacity duration-200 ease-out motion-reduce:transition-none',
+        hidden ? 'translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100',
+      )}
       aria-label="Psalm view controls"
     >
       <div className="max-w-4xl mx-auto flex items-center gap-1 px-2 h-11 md:h-13">

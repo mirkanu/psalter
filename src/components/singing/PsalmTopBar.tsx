@@ -24,6 +24,10 @@ interface Props {
   precentingVerseRange?: string | null
   /** For multi-version psalms (a/b), all versions with slugs and current marker. */
   versionSiblings?: { slug: string; displayLabel: string; isCurrent: boolean }[]
+  /** Task 3 (04.9.14-01): scroll-hide navigation. When true, the bar slides
+   *  up and fades out; scrolling back up restores it. Purely visual — the
+   *  bar stays mounted so its sticky positioning/measurements don't reset. */
+  hidden?: boolean
 }
 
 function isEditableTarget(el: Element | null): boolean {
@@ -51,6 +55,7 @@ export function PsalmTopBar({
   precentingNextHref,
   precentingVerseRange,
   versionSiblings,
+  hidden = false,
 }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -95,7 +100,13 @@ export function PsalmTopBar({
   return (
     <header
       data-singing-topbar
-      className="sticky top-14 z-30 bg-background/95 backdrop-blur border-b"
+      data-tour-target="top-bar"
+      data-scroll-hidden={hidden ? '' : undefined}
+      className={cn(
+        'sticky top-14 z-30 bg-background/95 backdrop-blur border-b',
+        'transition-transform transition-opacity duration-200 ease-out motion-reduce:transition-none',
+        hidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100',
+      )}
     >
       <div className="max-w-4xl mx-auto relative flex items-center justify-between gap-2 px-2 h-12 md:h-14 landscape:h-10">
         {isPending && (
