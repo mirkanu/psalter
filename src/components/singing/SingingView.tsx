@@ -371,8 +371,16 @@ export function SingingView({
     const main = mainRef.current
     if (!main) return
 
+    // Quick task 260712-sny (bug b fix): scroll-hide must only apply below
+    // the `md` 768px breakpoint. Desktop has ample vertical room and hiding
+    // chrome there is jarring — gate the handler so it's a no-op above 767px,
+    // and force-reset all hidden flags if the viewport crosses into desktop
+    // while scrolled down (resize / orientation flip while hidden).
+    const mql = window.matchMedia('(max-width: 767px)')
+
     const lastByEl = new WeakMap<EventTarget, number>()
     const handleScroll = (e: Event) => {
+      if (!mql.matches) return
       const el = e.target as HTMLElement | null
       if (!el || typeof el.scrollTop !== 'number') return
       const scrollTop = el.scrollTop
@@ -387,9 +395,17 @@ export function SingingView({
       lastByEl.set(el, scrollTop)
     }
 
+    const handleMql = () => {
+      if (!mql.matches) {
+        setTopBarHidden(false); setBottomBarHidden(false); setMiniBarAutoHidden(false)
+      }
+    }
+    mql.addEventListener('change', handleMql)
+
     main.addEventListener('scroll', handleScroll, { capture: true, passive: true })
     return () => {
       main.removeEventListener('scroll', handleScroll, { capture: true } as EventListenerOptions)
+      mql.removeEventListener('change', handleMql)
     }
   }, [abc])
 
