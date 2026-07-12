@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready_to_plan
-stopped_at: Phase 4.9.13 UI-SPEC approved
-last_updated: "2026-06-28T19:19:29.007Z"
-last_activity: 2026-06-28 -- Phase 04.9.13 execution started
+status: executing
+stopped_at: Completed 04.9.14-01-PLAN.md
+last_updated: "2026-07-12T09:29:42.401Z"
+last_activity: 2026-07-12
 progress:
   total_phases: 13
-  completed_phases: 11
+  completed_phases: 10
   total_plans: 52
   completed_plans: 52
-  percent: 85
+  percent: 100
 ---
 
 # Project State
@@ -21,17 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-07)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 04.9.13 — single-psalm-ui-streamlining
+**Current focus:** Phase 04.9.14 — single-psalm-view-fixes
 
 ## Current Position
 
-Phase: 04.10
-Plan: Not started
+Phase: 04.9.14 (single-psalm-view-fixes) — EXECUTING
+Plan: 2 of 3
 UI-SPEC: Phase 04.9.4 closed out. Singing-view chrome refined across 4 polish rounds (chrome-dedup, singing-chrome-polish, r3, r4); audio first-press bug fixed; tour redesigned (4 steps, per-element spotlights); mobile bar h-11 (44px); lyrics/solfège views get bigger font + padding + inline YouTube embed; "Ps 119:N-M" range titles.
-Status: Ready to plan
-Last activity: 2026-06-28
+Status: Ready to execute
+Last activity: 2026-07-12
 
-Progress: [██████████] 95%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -81,6 +81,7 @@ Progress: [██████████] 95%
 | Phase 04.12 P05 | 25 | 2 tasks | 3 files |
 | Phase 05-precentor-portal P01 | 1015 | 3 tasks | 11 files |
 | Phase 05 P04 | 900 | 3 tasks | 7 files |
+| Phase 04.9.14 P01 | 45 | 6 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -153,6 +154,10 @@ Recent decisions affecting current work:
 - [Phase 04.11]: 04.11-04: WAVE_B_THRESHOLD=20 and LOW_CONFIDENCE_THRESHOLD=0.85 (tunable constants in ocr-melisma-batch.ts)
 - [Phase 04.11]: 04.11-04: real DB lyrics_structured shape is Array<{index,lines:[{text}]}> NOT cycles/stanzas - syllabification at read-time via syllabifyForAbc
 - [Phase ?]: drizzle-kit not installed due to NODE_ENV=production suppressing devDependency installation; fixed by npm install --include=dev
+- [Phase 04.9.14-01]: Split-leaf layout always stacks notation above lyrics (single column); mobile chromeless caps each region at 50% height with independent scroll
+- [Phase 04.9.14-01]: Notation rendering scale fixed at 1 in split-leaf mode; baseSize only drives lyrics CSS var, decoupling A-/A+ zoom from staff size
+- [Phase 04.9.14-01]: Scroll-hide wired to NotationRenderer's internal [data-notation-viewarea] scroll container (not window.scrollY) since SingingView's fixed-height layout never scrolls at window level
+- [Phase 04.9.14-01]: Onboarding tour bumped psalter_tour_v1 to psalter_tour_v2; 3 new scroll-hide steps gated to split-leaf mobile (<768px)
 
 ### Pending Todos
 
@@ -190,6 +195,7 @@ None yet.
 
 - ABC notation source: No existing ABC files for Scottish Psalter tunes. Phase 4 requires sourcing public-domain ABC or encoding from printed editions. The Session API lookup spike is the first plan in Phase 4.
 - Tune JPG download incomplete — 172 tunes have NULL score_jpg_url. VPS root filesystem is 97% full (38GB). Expand disk before running migrate-airtable.ts without SKIP_IMAGES=1.
+- REQUIREMENTS.md has no UI-06/UI-07/UI-08 rows — Phase 04.9.14 plans reference these IDs in frontmatter but they were never added to the traceability table during planning; requirements.mark-complete no-ops until rows are added
 
 ## Deferred Items
 
@@ -203,9 +209,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-28T17:52:51.378Z
-Stopped at: Phase 4.9.13 UI-SPEC approved
-Resume file: .planning/phases/04.9.13-single-psalm-ui-streamlining/04.9.13-UI-SPEC.md
+Last session: 2026-07-12T09:29:05.049Z
+Stopped at: Completed 04.9.14-01-PLAN.md
+Resume file: None
 
 ### Deferred from 04.9.4 polish (separate tickets when needed)
 
