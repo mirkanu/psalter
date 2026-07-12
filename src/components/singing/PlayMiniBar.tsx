@@ -136,7 +136,12 @@ export function PlayMiniBar({
         isInline && 'fixed inset-x-0 px-1.5 border-t border-border/40 bg-background/90 backdrop-blur-md',
         isInline && 'bottom-[calc(2.75rem+max(env(safe-area-inset-bottom)-12px,0px))]',
         isInline && 'md:bottom-[calc(3.25rem+max(env(safe-area-inset-bottom)-12px,0px))]',
-        isInline && 'md:inset-x-auto md:right-4 md:max-w-md md:w-auto md:rounded-lg md:border md:border-border/40 md:shadow-lg md:px-2',
+        // md:right calc aligns the card's right edge with GlassBottomBar's centered
+        // max-w-4xl (56rem) column + its px-2 (0.5rem) — i.e. directly above the Gear
+        // button — instead of pinning to the far viewport edge (quick task 260712-lp9,
+        // bug b). Scoped to md: ONLY; mobile keeps the unprefixed `inset-x-0` full-width
+        // layout above, which must not regress.
+        isInline && 'md:inset-x-auto md:right-[calc(max(0px,(100vw_-_56rem)/2)_+_0.5rem)] md:max-w-md md:w-auto md:rounded-lg md:border md:border-border/40 md:shadow-lg md:px-2',
         'transition-all duration-200 ease-out',
         'motion-reduce:translate-y-0 motion-reduce:!transition-opacity motion-reduce:duration-100',
         visible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0',
