@@ -13,7 +13,6 @@ import type { TuneOption, TuneSwitcherSections } from './types'
 import type { PsalmDetail } from '@/db/queries/psalms'
 import type { PsalmRow } from '@/components/PsalmListingGrid'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
-import { pickAbcWithMarkers, sopranoOnly } from '@/lib/utils'
 import { setChromeHidden } from '@/lib/chrome-hidden-store'
 
 const STORAGE_MODE_KEY = 'psalter-score-mode'
@@ -176,24 +175,6 @@ export function SingingView({
     }
   }, [viewMode])
 
-  // Fetch melisma approval status for the active tune (drives GearPopover gray-out).
-  // CR-02 fix: use the public /api/melisma-status route rather than
-  // /api/dev/melisma-decision — this component renders on the anonymous
-  // public psalm page, and the /api/dev/ namespace is documented as
-  // Cloudflare-Access-gated dev tooling. See src/app/api/melisma-status/route.ts.
-  useEffect(() => {
-    if (!activeTune?.id) { setMelismaStatus(null); return }
-    let cancelled = false
-    fetch(`/api/melisma-status?tuneId=${activeTune.id}`)
-      .then((r) => r.json())
-      // Plan 04.9.14-02 (Rule 1 fix): the route returns `currentStatus`, not
-      // `status` — reading the wrong field left melismaStatus permanently
-      // null, silently disabling the approval gate this plan implements.
-      .then((data) => { if (!cancelled) setMelismaStatus(data.currentStatus ?? null) })
-      .catch(() => { if (!cancelled) setMelismaStatus(null) })
-    return () => { cancelled = true }
-  }, [activeTune?.id])
-
   // 04.9.4-03: Proportional zoom heuristic.
   // On viewport width change (resize / orientation flip / visualViewport),
   // recompute baseSize as clamp(current * newWidth / refWidth, 8, 40).
@@ -251,7 +232,6 @@ export function SingingView({
   // 04.9.4-02 lifted state: audio + gear drawer + stanza indicator
   const [isPlaying, setIsPlaying] = useState(false)
   const [gearOpen, setGearOpen] = useState(false)
-  const [melismaStatus, setMelismaStatus] = useState<'approved' | 'not_approved' | null>(null)
   const [miniBarMounted, setMiniBarMounted] = useState(false)
   const [miniBarVisible, setMiniBarVisible] = useState(false)
   // Task 3 (04.9.14-03): scroll-driven auto-hide, kept separate from the
@@ -352,28 +332,11 @@ export function SingingView({
   const youtubeUrl = activeTune?.youtubeUrl ?? null
   const soundcloudUrl = activeTune?.soundcloudUrl ?? null
 
-  // Plan 04.9.14-02 (Task 2): inline Solfège ABC — prefers the SATB/mono
-  // variant carrying `% PHRASE_BREAK` markers, reduced to soprano-only.
-  const solfegeAbc = useMemo(() => {
-    if (!activeTune) return ''
-    const picked = pickAbcWithMarkers(
-      activeTune.abcSatb ?? null,
-      activeTune.abcNotation ?? null,
-    )
-    return picked ? sopranoOnly(picked) : ''
-  }, [activeTune])
-
   // Task 3 (04.9.14-03): final visibility passed to PlayMiniBar combines the
   // manual toggle (collapse button / play state) with scroll-driven
   // auto-hide. A manual collapse (miniBarVisible=false) is NOT restored by
   // scrolling up — only the auto-hide layer reacts to scroll.
   const effectiveMiniBarVisible = miniBarVisible && !miniBarAutoHidden
-
-  // Plan 04.9.14-02 (Task 3): approval gate. `melismaStatus` starts `null`
-  // (pre-fetch / no tune) and is treated as NOT approved — inline solfège
-  // stays disabled until the fetch confirms `'approved'`. Staff view is
-  // never gated (CONTEXT "Approval Gate Decision" — locked).
-  const isTuneApproved = melismaStatus === 'approved'
 
   // Task 3 (04.9.14-01, hardened in quick task 260712-kd1): scroll-hide
   // navigation. Top bar hides past 40px of scroll (while scrolling down),
@@ -509,8 +472,6 @@ export function SingingView({
             soundcloudUrl={soundcloudUrl}
             staffPages={staffPages}
             solfegePages={solfegePages}
-            solfegeAbc={solfegeAbc}
-            isTuneApproved={isTuneApproved}
           />
         ) : (
           <div className="p-6 text-sm text-muted-foreground italic">
@@ -561,17 +522,12 @@ export function SingingView({
             studyHref={studyHref}
             onRestartTour={handleRestartTour}
             showLyricsOption={!!showLyrics}
-            // Plan 04.9.14-02 (Task 3/4): Staff view is available regardless of
-            // melisma approval status (CONTEXT "Approval Gate Decision" —
-            // locked). CR-04 fix: Solfège availability is split by layout —
-            // inline Solfège is gated by isTuneApproved (matches
-            // NotationRenderer's inline-solfège approval guard exactly),
-            // while split-leaf Solfège (JPG-based) is ungated, matching
-            // NotationRenderer's documented "split-leaf solfège is
-            // unaffected by melisma approval status" behavior.
+            // Staff availability is driven by ABC presence; Solfège
+            // availability is driven solely by solfège JPG presence — both
+            // inline and split-leaf Solfège render the same scanned image
+            // (04.9.14-lcg revert), so a single ungated boolean covers both.
             staffAvailable={!!(activeTune?.abcNotation || activeTune?.abcSatb)}
-            solfegeInlineAvailable={isTuneApproved}
-            solfegeSplitAvailable={!!(solfegeJpgUrl || solfegePages.length > 0)}
+            solfegeAvailable={!!(solfegeJpgUrl || solfegePages.length > 0)}
           />
         }
       />
