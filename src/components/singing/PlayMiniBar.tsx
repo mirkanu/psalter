@@ -204,12 +204,19 @@ export function PlayMiniBar({
               width="100%"
               height="56"
               allow="autoplay"
-              // WR-03 fix: dropped allow-same-origin — combining it with
-              // allow-scripts lets the framed document script its way out of
-              // the sandbox (e.g. `iframe.sandbox = ''` self-mutation).
-              // SoundCloud's embed player does not require same-origin
-              // storage access to function.
-              sandbox="allow-scripts"
+              // SoundCloud's embed widget accesses localStorage during init; without
+              // allow-same-origin the frame is an opaque origin, that access throws
+              // SecurityError, and the widget renders an empty shell with NO play button
+              // (verified live via the Playwright daemon, quick task 260712-lp9 — reverses
+              // the WR-03 review fix, which was based on an incorrect "no storage needed"
+              // assumption). This is a KNOWING, low-risk exception: w.soundcloud.com is
+              // CROSS-ORIGIN to us, so allow-same-origin grants the frame its own (SC's)
+              // origin — NOT access to our DOM/cookies — and the classic sandbox-escape
+              // concern (allow-scripts + allow-same-origin lets a frame drop its own
+              // sandbox / script the parent) applies to SAME-origin embeds, not this one.
+              // `src` is built from soundcloudUrl (admin/precentor-editable DB field, not
+              // raw public input) and URL-encoded. See 260712-lp9-PLAN.md for the register.
+              sandbox="allow-scripts allow-same-origin"
               src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(soundcloudUrl!)}&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false`}
               className="rounded-md border border-border shrink-0"
             />
