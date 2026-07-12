@@ -100,6 +100,14 @@ export function OnboardingTour({ viewMode }: Props = {}) {
     [isSplitLeafMobile],
   )
 
+  // CR-01 fix: if `steps` shrinks (e.g. a resize/rotation crosses the 768px
+  // breakpoint mid-tour, dropping SCROLL_HIDE_STEPS), clamp `step` so it never
+  // points past the end of the new, shorter array. Without this, the
+  // measurement effect below reads `steps[step]` as `undefined` and throws.
+  useEffect(() => {
+    setStep((s) => Math.min(s, steps.length - 1))
+  }, [steps.length])
+
   // Hydrate from localStorage AFTER mount
   useEffect(() => {
     let seen = true
@@ -126,7 +134,12 @@ export function OnboardingTour({ viewMode }: Props = {}) {
   useEffect(() => {
     if (!mounted || tourSeen) return
     const update = () => {
-      const rs = measure(steps[step].target)
+      // CR-01 fix: clamp defensively in case this effect fires (e.g. via the
+      // resize listener) in the same tick `steps` shrank but before the
+      // clamping effect above has committed its `setStep` — never trust
+      // `step` to be in-bounds for the CURRENT `steps` array.
+      const safeStep = Math.min(step, steps.length - 1)
+      const rs = measure(steps[safeStep].target)
       if (!rs || rs.length === 0) {
         // Target missing — dismiss gracefully (mitigates T-04.9.4.04-03 DoS).
         dismiss()
@@ -155,7 +168,10 @@ export function OnboardingTour({ viewMode }: Props = {}) {
 
   if (!mounted || tourSeen || !rects || rects.length === 0) return null
 
-  const isLast = step === steps.length - 1
+  // CR-01 fix: clamp for render too — `steps` can shrink (breakpoint cross)
+  // in the same render pass before the clamping effect commits.
+  const currentStep = Math.min(step, steps.length - 1)
+  const isLast = currentStep === steps.length - 1
   const padding = 8
 
   // Bubble placement is based on the union bbox so it never overlaps any spotlight.
@@ -203,15 +219,15 @@ export function OnboardingTour({ viewMode }: Props = {}) {
       <div
         role="dialog"
         aria-live="polite"
-        aria-label={`Onboarding step ${step + 1} of ${steps.length}`}
+        aria-label={`Onboarding step ${currentStep + 1} of ${steps.length}`}
         tabIndex={-1}
         className="absolute z-[202] bg-background border border-border rounded-lg shadow-lg p-4"
         style={{ ...bubbleStyle, width: 'min(320px, 90vw)' }}
       >
         <p className="text-xs text-muted-foreground text-center mb-2">
-          Step {step + 1} of {steps.length}
+          Step {currentStep + 1} of {steps.length}
         </p>
-        <p className="text-sm font-normal mb-4">{steps[step].copy}</p>
+        <p className="text-sm font-normal mb-4">{steps[currentStep].copy}</p>
         <div className="flex items-center justify-between gap-2">
           <Button variant="ghost" size="sm" onClick={dismiss}>
             Skip tour
