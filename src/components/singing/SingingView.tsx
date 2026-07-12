@@ -13,6 +13,7 @@ import type { TuneOption, TuneSwitcherSections } from './types'
 import type { PsalmDetail } from '@/db/queries/psalms'
 import type { PsalmRow } from '@/components/PsalmListingGrid'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
+import { pickAbcWithMarkers, sopranoOnly } from '@/lib/utils'
 
 const STORAGE_MODE_KEY = 'psalter-score-mode'
 const STORAGE_SIZE_KEY = 'psalter-staff-size'
@@ -180,7 +181,10 @@ export function SingingView({
     let cancelled = false
     fetch(`/api/dev/melisma-decision?tuneId=${activeTune.id}`)
       .then((r) => r.json())
-      .then((data) => { if (!cancelled) setMelismaStatus(data.status ?? null) })
+      // Plan 04.9.14-02 (Rule 1 fix): the route returns `currentStatus`, not
+      // `status` — reading the wrong field left melismaStatus permanently
+      // null, silently disabling the approval gate this plan implements.
+      .then((data) => { if (!cancelled) setMelismaStatus(data.currentStatus ?? null) })
       .catch(() => { if (!cancelled) setMelismaStatus(null) })
     return () => { cancelled = true }
   }, [activeTune?.id])
@@ -334,6 +338,23 @@ export function SingingView({
   const youtubeUrl = activeTune?.youtubeUrl ?? null
   const soundcloudUrl = activeTune?.soundcloudUrl ?? null
 
+  // Plan 04.9.14-02 (Task 2): inline Solfège ABC — prefers the SATB/mono
+  // variant carrying `% PHRASE_BREAK` markers, reduced to soprano-only.
+  const solfegeAbc = useMemo(() => {
+    if (!activeTune) return ''
+    const picked = pickAbcWithMarkers(
+      (activeTune as { abcSatb?: string | null }).abcSatb ?? null,
+      activeTune.abcNotation ?? null,
+    )
+    return picked ? sopranoOnly(picked) : ''
+  }, [activeTune])
+
+  // Plan 04.9.14-02 (Task 3): approval gate. `melismaStatus` starts `null`
+  // (pre-fetch / no tune) and is treated as NOT approved — inline solfège
+  // stays disabled until the fetch confirms `'approved'`. Staff view is
+  // never gated (CONTEXT "Approval Gate Decision" — locked).
+  const isTuneApproved = melismaStatus === 'approved'
+
   // Task 3 (04.9.14-01): scroll-hide navigation. Top bar hides past 40px of
   // scroll (while scrolling down), bottom bar past 100px. Both reappear
   // immediately on any upward scroll. The actual scrollable region is the
@@ -435,6 +456,8 @@ export function SingingView({
             soundcloudUrl={soundcloudUrl}
             staffPages={staffPages}
             solfegePages={solfegePages}
+            solfegeAbc={solfegeAbc}
+            isTuneApproved={isTuneApproved}
           />
         ) : (
           <div className="p-6 text-sm text-muted-foreground italic">
@@ -478,8 +501,13 @@ export function SingingView({
             studyHref={studyHref}
             onRestartTour={handleRestartTour}
             showLyricsOption={!!showLyrics}
-            staffAvailable={!!(activeTune?.abcNotation || activeTune?.abcSatb) && melismaStatus !== 'not_approved'}
-            solfegeAvailable={!!(activeTune?.solfegeOcrText || (activeTune as { solfegeSopranoEdited?: string | null })?.solfegeSopranoEdited) && melismaStatus !== 'not_approved'}
+            // Plan 04.9.14-02 (Task 3/4): Staff view is available regardless of
+            // melisma approval status (CONTEXT "Approval Gate Decision" —
+            // locked). Solfège availability is now driven solely by
+            // isTuneApproved so the gear popover's disabled state matches the
+            // NotationRenderer inline-solfège approval guard exactly.
+            staffAvailable={!!(activeTune?.abcNotation || activeTune?.abcSatb)}
+            solfegeAvailable={isTuneApproved}
           />
         }
       />
