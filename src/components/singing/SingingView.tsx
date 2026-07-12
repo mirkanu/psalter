@@ -249,6 +249,15 @@ export function SingingView({
   const [melismaStatus, setMelismaStatus] = useState<'approved' | 'not_approved' | null>(null)
   const [miniBarMounted, setMiniBarMounted] = useState(false)
   const [miniBarVisible, setMiniBarVisible] = useState(false)
+  // Task 3 (04.9.14-03): scroll-driven auto-hide, kept separate from the
+  // user's manual visibility toggle (collapse button / play state) so a
+  // manual collapse is NOT undone by scrolling up — see effective visibility
+  // derivation below.
+  const [miniBarAutoHidden, setMiniBarAutoHidden] = useState(false)
+  // Task 4 (04.9.14-03): actual rendered height of PlayMiniBar, reported via
+  // ResizeObserver — used to reserve exact bottom padding in the scrollable
+  // notation region (0 when the bar isn't effectively visible).
+  const [miniBarHeight, setMiniBarHeight] = useState(0)
   const [currentStanza, setCurrentStanza] = useState<number | null>(null)
   const [totalStanzas, setTotalStanzas] = useState<number | null>(null)
   const [stanzaPage, setStanzaPage] = useState<number>(1)
@@ -349,6 +358,12 @@ export function SingingView({
     return picked ? sopranoOnly(picked) : ''
   }, [activeTune])
 
+  // Task 3 (04.9.14-03): final visibility passed to PlayMiniBar combines the
+  // manual toggle (collapse button / play state) with scroll-driven
+  // auto-hide. A manual collapse (miniBarVisible=false) is NOT restored by
+  // scrolling up — only the auto-hide layer reacts to scroll.
+  const effectiveMiniBarVisible = miniBarVisible && !miniBarAutoHidden
+
   // Plan 04.9.14-02 (Task 3): approval gate. `melismaStatus` starts `null`
   // (pre-fetch / no tune) and is treated as NOT approved — inline solfège
   // stays disabled until the fetch confirms `'approved'`. Staff view is
@@ -381,6 +396,11 @@ export function SingingView({
         const scrollingDown = scrollTop > lastScrollTop
         setTopBarHidden(scrollTop > 40 && scrollingDown)
         setBottomBarHidden(scrollTop > 100 && scrollingDown)
+        // Task 3 (04.9.14-03): PlayMiniBar auto-hides on scroll down (same
+        // 100px threshold as the bottom bar, since it sits directly above
+        // it) and reappears on any upward scroll — independent of the
+        // manual collapse state (see `effectiveMiniBarVisible`).
+        setMiniBarAutoHidden(scrollTop > 100 && scrollingDown)
         lastScrollTop = scrollTop
       }
       container.addEventListener('scroll', handleScroll, { passive: true })
@@ -464,6 +484,16 @@ export function SingingView({
             No notation available for this psalm.
           </div>
         )}
+        {/* Task 4 (04.9.14-03): dynamic spacer reserving exact room for
+           PlayMiniBar (on top of the pb-11/md:pb-13 already reserved for
+           GlassBottomBar), so content never sits hidden behind the two
+           stacked fixed bars. Height comes from PlayMiniBar's own
+           ResizeObserver report (0 when collapsed/auto-hidden). */}
+        <div
+          aria-hidden
+          style={{ height: effectiveMiniBarVisible ? miniBarHeight : 0 }}
+          className="shrink-0 transition-[height] duration-200 ease-out"
+        />
       </main>
 
       <PsalmSelectorSheet
@@ -515,12 +545,13 @@ export function SingingView({
         <PlayMiniBar
           abc={abc}
           mounted={miniBarMounted}
-          visible={miniBarVisible}
+          visible={effectiveMiniBarVisible}
           onCollapse={() => setMiniBarVisible(false)}
           isPlaying={isPlaying}
           onPlayingChange={handlePlayingChange}
           soundcloudUrl={soundcloudUrl}
           tuneName={tuneName}
+          onHeightChange={setMiniBarHeight}
           variant="inline"
         />
       )}
