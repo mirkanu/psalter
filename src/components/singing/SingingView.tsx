@@ -175,11 +175,15 @@ export function SingingView({
     }
   }, [viewMode])
 
-  // Fetch melisma approval status for the active tune (drives GearPopover gray-out)
+  // Fetch melisma approval status for the active tune (drives GearPopover gray-out).
+  // CR-02 fix: use the public /api/melisma-status route rather than
+  // /api/dev/melisma-decision — this component renders on the anonymous
+  // public psalm page, and the /api/dev/ namespace is documented as
+  // Cloudflare-Access-gated dev tooling. See src/app/api/melisma-status/route.ts.
   useEffect(() => {
     if (!activeTune?.id) { setMelismaStatus(null); return }
     let cancelled = false
-    fetch(`/api/dev/melisma-decision?tuneId=${activeTune.id}`)
+    fetch(`/api/melisma-status?tuneId=${activeTune.id}`)
       .then((r) => r.json())
       // Plan 04.9.14-02 (Rule 1 fix): the route returns `currentStatus`, not
       // `status` — reading the wrong field left melismaStatus permanently
