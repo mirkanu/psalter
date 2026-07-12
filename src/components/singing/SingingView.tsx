@@ -356,7 +356,7 @@ export function SingingView({
   const solfegeAbc = useMemo(() => {
     if (!activeTune) return ''
     const picked = pickAbcWithMarkers(
-      (activeTune as { abcSatb?: string | null }).abcSatb ?? null,
+      activeTune.abcSatb ?? null,
       activeTune.abcNotation ?? null,
     )
     return picked ? sopranoOnly(picked) : ''
@@ -470,12 +470,12 @@ export function SingingView({
             solfegeJpgUrl={solfegeJpgUrl}
             tuneName={tuneName}
             tuneMeter={meter}
-            phraseShapeOverride={(activeTune as { phraseShapeOverride?: number[] | null } | undefined)?.phraseShapeOverride ?? null}
+            phraseShapeOverride={activeTune?.phraseShapeOverride ?? null}
             stanzaMeter={stanzaMeter}
             lyricsStructured={lyricsStructured}
             doubleLength={activeTune?.doubleLength ?? false}
             solfegeOcrText={activeTune?.solfegeOcrText ?? null}
-            melismaPositions={(activeTune as { melismaPositions?: number[][] | null } | undefined)?.melismaPositions ?? null}
+            melismaPositions={activeTune?.melismaPositions ?? null}
             showLyrics={showLyrics}
             viewMode={viewMode}
             onViewModeChange={setViewMode}
