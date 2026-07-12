@@ -533,11 +533,15 @@ export function SingingView({
             showLyricsOption={!!showLyrics}
             // Plan 04.9.14-02 (Task 3/4): Staff view is available regardless of
             // melisma approval status (CONTEXT "Approval Gate Decision" —
-            // locked). Solfège availability is now driven solely by
-            // isTuneApproved so the gear popover's disabled state matches the
-            // NotationRenderer inline-solfège approval guard exactly.
+            // locked). CR-04 fix: Solfège availability is split by layout —
+            // inline Solfège is gated by isTuneApproved (matches
+            // NotationRenderer's inline-solfège approval guard exactly),
+            // while split-leaf Solfège (JPG-based) is ungated, matching
+            // NotationRenderer's documented "split-leaf solfège is
+            // unaffected by melisma approval status" behavior.
             staffAvailable={!!(activeTune?.abcNotation || activeTune?.abcSatb)}
-            solfegeAvailable={isTuneApproved}
+            solfegeInlineAvailable={isTuneApproved}
+            solfegeSplitAvailable={!!(solfegeJpgUrl || solfegePages.length > 0)}
           />
         }
       />
