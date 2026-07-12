@@ -55,7 +55,9 @@ export function GearPopover({
       return
     }
     if (notation === 'solfege' && !solfegeAvailable) {
-      toast('Coming soon', { description: 'Solfege notation for this tune is not yet available' })
+      toast('Notation not yet approved', {
+        description: "This tune's melisma positions haven't been approved. Approve in the melisma editor to enable solfège view.",
+      })
       return
     }
     const newMode: ViewMode = isSplit
@@ -175,6 +177,7 @@ export function GearPopover({
                   role="radio"
                   aria-checked={!isStaff}
                   aria-label="Solfege"
+                  title={!solfegeAvailable ? 'Notation not yet approved — use melisma editor to approve' : undefined}
                   onClick={() => handleNotationChange('solfege')}
                   disabled={!solfegeAvailable}
                   className={[
