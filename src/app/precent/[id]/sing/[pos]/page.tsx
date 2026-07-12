@@ -159,5 +159,7 @@ function buildTuneOption(tune: Record<string, any>): AlternateTune {
     doubleLength: (tune.doubleLength ?? false) as boolean,
     solfegeOcrText: (tune.solfegeOcrText ?? null) as string | null,
     melismaPositions: (tune.melismaPositions ?? null) as number[][] | null,
+    // WR-04: phraseShapeOverride added to the shared AlternateTune type.
+    phraseShapeOverride: (tune.phraseShapeOverride ?? null) as number[] | null,
   }
 }
