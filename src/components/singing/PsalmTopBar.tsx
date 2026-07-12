@@ -104,8 +104,8 @@ export function PsalmTopBar({
       data-scroll-hidden={hidden ? '' : undefined}
       className={cn(
         'sticky top-14 z-30 bg-background/95 backdrop-blur border-b',
-        'transition-transform transition-opacity duration-200 ease-out motion-reduce:transition-none',
-        hidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100',
+        'transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none',
+        hidden ? '-translate-y-[calc(100%_+_3.5rem)] opacity-0 pointer-events-none' : 'translate-y-0 opacity-100',
       )}
     >
       <div className="max-w-4xl mx-auto relative flex items-center justify-between gap-2 px-2 h-12 md:h-14 landscape:h-10">
