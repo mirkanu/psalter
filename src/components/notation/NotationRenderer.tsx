@@ -128,6 +128,22 @@ export interface NotationRendererProps {
   staffPages?: string[]
   /** Full ordered list of solfège image paths for the active tune (server-derived). Enables multi-page thumbnail nav. */
   solfegePages?: string[]
+  /**
+   * Plan 04.9.14-02 (Task 2): pre-derived ABC source for the INLINE solfège
+   * view — `sopranoOnly(pickAbcWithMarkers(abcSatb, abcNotation))`, computed
+   * by the parent (SingingView). Renders via the same abcjs pipeline as
+   * Staff view when present. Falls back to `abc` when omitted/empty, then to
+   * the JPG fallback (`solfegeJpgUrl`) when no ABC is available at all.
+   */
+  solfegeAbc?: string
+  /**
+   * Plan 04.9.14-02 (Task 3): whether this tune's melisma positions have been
+   * approved (`melismaStatus === 'approved'`) in the melisma editor. Gates
+   * the INLINE solfège view only — Staff view and split-leaf solfège (JPG)
+   * are unaffected. Defaults to `true` for callers that don't pass it (e.g.
+   * /tunes/[id], /study) so those routes see no behavior change.
+   */
+  isTuneApproved?: boolean
 }
 
 export type ViewMode = 'staff' | 'solfege' | 'staff-split' | 'solfege-split' | 'lyrics'
@@ -235,13 +251,12 @@ export function NotationRenderer({
   melismaPositions = null,
   staffPages = [],
   solfegePages = [],
+  solfegeAbc = '',
+  isTuneApproved = true,
 }: NotationRendererProps) {
   // chromeless mode permanently disables the FS overlay; the singing view IS the fullscreen.
   const allowFullscreen = !chromeless
   // ── Derived: phrases & cycles ──────────────────────────────────────────────
-  const split = useMemo(() => splitOnPhraseBreaks(abc), [abc])
-  const T = split.phrases.length
-
   // Plan 04.9.6-05 (D-01, D-15): use the canonical structured-lyrics path
   // when populated; otherwise parse the legacy blob into a transient
   // `Stanza[]` so the downstream grid consumer (`mapCycleToPhraseSyllableLines`)
@@ -474,15 +489,6 @@ export function NotationRenderer({
     }, 150)
     return () => clearTimeout(timer)
   }, [visibleCycles, viewMode, showOriginal, baseSize])
-
-  // When phraseShapeOverride adds extra phrases beyond the ABC PHRASE_BREAK count
-  // (e.g. Abbeyville [8,6,8,6,6] has 5 phrases but 4 ABC phrases), extend the
-  // index range so the extra phrase gets a staff line too.
-  const effectivePhraseTotal = Math.max(T, phraseShapeOverride?.length ?? 0)
-  const visiblePhraseIndices = useMemo<number[]>(
-    () => Array.from({ length: effectivePhraseTotal }, (_, i) => i),
-    [effectivePhraseTotal],
-  )
 
   // ── Pagination handlers (cycle-page only) ──────────────────────────────────
   const atStart = cyclePage === 0
@@ -738,7 +744,22 @@ export function NotationRenderer({
   // emit its body line followed by one `w:` line per stanza-portion. This
   // gives the visual effect of N stacked phrase rows while remaining a single
   // tune for the synth (Play traverses end-to-end naturally).
-  const unifiedAbc = useMemo(() => {
+  // Plan 04.9.14-02 (Task 1/2): extracted to a factory so the same pipeline can
+  // build TWO independent ABC bodies — the Staff view's (`abc`) and the
+  // inline Solfège view's (`solfegeAbc`) — without duplicating ~250 lines of
+  // w:-line / melisma-position logic. Each caller computes its OWN local
+  // `split`/`visiblePhraseIndices` from its own source string, since the two
+  // sources may have different phrase counts (e.g. SATB carries markers the
+  // monophonic column lacks). Everything else (visibleCycles, tuneMeter,
+  // showLyrics, phraseSubdivisions, chromeless, solfegeVoices,
+  // melismaPositions, phraseShapeOverride, wLinesForPhrase) is identical
+  // regardless of source, since both represent the same tune/stanza data.
+  function buildUnifiedAbc(sourceAbc: string): string {
+    const localSplit = splitOnPhraseBreaks(sourceAbc)
+    const localT = localSplit.phrases.length
+    const localEffectivePhraseTotal = Math.max(localT, phraseShapeOverride?.length ?? 0)
+    const localVisiblePhraseIndices = Array.from({ length: localEffectivePhraseTotal }, (_, i) => i)
+
     // Strip header lines that produce visible chrome we already render elsewhere:
     //   - `T:` titles — abcjs renders these as staff title; page UI already
     //      shows the tune name.
@@ -753,7 +774,7 @@ export function NotationRenderer({
     //      asked this be documented here rather than equalised across routes.
     // We also strip the `name="..."` attribute from any `V:` voice declaration
     // in chromeless mode so abcjs doesn't print "Soprano" beside the stave.
-    const cleanedHeader = split.header
+    const cleanedHeader = localSplit.header
       .split('\n')
       .filter((l) => {
         const t = l.trim()
@@ -766,7 +787,7 @@ export function NotationRenderer({
       // `name="..."` and must not be mutated. (BL-04)
       .map((l) => (chromeless && /^V:/.test(l.trim()) ? l.replace(/\s*name="[^"]*"/g, '') : l))
       .join('\n')
-    if (split.phrases.length === 0) return cleanedHeader
+    if (localSplit.phrases.length === 0) return cleanedHeader
     const parts: string[] = [cleanedHeader]
 
     // splitMusicIntoSubLines extracted to ./splitMusicIntoSubLines.ts
@@ -839,10 +860,10 @@ export function NotationRenderer({
       }
     }
 
-    for (const i of visiblePhraseIndices) {
+    for (const i of localVisiblePhraseIndices) {
       // For repeated-last-line tunes (phraseShapeOverride has more entries than
       // ABC phrases), indices beyond T reuse the last ABC phrase's music.
-      const phraseBody = (split.phrases[Math.min(i, split.phrases.length - 1)] ?? '').trim()
+      const phraseBody = (localSplit.phrases[Math.min(i, localSplit.phrases.length - 1)] ?? '').trim()
       if (!phraseBody) continue
 
       // ── Phase 04.9.12: melisma-positions branch ──────────────────────
@@ -863,7 +884,7 @@ export function NotationRenderer({
         const posSet = new Set(phrasePositions)
 
         // Count note heads in this phrase to know total slot count.
-        const phraseBodyForCount = (split.phrases[Math.min(i, split.phrases.length - 1)] ?? '').trim()
+        const phraseBodyForCount = (localSplit.phrases[Math.min(i, localSplit.phrases.length - 1)] ?? '').trim()
         const musicOnlyForCount = phraseBodyForCount.split('\n').filter(l => !/^\s*w:/.test(l)).join('\n')
         const noteCount = countNoteHeads(musicOnlyForCount)
         const nonMelismaSlots = Math.max(0, noteCount - phrasePositions.length)
@@ -992,7 +1013,7 @@ export function NotationRenderer({
             // Proportionally distribute the single lyric line across sub-staves.
             const rawText = cycleLines[0]
             if (!rawText || !rawText.trim()) continue
-            const syllabified = wLineForSyllables(rawText, Math.min(i, split.phrases.length - 1))
+            const syllabified = wLineForSyllables(rawText, Math.min(i, localSplit.phrases.length - 1))
             const chunks = splitWLineIntoChunks(syllabified, actualSubdivisions)
             const chunk = chunks[sub]
             if (!chunk || !chunk.trim()) continue
@@ -1004,16 +1025,30 @@ export function NotationRenderer({
             // emit no w: line for that sub-staff.
             const text = cycleLines[sub]
             if (!text || !text.trim()) continue
-            const wRaw = wLineForSyllables(text, Math.min(i, split.phrases.length - 1))
+            const wRaw = wLineForSyllables(text, Math.min(i, localSplit.phrases.length - 1))
             parts.push(`w: ${padWLineToNoteCount(wRaw, musicSubLines[sub])}`)
           }
         }
       }
     }
     return parts.join('\n')
-    // wLinesForPhrase depends on visibleCycles, captured by closure.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [split, visiblePhraseIndices, visibleCycles, tuneMeter, showLyrics, phraseSubdivisions, chromeless, solfegeVoices, melismaPositions])
+  }
+  // wLinesForPhrase depends on visibleCycles, captured by closure.
+  // buildUnifiedAbc is intentionally omitted from deps — it's redefined each
+  // render as a plain closure (not itself memoized), so including it would
+  // defeat the memo; its own inputs are all listed explicitly below.
+  const unifiedAbc = useMemo(
+    () => buildUnifiedAbc(abc),
+    [abc, phraseShapeOverride, visibleCycles, tuneMeter, showLyrics, phraseSubdivisions, chromeless, solfegeVoices, melismaPositions],
+  )
+
+  // Plan 04.9.14-02 (Task 1/2): inline Solfège view's ABC body — same pipeline,
+  // sourced from `solfegeAbc` (falls back to `abc` when the parent hasn't
+  // supplied one, e.g. /tunes/[id] or /study, which don't pass solfegeAbc).
+  const unifiedSolfegeAbc = useMemo(
+    () => buildUnifiedAbc(solfegeAbc || abc),
+    [solfegeAbc, abc, phraseShapeOverride, visibleCycles, tuneMeter, showLyrics, phraseSubdivisions, chromeless, solfegeVoices, melismaPositions],
+  )
 
   // Split-leaf staff view needs ABC without inline w: lyrics (lyrics render in separate column).
   const unifiedAbcNoLyrics = useMemo(
@@ -1103,8 +1138,41 @@ export function NotationRenderer({
     } else {
       viewArea = notationBlock
     }
+  } else if (viewMode === 'solfege' && !isTuneApproved) {
+    // Plan 04.9.14-02 (Task 3): approval gate. Inline solfège only — Staff
+    // view and split-leaf solfège (JPG) are unaffected by melisma approval
+    // status (CONTEXT "Approval Gate Decision").
+    viewArea = (
+      <div className="p-4 text-center text-muted-foreground">
+        This tune&apos;s notation hasn&apos;t been approved yet. Please check the melisma editor.
+      </div>
+    )
+  } else if (viewMode === 'solfege' && (solfegeAbc.trim() || abc.trim())) {
+    // Plan 04.9.14-02 (Task 1/2): inline solfège renders abcjs SVG — same
+    // pipeline as Staff view — using `unifiedSolfegeAbc` (derived from
+    // `solfegeAbc`, falling back to `abc`). Split-leaf solfège keeps the JPG
+    // + thumbnail behavior below (unchanged).
+    const notationBlock = (
+      <div ref={staffRef}>
+        <AbcPlayer
+          abc={unifiedSolfegeAbc}
+          scale={scale}
+          tuneName={tuneName}
+          staffJpgUrl={scoreJpgUrl}
+          solfegeJpgUrl={solfegeJpgUrl}
+          renderLyricsBelow={lyricsBelow}
+          showOriginal={showOriginal}
+          onShowOriginalChange={setShowOriginal}
+          renderAboveOriginal={<BackToNotationButton onClick={() => setShowOriginal(false)} />}
+          hidePlayerControls={isFullscreen || chromeless}
+          staffWidthFactor={staffWidthFactor}
+        />
+      </div>
+    )
+    viewArea = notationBlock
   } else if (viewMode === 'solfege' || viewMode === 'solfege-split') {
-    // Solfege: JPEG image inline or split-leaf. (Solfege-as-ABC is future work.)
+    // Solfege: JPEG image inline (no ABC available — legacy fallback) or
+    // split-leaf (JPG + thumbnails, always).
     const pages = activePages(viewMode, staffPages, solfegePages)
     const hasMultiPages = pages.length > 1
     const currentSrc = pages[pageIndex] ?? solfegeJpgUrl ?? null
