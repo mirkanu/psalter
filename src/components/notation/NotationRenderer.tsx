@@ -1038,6 +1038,37 @@ export function NotationRenderer({
   const isSplit = isSplitMode(viewMode)
   const usesSolfege = isSolfegeMode(viewMode)
 
+  // ── Split-leaf layout (Task 1 + Task 2, Phase 04.9.14 Plan 01) ────────────
+  // Desktop (≥768px, all callers): lyrics stack UNDER notation — single
+  // column, no side-by-side grid (CONTEXT "Desktop Lyrics Stacking Decision").
+  // Mobile chromeless (<768px, SingingView only): notation is capped at
+  // ≤50% of the available viewport height with its own scroll region;
+  // lyrics take the remaining ≥50% with an independent scroll region — this
+  // replaces the old shared `max-h-[80vh]` + whole-page-scroll behaviour.
+  // Non-chromeless callers (e.g. /tunes/[id], /study) have no fixed-height
+  // ancestor, so they always use the simple stacked layout regardless of
+  // viewport width.
+  function renderSplitLeaf(notationSlot: ReactNode, stanzaSlot: ReactNode): ReactNode {
+    if (chromeless) {
+      return (
+        <div className="flex flex-col h-full gap-4 px-4 pt-4 md:h-auto md:gap-4">
+          <div className="flex-1 min-h-0 max-h-[50%] overflow-y-auto md:max-h-none md:overflow-visible md:flex-none">
+            {notationSlot}
+          </div>
+          <div className="flex-1 min-h-0 max-h-[50%] overflow-y-auto md:max-h-none md:overflow-visible md:flex-none">
+            {stanzaSlot}
+          </div>
+        </div>
+      )
+    }
+    return (
+      <div className="grid grid-cols-1 gap-4">
+        <div className="space-y-2">{notationSlot}</div>
+        <div className="space-y-2">{stanzaSlot}</div>
+      </div>
+    )
+  }
+
   if (viewMode === 'staff' || viewMode === 'staff-split') {
     // Staff ABC: inline (with w: lyrics) or split-leaf (no w: lyrics, StanzaList below)
     const isPartialPage = visibleCycles.length < CYCLES_PER_PAGE
@@ -1064,22 +1095,11 @@ export function NotationRenderer({
 
     if (isSplit) {
       const stanzaBlock = showLyrics && stanzas.length > 0 ? (
-        <div className="min-h-[60vh] max-h-[80vh] overflow-y-auto">
+        <div className="h-full overflow-y-auto md:h-auto md:max-h-[80vh]">
           <StanzaList stanzas={stanzas} />
         </div>
       ) : null
-      viewArea = (
-        <div className={chromeless ? 'space-y-4 px-4 pt-4' : 'space-y-4'}>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="md:col-span-3 space-y-2 md:sticky md:top-0 md:self-start">
-              {notationBlock}
-            </div>
-            <div className="md:col-span-2">
-              {stanzaBlock}
-            </div>
-          </div>
-        </div>
-      )
+      viewArea = renderSplitLeaf(notationBlock, stanzaBlock)
     } else {
       viewArea = notationBlock
     }
@@ -1095,8 +1115,14 @@ export function NotationRenderer({
         <img
           src={currentSrc}
           alt={`Solfège for ${tuneName}`}
-          className="w-full h-auto rounded-md border border-border"
-          style={chromeless ? { maxWidth: '100%' } : undefined}
+          className={cn(
+            'rounded-md border border-border',
+            // Task 2: split-leaf JPG fallback must respect the ≤50% viewport
+            // height cap on mobile — object-contain lets the image shrink to
+            // fit its constrained parent instead of overflowing it.
+            isSplit ? 'max-h-full w-auto object-contain mx-auto' : 'w-full h-auto',
+          )}
+          style={chromeless && !isSplit ? { maxWidth: '100%' } : undefined}
         />
       </div>
     ) : (
@@ -1136,35 +1162,38 @@ export function NotationRenderer({
     ) : null
 
     const stanzaBlock = showLyrics && stanzas.length > 0 ? (
-      <div className={isSplit ? 'min-h-[60vh] max-h-[80vh] overflow-y-auto' : (chromeless ? '' : 'max-h-[60vh] overflow-y-auto')}>
+      <div className={isSplit ? 'h-full overflow-y-auto md:h-auto md:max-h-[80vh]' : (chromeless ? '' : 'max-h-[60vh] overflow-y-auto')}>
         <StanzaList stanzas={stanzas} />
       </div>
     ) : null
 
-    viewArea = (
-      <div className={chromeless ? 'space-y-4 px-4 pt-4' : 'space-y-4'}>
-        {!chromeless && (
+    if (isSplit) {
+      const notationSlot = (
+        <>
+          {mainImageBlock}
+          {thumbnailStrip}
+        </>
+      )
+      viewArea = !chromeless ? (
+        <div className="space-y-4">
           <BackToNotationButton onClick={() => setViewMode('staff')} />
-        )}
-        {isSplit ? (
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="md:col-span-3 space-y-2 md:sticky md:top-0 md:self-start">
-              {mainImageBlock}
-              {thumbnailStrip}
-            </div>
-            <div className="md:col-span-2">
-              {stanzaBlock}
-            </div>
-          </div>
-        ) : (
-          <>
-            {mainImageBlock}
-            {thumbnailStrip}
-            {stanzaBlock}
-          </>
-        )}
-      </div>
-    )
+          {renderSplitLeaf(notationSlot, stanzaBlock)}
+        </div>
+      ) : (
+        renderSplitLeaf(notationSlot, stanzaBlock)
+      )
+    } else {
+      viewArea = (
+        <div className={chromeless ? 'space-y-4 px-4 pt-4' : 'space-y-4'}>
+          {!chromeless && (
+            <BackToNotationButton onClick={() => setViewMode('staff')} />
+          )}
+          {mainImageBlock}
+          {thumbnailStrip}
+          {stanzaBlock}
+        </div>
+      )
+    }
   } else {
     // Lyrics-only: single-column scrollable list of all stanzas (D-17 verse numbers).
     // 260517-cm0 #4a: in chromeless (singing) view, apply generous padding +
@@ -1252,7 +1281,16 @@ export function NotationRenderer({
       {chromeless ? (
         <div
           data-notation-viewarea
-          className="flex-1 min-h-0 overflow-y-auto"
+          className={cn(
+            'flex-1 min-h-0',
+            // Split-leaf mode composes its OWN two independently-scrolling
+            // regions (notation ≤50%, lyrics remainder) below <768px, so this
+            // outer wrapper must not also scroll/clip on mobile — it would
+            // double-scroll. At ≥768px the split-leaf inner container reverts
+            // to simple document flow, so the outer wrapper resumes normal
+            // scrolling (Task 1 + Task 2).
+            isSplit ? 'overflow-hidden md:overflow-y-auto' : 'overflow-y-auto',
+          )}
         >
           {viewArea}
         </div>
