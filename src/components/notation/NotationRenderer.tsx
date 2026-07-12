@@ -1085,8 +1085,25 @@ export function NotationRenderer({
   // Non-chromeless callers (e.g. /tunes/[id], /study) have no fixed-height
   // ancestor, so they always use the simple stacked layout regardless of
   // viewport width.
-  function renderSplitLeaf(notationSlot: ReactNode, stanzaSlot: ReactNode): ReactNode {
+  function renderSplitLeaf(notationSlot: ReactNode, stanzaSlot: ReactNode, capBothHalvesOnDesktop = false): ReactNode {
     if (chromeless) {
+      if (capBothHalvesOnDesktop) {
+        // 260712-tmm Bug (a): Solfège split-leaf must keep the 50/50 cap at
+        // ALL widths (no md:h-auto / md:max-h-none escape hatch), so the
+        // scanned JPG never exceeds 50% of the viewport, guaranteeing lyrics
+        // a minimum 50%. SingingView's <main> is fixed-height on desktop
+        // (md:h-[calc(100dvh-116px)]) so h-full resolves correctly here.
+        return (
+          <div className="flex flex-col h-full gap-4 px-4 pt-4">
+            <div data-notation-slot className="flex-1 min-h-0 max-h-[50%] overflow-y-auto">
+              {notationSlot}
+            </div>
+            <div className="flex-1 min-h-0 max-h-[50%] overflow-y-auto">
+              {stanzaSlot}
+            </div>
+          </div>
+        )
+      }
       return (
         <div className="flex flex-col h-full gap-4 px-4 pt-4 md:h-auto md:gap-4">
           {/* 260712-szw: data-notation-slot is a measurement hook for
@@ -1220,10 +1237,10 @@ export function NotationRenderer({
       viewArea = !chromeless ? (
         <div className="space-y-4">
           <BackToNotationButton onClick={() => setViewMode('staff')} />
-          {renderSplitLeaf(notationSlot, stanzaBlock)}
+          {renderSplitLeaf(notationSlot, stanzaBlock, true)}
         </div>
       ) : (
-        renderSplitLeaf(notationSlot, stanzaBlock)
+        renderSplitLeaf(notationSlot, stanzaBlock, true)
       )
     } else {
       viewArea = (
