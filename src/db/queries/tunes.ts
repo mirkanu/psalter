@@ -106,6 +106,13 @@ export interface AlternateTune {
    * melisma continuation (w: `_` token). NULL = use heuristic path.
    */
   melismaPositions: number[][] | null
+  /**
+   * WR-04 fix: per-tune phrase syllable shape override (e.g. [8,6,8,6,6] for
+   * Abbeyville), authored in /dev/melisma-editor. NULL = use meter default.
+   * Added to the shared type so callers (SingingView) don't need an ad hoc
+   * inline type-assertion cast to read it off a TuneOption.
+   */
+  phraseShapeOverride: number[] | null
 }
 
 export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]> {
@@ -124,6 +131,7 @@ export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]>
       doubleLength: true,
       solfegeOcrText: true,
       melismaPositions: true,
+      phraseShapeOverride: true,
     },
     orderBy: (t, { asc }) => [asc(t.name)],
   })
