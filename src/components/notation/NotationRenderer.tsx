@@ -495,7 +495,15 @@ export function NotationRenderer({
     setCyclePage((p) => Math.max(p - 1, 0))
   }
 
-  const scale = baseSize / 14
+  // 04.9.14-01 (Task 4): decouple notation rendering scale from lyrics font
+  // size in split-leaf mode. In split-leaf, A-/A+ (baseSize) drives ONLY
+  // `--staff-base-size` (lyrics/verse text CSS var) via rootStyle below;
+  // the notation itself renders at a fixed scale so the staff never grows
+  // or shrinks when the user zooms lyrics text. Non-split modes keep the
+  // original coupled behaviour (scale tracks baseSize) — unchanged.
+  const isSplitForScale = isSplitMode(viewMode)
+  const SPLIT_LEAF_NOTATION_SCALE = 1
+  const scale = isSplitForScale ? SPLIT_LEAF_NOTATION_SCALE : baseSize / 14
 
   // Chromeless (singing view) wants ≥3 systems on mobile, ≥4 on tablet+
   // (UI-SPEC §Body / design-notes "4 systems"). Force abcjs to wrap by
