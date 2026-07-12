@@ -2,6 +2,7 @@ import { cache } from "react"
 import { db } from "@/db"
 import { eq, asc } from "drizzle-orm"
 import { tunes } from "@/db/schema"
+import { deriveTuneJpgPages } from "@/lib/tune-jpg-urls"
 
 export async function fetchTuneIds(): Promise<number[]> {
   const rows = await db.select({ id: tunes.id }).from(tunes).orderBy(asc(tunes.id))
@@ -113,6 +114,14 @@ export interface AlternateTune {
    * inline type-assertion cast to read it off a TuneOption.
    */
   phraseShapeOverride: number[] | null
+  /**
+   * 260712-tmm: Server-derived (fs) full ordered JPG page arrays for THIS
+   * tune. Populated in fetchTunesByMeter (and each page RSC's primary-tune
+   * builder) via deriveTuneJpgPages so client-side tune switches show the
+   * correct multi-page scan (260712-tmm bug b). Empty = no pages on disk.
+   */
+  staffPages: string[]
+  solfegePages: string[]
 }
 
 export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]> {
@@ -136,5 +145,10 @@ export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]>
     orderBy: (t, { asc }) => [asc(t.name)],
   })
   const PLACEHOLDER_PREFIXES = ['use ', 'do not ', 'do NOT ']
-  return rows.filter((t) => !PLACEHOLDER_PREFIXES.some((p) => t.name.toLowerCase().startsWith(p)))
+  return rows
+    .filter((t) => !PLACEHOLDER_PREFIXES.some((p) => t.name.toLowerCase().startsWith(p)))
+    .map((t) => {
+      const { staffPages, solfegePages } = deriveTuneJpgPages(t.name)
+      return { ...t, staffPages, solfegePages }
+    })
 }
