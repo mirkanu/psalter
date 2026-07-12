@@ -2,12 +2,8 @@
 import type { ReactNode } from 'react'
 import { Settings, Play, Pause, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { ViewMode } from '@/components/notation/NotationRenderer'
 
 interface Props {
-  /** Retained for prop compatibility with SingingView; view selection now lives in GearPopover. */
-  viewMode?: ViewMode
-  onViewModeChange?: (mode: ViewMode) => void
   baseSize: number
   onBaseSizeChange: (size: number) => void
   /** 1-indexed current stanza/cycle page; null when unknown */
@@ -20,8 +16,6 @@ interface Props {
   isPlaying: boolean
   onPlayToggle: () => void
   onGearOpen: () => void
-  /** Retained for prop compatibility; no longer rendered here. */
-  showLyricsOption?: boolean
   /** Gear popover slot — when provided, replaces the default Settings button. */
   gear?: ReactNode
   /** Task 3 (04.9.14-01): scroll-hide navigation. When true, slides down and

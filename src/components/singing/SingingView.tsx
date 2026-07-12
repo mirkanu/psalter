@@ -522,8 +522,6 @@ export function SingingView({
       />
 
       <GlassBottomBar
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
         baseSize={baseSize}
         onBaseSizeChange={handleBaseSizeChange}
         currentStanza={viewMode === 'staff' ? currentStanza : null}
@@ -533,7 +531,6 @@ export function SingingView({
         isPlaying={isPlaying}
         onPlayToggle={handlePlayToggle}
         onGearOpen={() => setGearOpen(true)}
-        showLyricsOption={!!showLyrics}
         hidden={bottomBarHidden}
         gear={
           <GearPopover
