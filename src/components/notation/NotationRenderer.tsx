@@ -1095,10 +1095,10 @@ export function NotationRenderer({
         // (md:h-[calc(100dvh-116px)]) so h-full resolves correctly here.
         return (
           <div className="flex flex-col h-full gap-4 px-4 pt-4">
-            <div data-notation-slot className="flex-none min-h-0 max-h-[50%] overflow-y-auto">
+            <div data-notation-slot className="flex-none min-h-0 max-h-[50%] overflow-hidden flex flex-col">
               {notationSlot}
             </div>
-            <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="flex-1 min-h-0 overflow-hidden">
               {stanzaSlot}
             </div>
           </div>
@@ -1182,20 +1182,22 @@ export function NotationRenderer({
     const currentSrc = pages[pageIndex] ?? solfegeJpgUrl ?? null
 
     const mainImageBlock = currentSrc ? (
-      <div className={chromeless ? '-mx-4' : ''}>
+      <div className={cn(
+        chromeless && !isSplit ? '-mx-4' : '',
+        isSplit && chromeless ? 'flex-1 min-h-0 flex items-start justify-center' : '',
+      )}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={currentSrc}
           alt={`Solfège for ${tuneName}`}
           className={cn(
             'rounded-md border border-border',
-            // chromeless split-leaf: width-based natural sizing so the outer notation
-            // slot's own max-h-[50%]+overflow-y-auto caps & scrolls the JPG in BOTH
-            // resting and reflowed states (no fixed dvh guess).
             isSplit
               ? chromeless
-                ? 'w-full h-auto'
-                : 'max-h-full w-auto object-contain mx-auto' // non-chromeless (/tunes, /study) grid layout unchanged
+                // chromeless split-leaf: CONTAIN within the max-h-[50%] flex notation
+                // slot — shrink to fit height AND width, never scroll, never crop.
+                ? 'max-h-full max-w-full w-auto h-auto object-contain'
+                : 'max-h-full w-auto object-contain mx-auto' // non-chromeless grid unchanged
               : 'w-full h-auto',
           )}
           style={chromeless && !isSplit ? { maxWidth: '100%' } : undefined}
@@ -1238,7 +1240,11 @@ export function NotationRenderer({
     ) : null
 
     const stanzaBlock = showLyrics && stanzas.length > 0 ? (
-      <div className={isSplit ? 'h-full overflow-y-auto md:h-auto md:max-h-[80vh]' : (chromeless ? '' : 'max-h-[60vh] overflow-y-auto')}>
+      <div className={
+        isSplit
+          ? (chromeless ? 'h-full overflow-y-auto' : 'h-full overflow-y-auto md:h-auto md:max-h-[80vh]')
+          : (chromeless ? '' : 'max-h-[60vh] overflow-y-auto')
+      }>
         <StanzaList stanzas={stanzas} />
       </div>
     ) : null
