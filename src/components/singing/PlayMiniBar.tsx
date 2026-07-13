@@ -86,6 +86,46 @@ export function PlayMiniBar({
   const isScMode = audioSource === 'soundcloud'
   const barHeight = isScMode ? 'h-[80px]' : 'h-[44px]'
 
+  // Quick task 260713-a5b: on a FRESH mount into SoundCloud mode, the
+  // <iframe> element is newly created concurrently with the AbcAudioControls
+  // subtree unmounting AND the bar's 44px->80px `duration-200` layout
+  // transition. Diagnostic evidence (260713-a5b diagnostic.js, run against
+  // the real app via the Playwright daemon) directly caught the fresh
+  // iframe being inserted while the bar's own rectHeight was still
+  // mid-transition (e.g. 64.78px, climbing toward 80px), which is the exact
+  // race that can abort the widget's api-widget.soundcloud.com/me bootstrap
+  // fetch and leave the static Download/privacy-policy fallback rendered
+  // instead of the interactive player. On a later tune switch (isScMode
+  // already true) the SAME iframe element persists and only its `src`
+  // changes — that path is unaffected and already worked before this fix.
+  // Deferring the iframe's FIRST mount until after the bar's transition has
+  // had time to settle removes this race: `scIframeReady` gates only the
+  // very first insertion of the iframe into SC mode, not any later src swap.
+  const [scIframeReady, setScIframeReady] = useState(false)
+
+  useEffect(() => {
+    if (!isScMode) {
+      // Reset so a future re-entry into SC mode defers again.
+      setScIframeReady(false)
+      return
+    }
+    let rafId: number | null = null
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+    // Double rAF lets the browser commit + paint the 44px->80px layout
+    // transition's starting frame; the trailing timeout (220ms, just past
+    // the 200ms `duration-200` transition) ensures the bar has visually
+    // settled at its final 80px size before the iframe is ever inserted.
+    rafId = requestAnimationFrame(() => {
+      rafId = requestAnimationFrame(() => {
+        timeoutId = setTimeout(() => setScIframeReady(true), 220)
+      })
+    })
+    return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId)
+      if (timeoutId !== null) clearTimeout(timeoutId)
+    }
+  }, [isScMode])
+
   // Plan 04.9.14-03 (Task 4): report actual rendered height to the caller so
   // the scrollable content area can reserve exactly enough bottom padding
   // (handles both the compact h-[44px] and SoundCloud h-[80px] profiles).
@@ -201,7 +241,7 @@ export function PlayMiniBar({
             onPlayingChange={onPlayingChange}
             label="Tune audio controls"
           />
-        ) : (
+        ) : scIframeReady ? (
           <>
             {/* B(c): iframe height fits in 80px bar */}
             <iframe
@@ -232,6 +272,17 @@ export function PlayMiniBar({
               </span>
             )}
           </>
+        ) : (
+          // Quick task 260713-a5b: placeholder occupies the same flex-1 slot
+          // while the bar's SC-mode 80px layout settles, so the iframe never
+          // mounts into a still-animating container (see scIframeReady effect
+          // above). Keeps ResizeObserver-reported height correct immediately.
+          <span
+            data-sc-iframe-loading
+            className="text-xs italic text-muted-foreground truncate"
+          >
+            Loading recording...
+          </span>
         )}
       </div>
     </div>
