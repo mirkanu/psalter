@@ -543,12 +543,11 @@ export function SingingView({
             studyHref={studyHref}
             onRestartTour={handleRestartTour}
             showLyricsOption={!!showLyrics}
-            // Staff availability is driven by ABC presence; Solfège
-            // availability is driven solely by solfège JPG presence — both
-            // inline and split-leaf Solfège render the same scanned image
-            // (04.9.14-lcg revert), so a single ungated boolean covers both.
             staffAvailable={!!(activeTune?.abcNotation || activeTune?.abcSatb)}
-            solfegeAvailable={!!(solfegeJpgUrl || activeSolfegePages.length > 0)}
+            // Inline Solfège rendering is not built yet (abcjs has no tonic
+            // sol-fa) — permanently disabled until real rendering exists.
+            solfegeInlineAvailable={false}
+            solfegeSplitAvailable={!!(solfegeJpgUrl || activeSolfegePages.length > 0)}
           />
         }
       />
