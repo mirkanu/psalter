@@ -1161,10 +1161,22 @@ export function NotationRenderer({
     } else {
       viewArea = notationBlock
     }
-  } else if (viewMode === 'solfege' || viewMode === 'solfege-split') {
-    // Solfège: inline and split-leaf both render the scanned solfège JPG
-    // (+ thumbnails/pagination) — abcjs has no tonic sol-fa support, so this
-    // is the only Solfège view mode (04.9.14-lcg revert).
+  } else if (viewMode === 'solfege') {
+    // Inline Solfège is not built yet — abcjs has no tonic sol-fa support, and a
+    // static JPG does not match what "inline" means for Staff. The gear toggle
+    // disables NEW inline-solfège selections; this branch only handles a stale
+    // localStorage viewMode:'solfege'. Split-leaf Solfège (the scanned JPG) is
+    // handled by the branch below and is unaffected.
+    viewArea = (
+      <div className={chromeless ? 'px-4 pt-8 flex flex-col items-center text-center gap-2' : 'py-8 flex flex-col items-center text-center gap-2'}>
+        <p className="text-sm font-medium">Inline Solfège is coming soon</p>
+        <p className="text-sm text-muted-foreground max-w-xs">
+          Tonic sol-fa notation isn&apos;t available inline yet. Use the Split-Leaf layout to view the scanned Solfège, or switch to Staff.
+        </p>
+      </div>
+    )
+  } else if (viewMode === 'solfege-split') {
+    // Split-leaf Solfège renders the scanned solfège JPG (+ thumbnails/pagination).
     const pages = activePages(viewMode, staffPages, solfegePages)
     const hasMultiPages = pages.length > 1
     const currentSrc = pages[pageIndex] ?? solfegeJpgUrl ?? null
