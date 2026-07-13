@@ -1095,10 +1095,10 @@ export function NotationRenderer({
         // (md:h-[calc(100dvh-116px)]) so h-full resolves correctly here.
         return (
           <div className="flex flex-col h-full gap-4 px-4 pt-4">
-            <div data-notation-slot className="flex-1 min-h-0 max-h-[50%] overflow-y-auto">
+            <div data-notation-slot className="flex-none min-h-0 max-h-[50%] overflow-y-auto">
               {notationSlot}
             </div>
-            <div className="flex-1 min-h-0 max-h-[50%] overflow-y-auto">
+            <div className="flex-1 min-h-0 overflow-y-auto">
               {stanzaSlot}
             </div>
           </div>
@@ -1109,10 +1109,10 @@ export function NotationRenderer({
           {/* 260712-szw: data-notation-slot is a measurement hook for
               tests/diagnostics/split-leaf-staff-diff.mjs (clientHeight vs
               scrollHeight overflow check) — no behaviour change. */}
-          <div data-notation-slot className="flex-1 min-h-0 max-h-[50%] overflow-y-auto md:max-h-none md:overflow-visible md:flex-none">
+          <div data-notation-slot className="flex-none min-h-0 max-h-[50%] overflow-y-auto md:max-h-none md:overflow-visible">
             {notationSlot}
           </div>
-          <div className="flex-1 min-h-0 max-h-[50%] overflow-y-auto md:max-h-none md:overflow-visible md:flex-none">
+          <div className="flex-1 min-h-0 overflow-y-auto md:max-h-none md:overflow-visible md:flex-none">
             {stanzaSlot}
           </div>
         </div>
@@ -1189,10 +1189,14 @@ export function NotationRenderer({
           alt={`Solfège for ${tuneName}`}
           className={cn(
             'rounded-md border border-border',
-            // Task 2: split-leaf JPG fallback must respect the ≤50% viewport
-            // height cap on mobile — object-contain lets the image shrink to
-            // fit its constrained parent instead of overflowing it.
-            isSplit ? 'max-h-full w-auto object-contain mx-auto' : 'w-full h-auto',
+            // chromeless split-leaf: width-based natural sizing so the outer notation
+            // slot's own max-h-[50%]+overflow-y-auto caps & scrolls the JPG in BOTH
+            // resting and reflowed states (no fixed dvh guess).
+            isSplit
+              ? chromeless
+                ? 'w-full h-auto'
+                : 'max-h-full w-auto object-contain mx-auto' // non-chromeless (/tunes, /study) grid layout unchanged
+              : 'w-full h-auto',
           )}
           style={chromeless && !isSplit ? { maxWidth: '100%' } : undefined}
         />
