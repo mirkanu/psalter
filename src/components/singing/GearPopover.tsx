@@ -52,7 +52,6 @@ export function GearPopover({
   const isMusicNotes = viewMode !== 'lyrics'
   const isStaff = viewMode === 'staff' || viewMode === 'staff-split'
   const isSplit = viewMode === 'staff-split' || viewMode === 'solfege-split'
-  const solfegeAvailableForCurrentLayout = isSplit ? solfegeSplitAvailable : solfegeInlineAvailable
   const inlineLayoutDisabled = !isStaff && !solfegeInlineAvailable
 
   const handleNotationChange = (notation: 'staff' | 'solfege') => {
@@ -60,17 +59,14 @@ export function GearPopover({
       toast('Coming soon', { description: 'Staff notation for this tune is not yet available' })
       return
     }
-    if (notation === 'solfege' && !solfegeAvailableForCurrentLayout) {
-      toast('Coming soon', {
-        description: isSplit
-          ? "Solfège isn't available for this tune"
-          : 'Inline Solfège notation is not yet available — switch to Split-Leaf to view the scanned Solfège',
-      })
+    if (notation === 'solfege' && !solfegeSplitAvailable) {
+      toast('Coming soon', { description: "Solfège isn't available for this tune" })
       return
     }
-    const newMode: ViewMode = isSplit
-      ? (notation === 'staff' ? 'staff-split' : 'solfege-split')
-      : (notation === 'staff' ? 'staff' : 'solfege')
+    const newMode: ViewMode =
+      notation === 'solfege'
+        ? 'solfege-split'                       // inline solfege never exists — always split
+        : (isSplit ? 'staff-split' : 'staff')
     onViewModeChange(newMode)
   }
 
@@ -197,11 +193,11 @@ export function GearPopover({
                   aria-checked={!isStaff}
                   aria-label="Solfege"
                   onClick={() => handleNotationChange('solfege')}
-                  disabled={!solfegeAvailableForCurrentLayout}
+                  disabled={!solfegeSplitAvailable}
                   className={[
                     'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
-                    !solfegeAvailableForCurrentLayout && 'opacity-40 cursor-not-allowed',
-                    !isStaff && solfegeAvailableForCurrentLayout
+                    !solfegeSplitAvailable && 'opacity-40 cursor-not-allowed',
+                    !isStaff && solfegeSplitAvailable
                       ? 'bg-foreground text-background'
                       : 'text-muted-foreground hover:bg-muted',
                   ].join(' ')}
