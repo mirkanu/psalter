@@ -28,8 +28,11 @@ interface Props {
   showLyricsOption: boolean
   /** Whether Staff notation is available (ABC exists for this tune). */
   staffAvailable: boolean
-  /** Whether Solfège is available — a solfège JPG exists. */
-  solfegeAvailable: boolean
+  /** Whether INLINE Solfège rendering exists. Hardcoded false for now — real
+   *  abcjs tonic sol-fa rendering is not built yet. */
+  solfegeInlineAvailable: boolean
+  /** Whether SPLIT-LEAF Solfège (scanned JPG) is available. */
+  solfegeSplitAvailable: boolean
 }
 
 export function GearPopover({
@@ -41,21 +44,28 @@ export function GearPopover({
   onRestartTour,
   showLyricsOption,
   staffAvailable,
-  solfegeAvailable,
+  solfegeInlineAvailable,
+  solfegeSplitAvailable,
 }: Props) {
   const router = useRouter()
 
   const isMusicNotes = viewMode !== 'lyrics'
   const isStaff = viewMode === 'staff' || viewMode === 'staff-split'
   const isSplit = viewMode === 'staff-split' || viewMode === 'solfege-split'
+  const solfegeAvailableForCurrentLayout = isSplit ? solfegeSplitAvailable : solfegeInlineAvailable
+  const inlineLayoutDisabled = !isStaff && !solfegeInlineAvailable
 
   const handleNotationChange = (notation: 'staff' | 'solfege') => {
     if (notation === 'staff' && !staffAvailable) {
       toast('Coming soon', { description: 'Staff notation for this tune is not yet available' })
       return
     }
-    if (notation === 'solfege' && !solfegeAvailable) {
-      toast('Coming soon', { description: 'Solfège notation for this tune is not yet available' })
+    if (notation === 'solfege' && !solfegeAvailableForCurrentLayout) {
+      toast('Coming soon', {
+        description: isSplit
+          ? "Solfège isn't available for this tune"
+          : 'Inline Solfège notation is not yet available — switch to Split-Leaf to view the scanned Solfège',
+      })
       return
     }
     const newMode: ViewMode = isSplit
@@ -65,6 +75,10 @@ export function GearPopover({
   }
 
   const handleLayoutChange = (layout: 'inline' | 'split-leaf') => {
+    if (layout === 'inline' && !isStaff && !solfegeInlineAvailable) {
+      toast('Coming soon', { description: 'Inline Solfège notation is not yet available — Split-Leaf shows the scanned Solfège' })
+      return
+    }
     const newMode: ViewMode = isStaff
       ? (layout === 'split-leaf' ? 'staff-split' : 'staff')
       : (layout === 'split-leaf' ? 'solfege-split' : 'solfege')
@@ -76,7 +90,14 @@ export function GearPopover({
     // Restore last music mode — default to staff if nothing saved
     const stored = typeof window !== 'undefined' ? localStorage.getItem('psalter-score-mode') : null
     if (stored === 'staff-split' || stored === 'solfege' || stored === 'solfege-split') {
-      onViewModeChange(stored as ViewMode)
+      // Inline Solfège isn't built yet — a stale localStorage value of
+      // 'solfege' would otherwise silently restore the disabled inline
+      // state, bypassing the gear toggle's gating. Redirect to Staff.
+      if (stored === 'solfege' && !solfegeInlineAvailable) {
+        onViewModeChange('staff')
+      } else {
+        onViewModeChange(stored as ViewMode)
+      }
     } else {
       onViewModeChange('staff')
     }
@@ -176,11 +197,11 @@ export function GearPopover({
                   aria-checked={!isStaff}
                   aria-label="Solfege"
                   onClick={() => handleNotationChange('solfege')}
-                  disabled={!solfegeAvailable}
+                  disabled={!solfegeAvailableForCurrentLayout}
                   className={[
                     'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
-                    !solfegeAvailable && 'opacity-40 cursor-not-allowed',
-                    !isStaff && solfegeAvailable
+                    !solfegeAvailableForCurrentLayout && 'opacity-40 cursor-not-allowed',
+                    !isStaff && solfegeAvailableForCurrentLayout
                       ? 'bg-foreground text-background'
                       : 'text-muted-foreground hover:bg-muted',
                   ].join(' ')}
@@ -200,9 +221,12 @@ export function GearPopover({
                   role="radio"
                   aria-checked={!isSplit}
                   aria-label="Inline"
+                  title="Inline Solfège coming soon"
                   onClick={() => handleLayoutChange('inline')}
+                  disabled={inlineLayoutDisabled}
                   className={[
                     'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
+                    inlineLayoutDisabled && 'opacity-40 cursor-not-allowed',
                     !isSplit
                       ? 'bg-foreground text-background'
                       : 'text-muted-foreground hover:bg-muted',
