@@ -1066,7 +1066,7 @@ export function NotationRenderer({
   // render the same StanzaList below the JPG.
   const lyricsBelow =
     showLyrics && stanzas.length > 0 ? (
-      <div className="mt-4 max-h-[60vh] overflow-y-auto">
+      <div className="mt-4 max-h-[60vh] overflow-y-auto overscroll-y-none">
         <StanzaList stanzas={stanzas} />
       </div>
     ) : null
@@ -1109,10 +1109,10 @@ export function NotationRenderer({
           {/* 260712-szw: data-notation-slot is a measurement hook for
               tests/diagnostics/split-leaf-staff-diff.mjs (clientHeight vs
               scrollHeight overflow check) — no behaviour change. */}
-          <div data-notation-slot className="flex-none min-h-0 max-h-[50%] overflow-y-auto md:max-h-none md:overflow-visible">
+          <div data-notation-slot className="flex-none min-h-0 max-h-[50%] overflow-y-auto md:max-h-none md:overflow-visible overscroll-y-none">
             {notationSlot}
           </div>
-          <div className="flex-1 min-h-0 overflow-y-auto md:max-h-none md:overflow-visible md:flex-none">
+          <div className="flex-1 min-h-0 overflow-y-auto md:max-h-none md:overflow-visible md:flex-none overscroll-y-none">
             {stanzaSlot}
           </div>
         </div>
@@ -1153,7 +1153,7 @@ export function NotationRenderer({
 
     if (isSplit) {
       const stanzaBlock = showLyrics && stanzas.length > 0 ? (
-        <div className="h-full overflow-y-auto md:h-auto md:max-h-[80vh]">
+        <div className="h-full overflow-y-auto md:h-auto md:max-h-[80vh] overscroll-y-none">
           <StanzaList stanzas={stanzas} />
         </div>
       ) : null
@@ -1242,8 +1242,8 @@ export function NotationRenderer({
     const stanzaBlock = showLyrics && stanzas.length > 0 ? (
       <div className={
         isSplit
-          ? (chromeless ? 'h-full overflow-y-auto' : 'h-full overflow-y-auto md:h-auto md:max-h-[80vh]')
-          : (chromeless ? '' : 'max-h-[60vh] overflow-y-auto')
+          ? (chromeless ? 'h-full overflow-y-auto overscroll-y-none' : 'h-full overflow-y-auto md:h-auto md:max-h-[80vh] overscroll-y-none')
+          : (chromeless ? '' : 'max-h-[60vh] overflow-y-auto overscroll-y-none')
       }>
         <StanzaList stanzas={stanzas} />
       </div>
@@ -1371,7 +1371,7 @@ export function NotationRenderer({
             // double-scroll. At ≥768px the split-leaf inner container reverts
             // to simple document flow, so the outer wrapper resumes normal
             // scrolling (Task 1 + Task 2).
-            isSplit ? 'overflow-hidden md:overflow-y-auto' : 'overflow-y-auto',
+            isSplit ? 'overflow-hidden md:overflow-y-auto overscroll-y-none' : 'overflow-y-auto overscroll-y-none',
           )}
         >
           {viewArea}
