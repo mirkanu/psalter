@@ -383,8 +383,19 @@ export function SingingView({
       if (!mql.matches) return
       const el = e.target as HTMLElement | null
       if (!el || typeof el.scrollTop !== 'number') return
-      const scrollTop = el.scrollTop
-      const scrollingDown = scrollTop > (lastByEl.get(el) ?? 0)
+      // iOS Safari rubber-band overscroll reports scrollTop OUTSIDE the natural
+      // [0, maxTop] range and oscillates rapidly at the boundary. Clamp to the
+      // valid range so bounce frames collapse to a constant boundary value
+      // (delta ~0) instead of registering as real up/down movement.
+      const maxTop = Math.max(0, el.scrollHeight - el.clientHeight)
+      const scrollTop = Math.min(Math.max(el.scrollTop, 0), maxTop)
+      const last = lastByEl.get(el) ?? 0
+      const delta = scrollTop - last
+      // Ignore sub-threshold jitter (bounce settle / tiny finger tremor). Normal
+      // scrolling easily exceeds 4px; slow real scrolls still accumulate because
+      // we do NOT advance `last` until the threshold is crossed.
+      if (Math.abs(delta) < 4) return
+      const scrollingDown = delta > 0
       setTopBarHidden(scrollTop > 40 && scrollingDown)
       setBottomBarHidden(scrollTop > 100 && scrollingDown)
       // Task 3 (04.9.14-03): PlayMiniBar auto-hides on scroll down (same
