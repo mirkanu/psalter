@@ -37,6 +37,7 @@ import { splitMusicIntoSubLines } from './splitMusicIntoSubLines'
 import { splitWLineByNoteCounts } from './splitWLineByNoteCounts'
 import { forceMatchMeterShape } from '@/lib/force-match-meter-shape'
 import { expectedSyllablesByLine } from '@/lib/meter-syllable-shape'
+import { detectRepeatedPitchContinuations } from '@/lib/detect-repeated-pitch-continuations'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -827,7 +828,7 @@ export function NotationRenderer({
     // Plan 04.9.9: per-phrase helper that uses buildWLineFromSolfa when solfège
     // OCR data is available, falling back to syllabifyForAbc otherwise.
     // Defined inside useMemo so it closes over solfegeVoices and tuneMeter.
-    function wLineForSyllables(rawText: string, phraseIndex: number): string {
+    function wLineForSyllables(rawText: string, phraseIndex: number, musicForPhrase?: string): string {
       const text = rawText.replace(/\n/g, ' ')
       let raw: string
       if (solfegeVoices && tuneMeter) {
@@ -844,7 +845,41 @@ export function NotationRenderer({
       } else {
         raw = syllabifyForAbc(text)
       }
-      const tokens = raw.split(/\s+/).filter(Boolean)
+      let tokens = raw.split(/\s+/).filter(Boolean)
+
+      // Reconcile a syllable deficit against the phrase's actual note count
+      // BEFORE falling back to the meter-shape word-splitter. A repeated-pitch
+      // note run (the psalm-singing "reciting note" / "point" convention —
+      // lyric-to-note-alignment.md §4 Mechanism 1) can absorb the deficit as
+      // melisma continuations (`_`), which is the musically correct reading
+      // when the source OCR lost the underline data. Without this, the
+      // meter-shape fallback below invents a fake mid-word split (e.g. "soul"
+      // → "sou-" + "l") purely to hit the expected token count — technically
+      // count-correct but nonsensical text that visually collides with
+      // neighbouring syllables once notes are packed tightly (mobile
+      // sub-staves).
+      if (musicForPhrase) {
+        const noteCount = countNoteHeads(musicForPhrase)
+        if (noteCount > 0 && tokens.length < noteCount) {
+          const deficit = noteCount - tokens.length
+          const continuations = detectRepeatedPitchContinuations(musicForPhrase, deficit)
+          if (continuations.length > 0) {
+            const contSet = new Set(continuations)
+            const merged: string[] = []
+            let tIdx = 0
+            for (let noteIdx = 0; noteIdx < noteCount; noteIdx++) {
+              if (contSet.has(noteIdx)) {
+                merged.push('_')
+              } else if (tIdx < tokens.length) {
+                merged.push(tokens[tIdx++])
+              }
+            }
+            while (tIdx < tokens.length) merged.push(tokens[tIdx++])
+            tokens = merged
+          }
+        }
+      }
+
       const expectedShape = expectedSyllablesByLine(tuneMeter)
       if (expectedShape) {
         const expected = expectedShape[phraseIndex]
@@ -1035,7 +1070,7 @@ export function NotationRenderer({
             // count) — matches the desktop single-staff 1:1 alignment.
             const rawText = cycleLines[0]
             if (!rawText || !rawText.trim()) continue
-            const syllabified = wLineForSyllables(rawText, Math.min(i, localSplit.phrases.length - 1))
+            const syllabified = wLineForSyllables(rawText, Math.min(i, localSplit.phrases.length - 1), cleanedBody)
             const chunks = splitWLineByNoteCounts(syllabified, subNoteCounts)
             const chunk = chunks[sub]
             if (!chunk || !chunk.trim()) continue
@@ -1047,7 +1082,7 @@ export function NotationRenderer({
             // emit no w: line for that sub-staff.
             const text = cycleLines[sub]
             if (!text || !text.trim()) continue
-            const wRaw = wLineForSyllables(text, Math.min(i, localSplit.phrases.length - 1))
+            const wRaw = wLineForSyllables(text, Math.min(i, localSplit.phrases.length - 1), musicSubLines[sub])
             parts.push(`w: ${padWLineToNoteCount(wRaw, musicSubLines[sub])}`)
           }
         }
