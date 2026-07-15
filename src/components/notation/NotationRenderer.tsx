@@ -34,6 +34,7 @@ import {
 import type { Stanza, StructuredLyrics } from '@/lib/lyrics-structured'
 import { phrasesForMeter } from '@/lib/abc-phrase-meter-map'
 import { splitMusicIntoSubLines } from './splitMusicIntoSubLines'
+import { splitWLineByNoteCounts } from './splitWLineByNoteCounts'
 import { forceMatchMeterShape } from '@/lib/force-match-meter-shape'
 import { expectedSyllablesByLine } from '@/lib/meter-syllable-shape'
 
@@ -1015,16 +1016,27 @@ export function NotationRenderer({
       const needsProportionalSplit =
         linesPerPhrase === 1 && actualSubdivisions > 1
 
+      // Per-sub-staff note-head counts, computed once per phrase. Used to
+      // weight syllable distribution by actual note count instead of equal
+      // token count — restores strict 1:1 syllable-to-note alignment when a
+      // phrase is subdivided unevenly (e.g. a held final note in its own
+      // measure). See splitWLineByNoteCounts.
+      const subNoteCounts = needsProportionalSplit
+        ? musicSubLines.map((m) => countNoteHeads(m))
+        : []
+
       for (let sub = 0; sub < actualSubdivisions; sub++) {
         parts.push(musicSubLines[sub])
         if (!showLyrics) continue
         for (const cycleLines of wLines) {
           if (needsProportionalSplit) {
-            // Proportionally distribute the single lyric line across sub-staves.
+            // Distribute the single lyric line across sub-staves, weighted
+            // by each sub-staff's real note-head count (not equal token
+            // count) — matches the desktop single-staff 1:1 alignment.
             const rawText = cycleLines[0]
             if (!rawText || !rawText.trim()) continue
             const syllabified = wLineForSyllables(rawText, Math.min(i, localSplit.phrases.length - 1))
-            const chunks = splitWLineIntoChunks(syllabified, actualSubdivisions)
+            const chunks = splitWLineByNoteCounts(syllabified, subNoteCounts)
             const chunk = chunks[sub]
             if (!chunk || !chunk.trim()) continue
             const padded = padWLineToNoteCount(chunk, musicSubLines[sub])
