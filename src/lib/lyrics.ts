@@ -139,13 +139,16 @@ export function extractVerse1(lyrics: string | null | undefined): string {
  *
  * Each word is syllabified using nlp-syllables. Multi-syllable words have
  * their syllables joined with "- " (hyphen-space as abcjs expects). Single-
- * syllable words are returned as-is. Trailing punctuation (.,;:!?) is
- * stripped before syllabifying and re-attached to the last syllable so lyric
- * punctuation is preserved. Words are separated by spaces in the output.
+ * syllable words are returned as-is. Original letter casing is restored onto
+ * the syllabified output (syllabizing only inserts separators, never changes
+ * letters), so capitalized verse-initial words stay capitalized. Trailing
+ * punctuation (.,;:!?) is stripped before syllabifying and re-attached to the
+ * last syllable so lyric punctuation is preserved. Words are separated by
+ * spaces in the output.
  *
  * @example
- *   syllabifyForAbc("beautiful assembly")
- *   // => "beau- ti- ful as- sem- bly"
+ *   syllabifyForAbc("Beautiful assembly")
+ *   // => "Beau- ti- ful as- sem- bly"
  *
  * @returns '' for empty input
  */
@@ -179,7 +182,29 @@ export function syllabifyForAbc(text: string): string {
     const joined = syllables
       .map((syl, i) => (i < syllables.length - 1 ? syl + '-' : syl))
       .join(' ')
-    return joined + trailing
+
+    // Restore original casing: the syllabizer/overrides only insert separators
+    // ("-", " ") between the same ordered letter sequence as `stripped`, so we
+    // walk both strings in parallel over alphabetic characters and copy each
+    // source letter's case onto the corresponding output letter. This handles
+    // digit-glued verse prefixes ("1Before") correctly since digits are
+    // skipped (not letters) on both sides.
+    let srcIdx = 0
+    const cased = joined
+      .split('')
+      .map((ch) => {
+        if (!/[a-z]/i.test(ch)) return ch
+        while (srcIdx < stripped.length && !/[a-z]/i.test(stripped[srcIdx])) {
+          srcIdx++
+        }
+        if (srcIdx >= stripped.length) return ch
+        const srcChar = stripped[srcIdx]
+        srcIdx++
+        return srcChar === srcChar.toUpperCase() ? ch.toUpperCase() : ch.toLowerCase()
+      })
+      .join('')
+
+    return cased + trailing
   })
 
   return result.filter(Boolean).join(' ')
