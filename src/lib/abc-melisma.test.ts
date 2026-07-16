@@ -151,4 +151,30 @@ describe('buildWLineFromSolfa', () => {
     expect(tokens.length).toBeGreaterThanOrEqual(8)
     expect(tokens.filter((t) => t === '_').length).toBeGreaterThanOrEqual(2)
   })
+
+  it('St Agnes, Durham P0 (260716 regression): prefers a repeated-pitch note as the passing note, not the first note of the run', () => {
+    // Real St Agnes, Durham tune 155 data. Soprano's first 3 events (m:m:m)
+    // are tied-duration repeats — without musicForPhrase, the old
+    // shortest-duration-first heuristic marked event 0 (the FIRST "m") as
+    // passing, forcing "My" onto note 0's underscore-continuation slot and
+    // shifting every following syllable one note late (visually "My"
+    // colliding with "soul" once packed onto a narrow mobile sub-staff).
+    const soprano =
+      'm :m :m | r :— :m | f :— :t_1 | d :— :— | s_1 :s_1 :s_1 | m :— :r | r :— :— || ' +
+      'f :f :m | r :— :d | t_1 :— :l_1 | s_1 :— :— | s_1 :l_1 :d | m :— :r | d :— :— || d | d ||'
+    const music = "b2b2b2a4 | b2c'4f2 | g6"
+    const warnings: string[] = []
+    const result = buildWLineFromSolfa(soprano, 'G', 'C', 0, 'CM', 'My soul with expectation', warnings, music)
+    expect(result).toBe('My _ soul with ex- pec- ta- tion')
+  })
+
+  it('falls back to the duration heuristic unchanged when musicForPhrase is omitted (no behavior change for existing callers)', () => {
+    const warnings: string[] = []
+    const result = buildWLineFromSolfa(
+      NO_PASSING_SOPRANO, 'G', 'C', 0, 'CM', 'Lord', warnings,
+    )
+    const tokens = result.split(/\s+/).filter(Boolean)
+    expect(tokens).toHaveLength(8)
+    expect(tokens.filter((t) => t === '_')).toHaveLength(7)
+  })
 })
