@@ -544,10 +544,18 @@ export function NotationRenderer({
   // (tests/diagnostics/split-leaf-staff-diff.mjs): spacing reduction alone
   // is NOT sufficient (434px -> 299px, still above the ~260px mobile
   // notation-slot budget) — both compact spacing AND a height-fit scale are
-  // required. Gated to chromeless && split-leaf && <768px so desktop
-  // split-leaf stays byte-identical to inline (260712-kov guarantee) and
-  // inline Staff / inline Solfège / split-leaf Solfège are unaffected.
-  const compactSplitMobile = chromeless && isSplitForWidth && viewportW < 768
+  // required.
+  //
+  // 260716: extended to inline (non-split) Staff too. The whole-tune inline
+  // view had NO height-fit at all on mobile — a CM tune's 8 sub-staves could
+  // exceed the chromeless notation-viewarea height and force a page scroll,
+  // even though the surrounding comment/design intent (UAT v6 issue #3) says
+  // Staff mode should never need to scroll. Gated to chromeless && (staff OR
+  // split-leaf) && <768px so desktop and non-chromeless callers (/tunes/[id],
+  // /study) stay byte-identical; inline/split-leaf Solfège (JPG-based, sized
+  // separately) are unaffected.
+  const compactSplitMobile =
+    chromeless && viewportW < 768 && (viewMode === 'staff' || viewMode === 'staff-split')
 
   // How many sub-systems to break each source phrase into. abcjs only wraps
   // music where the ABC source contains an explicit newline; staffwidth alone
@@ -1411,6 +1419,15 @@ export function NotationRenderer({
       {chromeless ? (
         <div
           data-notation-viewarea
+          // 260716: also tagged as a `data-notation-fit-slot` target for
+          // AbcPlayer's height-fit-scale pass (see `compactSplitMobile`
+          // below) when NOT split. Deliberately a DIFFERENT attribute than
+          // split-leaf's `data-notation-slot` (not reused) so the existing
+          // `tests/diagnostics/split-leaf-staff-diff.mjs` script's
+          // `document.querySelector('[data-notation-slot]')` (a global
+          // first-match query, unlike AbcPlayer's ancestor-relative
+          // `closest()`) keeps resolving only the split-leaf inner slot.
+          data-notation-fit-slot
           className={cn(
             'flex-1 min-h-0',
             // Split-leaf mode composes its OWN two independently-scrolling
@@ -1419,7 +1436,18 @@ export function NotationRenderer({
             // double-scroll. At ≥768px the split-leaf inner container reverts
             // to simple document flow, so the outer wrapper resumes normal
             // scrolling (Task 1 + Task 2).
-            isSplit ? 'overflow-hidden md:overflow-y-auto overscroll-y-none' : 'overflow-y-auto overscroll-y-none',
+            isSplit
+              ? 'overflow-hidden md:overflow-y-auto overscroll-y-none'
+              // 260716: inline Staff on mobile (compactSplitMobile) — hidden
+              // so the AbcPlayer height-fit-scale pass can shrink the SVG to
+              // fit without a page scroll. Non-Staff modes (lyrics, inline
+              // solfège placeholder) are plain text/JPG with no fit-scale
+              // mechanism, so they must keep scrolling — only gate the
+              // overflow change to the exact viewMode compactSplitMobile
+              // targets, not "any non-split chromeless view."
+              : compactSplitMobile
+              ? 'overflow-hidden md:overflow-y-auto overscroll-y-none'
+              : 'overflow-y-auto overscroll-y-none',
           )}
         >
           {viewArea}

@@ -290,7 +290,12 @@ export default function AbcPlayer({
       setSlotHeight(0)
       return
     }
-    const slotEl = outerRef.current?.closest('[data-notation-slot]') as HTMLElement | null
+    // 260716: also matches `[data-notation-fit-slot]` — the inline (non-split)
+    // Staff mobile fit target (NotationRenderer's chromeless viewarea
+    // wrapper). `closest()` finds the NEAREST ancestor regardless of which
+    // attribute matches, so split-leaf (nested inside its own, closer
+    // `[data-notation-slot]`) is unaffected.
+    const slotEl = outerRef.current?.closest('[data-notation-slot], [data-notation-fit-slot]') as HTMLElement | null
     if (!slotEl) return
     const update = () => setSlotHeight(slotEl.clientHeight)
     update()
