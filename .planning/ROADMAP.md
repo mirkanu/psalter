@@ -74,6 +74,20 @@ Plans:
 **Requirements:** MOBILE-04, MOBILE-05, MOBILE-06, MOBILE-07, MOBILE-08
 **Depends on:** Phase 4.9.14 (inline solfege abc rendering + approval gate groundwork)
 
+**Plans:** 5 plans
+
+Plans:
+**Wave 0**
+- [ ] 04.9.15-01-PLAN.md — Playwright diagnostic: confirm clef/key SVG selector (item a) + measure non-last-row under-fill (item d) before the fixes [BLOCKING]
+
+**Wave 1** *(depends on Wave 0)*
+- [ ] 04.9.15-02-PLAN.md — Item (b): decouple A+/A− to lyric-only via INLINE_STAFF_NOTATION_SCALE; step 2 / floor 8 / soft-40 / hard-120
+- [ ] 04.9.15-03-PLAN.md — Item (c): glue verse-number digit onto first syllable of inline-Staff w: lines
+
+**Wave 2** *(depends on Wave 0 + Plan 02)*
+- [ ] 04.9.15-04-PLAN.md — Item (e): explicit-'approved' gate on inline Staff (data-layer status + GearPopover disable + navigation fallback toast)
+- [ ] 04.9.15-05-PLAN.md — Items (a)+(d): 60% clef/key shrink on wrapped rows + non-last-row width fill (human visual sign-off)
+
 ### Milestone 2 — Precentor Portal & Polish
 
 - [ ] **Phase 5: Precentor Portal** - Precenting Sets (Date/Type/Note), psalm+tune table with meter mismatch checker, dnd-kit reordering, TunePickerModal, precenting mode with amber bar and position counter
