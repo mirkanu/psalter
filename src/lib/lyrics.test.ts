@@ -33,10 +33,10 @@ K:G
     expect(wLines[0]).toContain("1The")
     // Newline inside portion flattened to space:
     expect(wLines[0]).not.toContain('\n')
-    // syllabifyForAbc lowercases multi-syllable words and inserts the
+    // syllabifyForAbc preserves original letter casing and inserts the
     // hyphen at the syllable boundary nlp-syllables computes
-    // ("Shepherd" -> "she- pherd")
-    expect(wLines[0]).toContain('she- pherd')
+    // ("Shepherd" -> "She- pherd")
+    expect(wLines[0]).toContain('She- pherd')
   })
 
   it('multiple portions produce multiple consecutive w: lines in order (3-stanza CM fixture)', () => {
@@ -61,10 +61,10 @@ K:G
     const out = buildAbcWithSyllables(PHRASE_ABC, portions)
     const wLines = out.split('\n').filter((l) => l.startsWith('w:'))
     expect(wLines).toHaveLength(2)
-    // Multi-syllable words are lowercased by syllabifyForAbc, but the digit
-    // verse prefix sticks to the (now lowercase) first syllable.
-    expect(wLines[0]).toContain('1al- pha')
-    expect(wLines[1]).toContain('3gam')
+    // syllabifyForAbc preserves original letter casing; the digit verse
+    // prefix sticks to the (correctly capitalised) first syllable.
+    expect(wLines[0]).toContain('1Al- pha')
+    expect(wLines[1]).toContain('3Gam')
   })
 
   it('whitespace-only portions are skipped', () => {
@@ -150,11 +150,12 @@ describe('syllabifyForAbc — PSALM_SYLLABLE_OVERRIDES (psalm vocabulary)', () =
     expect(syllabifyForAbc('prayer,')).toBe('pray- er,')
   })
 
-  it('Prayer (capitalised) → pray- er (multi-syllable overrides are lowercase, same as NLP)', () => {
-    // Override syllables are lowercase strings. Multi-syllable words do NOT
-    // preserve capitalisation — consistent with NLP behaviour ("Praise" → "prai- se").
-    // Single-syllable overrides (e.g. "Tongues") DO preserve case via the stripped path.
-    expect(syllabifyForAbc('Prayer')).toBe('pray- er')
+  it('Prayer (capitalised) → Pray- er (capitalisation is preserved for multi-syllable words too)', () => {
+    // Override syllables are looked up lowercase, but the original word's
+    // letter casing is restored onto the syllabified output. Single-syllable
+    // overrides (e.g. "Tongues") already preserved case via the stripped path;
+    // multi-syllable words now do too.
+    expect(syllabifyForAbc('Prayer')).toBe('Pray- er')
   })
 
   it('tongues → 1 syllable (no split)', () => {
@@ -189,8 +190,8 @@ describe('syllabifyForAbc — PSALM_SYLLABLE_OVERRIDES (psalm vocabulary)', () =
     expect(syllabifyForAbc('righteous')).toBe('righ- teous')
   })
 
-  it('Righteous (capitalised) → righ- teous (multi-syllable overrides are lowercase)', () => {
-    expect(syllabifyForAbc('Righteous')).toBe('righ- teous')
+  it('Righteous (capitalised) → Righ- teous (capitalisation is preserved)', () => {
+    expect(syllabifyForAbc('Righteous')).toBe('Righ- teous')
   })
 
   it('righteousness → 3 syllables: righ- teous- ness', () => {
@@ -267,8 +268,11 @@ describe('PSALM_SYLLABLE_OVERRIDES — archaic -eth verbs', () => {
     })
   }
 
-  it('uppercase LEADETH is normalised to lowercase before lookup', () => {
-    expect(syllabifyForAbc('LEADETH')).toBe(syllabifyForAbc('leadeth'))
+  it('uppercase LEADETH is normalised to lowercase for override lookup, but its own casing is preserved in the output', () => {
+    // The override dictionary is keyed lowercase, so lookup still succeeds for
+    // all-caps input; the case-restoration pass then reapplies each source
+    // letter's case onto the matched syllables (all-caps in, all-caps out).
+    expect(syllabifyForAbc('LEADETH')).toBe('LEAD- ETH')
   })
 
   it('leadeth. with trailing punctuation → lead- eth.', () => {
@@ -286,5 +290,37 @@ describe('PSALM_SYLLABLE_OVERRIDES — archaic -eth verbs', () => {
 
   it('righteousness still → righ- teous- ness (no regression)', () => {
     expect(syllabifyForAbc('righteousness')).toBe('righ- teous- ness')
+  })
+})
+
+// ── Verse-initial capitalisation preservation (260716-dtm fix) ──────────────
+// Root cause: syllabifyForAbc lowercased every word before syllabifying, and
+// only the single-syllable branch restored original case. Multi-syllable
+// capitalized words (which most verse-initial words are) rendered lowercase
+// under the staff. These tests guard the case-restoration pass added to the
+// multi-syllable branch.
+describe('syllabifyForAbc — verse-initial capitalisation preservation', () => {
+  it('Before thou ever → Be- fore thou ever (capital preserved on multi-syllable opener)', () => {
+    expect(syllabifyForAbc('Before thou ever')).toBe('Be- fore thou ever')
+  })
+
+  it('Because a thousand → Be- cause a thou- sand', () => {
+    expect(syllabifyForAbc('Because a thousand')).toBe('Be- cause a thou- sand')
+  })
+
+  it('According as the → Ac- cor- ding as the', () => {
+    expect(syllabifyForAbc('According as the')).toBe('Ac- cor- ding as the')
+  })
+
+  it('digit-glued verse prefix "1Before" → 1Be- fore (capital lands on first LETTER, not the digit)', () => {
+    expect(syllabifyForAbc('1Before')).toBe('1Be- fore')
+  })
+
+  it('lowercase input stays lowercase (no regression)', () => {
+    expect(syllabifyForAbc('before thou ever')).toBe('be- fore thou ever')
+  })
+
+  it('single-syllable capitalised word unaffected (already worked pre-fix)', () => {
+    expect(syllabifyForAbc('Lord')).toBe('Lord')
   })
 })
