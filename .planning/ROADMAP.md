@@ -65,6 +65,15 @@ Plans:
 **Wave 3** *(depends on Wave 2)*
 - [x] 04.9.13-03-PLAN.md — Split-leaf view overhaul + desktop max-width constraint on /psalms/[id]
 
+- [ ] **Phase 4.9.15 (INSERTED): Mobile Inline Staff Optimization** - Optimise the mobile inline staff view surfaced from exploration of screenshots:
+  (a) Shrink (not hide) the repeated clef/key-signature block at the start of every wrapped row — abcjs has no reliable native option to suppress it on continuation rows (buggy under `wrap: true` per abcjs GitHub #437), so reduce its rendered size instead of hiding it after row 1
+  (b) A+/A- buttons control lyric font size only (not staff notation size); decrease is unconstrained; increase scales up until it would break the existing one-phrase-per-line/single-screen-fit rule, then that rule may be relaxed as a last resort
+  (c) Add verse numbers to inline staff view, matching how they display in lyrics-only and split-leaf views; also fix verse-initial letters not being capitalised (separate bug, same area)
+  (d) Fix row-stretch/justification bug causing wasted whitespace on non-last rows (confirmed on rows 1 and 2, not just last-row underfill)
+  (e) Gate staff-inline abc view behind explicit `'approved'` status in `tuneMelismaDecisions` (unmarked/`'not_approved'` tunes are NOT enough — only explicit `'approved'` unlocks abc staff-inline): gray out the Staff-inline gear menu option for non-approved tunes; if reached anyway (e.g. via next/prev psalm navigation), fall back to JPEG split-leaf (same fallback already used for non-approved solfège) with messaging directing the user to Settings to pick a different view
+**Requirements:** TBD (to be derived during /gsd-discuss-phase)
+**Depends on:** Phase 4.9.14 (inline solfege abc rendering + approval gate groundwork)
+
 ### Milestone 2 — Precentor Portal & Polish
 
 - [ ] **Phase 5: Precentor Portal** - Precenting Sets (Date/Type/Note), psalm+tune table with meter mismatch checker, dnd-kit reordering, TunePickerModal, precenting mode with amber bar and position counter
@@ -813,7 +822,7 @@ Plans:
 ## Progress
 
 **Milestone 1 Execution Order:**
-1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 4.9.5 → 4.9.6 → 4.9.7 → 4.9.8 → 4.9.9 → 4.9.10 → 4.9.11 → 4.9.12 → 4.9.13 → 4.9.14
+1 → 2 → 3 → 4 → 4.5 → 4.6 → 4.7 → 4.8 → 4.9 → 4.9.1 → 4.9.2 → 4.9.3 → 4.9.4 → 4.9.5 → 4.9.6 → 4.9.7 → 4.9.8 → 4.9.9 → 4.9.10 → 4.9.11 → 4.9.12 → 4.9.13 → 4.9.14 → 4.9.15
 
 **Milestone 2 Execution Order:**
 5 → 05.1 → 05.2 → 05.3 → 05.4 → 6
@@ -845,6 +854,7 @@ Plans:
 | 4.9.12. Melisma positions as tune-level data | 0/TBD | Not started | - |
 | 4.9.13. Single Psalm UI Streamlining | 3/3 | Complete | 2026-06-28 |
 | 4.9.14. Single Psalm View - Fix Phase 4.9.13 Issues | 3/3 | Planned | - |
+| 4.9.15. Mobile Inline Staff Optimization | 0/TBD | Not started | - |
 
 ### Milestone 2 — Precentor Portal & Polish
 
