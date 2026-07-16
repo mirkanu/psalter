@@ -559,11 +559,7 @@ export function NotationRenderer({
 
   // How many sub-systems to break each source phrase into. abcjs only wraps
   // music where the ABC source contains an explicit newline; staffwidth alone
-  // does not split a single music-line. For the chromeless singing view we
-  // need ≥3 systems on mobile and ≥4 on tablet (UI-SPEC §Body, design-notes
-  // "4 systems"), so we split each phrase into halves at every chromeless
-  // viewport. At very wide desktop (≥1280) the layout can comfortably show
-  // the original phrase-count without splitting.
+  // does not split a single music-line.
   //
   // UAT v7 bug-fix Bug-2 (mobile A+ no-op): on dense mobile content abcjs
   // hits a structural minimum width quickly, so staffwidth-modulation in
@@ -581,12 +577,20 @@ export function NotationRenderer({
   // segment renders notes with no lyrics underneath. Fix: force
   // baseSubdivisions=2 on narrow screens so music is EXPLICITLY split at
   // barlines, then proportionally distribute the w: line across sub-staves.
-  const baseSubdivisions =
-    !chromeless && viewportW < 480
-      ? 2
-      : chromeless && viewportW < 1280
-      ? 2
-      : 1
+  //
+  // 260716: the chromeless (<1280) branch of this forced-split rule is
+  // REMOVED. The design doc this rule cited (mobile-psalm-display-design.md
+  // §Body) actually specifies "4 staff systems like the reference
+  // screenshot" for a CM tune — i.e. ONE system per phrase, matching the
+  // phrase count. Forcing every phrase to split in half doubled that to 8
+  // systems, which is what the doc was trying to AVOID, not achieve. Tunes
+  // WITH DB melisma_positions already bypass this code entirely (separate
+  // branch above, never subdivides) and render cleanly at 1-system-per-phrase
+  // on mobile — proving the underlying abcjs wrap concern this rule guards
+  // against is not actually triggered by real CM/LM/SM phrase widths at
+  // mobile staffwidth. Verified broadly across meters/tunes with and without
+  // melisma data (see 260715-s7b SUMMARY) before removing.
+  const baseSubdivisions = !chromeless && viewportW < 480 ? 2 : 1
   const extraSubdivisions = chromeless
     ? baseSize >= 28
       ? 2
