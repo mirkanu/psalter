@@ -78,11 +78,11 @@ Plans:
 
 Plans:
 **Wave 0**
-- [ ] 04.9.15-01-PLAN.md — Playwright diagnostic: confirm clef/key SVG selector (item a) + measure non-last-row under-fill (item d) before the fixes [BLOCKING]
+- [x] 04.9.15-01-PLAN.md — Playwright diagnostic: confirm clef/key SVG selector (item a) + measure non-last-row under-fill (item d) before the fixes [BLOCKING]
 
 **Wave 1** *(depends on Wave 0)*
-- [ ] 04.9.15-02-PLAN.md — Item (b): decouple A+/A− to lyric-only via INLINE_STAFF_NOTATION_SCALE; step 2 / floor 8 / soft-40 / hard-120
-- [ ] 04.9.15-03-PLAN.md — Item (c): glue verse-number digit onto first syllable of inline-Staff w: lines
+- [x] 04.9.15-02-PLAN.md — Item (b): decouple A+/A− to lyric-only via INLINE_STAFF_NOTATION_SCALE; step 2 / floor 8 / soft-40 / hard-120
+- [x] 04.9.15-03-PLAN.md — Item (c): glue verse-number digit onto first syllable of inline-Staff w: lines
 
 **Wave 2** *(depends on Wave 0 + Plan 02)*
 - [ ] 04.9.15-04-PLAN.md — Item (e): explicit-'approved' gate on inline Staff (data-layer status + GearPopover disable + navigation fallback toast)
