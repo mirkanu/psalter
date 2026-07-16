@@ -646,6 +646,19 @@ Plans:
 **Wave 4** *(depends on Wave 1 + Wave 2 + Wave 3)*
 - [ ] 04.9.12-04-PLAN.md — Replace embedded-w branch in NotationRenderer with positions-based branch; thread melismaPositions from DB; Playwright UAT + human checkpoint
 
+### Phase 4.9.15 (INSERTED): Mobile Inline Staff Optimization
+**Goal:** Optimise the mobile inline staff view surfaced from exploration of screenshots — shrink repeated clef/key-signature blocks on wrapped rows, constrain font-size buttons to lyrics only, add verse numbers with correct capitalisation, fix row-stretch whitespace, and gate staff-inline behind explicit tune approval.
+**Requirements**: TBD (to be derived during /gsd-discuss-phase)
+**Depends on:** Phase 4.9.14 (inline solfege abc rendering + approval gate groundwork)
+**Plans:** TBD
+
+Scope:
+  (a) Shrink (not hide) the repeated clef/key-signature block at the start of every wrapped row — abcjs has no reliable native option to suppress it on continuation rows (buggy under `wrap: true` per abcjs GitHub #437), so reduce its rendered size instead of hiding it after row 1
+  (b) A+/A- buttons control lyric font size only (not staff notation size); decrease is unconstrained; increase scales up until it would break the existing one-phrase-per-line/single-screen-fit rule, then that rule may be relaxed as a last resort
+  (c) Add verse numbers to inline staff view, matching how they display in lyrics-only and split-leaf views; also fix verse-initial letters not being capitalised (separate bug, same area)
+  (d) Fix row-stretch/justification bug causing wasted whitespace on non-last rows (confirmed on rows 1 and 2, not just last-row underfill)
+  (e) Gate staff-inline abc view behind explicit `'approved'` status in `tuneMelismaDecisions` (unmarked/`'not_approved'` tunes are NOT enough — only explicit `'approved'` unlocks abc staff-inline): gray out the Staff-inline gear menu option for non-approved tunes; if reached anyway (e.g. via next/prev psalm navigation), fall back to JPEG split-leaf (same fallback already used for non-approved solfège) with messaging directing the user to Settings to pick a different view
+
 ### Phase 4.12: Explore Page Rebuild
 **Goal**: Rebuild /explore to match psalter.cprc.co.uk across all 6 sections — migrate missing schema fields, fetch new Airtable data, and redesign the page as a single scrollable layout with anchor sections. Users can browse psalms by theme, find NT quotations, explore Nave's topics with sub-topic drill-down, filter by author with historical metadata, and look up Heidelberg Catechism connections.
 **Requirements**: EXPLORE-01, EXPLORE-02, EXPLORE-03, EXPLORE-04, EXPLORE-05, EXPLORE-06
