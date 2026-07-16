@@ -122,6 +122,14 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 
 - [x] **RENDER-08**: Staff view renders every metrical line on its own sub-staff with words aligned to every note position (no trailing empty notes). All CM/LM/SM tunes are migrated to carry 3 `% PHRASE_BREAK` markers (DCM/DLM/DSM carry 7); `phrasesForMeter` returns 4 for CM/LM/SM/8.7.8.7/7.6.7.6 and 8 for DCM/DLM/DSM; `splitMusicIntoSubLines` defensively filters bare-rest pseudo-bars (z2 trailing rest bug). Verified across all 150 psalms via Playwright sweep. — Verified 04.9.10: 150/150 pass post-Path-NH re-annotation (final clean run 2026-05-29T17:41Z).
 
+### Mobile Inline Staff Optimization (Phase 4.9.15)
+
+- [ ] **MOBILE-04**: The repeated clef/key-signature block shrinks to 60% of row-1 size on every wrapped row (row 2+) in the mobile inline Staff view; row 1 stays full size.
+- [ ] **MOBILE-05**: A+/A− buttons control inline-Staff lyric font size only (not staff notation scale); range 8–120px, step 2px, with 40px as a soft threshold beyond which the one-phrase-per-row/single-screen-fit rule may be relaxed.
+- [ ] **MOBILE-06**: Verse numbers appear in the inline Staff view's `w:` lyric lines as a plain digit glued to the first syllable (e.g. "1Before"), matching the existing legacy-blob convention.
+- [ ] **MOBILE-07**: Non-last rows in the inline Staff view fill available width with no wasted whitespace (row-stretch/justification bug fixed for rows 1 and 2, not just the last row).
+- [ ] **MOBILE-08**: The inline Staff view is gated behind `tuneMelismaDecisions.status === 'approved'`; the Gear menu's Staff-inline option is grayed out for non-approved tunes, and JPEG split-leaf is shown with a toast if a non-approved tune is reached via navigation.
+
 ### Footer & Feedback (Phase 05.2)
 
 - [x] **FOOT-01**: A site footer is present on every page (public and authenticated); it contains: About link, Copyright link, Feedback link, and "Made by GSD Labs" linking to gsdlabs.dev
@@ -249,3 +257,8 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 | RENDER-06 | Phase 4.9.6: Psalter Alignment Implementation | Pending |
 | RENDER-07 | Phase 4.9.7: Staff-View Metrical-Line Hotfix | Complete |
 | RENDER-08 | Phase 4.9.8: Staff Display Word Alignment Fix | Complete |
+| MOBILE-04 | Phase 4.9.15: Mobile Inline Staff Optimization | Pending |
+| MOBILE-05 | Phase 4.9.15: Mobile Inline Staff Optimization | Pending |
+| MOBILE-06 | Phase 4.9.15: Mobile Inline Staff Optimization | Pending |
+| MOBILE-07 | Phase 4.9.15: Mobile Inline Staff Optimization | Pending |
+| MOBILE-08 | Phase 4.9.15: Mobile Inline Staff Optimization | Pending |

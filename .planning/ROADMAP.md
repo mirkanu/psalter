@@ -71,7 +71,7 @@ Plans:
   (c) Add verse numbers to inline staff view, matching how they display in lyrics-only and split-leaf views; also fix verse-initial letters not being capitalised (separate bug, same area)
   (d) Fix row-stretch/justification bug causing wasted whitespace on non-last rows (confirmed on rows 1 and 2, not just last-row underfill)
   (e) Gate staff-inline abc view behind explicit `'approved'` status in `tuneMelismaDecisions` (unmarked/`'not_approved'` tunes are NOT enough — only explicit `'approved'` unlocks abc staff-inline): gray out the Staff-inline gear menu option for non-approved tunes; if reached anyway (e.g. via next/prev psalm navigation), fall back to JPEG split-leaf (same fallback already used for non-approved solfège) with messaging directing the user to Settings to pick a different view
-**Requirements:** TBD (to be derived during /gsd-discuss-phase)
+**Requirements:** MOBILE-04, MOBILE-05, MOBILE-06, MOBILE-07, MOBILE-08
 **Depends on:** Phase 4.9.14 (inline solfege abc rendering + approval gate groundwork)
 
 ### Milestone 2 — Precentor Portal & Polish
@@ -646,9 +646,9 @@ Plans:
 **Wave 4** *(depends on Wave 1 + Wave 2 + Wave 3)*
 - [ ] 04.9.12-04-PLAN.md — Replace embedded-w branch in NotationRenderer with positions-based branch; thread melismaPositions from DB; Playwright UAT + human checkpoint
 
-### Phase 4.9.15 (INSERTED): Mobile Inline Staff Optimization
+### Phase 4.9.15: Mobile Inline Staff Optimization (INSERTED)
 **Goal:** Optimise the mobile inline staff view surfaced from exploration of screenshots — shrink repeated clef/key-signature blocks on wrapped rows, constrain font-size buttons to lyrics only, add verse numbers with correct capitalisation, fix row-stretch whitespace, and gate staff-inline behind explicit tune approval.
-**Requirements**: TBD (to be derived during /gsd-discuss-phase)
+**Requirements**: MOBILE-04, MOBILE-05, MOBILE-06, MOBILE-07, MOBILE-08
 **Depends on:** Phase 4.9.14 (inline solfege abc rendering + approval gate groundwork)
 **Plans:** TBD
 
