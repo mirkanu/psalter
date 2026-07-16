@@ -105,10 +105,16 @@ export function mapCycleToPhraseSyllableLines(
     const start = p * linesPerPhrase
     const slice = flatLines.slice(start, start + linesPerPhrase)
     for (const l of slice) {
-      const text =
+      const syllabified =
         l.syllables && l.syllables.length > 0
           ? l.syllables.join(' ')
           : syllabifyForAbc(l.text)
+      // MOBILE-06 / locked decision 3: glue the plain Bible-verse digit to the first
+      // syllable (no markup, no separator) — matches serialiseLyrics. A w: line is
+      // plain ABC text abcjs renders into its own SVG <text> nodes, so raised/small
+      // styled digits are not achievable here. Prefixing keeps the token count
+      // identical (1 token : 1 note).
+      const text = l.bibleVerseRef !== undefined ? `${l.bibleVerseRef}${syllabified}` : syllabified
       result[p]!.push(text)
     }
   }
