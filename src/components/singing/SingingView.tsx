@@ -120,15 +120,25 @@ export function SingingView({
   const showLyrics = !!lyrics
   const [viewMode, setViewMode] = useState<ViewMode>('staff')
   const [baseSize, setBaseSize] = useState<number>(14)
+  // 04.9.15-02: notationBaseSize is a SECOND, independent size state driving
+  // ONLY the chromeless inline-Staff abcjs scale (via computeNotationScale).
+  // It is seeded at the pre-existing inline-Staff mobile default (13, matches
+  // NotationRenderer's MOBILE_DEFAULT_SIZE_CHROMELESS) and is driven EXCLUSIVELY
+  // by the viewport-resize proportional-zoom heuristic below — never by A+/A−
+  // button presses. `baseSize` (above) is now lyric-only: driven ONLY by A+/A−.
+  const [notationBaseSize, setNotationBaseSize] = useState<number>(13)
   const [mounted, setMounted] = useState(false)
 
   // 04.9.4-03: Proportional zoom heuristic — refs avoid stale closures in the
   // debounced resize handler. `referenceWidthRef` tracks the viewport width at
   // the moment of the last manual A+/A− override (or initial mount).
+  // 04.9.15-02: this reference width now belongs to the NOTATION heuristic
+  // (notationBaseSize), not the lyric baseSize — see handleBaseSizeChange below.
   const referenceWidthRef = useRef<number>(
     typeof window !== 'undefined' ? window.innerWidth : 375
   )
   const baseSizeRef = useRef<number>(baseSize)
+  const notationBaseSizeRef = useRef<number>(notationBaseSize)
 
   // Hydrate from localStorage AFTER first paint to avoid SSR mismatch — this
   // component itself is server-rendered (the notation child is dynamic ssr:false).
@@ -161,6 +171,11 @@ export function SingingView({
   useEffect(() => {
     baseSizeRef.current = baseSize
   }, [baseSize])
+  // 04.9.15-02: Keep notationBaseSizeRef in sync — mirrors the baseSizeRef
+  // pattern above, but for the notation-only viewport-resize heuristic.
+  useEffect(() => {
+    notationBaseSizeRef.current = notationBaseSize
+  }, [notationBaseSize])
 
   // When switching to lyrics-only, auto-close the mini-bar and reset playback.
   // Split-leaf and solfege modes still use the abcjs synth, so the mini-bar stays.
@@ -177,8 +192,12 @@ export function SingingView({
 
   // 04.9.4-03: Proportional zoom heuristic.
   // On viewport width change (resize / orientation flip / visualViewport),
-  // recompute baseSize as clamp(current * newWidth / refWidth, 8, 40).
+  // recompute notationBaseSize as clamp(current * newWidth / refWidth, 8, 40).
   // Debounced 150ms; ignores deltas < 8px to suppress mobile URL-bar churn.
+  // 04.9.15-02: REPURPOSED from driving `baseSize` to driving `notationBaseSize`
+  // — the lyric-only baseSize is no longer touched by viewport resize, only by
+  // A+/A−. This keeps the inline-Staff notation rescaling on resize/orientation
+  // change exactly as before, decoupled only from the A+/A− lyric control.
   useEffect(() => {
     if (typeof window === 'undefined') return
     // Replace the SSR fallback (375) with the real viewport width post-hydration.
@@ -195,13 +214,13 @@ export function SingingView({
           return
         }
         if (Math.abs(newWidth - refWidth) < 8) return
-        const current = baseSizeRef.current
+        const current = notationBaseSizeRef.current
         const computed = current * (newWidth / refWidth)
         const clamped = Math.max(8, Math.min(40, computed))
         const rounded = Math.round(clamped)
         referenceWidthRef.current = newWidth
         if (rounded !== current) {
-          setBaseSize(rounded)
+          setNotationBaseSize(rounded)
         }
       }, 150)
     }
@@ -216,12 +235,11 @@ export function SingingView({
     }
   }, [])
 
-  // 04.9.4-03: Manual A+/A− override resets the reference width so subsequent
-  // viewport changes scale from the new reference.
+  // 04.9.15-02: A+/A− now drives ONLY the lyric-only baseSize. It no longer
+  // resets referenceWidthRef — that ref belongs exclusively to the
+  // notationBaseSize resize heuristic above, and a lyric-only A+/A− press
+  // must not perturb the notation scale's resize reference.
   const handleBaseSizeChange = useCallback((newSize: number) => {
-    if (typeof window !== 'undefined') {
-      referenceWidthRef.current = window.innerWidth
-    }
     setBaseSize(newSize)
   }, [])
 
@@ -496,6 +514,7 @@ export function SingingView({
             onViewModeChange={setViewMode}
             baseSize={baseSize}
             onBaseSizeChange={handleBaseSizeChange}
+            notationBaseSize={notationBaseSize}
             chromeless={true}
             onStanzaChange={handleStanzaChange}
             stanzaPage={stanzaPage}

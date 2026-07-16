@@ -38,6 +38,7 @@ import { splitWLineByNoteCounts } from './splitWLineByNoteCounts'
 import { forceMatchMeterShape } from '@/lib/force-match-meter-shape'
 import { expectedSyllablesByLine } from '@/lib/meter-syllable-shape'
 import { detectRepeatedPitchContinuations } from '@/lib/detect-repeated-pitch-continuations'
+import { computeNotationScale } from '@/lib/notation-scale'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -78,6 +79,12 @@ export interface NotationRendererProps {
    */
   baseSize?: number
   onBaseSizeChange?: (size: number) => void
+  /**
+   * Viewport-resize-driven notation size for chromeless inline Staff (SingingView's
+   * existing 04.9.4-03 proportional-zoom heuristic), independent of the lyric-only
+   * `baseSize` (which A+/A− drives). Ignored for all other view modes/callers.
+   */
+  notationBaseSize?: number
   /**
    * When true, the internal controlBar (size + view-mode + pagination +
    * fullscreen-enter button) is NOT rendered. Parent is expected to
@@ -135,9 +142,9 @@ export interface NotationRendererProps {
 export type ViewMode = 'staff' | 'solfege' | 'staff-split' | 'solfege-split' | 'lyrics'
 type BaseSize = number
 
-const MIN_SIZE = 4
-const MAX_SIZE = 120
-const SIZE_STEP = 2
+export const MIN_SIZE = 4
+export const MAX_SIZE = 120
+export const SIZE_STEP = 2
 const DEFAULT_SIZE: BaseSize = 14
 /** Larger default on narrow portrait screens so phrases naturally wrap to 4 rows. */
 const MOBILE_DEFAULT_SIZE: BaseSize = 24
@@ -225,6 +232,7 @@ export function NotationRenderer({
   viewMode: viewModeProp,
   baseSize: baseSizeProp,
   onBaseSizeChange,
+  notationBaseSize,
   chromeless = false,
   onStanzaChange,
   stanzaPage,
@@ -491,9 +499,7 @@ export function NotationRenderer({
   // the notation itself renders at a fixed scale so the staff never grows
   // or shrinks when the user zooms lyrics text. Non-split modes keep the
   // original coupled behaviour (scale tracks baseSize) — unchanged.
-  const isSplitForScale = isSplitMode(viewMode)
-  const SPLIT_LEAF_NOTATION_SCALE = 1
-  const scale = isSplitForScale ? SPLIT_LEAF_NOTATION_SCALE : baseSize / 14
+  const scale = computeNotationScale({ viewMode, chromeless, baseSize, notationBaseSize })
 
   // Chromeless (singing view) wants ≥3 systems on mobile, ≥4 on tablet+
   // (UI-SPEC §Body / design-notes "4 systems"). Force abcjs to wrap by

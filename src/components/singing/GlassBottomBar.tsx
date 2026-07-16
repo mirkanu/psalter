@@ -2,6 +2,7 @@
 import type { ReactNode } from 'react'
 import { Settings, Play, Pause, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { MAX_SIZE, SIZE_STEP } from '@/components/notation/NotationRenderer'
 
 interface Props {
   baseSize: number
@@ -67,16 +68,18 @@ export function GlassBottomBar({
           <button
             type="button"
             aria-label="Decrease size"
-            onClick={() => onBaseSizeChange(Math.max(8, baseSize - 1))}
-            className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75"
+            onClick={() => onBaseSizeChange(Math.max(8, baseSize - SIZE_STEP))}
+            disabled={baseSize <= 8}
+            className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
           >
             A−
           </button>
           <button
             type="button"
             aria-label="Increase size"
-            onClick={() => onBaseSizeChange(Math.min(40, baseSize + 1))}
-            className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75"
+            onClick={() => onBaseSizeChange(Math.min(MAX_SIZE, baseSize + SIZE_STEP))}
+            disabled={baseSize >= MAX_SIZE}
+            className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
           >
             A+
           </button>
