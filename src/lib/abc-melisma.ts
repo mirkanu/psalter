@@ -11,6 +11,7 @@
 import { getPassingPositions } from './solfege-parser'
 import { syllabifyForAbc } from './lyrics'
 import { phrasesForMeter } from './abc-phrase-meter-map'
+import { detectRepeatedPitchContinuations } from './detect-repeated-pitch-continuations'
 
 // Re-export NoteEvent type for consumers
 export type { NoteEvent } from './solfege-parser'
@@ -137,6 +138,14 @@ function syllabicCountToRawIndex(
  * @param syllables     Space-separated syllable text for this phrase portion
  *                      (already a single metrical line, e.g. "The Lord's my shep- herd")
  * @param warnings      Mutable array for diagnostic messages (passed in from caller)
+ * @param musicForPhrase Optional ABC music for this phrase (e.g. "b2b2b2a4 | b2c'4f2 | g6").
+ *                      When provided, repeated-pitch note runs (the psalm-singing
+ *                      "reciting note" convention — see
+ *                      lyric-to-note-alignment.md §4 Mechanism 1) are preferred as
+ *                      passing/continuation candidates over the raw shortest-duration
+ *                      heuristic below, which otherwise can pick the FIRST note of a
+ *                      repeated run (needs its own syllable) instead of a later one
+ *                      (the true continuation).
  */
 export function buildWLineFromSolfa(
   soprano: string,
@@ -146,6 +155,7 @@ export function buildWLineFromSolfa(
   meter: string,
   syllables: string,
   warnings: string[],
+  musicForPhrase?: string,
 ): string {
   // Step 1: Get total event count. Passing flags from dot-pair detection are NOT
   // used for syllabic-slot assignment — solfège dot-pairs indicate rhythm (dotted
@@ -186,19 +196,40 @@ export function buildWLineFromSolfa(
   // shortest notes as passing until counts balance
   let adjustedPassings = new Array(noteCount).fill(false) as boolean[]
   if (syllabicCount > sylTokens.length) {
-    const events = getDurationEvents(soprano, phraseStart, phraseEnd)
-    // Build array of {index, duration} for non-passing positions, sort ascending duration
-    const candidates = events
-      .map((e, i) => ({ i, duration: e.duration, passing: adjustedPassings[i] }))
-      .filter((c) => !c.passing)
-      .sort((a, b) => a.duration - b.duration) // shortest first
-
     let surplus = syllabicCount - sylTokens.length
-    // Convert shortest notes to passing, later indices preferred for ties
-    for (const c of candidates) {
-      if (surplus <= 0) break
-      adjustedPassings[c.i] = true
-      surplus--
+
+    // Prefer repeated-pitch note runs (the "reciting note" / "point"
+    // convention) as passing candidates before falling back to the
+    // shortest-duration heuristic. The duration heuristic alone cannot tell
+    // a repeated pitch from any other short note, so on a tied-duration run
+    // (e.g. three quarter notes on the same pitch) it picks the run's FIRST
+    // note — which needs its own syllable — instead of a later one, which is
+    // the actual continuation.
+    if (musicForPhrase) {
+      const preferred = detectRepeatedPitchContinuations(musicForPhrase, surplus)
+      for (const idx of preferred) {
+        if (surplus <= 0) break
+        if (idx < noteCount && !adjustedPassings[idx]) {
+          adjustedPassings[idx] = true
+          surplus--
+        }
+      }
+    }
+
+    if (surplus > 0) {
+      const events = getDurationEvents(soprano, phraseStart, phraseEnd)
+      // Build array of {index, duration} for non-passing positions, sort ascending duration
+      const candidates = events
+        .map((e, i) => ({ i, duration: e.duration, passing: adjustedPassings[i] }))
+        .filter((c) => !c.passing)
+        .sort((a, b) => a.duration - b.duration) // shortest first
+
+      // Convert shortest notes to passing, later indices preferred for ties
+      for (const c of candidates) {
+        if (surplus <= 0) break
+        adjustedPassings[c.i] = true
+        surplus--
+      }
     }
     syllabicCount = adjustedPassings.filter((v) => !v).length
   }

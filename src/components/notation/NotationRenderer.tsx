@@ -841,6 +841,7 @@ export function NotationRenderer({
           tuneMeter,
           text,
           warnings,
+          musicForPhrase,
         )
       } else {
         raw = syllabifyForAbc(text)
