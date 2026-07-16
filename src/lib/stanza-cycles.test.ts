@@ -4,6 +4,7 @@ import {
   mapCycleToPhraseSyllableLines,
 } from './stanza-cycles'
 import type { Stanza } from './lyrics-structured'
+import { syllabifyForAbc } from './lyrics'
 
 function stanza(idx: number, ...lines: string[]): Stanza {
   return { index: idx, lines: lines.map((text) => ({ text })) }
@@ -159,6 +160,63 @@ describe('mapCycleToPhraseSyllableLines — RENDER-07 all metrical lines render 
     for (const m of ['X1', 'X2', 'X3', 'X4', 'X5']) {
       expect(concatenated).toContain(m)
     }
+  })
+})
+
+describe('mapCycleToPhraseSyllableLines — MOBILE-06 verse-number digit-glue', () => {
+  it('glues bibleVerseRef digit to the front of the first syllable (no separator)', () => {
+    const stanzaWithRef: Stanza = {
+      index: 0,
+      lines: [{ text: 'Before the mountains', bibleVerseRef: 1 }],
+    }
+    const result = mapCycleToPhraseSyllableLines([stanzaWithRef], 1)
+    const output = result[0]![0]!
+    expect(output.startsWith('1')).toBe(true)
+    const unprefixed = syllabifyForAbc('Before the mountains')
+    expect(output.slice(1)).toBe(unprefixed)
+  })
+
+  it('leaves lines without bibleVerseRef unchanged (no leading digit)', () => {
+    const stanzaNoRef: Stanza = {
+      index: 0,
+      lines: [{ text: 'plain line' }],
+    }
+    const result = mapCycleToPhraseSyllableLines([stanzaNoRef], 1)
+    const output = result[0]![0]!
+    expect(output).toBe(syllabifyForAbc('plain line'))
+    expect(/^\d/.test(output)).toBe(false)
+  })
+
+  it('applies the digit-glue to the Line.syllables hand-override branch too', () => {
+    const overridden: Stanza = {
+      index: 0,
+      lines: [{ text: 'x', bibleVerseRef: 5, syllables: ['be-au', 'ti-ful'] }],
+    }
+    const result = mapCycleToPhraseSyllableLines([overridden], 1)
+    expect(result[0]![0]).toBe('5be-au ti-ful')
+  })
+
+  it('preserves token count when gluing the digit (no standalone digit token)', () => {
+    const stanzaWithRef: Stanza = {
+      index: 0,
+      lines: [{ text: 'Before the mountains', bibleVerseRef: 1 }],
+    }
+    const withRef = mapCycleToPhraseSyllableLines([stanzaWithRef], 1)[0]![0]!
+    const stanzaNoRef: Stanza = {
+      index: 0,
+      lines: [{ text: 'Before the mountains' }],
+    }
+    const withoutRef = mapCycleToPhraseSyllableLines([stanzaNoRef], 1)[0]![0]!
+    expect(withRef.split(' ').length).toBe(withoutRef.split(' ').length)
+  })
+
+  it('renders bibleVerseRef 0 (falsy but defined) as a leading "0"', () => {
+    const stanzaZeroRef: Stanza = {
+      index: 0,
+      lines: [{ text: 'zero verse', bibleVerseRef: 0 }],
+    }
+    const result = mapCycleToPhraseSyllableLines([stanzaZeroRef], 1)
+    expect(result[0]![0]!.startsWith('0')).toBe(true)
   })
 })
 
