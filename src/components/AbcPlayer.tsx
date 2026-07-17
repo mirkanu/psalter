@@ -62,6 +62,102 @@ function injectCompactSpacingDirectives(abc: string): string {
   return before.concat(DIRECTIVES, after).join('\n')
 }
 
+const CLEF_KEY_SHRINK_SCALE = 0.6
+
+/**
+ * MOBILE-04/MOBILE-07 (Phase 04.9.15 Plan 05, revised after human checkpoint
+ * feedback): shrinks the repeated clef + key-signature glyph group on EVERY
+ * row of mobile inline (non-split, chromeless) Staff — including row 1, per
+ * explicit user override of the original "row 1 stays full size" plan text
+ * — and reflows the freed horizontal space into the following notation/
+ * lyrics. Runs as a post-render DOM pass rather than a static CSS rule
+ * because CSS alone cannot solve either of the two problems the human found:
+ *
+ * 1. Vertical alignment: a static `transform-origin: left center` pivots
+ *    around each element's OWN bounding-box center, but the clef and
+ *    key-signature glyphs are NOT symmetrically positioned around the
+ *    staff's vertical center (confirmed live: for one real tune, the
+ *    key-signature's own bbox center sat ~24% of its own height ABOVE the
+ *    staff's actual center — a fixed CSS percentage cannot account for this
+ *    per-key-signature variance, since different keys occupy different
+ *    staff lines/spaces). This function measures the ACTUAL staff position
+ *    per row and computes a transform-origin Y-percentage relative to EACH
+ *    element's own bbox that lands exactly on the staff's vertical center,
+ *    so the scale-down never shifts the glyph off the staff regardless of
+ *    clef/key shape.
+ * 2. Horizontal space reclaim: a CSS `transform: scale()` only shrinks the
+ *    glyph visually — it does not change abcjs's own layout math, so the
+ *    following notes/lyrics stay at their original x-position, leaving a
+ *    gap where the glyph used to be. This function computes exactly how
+ *    much width was freed (scale pivots from the LEFT edge, so only the
+ *    right edge moves) and translates every subsequent sibling in that row
+ *    (notes, bars, time signature, lyrics, ties/slurs — everything except
+ *    the 5 staff lines, which must stay fixed since they already span the
+ *    full row width) left by that amount, so the reclaimed space is
+ *    actually used instead of sitting empty.
+ *
+ * Idempotent / safe to call on every render: the caller always tears down
+ * and rebuilds the SVG from scratch first (`el.innerHTML = ''`), so there is
+ * no stale transform state to reset.
+ */
+function applyClefKeySignatureShrink(containerEl: HTMLElement): void {
+  const rows = containerEl.querySelectorAll<SVGGElement>('.abcjs-staff-wrapper')
+  rows.forEach((row) => {
+    const staffEl = row.querySelector<SVGGraphicsElement>('.abcjs-staff')
+    if (!staffEl) return
+    const staffBB = staffEl.getBBox()
+    if (staffBB.height === 0) return
+    const staffCenterY = staffBB.y + staffBB.height / 2
+
+    const shrinkEls = Array.from(
+      row.querySelectorAll<SVGGraphicsElement>('.abcjs-clef, .abcjs-key-signature'),
+    )
+    if (shrinkEls.length === 0) return
+
+    let originalRightEdge = -Infinity
+    let shrunkRightEdge = -Infinity
+    for (const el of shrinkEls) {
+      const bb = el.getBBox()
+      if (bb.width === 0 || bb.height === 0) continue
+      // Percentage (relative to THIS element's own bbox height) at which the
+      // staff's vertical center falls — this is the correct transform-origin
+      // Y so scaling never shifts the glyph's staff-relative position,
+      // regardless of how the specific clef/key-signature glyph is shaped.
+      const originYPercent = ((staffCenterY - bb.y) / bb.height) * 100
+      // CRITICAL: percentage-based transform-origin on an SVG child element
+      // defaults to being relative to the NEAREST SVG VIEWPORT (the entire
+      // multi-row tune's viewBox — hundreds of units tall), NOT this
+      // element's own ~50-unit-tall bounding box, unless `transform-box:
+      // fill-box` is set explicitly. Without it, "left" / "52%" resolve
+      // against the whole SVG's box, throwing the glyph wildly off its
+      // intended position (confirmed live: clef rendered ~60px away from the
+      // staff instead of on it). fill-box makes transform-origin relative to
+      // THIS element's own getBBox(), matching the math above.
+      el.style.transformBox = 'fill-box'
+      el.style.transformOrigin = `left ${originYPercent}%`
+      el.style.transform = `scale(${CLEF_KEY_SHRINK_SCALE})`
+      originalRightEdge = Math.max(originalRightEdge, bb.x + bb.width)
+      // transform-origin's X is "left" (0%), so the left edge (bb.x) is
+      // fixed by the scale and only the right edge moves inward.
+      shrunkRightEdge = Math.max(shrunkRightEdge, bb.x + bb.width * CLEF_KEY_SHRINK_SCALE)
+    }
+    if (originalRightEdge === -Infinity) return
+    const freedSpace = originalRightEdge - shrunkRightEdge
+    if (freedSpace <= 0) return
+
+    // Shift everything else in this row left into the reclaimed space —
+    // except the 5 staff lines themselves (already span the full row width
+    // and must stay put) and the clef/key elements we just transformed.
+    for (const child of Array.from(row.children)) {
+      if (!(child instanceof SVGGraphicsElement)) continue
+      if (child.classList.contains('abcjs-staff')) continue
+      if (child.classList.contains('abcjs-clef')) continue
+      if (child.classList.contains('abcjs-key-signature')) continue
+      child.style.transform = `translateX(-${freedSpace}px)`
+    }
+  })
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface AbcPlayerProps {
@@ -472,6 +568,14 @@ export default function AbcPlayer({
         expandToWidest,
       })
       visualObjRef.current = visualObjs?.[0] ?? null
+      // MOBILE-04 (revised): shrink the clef/key-signature glyph group on
+      // every row — including row 1 — and reflow the freed space into the
+      // following notation/lyrics. Gated to the same staffWidthFactor < 1
+      // signal as expandToWidest above (chromeless inline non-split Staff
+      // only); split-leaf and desktop non-chromeless are untouched.
+      if (staffWidthFactor < 1) {
+        applyClefKeySignatureShrink(el)
+      }
     } catch (e) {
       console.error('abcjs render failed:', e)
       setAudioError('Could not render notation.')
