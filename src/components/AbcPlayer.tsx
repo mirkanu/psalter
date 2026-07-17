@@ -422,30 +422,33 @@ export default function AbcPlayer({
       //   bigger). A+ visibly grows the staff.
       // - Smaller requested size → wider staffwidth → fewer wraps → shorter
       //   SVG.
-      // MOBILE-07 (Phase 04.9.15 Plan 05): chromeless inline (non-split) Staff
-      // is the ONLY caller that ever passes staffWidthFactor < 1 (split-leaf
-      // was already fixed to a permanent 1 by 260712-kov; non-chromeless
-      // desktop callers default to 1 too) — NotationRenderer.tsx narrows it to
-      // 0.55/0.85 to force multiple systems under the pre-04.9.12 wrap
-      // mechanism. Since SingingView always supplies melismaPositions,
-      // buildUnifiedAbc's melisma-positions branch already emits exactly one
-      // already-fixed music line per phrase, so system count no longer
-      // depends on that narrowing (see NotationRenderer.tsx's 260712-kov
-      // comment) — it now only compresses note spacing. abcjs's own
-      // non-last-line auto-stretch (calcHorizontalSpacing) justifies each row
-      // to THIS narrowed target, not the actual rendered container width;
-      // once the responsive SVG viewBox scales back up to fill the container,
-      // rows whose natural content is close to the narrowed target look
-      // visibly under-filled relative to a wider row that overflowed it
-      // (confirmed live: tests/diagnostics/inline-staff-clef-stretch-diff.mjs
-      // — worst fill ratio 0.807 on psalm-78 before this fix). Fix: for this
-      // narrowed-factor case, target the FULL container width for
-      // justification purposes instead — mirrors the 260712-kov split-leaf
-      // fix. Split-leaf (factor already 1) and desktop non-chromeless
-      // (default 1) are untouched since this only overrides factor < 1.
-      const stretchStaffWidthFactor = staffWidthFactor < 1 ? 1 : staffWidthFactor
-      const targetStaffwidth = (containerWidth * stretchStaffWidthFactor) / effectiveScale
+      const targetStaffwidth = (containerWidth * staffWidthFactor) / effectiveScale
       const effectiveStaffWidth = Math.max(120, Math.floor(targetStaffwidth))
+      // MOBILE-07 (Phase 04.9.15 Plan 05): live Playwright measurement
+      // (tests/diagnostics/inline-staff-clef-stretch-diff.mjs) proved the
+      // under-fill is NOT abcjs failing to auto-stretch non-last rows to our
+      // requested `staffwidth` target — it's that different rows have
+      // genuinely different NATURAL minimum content width (note count/lyric
+      // length varies per phrase), and every row's natural minimum already
+      // EXCEEDS whatever `effectiveStaffWidth` we can reasonably request
+      // (confirmed via direct SVG getBBox() inspection: row natural widths
+      // 408-450 abcjs-units vs. our ~212-369 unit target in both the old
+      // narrowed-factor case AND a wider factor=1 target — neither reaches
+      // the rows' natural floor, so calcHorizontalSpacing's compression
+      // bottoms out at each row's own minimum instead of stretching, and the
+      // narrower rows (lower natural minimum) render visibly smaller once
+      // the shared viewBox scales everything down to the container width).
+      // abcjs's own `expandToWidest` engraver option (EngraverController,
+      // abcjs-basic.js) is the correct built-in fix for exactly this: when a
+      // row needs more than the initial target, it reruns layout for EVERY
+      // row using that wider natural width as the new shared target, so all
+      // non-last rows converge to the SAME width instead of each compressing
+      // to its own floor. Gated to the chromeless inline (non-split) case via
+      // the same staffWidthFactor < 1 signal used above (split-leaf's factor
+      // is already 1 per 260712-kov; non-chromeless desktop defaults to 1) —
+      // no new abcjs `format` key invented, this is an existing top-level
+      // renderAbc option.
+      const expandToWidest = staffWidthFactor < 1
       // 260712-szw: mobile split-leaf only — compact vertical spacing via
       // %% ABC directive prepend (see injectCompactSpacingDirectives; abcjs's
       // JS-level `format` option does not honor topmargin/botmargin/
@@ -464,6 +467,9 @@ export default function AbcPlayer({
         // UAT v6 issue #2(a): force every system — including the last — to
         // span the full staffwidth so all lines are visually even-length.
         format: { stretchlast: 1 },
+        // MOBILE-07: see comment above effectiveStaffWidth — lets a row that
+        // naturally needs more than our target re-layout every row to match.
+        expandToWidest,
       })
       visualObjRef.current = visualObjs?.[0] ?? null
     } catch (e) {
