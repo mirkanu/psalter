@@ -72,13 +72,14 @@ const LEADING_GLYPH_SELECTOR = '.abcjs-clef, .abcjs-key-signature, .abcjs-time-s
 
 /**
  * MOBILE-04/MOBILE-07 (Phase 04.9.15 Plan 05, revised after human checkpoint
- * feedback, then extended per a follow-up user request): shrinks the
+ * feedback, then extended twice per follow-up user requests): shrinks the
  * repeated clef + key-signature + time-signature glyph group on EVERY row
  * of mobile inline (non-split, chromeless) Staff — including row 1, per
  * explicit user override of the original "row 1 stays full size" plan text
  * — and reflows the freed horizontal space into the following notation/
  * lyrics. Runs as a post-render DOM pass rather than a static CSS rule
- * because CSS alone cannot solve either of the two problems the human found:
+ * because CSS alone cannot solve any of the three problems found across
+ * checkpoint rounds:
  *
  * 1. Vertical alignment: a static `transform-origin: left center` pivots
  *    around each element's OWN bounding-box center, but these glyphs are
@@ -88,25 +89,41 @@ const LEADING_GLYPH_SELECTOR = '.abcjs-clef, .abcjs-key-signature, .abcjs-time-s
  *    fixed CSS percentage cannot account for this per-glyph variance, since
  *    different keys/clefs occupy different staff lines/spaces). This
  *    function measures the ACTUAL staff position per row and computes a
- *    transform-origin Y-percentage relative to EACH element's own bbox that
- *    lands exactly on the staff's vertical center, so the scale-down never
- *    shifts the glyph off the staff regardless of shape.
+ *    transform-origin Y-percentage relative to the COMBINED group's bbox
+ *    that lands exactly on the staff's vertical center.
  * 2. Horizontal space reclaim: a CSS `transform: scale()` only shrinks the
  *    glyph visually — it does not change abcjs's own layout math, so the
  *    following notes/lyrics stay at their original x-position, leaving a
- *    gap where the glyph used to be. This function computes exactly how
- *    much width was freed (scale pivots from the LEFT edge, so only the
- *    right edge moves) and translates every subsequent sibling in that row
- *    (notes, bars, lyrics, ties/slurs — everything except the 5 staff
- *    lines, which must stay fixed since they already span the full row
- *    width) left by that amount, so the reclaimed space is actually used
- *    instead of sitting empty.
+ *    gap where the glyph used to be.
+ * 3. Inter-glyph gaps (found on a later round): scaling each glyph
+ *    INDEPENDENTLY (each pivoting from its own left edge, as an earlier
+ *    version of this function did) only shrinks each glyph's own footprint
+ *    — the ORIGINAL full-size whitespace BETWEEN glyphs (sized for
+ *    full-size glyphs) is left completely untouched, so the shrunk glyphs
+ *    end up floating in oversized gaps (confirmed live on Psalm 31: an
+ *    11.8px gap between clef and key-signature, and a 17.3px gap between
+ *    key-signature and time-signature, neither of which shrank at all when
+ *    each glyph was scaled independently).
+ *
+ * Fix for all three: wrap ALL the leading glyphs found in a row (whichever
+ * of clef/key-signature/time-signature exist — time-signature is often only
+ * present on row 0) in a single new `<g>` element, and apply ONE scale
+ * transform to that GROUP, pivoting from the group's own combined
+ * bounding-box left edge and the staff's vertical center. Because the gaps
+ * between glyphs are just empty space WITHIN that combined bounding box,
+ * scaling the whole group compresses the gaps by the same factor as the
+ * glyphs themselves — closing them proportionally, not just shrinking each
+ * glyph in isolation. The total freed width (combined group width times
+ * (1 - scale)) is then used to shift every other element in the row (notes,
+ * bars, lyrics — not the 5 staff lines, which already span the full row
+ * width) left by that full amount.
  *
  * Idempotent / safe to call on every render: the caller always tears down
  * and rebuilds the SVG from scratch first (`el.innerHTML = ''`), so there is
- * no stale transform state to reset.
+ * no stale transform state or leftover wrapper `<g>` to reset.
  */
 function applyLeadingGlyphShrink(containerEl: HTMLElement): void {
+  const SVG_NS = 'http://www.w3.org/2000/svg'
   const rows = containerEl.querySelectorAll<SVGGElement>('.abcjs-staff-wrapper')
   rows.forEach((row) => {
     const staffEl = row.querySelector<SVGGraphicsElement>('.abcjs-staff')
@@ -117,50 +134,68 @@ function applyLeadingGlyphShrink(containerEl: HTMLElement): void {
 
     const shrinkEls = Array.from(
       row.querySelectorAll<SVGGraphicsElement>(LEADING_GLYPH_SELECTOR),
-    )
+    ).filter((el) => {
+      const bb = el.getBBox()
+      return bb.width > 0 && bb.height > 0
+    })
     if (shrinkEls.length === 0) return
 
-    let originalRightEdge = -Infinity
-    let shrunkRightEdge = -Infinity
+    // Sort left-to-right so the wrapper group's paint order matches the
+    // original document order regardless of how the selector matched them.
+    shrinkEls.sort((a, b) => a.getBBox().x - b.getBBox().x)
+
+    // Combined bounding box across ALL leading glyphs together — this is
+    // what makes the inter-glyph GAPS shrink along with the glyphs.
+    let groupLeft = Infinity
+    let groupTop = Infinity
+    let groupRight = -Infinity
+    let groupBottom = -Infinity
     for (const el of shrinkEls) {
       const bb = el.getBBox()
-      if (bb.width === 0 || bb.height === 0) continue
-      // Percentage (relative to THIS element's own bbox height) at which the
-      // staff's vertical center falls — this is the correct transform-origin
-      // Y so scaling never shifts the glyph's staff-relative position,
-      // regardless of how the specific clef/key/time glyph is shaped.
-      const originYPercent = ((staffCenterY - bb.y) / bb.height) * 100
-      // CRITICAL: percentage-based transform-origin on an SVG child element
-      // defaults to being relative to the NEAREST SVG VIEWPORT (the entire
-      // multi-row tune's viewBox — hundreds of units tall), NOT this
-      // element's own ~50-unit-tall bounding box, unless `transform-box:
-      // fill-box` is set explicitly. Without it, "left" / "52%" resolve
-      // against the whole SVG's box, throwing the glyph wildly off its
-      // intended position (confirmed live: clef rendered ~60px away from the
-      // staff instead of on it). fill-box makes transform-origin relative to
-      // THIS element's own getBBox(), matching the math above.
-      el.style.transformBox = 'fill-box'
-      el.style.transformOrigin = `left ${originYPercent}%`
-      el.style.transform = `scale(${CLEF_KEY_SHRINK_SCALE})`
-      originalRightEdge = Math.max(originalRightEdge, bb.x + bb.width)
-      // transform-origin's X is "left" (0%), so the left edge (bb.x) is
-      // fixed by the scale and only the right edge moves inward.
-      shrunkRightEdge = Math.max(shrunkRightEdge, bb.x + bb.width * CLEF_KEY_SHRINK_SCALE)
+      groupLeft = Math.min(groupLeft, bb.x)
+      groupTop = Math.min(groupTop, bb.y)
+      groupRight = Math.max(groupRight, bb.x + bb.width)
+      groupBottom = Math.max(groupBottom, bb.y + bb.height)
     }
-    if (originalRightEdge === -Infinity) return
-    const freedSpace = originalRightEdge - shrunkRightEdge
+    const groupWidth = groupRight - groupLeft
+    const groupHeight = groupBottom - groupTop
+    if (groupWidth <= 0 || groupHeight <= 0) return
+
+    const group = document.createElementNS(SVG_NS, 'g') as unknown as SVGGraphicsElement
+    group.setAttribute('class', 'abcjs-leading-glyph-shrink-group')
+    row.insertBefore(group, shrinkEls[0])
+    for (const el of shrinkEls) {
+      group.appendChild(el) // appendChild MOVES el (it already has a parent)
+    }
+
+    // Percentage (relative to the COMBINED group's bbox height) at which the
+    // staff's vertical center falls — correct transform-origin Y so scaling
+    // never shifts any of the glyphs off the staff, regardless of shape.
+    const originYPercent = ((staffCenterY - groupTop) / groupHeight) * 100
+    // CRITICAL: percentage-based transform-origin on an SVG element defaults
+    // to being relative to the NEAREST SVG VIEWPORT (the entire multi-row
+    // tune's viewBox — hundreds of units tall), NOT this element's own
+    // bounding box, unless `transform-box: fill-box` is set explicitly.
+    // Without it, the glyphs render far off their intended position.
+    group.style.transformBox = 'fill-box'
+    group.style.transformOrigin = `left ${originYPercent}%`
+    group.style.transform = `scale(${CLEF_KEY_SHRINK_SCALE})`
+
+    // transform-origin's X is "left" (0%), so the group's left edge is fixed
+    // and only its right edge moves inward — the freed width is simply the
+    // group's total original width times the shrunk fraction, which now
+    // correctly includes the inter-glyph gaps (previously only each glyph's
+    // own shrink was counted, undercounting the true freed space).
+    const freedSpace = groupWidth * (1 - CLEF_KEY_SHRINK_SCALE)
     if (freedSpace <= 0) return
 
     // Shift everything else in this row left into the reclaimed space —
-    // except the 5 staff lines themselves (already span the full row width
-    // and must stay put) and the clef/key/time-signature elements we just
-    // transformed.
+    // except the 5 staff lines (already span the full row width and must
+    // stay put) and the new wrapper group itself.
     for (const child of Array.from(row.children)) {
       if (!(child instanceof SVGGraphicsElement)) continue
       if (child.classList.contains('abcjs-staff')) continue
-      if (child.classList.contains('abcjs-clef')) continue
-      if (child.classList.contains('abcjs-key-signature')) continue
-      if (child.classList.contains('abcjs-time-signature')) continue
+      if (child === group) continue
       child.style.transform = `translateX(-${freedSpace}px)`
     }
   })
