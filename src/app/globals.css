@@ -169,3 +169,21 @@
 [data-notation-body][data-view-mode="solfege"] .verse-number {
   font-size: calc(var(--staff-base-size, 14px) * 0.85);
 }
+
+/* MOBILE-04 (Phase 04.9.15 Plan 05): shrink (not hide) the repeated clef +
+   key-signature glyph group on wrapped continuation rows of the mobile
+   inline Staff view. Row 1 (first system) stays full size — it is the
+   reader's orientation point. Scoped to [data-view-mode="staff"] so
+   split-leaf / solfège / desktop non-chromeless staff are untouched.
+   Selector confirmed live via tests/diagnostics/inline-staff-clef-stretch-diff.mjs
+   (04.9.15-01-SUMMARY.md): .abcjs-clef and .abcjs-key-signature are direct
+   child <g> elements of .abcjs-staff-wrapper on every row — NOT
+   .abcjs-top-line (that's a staff ruling line, confirmed wrong per
+   04.9.15-RESEARCH.md Pitfall 1). transform-origin: left center keeps the
+   glyphs anchored to their leading edge so the 5-line staff itself is not
+   shifted. */
+[data-notation-body][data-view-mode="staff"] .abcjs-staff-wrapper:not(:first-of-type) .abcjs-clef,
+[data-notation-body][data-view-mode="staff"] .abcjs-staff-wrapper:not(:first-of-type) .abcjs-key-signature {
+  transform: scale(0.6);
+  transform-origin: left center;
+}
