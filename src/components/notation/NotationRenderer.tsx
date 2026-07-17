@@ -137,6 +137,14 @@ export interface NotationRendererProps {
   staffPages?: string[]
   /** Full ordered list of solfège image paths for the active tune (server-derived). Enables multi-page thumbnail nav. */
   solfegePages?: string[]
+  /**
+   * When false, Split-Leaf Staff renders the pre-rendered staff JPEG instead
+   * of live abcjs notation (mirrors how Split-Leaf Solfège already always
+   * shows the scanned JPG). Default true preserves current behavior for
+   * every caller that doesn't pass it (study/tune pages are never gated —
+   * locked decision from Phase 04.9.14).
+   */
+  staffInlineApproved?: boolean
 }
 
 export type ViewMode = 'staff' | 'solfege' | 'staff-split' | 'solfege-split' | 'lyrics'
@@ -245,6 +253,7 @@ export function NotationRenderer({
   melismaPositions = null,
   staffPages = [],
   solfegePages = [],
+  staffInlineApproved = true,
 }: NotationRendererProps) {
   // chromeless mode permanently disables the FS overlay; the singing view IS the fullscreen.
   const allowFullscreen = !chromeless
@@ -1141,6 +1150,76 @@ export function NotationRenderer({
   const isSplit = isSplitMode(viewMode)
   const usesSolfege = isSolfegeMode(viewMode)
 
+  // Shared scanned-image (JPG) renderer — used by Split-Leaf Solfège (always)
+  // and Split-Leaf Staff (only when the active tune is not melisma-approved,
+  // see forceStaffJpgFallback below). Extracted from the pre-existing
+  // solfege-split rendering; output is byte-identical for that caller (pure
+  // refactor for reuse, not a behavior change to Solfège).
+  function renderScannedPages(pages: string[], fallbackUrl: string | null, altText: string) {
+    const hasMultiPages = pages.length > 1
+    const currentSrc = pages[pageIndex] ?? fallbackUrl ?? null
+
+    const mainImageBlock = currentSrc ? (
+      <div className={cn(
+        chromeless && !isSplit ? '-mx-4' : '',
+        isSplit && chromeless ? 'flex-1 min-h-0 flex items-start justify-center' : '',
+      )}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={currentSrc}
+          alt={altText}
+          className={cn(
+            'rounded-md border border-border',
+            isSplit
+              ? chromeless
+                // chromeless split-leaf: CONTAIN within the max-h-[50%] flex notation
+                // slot — shrink to fit height AND width, never scroll, never crop.
+                ? 'max-h-full max-w-full w-auto h-auto object-contain'
+                : 'max-h-full w-auto object-contain mx-auto' // non-chromeless grid unchanged
+              : 'w-full h-auto',
+          )}
+          style={chromeless && !isSplit ? { maxWidth: '100%' } : undefined}
+        />
+      </div>
+    ) : (
+      <p className="text-sm text-muted-foreground italic">Score image not available</p>
+    )
+
+    const thumbnailStrip = hasMultiPages ? (
+      <div className="flex items-center gap-2 py-2">
+        <button type="button" aria-label="Previous page" data-page-prev
+          onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
+          disabled={pageIndex === 0}
+          className="h-11 w-11 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none">
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <div className="flex gap-2 overflow-x-auto flex-1 min-w-0">
+          {pages.map((src, idx) => (
+            <button key={src} type="button"
+              aria-label={`Page ${idx + 1} of ${pages.length}`}
+              aria-current={idx === pageIndex ? 'true' : undefined}
+              onClick={() => setPageIndex(idx)}
+              className={cn(
+                'shrink-0 w-20 h-[100px] rounded border overflow-hidden transition-[border,box-shadow] duration-100',
+                idx === pageIndex ? 'ring-2 ring-foreground border-foreground' : 'border-border hover:border-foreground/60',
+              )}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={src} alt="" loading="lazy" className="w-full h-full object-cover" />
+            </button>
+          ))}
+        </div>
+        <button type="button" aria-label="Next page" data-page-next
+          onClick={() => setPageIndex((i) => Math.min(pages.length - 1, i + 1))}
+          disabled={pageIndex === pages.length - 1}
+          className="h-11 w-11 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none">
+          <ChevronRight className="h-5 w-5" />
+        </button>
+      </div>
+    ) : null
+
+    return { mainImageBlock, thumbnailStrip }
+  }
+
   // ── Split-leaf layout (Task 1 + Task 2, Phase 04.9.14 Plan 01) ────────────
   // Desktop (≥768px, all callers): lyrics stack UNDER notation — single
   // column, no side-by-side grid (CONTEXT "Desktop Lyrics Stacking Decision").
@@ -1197,25 +1276,45 @@ export function NotationRenderer({
     const isPartialPage = visibleCycles.length < CYCLES_PER_PAGE
     const applyMinHeight = !chromeless && isPartialPage && minStaffHeight > 0
     const abcForView = isSplit ? unifiedAbcNoLyrics : unifiedAbc
+    // Bug 1 (quick task 260717-mwv): Split-Leaf Staff was never gated by
+    // tune-approval status (only INLINE Staff was, via SingingView's
+    // shouldFallbackToSplit) — so a user correctly bounced from inline to
+    // Split-Leaf still saw the unapproved tune's live-rendered abcjs there.
+    // Reuse the same scanned-JPG path Split-Leaf Solfège already always uses.
+    const forceStaffJpgFallback = isSplit && !staffInlineApproved
 
-    const notationBlock = (
-      <div ref={staffRef} style={applyMinHeight ? { minHeight: minStaffHeight } : undefined}>
-        <AbcPlayer
-          abc={abcForView}
-          scale={scale}
-          tuneName={tuneName}
-          staffJpgUrl={scoreJpgUrl}
-          solfegeJpgUrl={solfegeJpgUrl}
-          renderLyricsBelow={isSplit ? undefined : lyricsBelow}
-          showOriginal={showOriginal}
-          onShowOriginalChange={setShowOriginal}
-          renderAboveOriginal={<BackToNotationButton onClick={() => setShowOriginal(false)} />}
-          hidePlayerControls={isFullscreen || chromeless}
-          staffWidthFactor={staffWidthFactor}
-          compactSplitMobile={compactSplitMobile}
-        />
-      </div>
-    )
+    const notationBlock: ReactNode = forceStaffJpgFallback
+      ? (() => {
+          const { mainImageBlock, thumbnailStrip } = renderScannedPages(
+            activePages('staff-split', staffPages, solfegePages),
+            scoreJpgUrl,
+            `Staff notation for ${tuneName}`,
+          )
+          return (
+            <>
+              {mainImageBlock}
+              {thumbnailStrip}
+            </>
+          )
+        })()
+      : (
+        <div ref={staffRef} style={applyMinHeight ? { minHeight: minStaffHeight } : undefined}>
+          <AbcPlayer
+            abc={abcForView}
+            scale={scale}
+            tuneName={tuneName}
+            staffJpgUrl={scoreJpgUrl}
+            solfegeJpgUrl={solfegeJpgUrl}
+            renderLyricsBelow={isSplit ? undefined : lyricsBelow}
+            showOriginal={showOriginal}
+            onShowOriginalChange={setShowOriginal}
+            renderAboveOriginal={<BackToNotationButton onClick={() => setShowOriginal(false)} />}
+            hidePlayerControls={isFullscreen || chromeless}
+            staffWidthFactor={staffWidthFactor}
+            compactSplitMobile={compactSplitMobile}
+          />
+        </div>
+      )
 
     if (isSplit) {
       const stanzaBlock = showLyrics && stanzas.length > 0 ? (
@@ -1223,7 +1322,7 @@ export function NotationRenderer({
           <StanzaList stanzas={stanzas} />
         </div>
       ) : null
-      viewArea = renderSplitLeaf(notationBlock, stanzaBlock)
+      viewArea = renderSplitLeaf(notationBlock, stanzaBlock, forceStaffJpgFallback)
     } else {
       viewArea = notationBlock
     }
@@ -1243,67 +1342,11 @@ export function NotationRenderer({
     )
   } else if (viewMode === 'solfege-split') {
     // Split-leaf Solfège renders the scanned solfège JPG (+ thumbnails/pagination).
-    const pages = activePages(viewMode, staffPages, solfegePages)
-    const hasMultiPages = pages.length > 1
-    const currentSrc = pages[pageIndex] ?? solfegeJpgUrl ?? null
-
-    const mainImageBlock = currentSrc ? (
-      <div className={cn(
-        chromeless && !isSplit ? '-mx-4' : '',
-        isSplit && chromeless ? 'flex-1 min-h-0 flex items-start justify-center' : '',
-      )}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={currentSrc}
-          alt={`Solfège for ${tuneName}`}
-          className={cn(
-            'rounded-md border border-border',
-            isSplit
-              ? chromeless
-                // chromeless split-leaf: CONTAIN within the max-h-[50%] flex notation
-                // slot — shrink to fit height AND width, never scroll, never crop.
-                ? 'max-h-full max-w-full w-auto h-auto object-contain'
-                : 'max-h-full w-auto object-contain mx-auto' // non-chromeless grid unchanged
-              : 'w-full h-auto',
-          )}
-          style={chromeless && !isSplit ? { maxWidth: '100%' } : undefined}
-        />
-      </div>
-    ) : (
-      <p className="text-sm text-muted-foreground italic">Score image not available</p>
+    const { mainImageBlock, thumbnailStrip } = renderScannedPages(
+      activePages(viewMode, staffPages, solfegePages),
+      solfegeJpgUrl,
+      `Solfège for ${tuneName}`,
     )
-
-    const thumbnailStrip = hasMultiPages ? (
-      <div className="flex items-center gap-2 py-2">
-        <button type="button" aria-label="Previous page" data-page-prev
-          onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
-          disabled={pageIndex === 0}
-          className="h-11 w-11 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none">
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-        <div className="flex gap-2 overflow-x-auto flex-1 min-w-0">
-          {pages.map((src, idx) => (
-            <button key={src} type="button"
-              aria-label={`Page ${idx + 1} of ${pages.length}`}
-              aria-current={idx === pageIndex ? 'true' : undefined}
-              onClick={() => setPageIndex(idx)}
-              className={cn(
-                'shrink-0 w-20 h-[100px] rounded border overflow-hidden transition-[border,box-shadow] duration-100',
-                idx === pageIndex ? 'ring-2 ring-foreground border-foreground' : 'border-border hover:border-foreground/60',
-              )}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={src} alt="" loading="lazy" className="w-full h-full object-cover" />
-            </button>
-          ))}
-        </div>
-        <button type="button" aria-label="Next page" data-page-next
-          onClick={() => setPageIndex((i) => Math.min(pages.length - 1, i + 1))}
-          disabled={pageIndex === pages.length - 1}
-          className="h-11 w-11 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none">
-          <ChevronRight className="h-5 w-5" />
-        </button>
-      </div>
-    ) : null
 
     const stanzaBlock = showLyrics && stanzas.length > 0 ? (
       <div className={
