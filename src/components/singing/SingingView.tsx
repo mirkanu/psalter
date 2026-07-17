@@ -182,6 +182,21 @@ export function SingingView({
     if (mounted && !showLyrics && viewMode === 'lyrics') setViewMode('staff')
   }, [showLyrics, viewMode, mounted])
 
+  // Item 2a (260717-mwv checkpoint round 1): no tune is active at all on a
+  // non-recommended versification (e.g. Ps 45a) — real lyrics render in
+  // Lyrics Only mode by default (see the top-level render below), but we
+  // still surface the "not recommended" context as a one-time toast rather
+  // than blocking the actual lyrics content behind a message.
+  const notRecommendedToastShownRef = useRef(false)
+  useEffect(() => {
+    if (!mounted) return
+    if (activeTune) return
+    if (isRecommendedVersion) return
+    if (notRecommendedToastShownRef.current) return
+    notRecommendedToastShownRef.current = true
+    toast('Please select a tune. Note that this versification of this psalm is not recommended.')
+  }, [mounted, activeTune, isRecommendedVersion])
+
   // Plan 04.9.15-04 (MOBILE-08): if navigation (next/prev psalm, tune switch,
   // or a stale localStorage restore) lands the user in inline Staff on a
   // non-approved tune, fall back to Split-Leaf and surface the locked toast.
@@ -205,7 +220,13 @@ export function SingingView({
   // ABC/JPG, no solfège JPG in any form) must force Lyrics Only rather than
   // the above effect's Split-Leaf fallback, which would render a blank
   // notation slot. Guarded by a tune-id ref (same pattern as
-  // lastFallbackTuneIdRef) so the toast fires once per transition.
+  // lastFallbackTuneIdRef) so it only fires once per transition.
+  //
+  // Checkpoint round 1 (item 3a): do NOT toast automatically on load/tune-switch
+  // — that was surprising when the user never asked for Music Notes in the
+  // first place. The explanation is now surfaced only if/when the user
+  // actively tries to open Music Notes for this tune (see GearPopover's
+  // musicNotesBlocked handling, which shows the same message on tap).
   const lastNoNotationTuneIdRef = useRef<number | null>(null)
   useEffect(() => {
     if (!mounted) return
@@ -213,7 +234,6 @@ export function SingingView({
     if (lastNoNotationTuneIdRef.current === (activeTune?.id ?? null)) return
     lastNoNotationTuneIdRef.current = activeTune?.id ?? null
     setViewMode('lyrics')
-    toast('No staff or solfège notation available for this tune — showing Lyrics Only. Audio may still be available via Play.')
   }, [activeTune, hasAnyNotation, mounted])
 
   // Persist (skip pre-mount window so we don't clobber storage with defaults)
@@ -306,6 +326,13 @@ export function SingingView({
   // Sheet open state
   const [psalmSelectorOpen, setPsalmSelectorOpen] = useState(false)
   const [tuneSwitcherOpen, setTuneSwitcherOpen] = useState(false)
+  // 260717-mwv checkpoint round 1 (items 2b/2c): when the user tries to open
+  // Music Notes or Play with no active tune, we proactively open the tune
+  // switcher instead of showing a dead-end message. This tracks WHY it was
+  // opened so the post-selection effect below can route correctly: picking a
+  // tune from the "Music Notes" path loads INLINE Staff; picking one from the
+  // "Play" path stays in Lyrics Only and opens the Play panel.
+  const [pendingTuneIntent, setPendingTuneIntent] = useState<'music-notes' | 'play' | null>(null)
 
   // 04.9.4-02 lifted state: audio + gear drawer + stanza indicator
   const [isPlaying, setIsPlaying] = useState(false)
@@ -359,6 +386,13 @@ export function SingingView({
   }, [totalStanzas])
 
   const handlePlayToggle = useCallback(() => {
+    // Item 2c: no tune active at all — open the tune selector instead of
+    // toggling a play state with nothing to play (audio needs a tune).
+    if (!activeTune) {
+      setPendingTuneIntent('play')
+      setTuneSwitcherOpen(true)
+      return
+    }
     setIsPlaying((prev) => {
       const next = !prev
       if (next) {
@@ -371,7 +405,55 @@ export function SingingView({
       }
       return next
     })
-  }, [miniBarMounted])
+  }, [miniBarMounted, activeTune])
+
+  // Item 2b: opens the tune switcher when the user taps "Music Notes" with
+  // no active tune (passed to GearPopover).
+  const handleRequestTuneSelection = useCallback(() => {
+    setPendingTuneIntent('music-notes')
+    setTuneSwitcherOpen(true)
+  }, [])
+
+  // If the tune switcher closes WITHOUT a tune having been picked (activeTune
+  // is still null at close time — TuneSwitcherSheet delays onOpenChange(false)
+  // by 120ms after a real selection specifically so the router update lands
+  // first), drop any pending intent so a later, unrelated tune change doesn't
+  // retroactively trigger the item 2b/2c routing below.
+  const handleTuneSwitcherOpenChange = useCallback((open: boolean) => {
+    setTuneSwitcherOpen(open)
+    if (!open && !activeTune) {
+      setPendingTuneIntent(null)
+    }
+  }, [activeTune])
+
+  // Resolves pendingTuneIntent once a real tune becomes active (i.e. the user
+  // picked one from the tune switcher opened by handleRequestTuneSelection /
+  // handlePlayToggle above). Keyed off activeTune?.id actually CHANGING (not
+  // merely re-rendering) via a ref, since activeTune is re-derived every
+  // render from searchParams.
+  const prevActiveTuneIdRef = useRef<number | null>(activeTune?.id ?? null)
+  useEffect(() => {
+    const prevId = prevActiveTuneIdRef.current
+    const currentId = activeTune?.id ?? null
+    prevActiveTuneIdRef.current = currentId
+    if (prevId === currentId) return
+    if (!pendingTuneIntent) return
+    if (currentId == null) return // still no tune — nothing to resolve yet
+    if (pendingTuneIntent === 'music-notes') {
+      // Item 2b: load directly into INLINE Staff (not split-leaf).
+      setViewMode('staff')
+    } else if (pendingTuneIntent === 'play') {
+      // Item 2c: stay in Lyrics Only, but open the Play panel immediately.
+      if (!miniBarMounted) {
+        setMiniBarMounted(true)
+        requestAnimationFrame(() => setMiniBarVisible(true))
+      } else {
+        setMiniBarVisible(true)
+      }
+      setIsPlaying(true)
+    }
+    setPendingTuneIntent(null)
+  }, [activeTune, pendingTuneIntent, miniBarMounted])
 
   const handlePlayingChange = useCallback((p: boolean) => {
     setIsPlaying(p)
@@ -555,43 +637,43 @@ export function SingingView({
           paddingBottom: bottomBarHidden ? '0px' : undefined,
         }}
       >
-        {activeTune ? (
-          <NotationRendererClient
-            abc={abc}
-            lyrics={lyrics}
-            scoreJpgUrl={scoreJpgUrl}
-            solfegeJpgUrl={solfegeJpgUrl}
-            tuneName={tuneName}
-            tuneMeter={meter}
-            phraseShapeOverride={activeTune?.phraseShapeOverride ?? null}
-            stanzaMeter={stanzaMeter}
-            lyricsStructured={lyricsStructured}
-            doubleLength={activeTune?.doubleLength ?? false}
-            solfegeOcrText={activeTune?.solfegeOcrText ?? null}
-            melismaPositions={activeTune?.melismaPositions ?? null}
-            showLyrics={showLyrics}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            baseSize={baseSize}
-            onBaseSizeChange={handleBaseSizeChange}
-            notationBaseSize={notationBaseSize}
-            chromeless={true}
-            onStanzaChange={handleStanzaChange}
-            stanzaPage={stanzaPage}
-            onStanzaPageChange={setStanzaPage}
-            youtubeUrl={youtubeUrl}
-            soundcloudUrl={soundcloudUrl}
-            staffPages={activeStaffPages}
-            solfegePages={activeSolfegePages}
-            staffInlineApproved={staffInlineApproved}
-          />
-        ) : (
-          <div className="p-6 text-sm text-muted-foreground italic">
-            {isRecommendedVersion
-              ? 'No notation available for this psalm.'
-              : 'Please select a tune. Note that this versification of this psalm is not recommended.'}
-          </div>
-        )}
+        {/* Item 2a (260717-mwv checkpoint round 1): lyrics come from the psalm
+           VERSION (lyrics/lyricsStructured), not the tune — so real Lyrics
+           Only content renders identically whether or not a tune is active.
+           Rendering unconditionally means a psalm-version with no active tune
+           at all gets the exact same Lyrics Only render path (no special
+           casing) as any other Lyrics Only view; viewMode is kept at 'lyrics'
+           until a tune is chosen (see the hasAnyNotation-gated effects above
+           and GearPopover's tune-selection-request flow). */}
+        <NotationRendererClient
+          abc={abc}
+          lyrics={lyrics}
+          scoreJpgUrl={scoreJpgUrl}
+          solfegeJpgUrl={solfegeJpgUrl}
+          tuneName={tuneName}
+          tuneMeter={meter}
+          phraseShapeOverride={activeTune?.phraseShapeOverride ?? null}
+          stanzaMeter={stanzaMeter}
+          lyricsStructured={lyricsStructured}
+          doubleLength={activeTune?.doubleLength ?? false}
+          solfegeOcrText={activeTune?.solfegeOcrText ?? null}
+          melismaPositions={activeTune?.melismaPositions ?? null}
+          showLyrics={showLyrics}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          baseSize={baseSize}
+          onBaseSizeChange={handleBaseSizeChange}
+          notationBaseSize={notationBaseSize}
+          chromeless={true}
+          onStanzaChange={handleStanzaChange}
+          stanzaPage={stanzaPage}
+          onStanzaPageChange={setStanzaPage}
+          youtubeUrl={youtubeUrl}
+          soundcloudUrl={soundcloudUrl}
+          staffPages={activeStaffPages}
+          solfegePages={activeSolfegePages}
+          staffInlineApproved={staffInlineApproved}
+        />
         {/* Task 4 (04.9.14-03): dynamic spacer reserving exact room for
            PlayMiniBar (on top of the pb-11/md:pb-13 already reserved for
            GlassBottomBar), so content never sits hidden behind the two
@@ -611,7 +693,7 @@ export function SingingView({
       />
       <TuneSwitcherSheet
         open={tuneSwitcherOpen}
-        onOpenChange={setTuneSwitcherOpen}
+        onOpenChange={handleTuneSwitcherOpenChange}
         sections={tuneSections}
         meterLabel={meter}
       />
@@ -642,6 +724,8 @@ export function SingingView({
             solfegeInlineAvailable={false}
             solfegeSplitAvailable={solfegeSplitAvailable}
             staffInlineApproved={staffInlineApproved}
+            hasActiveTune={!!activeTune}
+            onRequestTuneSelection={handleRequestTuneSelection}
           />
         }
       />

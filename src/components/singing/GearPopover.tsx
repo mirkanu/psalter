@@ -38,6 +38,13 @@ interface Props {
    *  tuneMelismaDecisions.status === 'approved'. Gates the Inline Staff
    *  layout button — only precentor-verified tunes may render inline. */
   staffInlineApproved: boolean
+  /** Whether a tune is currently active at all (260717-mwv checkpoint round 1,
+   *  item 2b) — when false, tapping "Music Notes" opens the tune selector
+   *  instead of toggling the view mode (there is nothing to notate yet). */
+  hasActiveTune: boolean
+  /** Opens the tune switcher sheet. Called when the user taps "Music Notes"
+   *  with no active tune (260717-mwv item 2b). */
+  onRequestTuneSelection: () => void
 }
 
 export function GearPopover({
@@ -52,6 +59,8 @@ export function GearPopover({
   solfegeInlineAvailable,
   solfegeSplitAvailable,
   staffInlineApproved,
+  hasActiveTune,
+  onRequestTuneSelection,
 }: Props) {
   const router = useRouter()
 
@@ -59,6 +68,13 @@ export function GearPopover({
   const isStaff = viewMode === 'staff' || viewMode === 'staff-split'
   const isSplit = viewMode === 'staff-split' || viewMode === 'solfege-split'
   const inlineLayoutDisabled = computeInlineLayoutDisabled({ isStaff, staffInlineApproved, solfegeInlineAvailable })
+  // 260717-mwv checkpoint round 1 (item 3b): a tune IS active but has zero
+  // notation in any form — grey out "Music Notes" entirely rather than
+  // letting the user navigate into a blank view. Tapping it anyway still
+  // explains why (item 3a/3b), since this uses aria-disabled + a live onClick
+  // rather than the native `disabled` attribute.
+  const hasAnyNotation = staffAvailable || solfegeSplitAvailable
+  const musicNotesBlocked = hasActiveTune && !hasAnyNotation
 
   const handleNotationChange = (notation: 'staff' | 'solfege') => {
     if (notation === 'staff' && !staffAvailable) {
@@ -94,6 +110,18 @@ export function GearPopover({
 
   const handleMainMusicNotes = () => {
     if (isMusicNotes) return
+    // 260717-mwv checkpoint round 1 (item 2b): no tune active at all — open
+    // the tune selector instead of the old "select a tune" fallback message.
+    if (!hasActiveTune) {
+      onRequestTuneSelection()
+      return
+    }
+    // Item 3a/3b: a tune IS active but has no notation in any form — explain
+    // why Music Notes is unavailable instead of switching into a blank view.
+    if (musicNotesBlocked) {
+      toast('No staff or solfège notation available for this tune — showing Lyrics Only. Audio may still be available via Play.')
+      return
+    }
     // Restore last music mode — default to staff if nothing saved
     const stored = typeof window !== 'undefined' ? localStorage.getItem('psalter-score-mode') : null
     if (stored === 'staff-split' || stored === 'solfege' || stored === 'solfege-split') {
@@ -145,10 +173,13 @@ export function GearPopover({
             type="button"
             role="radio"
             aria-checked={isMusicNotes}
+            aria-disabled={musicNotesBlocked ? 'true' : undefined}
             data-settings-main="music-notes"
+            title={musicNotesBlocked ? 'No staff or solfège notation available for this tune' : undefined}
             onClick={handleMainMusicNotes}
             className={[
               'h-10 rounded-md text-sm font-semibold active:scale-[0.95] transition-[transform,background,color] duration-75 motion-reduce:transition-none',
+              musicNotesBlocked && 'opacity-40',
               isMusicNotes
                 ? 'bg-foreground text-background'
                 : 'hover:bg-muted text-muted-foreground',
