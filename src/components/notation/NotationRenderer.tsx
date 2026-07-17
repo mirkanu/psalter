@@ -1320,8 +1320,13 @@ export function NotationRenderer({
       )
 
     if (isSplit) {
+      // 260717-mwv checkpoint round 1 follow-up: this inner div (not the
+      // outer data-lyrics-slot wrapper from renderSplitLeaf, which always
+      // matches its child's height via h-full) is the ACTUAL scroll
+      // container — tagged separately so SingingView's content-fits-viewport
+      // measurement targets the real scrollable element.
       const stanzaBlock = showLyrics && stanzas.length > 0 ? (
-        <div className="h-full overflow-y-auto md:h-auto md:max-h-[80vh] overscroll-y-none">
+        <div data-lyrics-scroll className="h-full overflow-y-auto md:h-auto md:max-h-[80vh] overscroll-y-none">
           <StanzaList stanzas={stanzas} />
         </div>
       ) : null
@@ -1351,12 +1356,17 @@ export function NotationRenderer({
       `Solfège for ${tuneName}`,
     )
 
+    // 260717-mwv checkpoint round 1 follow-up: data-lyrics-scroll marks the
+    // real scroll container in split mode (see the staff-split branch above
+    // for the full rationale).
     const stanzaBlock = showLyrics && stanzas.length > 0 ? (
-      <div className={
-        isSplit
-          ? (chromeless ? 'h-full overflow-y-auto overscroll-y-none' : 'h-full overflow-y-auto md:h-auto md:max-h-[80vh] overscroll-y-none')
-          : (chromeless ? '' : 'max-h-[60vh] overflow-y-auto overscroll-y-none')
-      }>
+      <div
+        data-lyrics-scroll={isSplit ? true : undefined}
+        className={
+          isSplit
+            ? (chromeless ? 'h-full overflow-y-auto overscroll-y-none' : 'h-full overflow-y-auto md:h-auto md:max-h-[80vh] overscroll-y-none')
+            : (chromeless ? '' : 'max-h-[60vh] overflow-y-auto overscroll-y-none')
+        }>
         <StanzaList stanzas={stanzas} />
       </div>
     ) : null
