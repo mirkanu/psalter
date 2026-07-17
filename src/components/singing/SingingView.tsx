@@ -46,6 +46,14 @@ interface Props {
   precentingVerseRange?: string | null
   /** For multi-version psalms (a/b), the full list of versions with slugs and current marker. */
   versionSiblings?: { slug: string; displayLabel: string; isCurrent: boolean }[]
+  /**
+   * Whether the active psalm-version's `psalterNumber` field contains the
+   * 'Recommended' marker — see `deriveVersionSlug` in `src/lib/psalm-slugs.ts`.
+   * Drives the "no tune selected yet" message when no active tune exists.
+   * Default true (single-version psalms / unknown = treat as recommended,
+   * keep the existing generic message).
+   */
+  isRecommendedVersion?: boolean
 }
 
 function readStoredViewMode(showLyrics: boolean): ViewMode {
@@ -89,6 +97,7 @@ export function SingingView({
   precentingNextHref,
   precentingVerseRange,
   versionSiblings,
+  isRecommendedVersion = true,
 }: Props) {
   const searchParams = useSearchParams()
   const tuneParam = searchParams?.get('tune') ?? null
@@ -122,6 +131,13 @@ export function SingingView({
   const activeStaffPages = activeTune?.staffPages ?? []
   const activeSolfegePages = activeTune?.solfegePages ?? []
 
+  // Bugs 2 & 3 (quick task 260717-mwv): hasAnyNotation distinguishes "tune
+  // has zero staff/solfège notation in any form" (force Lyrics Only, Bug 3)
+  // from "no tune is active at all" (Bug 2's "not recommended" messaging).
+  const staffAvailable = !!(activeTune?.abcNotation || activeTune?.abcSatb)
+  const solfegeSplitAvailable = !!(activeTune?.solfegeJpgUrl || activeSolfegePages.length > 0)
+  const hasAnyNotation = staffAvailable || solfegeSplitAvailable
+
   // ViewMode + baseSize state (owned here; passed controlled to NotationRenderer)
   const showLyrics = !!lyrics
   const [viewMode, setViewMode] = useState<ViewMode>('staff')
@@ -151,7 +167,11 @@ export function SingingView({
   // Runs ONCE on mount; we don't want re-hydration to clobber the user's
   // in-memory viewMode when showLyrics flips. (WR-01)
   useEffect(() => {
-    setViewMode(readStoredViewMode(showLyrics))
+    // Bug 3 (260717-mwv): never restore a stored Staff/Split preference for a
+    // tune with no notation at all — the forced-Lyrics-Only effect below
+    // would immediately override it anyway, but this avoids a flash of a
+    // broken Split-Leaf view before that effect fires.
+    setViewMode(hasAnyNotation ? readStoredViewMode(showLyrics) : 'lyrics')
     setBaseSize(readStoredBaseSize())
     setMounted(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -170,12 +190,31 @@ export function SingingView({
   const lastFallbackTuneIdRef = useRef<number | null>(null)
   useEffect(() => {
     if (!mounted) return
+    // Bug 3 (260717-mwv): a tune with no notation at all takes the dedicated
+    // forced-Lyrics-Only effect below instead — Split-Leaf would have
+    // nothing to render.
+    if (!hasAnyNotation) return
     if (!shouldFallbackToSplit({ viewMode, staffInlineApproved })) return
     if (lastFallbackTuneIdRef.current === (activeTune?.id ?? null)) return
     lastFallbackTuneIdRef.current = activeTune?.id ?? null
     setViewMode('staff-split')
     toast('Inline Staff not available for this tune — showing Split-Leaf. Pick a different view in Settings.')
-  }, [activeTune, staffInlineApproved, viewMode, mounted])
+  }, [activeTune, staffInlineApproved, viewMode, mounted, hasAnyNotation])
+
+  // Bug 3 (260717-mwv): a tune with NO notation source at all (no staff
+  // ABC/JPG, no solfège JPG in any form) must force Lyrics Only rather than
+  // the above effect's Split-Leaf fallback, which would render a blank
+  // notation slot. Guarded by a tune-id ref (same pattern as
+  // lastFallbackTuneIdRef) so the toast fires once per transition.
+  const lastNoNotationTuneIdRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (!mounted) return
+    if (hasAnyNotation) return
+    if (lastNoNotationTuneIdRef.current === (activeTune?.id ?? null)) return
+    lastNoNotationTuneIdRef.current = activeTune?.id ?? null
+    setViewMode('lyrics')
+    toast('No staff or solfège notation available for this tune — showing Lyrics Only. Audio may still be available via Play.')
+  }, [activeTune, hasAnyNotation, mounted])
 
   // Persist (skip pre-mount window so we don't clobber storage with defaults)
   useEffect(() => {
@@ -516,7 +555,7 @@ export function SingingView({
           paddingBottom: bottomBarHidden ? '0px' : undefined,
         }}
       >
-        {abc ? (
+        {activeTune ? (
           <NotationRendererClient
             abc={abc}
             lyrics={lyrics}
@@ -548,7 +587,9 @@ export function SingingView({
           />
         ) : (
           <div className="p-6 text-sm text-muted-foreground italic">
-            No notation available for this psalm.
+            {isRecommendedVersion
+              ? 'No notation available for this psalm.'
+              : 'Please select a tune. Note that this versification of this psalm is not recommended.'}
           </div>
         )}
         {/* Task 4 (04.9.14-03): dynamic spacer reserving exact room for
@@ -595,16 +636,16 @@ export function SingingView({
             studyHref={studyHref}
             onRestartTour={handleRestartTour}
             showLyricsOption={!!showLyrics}
-            staffAvailable={!!(activeTune?.abcNotation || activeTune?.abcSatb)}
+            staffAvailable={staffAvailable}
             // Inline Solfège rendering is not built yet (abcjs has no tonic
             // sol-fa) — permanently disabled until real rendering exists.
             solfegeInlineAvailable={false}
-            solfegeSplitAvailable={!!(solfegeJpgUrl || activeSolfegePages.length > 0)}
+            solfegeSplitAvailable={solfegeSplitAvailable}
             staffInlineApproved={staffInlineApproved}
           />
         }
       />
-      {abc && (
+      {(abc || soundcloudUrl) && (
         <PlayMiniBar
           abc={abc}
           mounted={miniBarMounted}
