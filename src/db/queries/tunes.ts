@@ -1,8 +1,20 @@
 import { cache } from "react"
 import { db } from "@/db"
-import { eq, asc } from "drizzle-orm"
-import { tunes } from "@/db/schema"
+import { eq, asc, and, inArray, isNotNull, desc } from "drizzle-orm"
+import { tunes, tuneMelismaDecisions } from "@/db/schema"
 import { deriveTuneJpgPages } from "@/lib/tune-jpg-urls"
+
+export type MelismaStatus = 'approved' | 'not_approved'
+
+export async function fetchTuneMelismaStatus(tuneId: number): Promise<MelismaStatus | null> {
+  const rows = await db
+    .select({ status: tuneMelismaDecisions.status })
+    .from(tuneMelismaDecisions)
+    .where(and(eq(tuneMelismaDecisions.tuneId, tuneId), isNotNull(tuneMelismaDecisions.status)))
+    .orderBy(desc(tuneMelismaDecisions.createdAt), desc(tuneMelismaDecisions.id))
+    .limit(1)
+  return (rows[0]?.status as MelismaStatus | undefined) ?? null
+}
 
 export async function fetchTuneIds(): Promise<number[]> {
   const rows = await db.select({ id: tunes.id }).from(tunes).orderBy(asc(tunes.id))
@@ -122,6 +134,12 @@ export interface AlternateTune {
    */
   staffPages: string[]
   solfegePages: string[]
+  /**
+   * Plan 04.9.15-04: latest explicit `tuneMelismaDecisions.status` for this
+   * tune (non-null-latest semantics — see fetchTuneMelismaStatus). NULL when
+   * no decision row exists yet. Gates inline Staff (MOBILE-08).
+   */
+  melismaStatus: MelismaStatus | null
 }
 
 export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]> {
@@ -145,10 +163,21 @@ export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]>
     orderBy: (t, { asc }) => [asc(t.name)],
   })
   const PLACEHOLDER_PREFIXES = ['use ', 'do not ', 'do NOT ']
-  return rows
-    .filter((t) => !PLACEHOLDER_PREFIXES.some((p) => t.name.toLowerCase().startsWith(p)))
-    .map((t) => {
-      const { staffPages, solfegePages } = deriveTuneJpgPages(t.name)
-      return { ...t, staffPages, solfegePages }
-    })
+  const filtered = rows.filter((t) => !PLACEHOLDER_PREFIXES.some((p) => t.name.toLowerCase().startsWith(p)))
+  const ids = filtered.map((t) => t.id)
+  const decisionRows = ids.length
+    ? await db
+        .select({ tuneId: tuneMelismaDecisions.tuneId, status: tuneMelismaDecisions.status })
+        .from(tuneMelismaDecisions)
+        .where(and(inArray(tuneMelismaDecisions.tuneId, ids), isNotNull(tuneMelismaDecisions.status)))
+        .orderBy(desc(tuneMelismaDecisions.createdAt), desc(tuneMelismaDecisions.id))
+    : []
+  const statusByTune = new Map<number, MelismaStatus>()
+  for (const r of decisionRows) {
+    if (!statusByTune.has(r.tuneId)) statusByTune.set(r.tuneId, r.status as MelismaStatus) // desc order -> first = latest
+  }
+  return filtered.map((t) => {
+    const { staffPages, solfegePages } = deriveTuneJpgPages(t.name)
+    return { ...t, staffPages, solfegePages, melismaStatus: statusByTune.get(t.id) ?? null }
+  })
 }

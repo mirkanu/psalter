@@ -14,6 +14,8 @@ import type { PsalmDetail } from '@/db/queries/psalms'
 import type { PsalmRow } from '@/components/PsalmListingGrid'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
 import { setChromeHidden } from '@/lib/chrome-hidden-store'
+import { resolveStaffInlineApproved, shouldFallbackToSplit } from '@/lib/inline-staff-gating'
+import { toast } from 'sonner'
 
 const STORAGE_MODE_KEY = 'psalter-score-mode'
 const STORAGE_SIZE_KEY = 'psalter-staff-size'
@@ -110,6 +112,10 @@ export function SingingView({
 
   const activeTune: TuneOption | null = overrideTune ?? primaryTune
 
+  // Plan 04.9.15-04 (MOBILE-08): explicit-approval gate for inline Staff —
+  // derived from the active tune's latest tuneMelismaDecisions.status.
+  const staffInlineApproved = resolveStaffInlineApproved(activeTune?.melismaStatus ?? null)
+
   // 260712-tmm bug (b): page arrays now travel WITH each tune (server-derived
   // in fetchTunesByMeter / page.tsx builders), so a client-side tune switch
   // always reflects the ACTIVE tune's own arrays instead of stale page props.
@@ -155,6 +161,21 @@ export function SingingView({
   useEffect(() => {
     if (mounted && !showLyrics && viewMode === 'lyrics') setViewMode('staff')
   }, [showLyrics, viewMode, mounted])
+
+  // Plan 04.9.15-04 (MOBILE-08): if navigation (next/prev psalm, tune switch,
+  // or a stale localStorage restore) lands the user in inline Staff on a
+  // non-approved tune, fall back to Split-Leaf and surface the locked toast.
+  // Guarded by a ref keyed to the active tune id so the toast fires once per
+  // transition into this state, not on every render while it persists.
+  const lastFallbackTuneIdRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (!mounted) return
+    if (!shouldFallbackToSplit({ viewMode, staffInlineApproved })) return
+    if (lastFallbackTuneIdRef.current === (activeTune?.id ?? null)) return
+    lastFallbackTuneIdRef.current = activeTune?.id ?? null
+    setViewMode('staff-split')
+    toast('Inline Staff not available for this tune — showing Split-Leaf. Pick a different view in Settings.')
+  }, [activeTune, staffInlineApproved, viewMode, mounted])
 
   // Persist (skip pre-mount window so we don't clobber storage with defaults)
   useEffect(() => {
@@ -578,6 +599,7 @@ export function SingingView({
             // sol-fa) — permanently disabled until real rendering exists.
             solfegeInlineAvailable={false}
             solfegeSplitAvailable={!!(solfegeJpgUrl || activeSolfegePages.length > 0)}
+            staffInlineApproved={staffInlineApproved}
           />
         }
       />
