@@ -544,6 +544,7 @@ export function SingingView({
             soundcloudUrl={soundcloudUrl}
             staffPages={activeStaffPages}
             solfegePages={activeSolfegePages}
+            staffInlineApproved={staffInlineApproved}
           />
         ) : (
           <div className="p-6 text-sm text-muted-foreground italic">
