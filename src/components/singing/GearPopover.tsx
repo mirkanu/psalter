@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
+import { computeInlineLayoutDisabled } from '@/lib/inline-staff-gating'
 
 interface Props {
   open: boolean
@@ -33,6 +34,10 @@ interface Props {
   solfegeInlineAvailable: boolean
   /** Whether SPLIT-LEAF Solfège (scanned JPG) is available. */
   solfegeSplitAvailable: boolean
+  /** Plan 04.9.15-04 (MOBILE-08): derived from the active tune's latest
+   *  tuneMelismaDecisions.status === 'approved'. Gates the Inline Staff
+   *  layout button — only precentor-verified tunes may render inline. */
+  staffInlineApproved: boolean
 }
 
 export function GearPopover({
@@ -46,13 +51,14 @@ export function GearPopover({
   staffAvailable,
   solfegeInlineAvailable,
   solfegeSplitAvailable,
+  staffInlineApproved,
 }: Props) {
   const router = useRouter()
 
   const isMusicNotes = viewMode !== 'lyrics'
   const isStaff = viewMode === 'staff' || viewMode === 'staff-split'
   const isSplit = viewMode === 'staff-split' || viewMode === 'solfege-split'
-  const inlineLayoutDisabled = !isStaff && !solfegeInlineAvailable
+  const inlineLayoutDisabled = computeInlineLayoutDisabled({ isStaff, staffInlineApproved, solfegeInlineAvailable })
 
   const handleNotationChange = (notation: 'staff' | 'solfege') => {
     if (notation === 'staff' && !staffAvailable) {
@@ -73,6 +79,11 @@ export function GearPopover({
   const handleLayoutChange = (layout: 'inline' | 'split-leaf') => {
     if (layout === 'inline' && !isStaff && !solfegeInlineAvailable) {
       toast('Coming soon', { description: 'Inline Solfège notation is not yet available — Split-Leaf shows the scanned Solfège' })
+      return
+    }
+    // Defensive guard — the button is already `disabled` in this state, but
+    // this prevents a synthetic click event from bypassing the gate (MOBILE-08).
+    if (layout === 'inline' && isStaff && !staffInlineApproved) {
       return
     }
     const newMode: ViewMode = isStaff
@@ -217,7 +228,7 @@ export function GearPopover({
                   role="radio"
                   aria-checked={!isSplit}
                   aria-label="Inline"
-                  title="Inline Solfège coming soon"
+                  title={isStaff ? "Inline Staff notation isn't approved for this tune yet" : "Inline Solfège coming soon"}
                   onClick={() => handleLayoutChange('inline')}
                   disabled={inlineLayoutDisabled}
                   className={[
