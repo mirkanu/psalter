@@ -93,6 +93,13 @@ export default async function PsalmPage({ params }: PageProps) {
       null
   }
 
+  // Bug 2 (quick task 260717-mwv): drives the "please select a tune, this
+  // versification is not recommended" messaging in SingingView when no tune
+  // is active yet.
+  const isRecommendedVersion = sortedVersions.length <= 1
+    ? true
+    : (activeVersion?.psalterNumber?.includes('Recommended') ?? false)
+
   // Derive primary tune from the active version
   const rawTune =
     activeVersion?.psalmVersionTunes.find((pvt) => pvt.isPrimary)?.tune ??
@@ -190,6 +197,7 @@ export default async function PsalmPage({ params }: PageProps) {
         studyHref={`/psalms/${slug}/study`}
         versePartLabel={versePartLabel}
         versionSiblings={versionSiblings}
+        isRecommendedVersion={isRecommendedVersion}
       />
     </div>
   )

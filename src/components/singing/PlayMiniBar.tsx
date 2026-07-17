@@ -39,7 +39,10 @@ export function PlayMiniBar({
   const rootRef = useRef<HTMLDivElement | null>(null)
 
   const hasSc = !!soundcloudUrl && soundcloudUrl.startsWith('http')
-  const [audioSource, setAudioSource] = useState<'abc' | 'soundcloud'>('abc')
+  // Bug 3 (260717-mwv): audio-only tunes (no ABC at all) must never attempt
+  // to render the (broken, because `abc` is empty) ABC audio controls.
+  const hasAbc = !!abc && abc.trim().length > 0
+  const [audioSource, setAudioSource] = useState<'abc' | 'soundcloud'>(() => (!hasAbc && hasSc ? 'soundcloud' : 'abc'))
   const [audioSourceRestored, setAudioSourceRestored] = useState(false)
   const [showTour, setShowTour] = useState(false)
 
@@ -54,6 +57,14 @@ export function PlayMiniBar({
     } catch { /* ignore */ }
     setAudioSourceRestored(true)
   }, [])
+
+  // Bug 3 (260717-mwv): re-force SoundCloud whenever this instance has no
+  // ABC — covers both a stale localStorage restore AND a later tune-switch
+  // to an audio-only tune (this component instance persists across tune
+  // switches; only its props change).
+  useEffect(() => {
+    if (!hasAbc && hasSc) setAudioSource('soundcloud')
+  }, [hasAbc, hasSc])
 
   useEffect(() => {
     if (!audioSourceRestored) return
@@ -81,8 +92,8 @@ export function PlayMiniBar({
     try { window.localStorage.setItem('psalter-player-toured', '1') } catch { /* ignore */ }
   }
 
-  const showScToggle = hasSc
-  const showDisclaimer = showScToggle && audioSource === 'soundcloud'
+  const showScToggle = hasSc && hasAbc
+  const showDisclaimer = hasSc && audioSource === 'soundcloud'
   const isScMode = audioSource === 'soundcloud'
   const barHeight = isScMode ? 'h-[80px]' : 'h-[44px]'
 
@@ -234,7 +245,7 @@ export function PlayMiniBar({
       )}
 
       <div className="flex-1 min-w-0 overflow-x-auto">
-        {audioSource === 'abc' ? (
+        {audioSource === 'abc' && hasAbc ? (
           <AbcAudioControls
             abc={abc}
             isPlaying={isPlaying}
