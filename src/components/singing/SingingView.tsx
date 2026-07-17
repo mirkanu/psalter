@@ -516,12 +516,32 @@ export function SingingView({
   // in split-leaf modes. A WeakMap tracks last scrollTop per scrolling
   // element since split-leaf has two independent regions; a single scalar
   // would corrupt direction detection when the user alternates between them.
+  //
+  // Checkpoint round 1 (items 3c/4 + follow-up clarification): two additional
+  // fixes layered onto the above:
+  //   - 3c root cause: this effect used to gate on `if (!abc) return`, so it
+  //     NEVER attached at all for a tune with no ABC (Ps 45b, or no tune at
+  //     all) — scroll-hide silently did nothing regardless of content height.
+  //     Now keyed off `[activeTune?.id, viewMode]` instead, so it (re)attaches
+  //     for every real state transition, abc or not.
+  //   - Item 4 (content-fits-viewport gating): when the active scrollable
+  //     region's content actually FITS inside its own viewport slot
+  //     (scrollHeight <= clientHeight, small tolerance for sub-pixel
+  //     rounding), scrolling is disabled entirely for that region (forced
+  //     `overflow-y: hidden`) and the hide-on-scroll behavior never activates
+  //     — there's nothing to scroll against. This is deliberately MOBILE-ONLY
+  //     (matches the rest of this feature's scope — desktop never hides bars).
+  //     Forcing overflow:auto unconditionally in the "barely fits" case was
+  //     the root cause of the "last lines unreachable" bug: a sliver of
+  //     accidental scroll range (from bottom padding reserved for the bars)
+  //     had hide/show math that broke right at that boundary. Disabling
+  //     scroll entirely when content fits sidesteps the boundary case rather
+  //     than trying to patch its arithmetic.
   useEffect(() => {
-    if (!abc) return
     // CR-03 fix: reset the scroll-hide flags whenever this effect (re)attaches
-    // — e.g. on a tune switch, which changes `abc` and detaches/reattaches
+    // — e.g. on a tune switch or view-mode change, which detaches/reattaches
     // the listener on a fresh scroll container. Without this, hidden chrome
-    // from the previous tune's scroll position could stay hidden after
+    // from the previous state's scroll position could stay hidden after
     // switching, since the container starts at scrollTop 0 and may never
     // produce the upward-scroll delta needed to reveal it again.
     setTopBarHidden(false)
@@ -537,17 +557,64 @@ export function SingingView({
     // and force-reset all hidden flags if the viewport crosses into desktop
     // while scrolled down (resize / orientation flip while hidden).
     const mql = window.matchMedia('(max-width: 767px)')
+    const SCROLL_FIT_TOLERANCE = 2
+
+    // Split-leaf has two INDEPENDENT scroll regions (notation half, lyrics
+    // half); non-split modes (Lyrics Only, inline Staff/Solfège) share one.
+    // The non-split outer wrapper (`data-notation-viewarea`) is intentionally
+    // excluded in split mode — it's already `overflow-hidden` there by design
+    // (its two children scroll independently), so measuring ITS scrollHeight
+    // would spuriously read as "needs scroll" and defeat the fits-viewport
+    // gate below.
+    const isSplitViewMode = viewMode === 'staff-split' || viewMode === 'solfege-split'
+    const selector = isSplitViewMode
+      ? '[data-notation-slot], [data-lyrics-slot]'
+      : '[data-notation-viewarea]'
+
+    const observedEls = new Set<HTMLElement>()
+
+    function applyScrollGate() {
+      const candidates = main!.querySelectorAll<HTMLElement>(selector)
+      let anyNeedsScroll = false
+      candidates.forEach((el) => {
+        if (!observedEls.has(el)) {
+          observedEls.add(el)
+          ro.observe(el)
+        }
+        if (!mql.matches) {
+          // Desktop: never touch overflow — this mobile-only feature simply
+          // doesn't apply; leave the existing CSS classes in control.
+          el.style.overflowY = ''
+          return
+        }
+        const fits = el.scrollHeight <= el.clientHeight + SCROLL_FIT_TOLERANCE
+        el.style.overflowY = fits ? 'hidden' : ''
+        if (!fits) anyNeedsScroll = true
+      })
+      if (!anyNeedsScroll) {
+        setTopBarHidden(false)
+        setBottomBarHidden(false)
+        setMiniBarAutoHidden(false)
+      }
+    }
+
+    const ro = new ResizeObserver(() => applyScrollGate())
+    ro.observe(main)
+    applyScrollGate()
 
     const lastByEl = new WeakMap<EventTarget, number>()
     const handleScroll = (e: Event) => {
       if (!mql.matches) return
       const el = e.target as HTMLElement | null
       if (!el || typeof el.scrollTop !== 'number') return
+      const maxTop = Math.max(0, el.scrollHeight - el.clientHeight)
+      // Item 4: a region whose content fits has its overflow forced to
+      // 'hidden' above so this shouldn't fire in practice — defensive only.
+      if (maxTop <= SCROLL_FIT_TOLERANCE) return
       // iOS Safari rubber-band overscroll reports scrollTop OUTSIDE the natural
       // [0, maxTop] range and oscillates rapidly at the boundary. Clamp to the
       // valid range so bounce frames collapse to a constant boundary value
       // (delta ~0) instead of registering as real up/down movement.
-      const maxTop = Math.max(0, el.scrollHeight - el.clientHeight)
       const scrollTop = Math.min(Math.max(el.scrollTop, 0), maxTop)
       const last = lastByEl.get(el) ?? 0
       const delta = scrollTop - last
@@ -567,6 +634,7 @@ export function SingingView({
     }
 
     const handleMql = () => {
+      applyScrollGate()
       if (!mql.matches) {
         setTopBarHidden(false); setBottomBarHidden(false); setMiniBarAutoHidden(false)
       }
@@ -577,8 +645,10 @@ export function SingingView({
     return () => {
       main.removeEventListener('scroll', handleScroll, { capture: true } as EventListenerOptions)
       mql.removeEventListener('change', handleMql)
+      ro.disconnect()
+      observedEls.forEach((el) => { el.style.overflowY = '' })
     }
-  }, [abc])
+  }, [activeTune?.id, viewMode])
 
   // Quick task 260712-kd1 (bug b fix): drive the shared chrome-hidden store
   // from the top-bar hidden flag so the root-layout SiteHeader hides together
