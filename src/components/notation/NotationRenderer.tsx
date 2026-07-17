@@ -1246,7 +1246,15 @@ export function NotationRenderer({
             <div data-notation-slot className="flex-none min-h-0 max-h-[50%] overflow-hidden flex flex-col">
               {notationSlot}
             </div>
-            <div data-lyrics-slot className="flex-1 min-h-0 overflow-hidden">
+            {/* 260717-mwv checkpoint round 1 (item 1 follow-up): this half was
+                `overflow-hidden` with no scroll at all — any lyrics beyond
+                the 50% slot were silently clipped with no way to reach them.
+                That directly contradicted this branch's own stated intent
+                ("guaranteeing lyrics a minimum 50%") and became far more
+                consequential once Bug 1 routed Split-Leaf Staff's JPG
+                fallback through this same branch (previously only Solfège
+                used it). Now scrollable, matching the sibling branch below. */}
+            <div data-lyrics-slot className="flex-1 min-h-0 overflow-y-auto overscroll-y-none">
               {stanzaSlot}
             </div>
           </div>
