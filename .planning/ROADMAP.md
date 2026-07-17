@@ -85,7 +85,7 @@ Plans:
 - [x] 04.9.15-03-PLAN.md — Item (c): glue verse-number digit onto first syllable of inline-Staff w: lines
 
 **Wave 2** *(depends on Wave 0 + Plan 02)*
-- [ ] 04.9.15-04-PLAN.md — Item (e): explicit-'approved' gate on inline Staff (data-layer status + GearPopover disable + navigation fallback toast)
+- [x] 04.9.15-04-PLAN.md — Item (e): explicit-'approved' gate on inline Staff (data-layer status + GearPopover disable + navigation fallback toast)
 - [ ] 04.9.15-05-PLAN.md — Items (a)+(d): 60% clef/key shrink on wrapped rows + non-last-row width fill (human visual sign-off)
 
 ### Milestone 2 — Precentor Portal & Polish
