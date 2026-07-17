@@ -8,7 +8,7 @@ import {
   getEditoriallyLinkedTuneIdsForPsalm,
   fetchPsalmListRows,
 } from '@/db/queries/psalms'
-import { fetchTunesByMeter, type AlternateTune } from '@/db/queries/tunes'
+import { fetchTunesByMeter, fetchTuneMelismaStatus, type AlternateTune, type MelismaStatus } from '@/db/queries/tunes'
 import { SingingView } from '@/components/singing/SingingView'
 import { PrecentingBar } from '@/components/precent/PrecentingBar'
 import { deriveTuneJpgPages } from '@/lib/tune-jpg-urls'
@@ -62,6 +62,12 @@ export default async function PrecentSingPage({ params }: PageProps) {
 
   // Tune override: if item.tuneId is set, prefer the assigned tune as primaryTune
   let primaryTune: AlternateTune | null = null
+  // buildTuneOption (below) has no join to tuneMelismaDecisions — only
+  // fetchTunesByMeter's per-meter batch fetch does. Track whether primaryTune
+  // came from buildTuneOption so we backfill its REAL status afterward
+  // (buildTuneOption defaults melismaStatus to null, not undefined, so an
+  // "is undefined" check would never fire — this flag is the correct guard).
+  let primaryTuneNeedsMelismaStatus = false
 
   if (item.tuneId) {
     // Find the assigned tune in alternateTunes (same meter) or use the tune row directly
@@ -72,9 +78,15 @@ export default async function PrecentSingPage({ params }: PageProps) {
       // Tune is outside the psalm's default meter — fetch it from the DB via set item tune relation
       // Fallback: still use the psalm's default tune
       primaryTune = primaryTuneRow ? buildTuneOption(primaryTuneRow) : null
+      primaryTuneNeedsMelismaStatus = !!primaryTune
     }
   } else {
     primaryTune = primaryTuneRow ? buildTuneOption(primaryTuneRow) : null
+    primaryTuneNeedsMelismaStatus = !!primaryTune
+  }
+
+  if (primaryTune && primaryTuneNeedsMelismaStatus) {
+    primaryTune = { ...primaryTune, melismaStatus: await fetchTuneMelismaStatus(primaryTune.id) }
   }
 
   const editorialSet = await getEditoriallyLinkedTuneIdsForPsalm(psalm.id)
@@ -160,5 +172,6 @@ function buildTuneOption(tune: Record<string, any>): AlternateTune {
     phraseShapeOverride: (tune.phraseShapeOverride ?? null) as number[] | null,
     staffPages,
     solfegePages,
+    melismaStatus: (tune.melismaStatus ?? null) as MelismaStatus | null,
   }
 }

@@ -9,7 +9,7 @@ import {
   getEditoriallyLinkedTuneIdsForPsalm,
   fetchPsalmListRows,
 } from '@/db/queries/psalms'
-import { fetchTunesByMeter } from '@/db/queries/tunes'
+import { fetchTunesByMeter, fetchTuneMelismaStatus } from '@/db/queries/tunes'
 import { SingingView } from '@/components/singing/SingingView'
 import { parseSlug, deriveVersionSlug, stripStar, slugToDisplayTitle } from '@/lib/psalm-slugs'
 import { deriveTuneJpgPages } from '@/lib/tune-jpg-urls'
@@ -111,8 +111,9 @@ export default async function PsalmPage({ params }: PageProps) {
 
   // Wrap primaryTune in TuneOption (AlternateTune) shape — used uniformly by SingingView
   const primaryTune = primaryTuneRow
-    ? (() => {
+    ? await (async () => {
         const { staffPages, solfegePages } = deriveTuneJpgPages(primaryTuneRow.name)
+        const melismaStatus = await fetchTuneMelismaStatus(primaryTuneRow.id)
         return {
           id: primaryTuneRow.id,
           name: primaryTuneRow.name,
@@ -129,6 +130,7 @@ export default async function PsalmPage({ params }: PageProps) {
           melismaPositions: (primaryTuneRow as { melismaPositions?: number[][] | null }).melismaPositions ?? null,
           staffPages,
           solfegePages,
+          melismaStatus,
         }
       })()
     : null
