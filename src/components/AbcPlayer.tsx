@@ -422,7 +422,29 @@ export default function AbcPlayer({
       //   bigger). A+ visibly grows the staff.
       // - Smaller requested size → wider staffwidth → fewer wraps → shorter
       //   SVG.
-      const targetStaffwidth = (containerWidth * staffWidthFactor) / effectiveScale
+      // MOBILE-07 (Phase 04.9.15 Plan 05): chromeless inline (non-split) Staff
+      // is the ONLY caller that ever passes staffWidthFactor < 1 (split-leaf
+      // was already fixed to a permanent 1 by 260712-kov; non-chromeless
+      // desktop callers default to 1 too) — NotationRenderer.tsx narrows it to
+      // 0.55/0.85 to force multiple systems under the pre-04.9.12 wrap
+      // mechanism. Since SingingView always supplies melismaPositions,
+      // buildUnifiedAbc's melisma-positions branch already emits exactly one
+      // already-fixed music line per phrase, so system count no longer
+      // depends on that narrowing (see NotationRenderer.tsx's 260712-kov
+      // comment) — it now only compresses note spacing. abcjs's own
+      // non-last-line auto-stretch (calcHorizontalSpacing) justifies each row
+      // to THIS narrowed target, not the actual rendered container width;
+      // once the responsive SVG viewBox scales back up to fill the container,
+      // rows whose natural content is close to the narrowed target look
+      // visibly under-filled relative to a wider row that overflowed it
+      // (confirmed live: tests/diagnostics/inline-staff-clef-stretch-diff.mjs
+      // — worst fill ratio 0.807 on psalm-78 before this fix). Fix: for this
+      // narrowed-factor case, target the FULL container width for
+      // justification purposes instead — mirrors the 260712-kov split-leaf
+      // fix. Split-leaf (factor already 1) and desktop non-chromeless
+      // (default 1) are untouched since this only overrides factor < 1.
+      const stretchStaffWidthFactor = staffWidthFactor < 1 ? 1 : staffWidthFactor
+      const targetStaffwidth = (containerWidth * stretchStaffWidthFactor) / effectiveScale
       const effectiveStaffWidth = Math.max(120, Math.floor(targetStaffwidth))
       // 260712-szw: mobile split-leaf only — compact vertical spacing via
       // %% ABC directive prepend (see injectCompactSpacingDirectives; abcjs's
