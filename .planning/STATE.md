@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 04.9.14-03-PLAN.md
-last_updated: "2026-07-16T18:36:40.094Z"
-last_activity: 2026-07-16 -- Phase 04.9.15 execution started
+status: verifying
+stopped_at: Completed 04.9.15-05-PLAN.md (approved after 4 checkpoint rounds)
+last_updated: "2026-07-17T16:23:48.898Z"
+last_activity: 2026-07-17
 progress:
   total_phases: 14
-  completed_phases: 10
+  completed_phases: 11
   total_plans: 57
-  completed_plans: 52
-  percent: 91
+  completed_plans: 57
+  percent: 100
 ---
 
 # Project State
@@ -26,10 +26,10 @@ See: .planning/PROJECT.md (updated 2026-05-07)
 ## Current Position
 
 Phase: 04.9.15 (mobile-inline-staff-optimization) — EXECUTING
-Plan: 1 of 5
+Plan: 5 of 5
 UI-SPEC: Phase 04.9.4 closed out. Singing-view chrome refined across 4 polish rounds (chrome-dedup, singing-chrome-polish, r3, r4); audio first-press bug fixed; tour redesigned (4 steps, per-element spotlights); mobile bar h-11 (44px); lyrics/solfège views get bigger font + padding + inline YouTube embed; "Ps 119:N-M" range titles.
-Status: Executing Phase 04.9.15
-Last activity: 2026-07-16 -- Phase 04.9.15 execution started
+Status: Phase complete — ready for verification
+Last activity: 2026-07-17
 
 Progress: [██████████] 100%
 
@@ -84,6 +84,7 @@ Progress: [██████████] 100%
 | Phase 04.9.14 P01 | 45 | 6 tasks | 6 files |
 | Phase 04.9.14 P02 | 35 | 4 tasks | 3 files |
 | Phase 04.9.14 P03 | 30 min | 5 tasks | 3 files |
+| Phase 04.9.15 P05 | 215 min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -166,6 +167,9 @@ Recent decisions affecting current work:
 - [Phase 04.9.14-03]: PlayMiniBar inline variant switched to fixed positioning (bottom offset matches GlassBottomBar h-11/h-13 + safe-area formula) instead of document flow, which had placed it below the fixed bottom bar requiring scroll
 - [Phase 04.9.14-03]: PlayMiniBar reports its own height via ResizeObserver (onHeightChange) so SingingView reserves exact dynamic bottom padding instead of a static guess, correctly handling both 44px compact and 80px SoundCloud-mode profiles
 - [Phase 04.9.14-03]: PlayMiniBar auto-hide reuses Plan 01's scroll listener; effectiveMiniBarVisible = miniBarVisible && !miniBarAutoHidden ensures manual collapse is never restored by scrolling up
+- [Phase 04.9.15-05]: Clef/key/time-signature shrink on inline Staff implemented as a post-render JS DOM pass (applyLeadingGlyphShrink), not static CSS — CSS transform-origin percentages default to the whole SVG viewport (not the element's own bbox) without transform-box:fill-box, and independently-scaled glyphs leave inter-glyph gaps untouched -- both required measured DOM geometry to fix correctly, which only JS can compute
+- [Phase 04.9.15-05]: MOBILE-07 row-stretch fix uses abcjs's native expandToWidest render option — staffWidthFactor narrowing was not the root cause (empirically disproven); every wrapped row's natural minimum content width already exceeded any reasonable staffwidth target, so expandToWidest (letting the widest row's natural width become the shared target for all rows) was the correct built-in abcjs mechanism
+- [Phase 04.9.15-05]: All rows shrink clef/key/time-signature (not just wrapped rows), per explicit user override of the original plan text — User decided consistency across all rows (including row 1) was preferred over the original reader-orientation-point rationale for keeping row 1 full size
 
 ### Pending Todos
 
@@ -231,8 +235,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-12T10:09:19.423Z
-Stopped at: Completed 04.9.14-03-PLAN.md
+Last session: 2026-07-17T16:23:48.850Z
+Stopped at: Completed 04.9.15-05-PLAN.md (approved after 4 checkpoint rounds)
 Resume file: None
 
 ### Deferred from 04.9.4 polish (separate tickets when needed)
