@@ -63,44 +63,50 @@ function injectCompactSpacingDirectives(abc: string): string {
 }
 
 const CLEF_KEY_SHRINK_SCALE = 0.6
+// Leading-glyph classes shrunk by applyLeadingGlyphShrink. Time-signature
+// added per user follow-up request on Psalm 31 (post-checkpoint-approval):
+// abcjs only draws it on row 0 (it's not repeated on wrapped rows, unlike
+// the key signature, which repeats every system) — confirmed live via
+// direct DOM inspection of /psalms/31, NOT assumed.
+const LEADING_GLYPH_SELECTOR = '.abcjs-clef, .abcjs-key-signature, .abcjs-time-signature'
 
 /**
  * MOBILE-04/MOBILE-07 (Phase 04.9.15 Plan 05, revised after human checkpoint
- * feedback): shrinks the repeated clef + key-signature glyph group on EVERY
- * row of mobile inline (non-split, chromeless) Staff — including row 1, per
+ * feedback, then extended per a follow-up user request): shrinks the
+ * repeated clef + key-signature + time-signature glyph group on EVERY row
+ * of mobile inline (non-split, chromeless) Staff — including row 1, per
  * explicit user override of the original "row 1 stays full size" plan text
  * — and reflows the freed horizontal space into the following notation/
  * lyrics. Runs as a post-render DOM pass rather than a static CSS rule
  * because CSS alone cannot solve either of the two problems the human found:
  *
  * 1. Vertical alignment: a static `transform-origin: left center` pivots
- *    around each element's OWN bounding-box center, but the clef and
- *    key-signature glyphs are NOT symmetrically positioned around the
- *    staff's vertical center (confirmed live: for one real tune, the
- *    key-signature's own bbox center sat ~24% of its own height ABOVE the
- *    staff's actual center — a fixed CSS percentage cannot account for this
- *    per-key-signature variance, since different keys occupy different
- *    staff lines/spaces). This function measures the ACTUAL staff position
- *    per row and computes a transform-origin Y-percentage relative to EACH
- *    element's own bbox that lands exactly on the staff's vertical center,
- *    so the scale-down never shifts the glyph off the staff regardless of
- *    clef/key shape.
+ *    around each element's OWN bounding-box center, but these glyphs are
+ *    NOT symmetrically positioned around the staff's vertical center
+ *    (confirmed live: for one real tune, the key-signature's own bbox
+ *    center sat ~24% of its own height ABOVE the staff's actual center — a
+ *    fixed CSS percentage cannot account for this per-glyph variance, since
+ *    different keys/clefs occupy different staff lines/spaces). This
+ *    function measures the ACTUAL staff position per row and computes a
+ *    transform-origin Y-percentage relative to EACH element's own bbox that
+ *    lands exactly on the staff's vertical center, so the scale-down never
+ *    shifts the glyph off the staff regardless of shape.
  * 2. Horizontal space reclaim: a CSS `transform: scale()` only shrinks the
  *    glyph visually — it does not change abcjs's own layout math, so the
  *    following notes/lyrics stay at their original x-position, leaving a
  *    gap where the glyph used to be. This function computes exactly how
  *    much width was freed (scale pivots from the LEFT edge, so only the
  *    right edge moves) and translates every subsequent sibling in that row
- *    (notes, bars, time signature, lyrics, ties/slurs — everything except
- *    the 5 staff lines, which must stay fixed since they already span the
- *    full row width) left by that amount, so the reclaimed space is
- *    actually used instead of sitting empty.
+ *    (notes, bars, lyrics, ties/slurs — everything except the 5 staff
+ *    lines, which must stay fixed since they already span the full row
+ *    width) left by that amount, so the reclaimed space is actually used
+ *    instead of sitting empty.
  *
  * Idempotent / safe to call on every render: the caller always tears down
  * and rebuilds the SVG from scratch first (`el.innerHTML = ''`), so there is
  * no stale transform state to reset.
  */
-function applyClefKeySignatureShrink(containerEl: HTMLElement): void {
+function applyLeadingGlyphShrink(containerEl: HTMLElement): void {
   const rows = containerEl.querySelectorAll<SVGGElement>('.abcjs-staff-wrapper')
   rows.forEach((row) => {
     const staffEl = row.querySelector<SVGGraphicsElement>('.abcjs-staff')
@@ -110,7 +116,7 @@ function applyClefKeySignatureShrink(containerEl: HTMLElement): void {
     const staffCenterY = staffBB.y + staffBB.height / 2
 
     const shrinkEls = Array.from(
-      row.querySelectorAll<SVGGraphicsElement>('.abcjs-clef, .abcjs-key-signature'),
+      row.querySelectorAll<SVGGraphicsElement>(LEADING_GLYPH_SELECTOR),
     )
     if (shrinkEls.length === 0) return
 
@@ -122,7 +128,7 @@ function applyClefKeySignatureShrink(containerEl: HTMLElement): void {
       // Percentage (relative to THIS element's own bbox height) at which the
       // staff's vertical center falls — this is the correct transform-origin
       // Y so scaling never shifts the glyph's staff-relative position,
-      // regardless of how the specific clef/key-signature glyph is shaped.
+      // regardless of how the specific clef/key/time glyph is shaped.
       const originYPercent = ((staffCenterY - bb.y) / bb.height) * 100
       // CRITICAL: percentage-based transform-origin on an SVG child element
       // defaults to being relative to the NEAREST SVG VIEWPORT (the entire
@@ -147,12 +153,14 @@ function applyClefKeySignatureShrink(containerEl: HTMLElement): void {
 
     // Shift everything else in this row left into the reclaimed space —
     // except the 5 staff lines themselves (already span the full row width
-    // and must stay put) and the clef/key elements we just transformed.
+    // and must stay put) and the clef/key/time-signature elements we just
+    // transformed.
     for (const child of Array.from(row.children)) {
       if (!(child instanceof SVGGraphicsElement)) continue
       if (child.classList.contains('abcjs-staff')) continue
       if (child.classList.contains('abcjs-clef')) continue
       if (child.classList.contains('abcjs-key-signature')) continue
+      if (child.classList.contains('abcjs-time-signature')) continue
       child.style.transform = `translateX(-${freedSpace}px)`
     }
   })
@@ -568,13 +576,14 @@ export default function AbcPlayer({
         expandToWidest,
       })
       visualObjRef.current = visualObjs?.[0] ?? null
-      // MOBILE-04 (revised): shrink the clef/key-signature glyph group on
-      // every row — including row 1 — and reflow the freed space into the
-      // following notation/lyrics. Gated to the same staffWidthFactor < 1
-      // signal as expandToWidest above (chromeless inline non-split Staff
-      // only); split-leaf and desktop non-chromeless are untouched.
+      // MOBILE-04 (revised): shrink the clef/key-signature/time-signature
+      // glyph group on every row — including row 1 — and reflow the freed
+      // space into the following notation/lyrics. Gated to the same
+      // staffWidthFactor < 1 signal as expandToWidest above (chromeless
+      // inline non-split Staff only); split-leaf and desktop non-chromeless
+      // are untouched.
       if (staffWidthFactor < 1) {
-        applyClefKeySignatureShrink(el)
+        applyLeadingGlyphShrink(el)
       }
     } catch (e) {
       console.error('abcjs render failed:', e)
