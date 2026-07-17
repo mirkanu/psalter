@@ -565,10 +565,16 @@ export function SingingView({
     // excluded in split mode — it's already `overflow-hidden` there by design
     // (its two children scroll independently), so measuring ITS scrollHeight
     // would spuriously read as "needs scroll" and defeat the fits-viewport
-    // gate below.
+    // gate below. `data-lyrics-scroll` (not `data-lyrics-slot`) is used for
+    // the lyrics half specifically because `data-lyrics-slot` is only a
+    // structural wrapper that always matches its child's height via `h-full`
+    // — the REAL scroll container is the inner StanzaList wrapper div, which
+    // is what needs measuring (found empirically via Playwright: the outer
+    // wrapper's scrollHeight always equalled its clientHeight regardless of
+    // actual lyrics length, defeating the fits-viewport check entirely).
     const isSplitViewMode = viewMode === 'staff-split' || viewMode === 'solfege-split'
     const selector = isSplitViewMode
-      ? '[data-notation-slot], [data-lyrics-slot]'
+      ? '[data-notation-slot], [data-lyrics-scroll]'
       : '[data-notation-viewarea]'
 
     const observedEls = new Set<HTMLElement>()
