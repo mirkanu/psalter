@@ -162,20 +162,46 @@ export function SingingView({
   const baseSizeRef = useRef<number>(baseSize)
   const notationBaseSizeRef = useRef<number>(notationBaseSize)
 
+  // Checkpoint round 4 (item 3 refinement): tracks whether the user's
+  // most-recently-used view mode (BEFORE the current transition) was a Music
+  // Notes mode (not Lyrics Only) — decides whether the zero-notation
+  // auto-toast below should fire. Two distinct "before" signals feed it:
+  //   - Seeded from the PERSISTED localStorage preference in the
+  //     mount-hydration effect below, which is the only reliable source at
+  //     that exact moment (that same effect may itself force viewMode to
+  //     'lyrics' for a zero-notation tune, which would otherwise clobber the
+  //     signal before anything else gets to read it).
+  //   - Kept in sync afterward by the small effect further below, which only
+  //     updates it while hasAnyNotation is true (i.e. only ever records a
+  //     GENUINE, non-forced viewMode as "the last real preference").
+  const wasMusicNotesBeforeRef = useRef<boolean>(false)
+
   // Hydrate from localStorage AFTER first paint to avoid SSR mismatch — this
   // component itself is server-rendered (the notation child is dynamic ssr:false).
   // Runs ONCE on mount; we don't want re-hydration to clobber the user's
   // in-memory viewMode when showLyrics flips. (WR-01)
   useEffect(() => {
+    const stored = readStoredViewMode(showLyrics)
+    wasMusicNotesBeforeRef.current = stored !== 'lyrics'
     // Bug 3 (260717-mwv): never restore a stored Staff/Split preference for a
     // tune with no notation at all — the forced-Lyrics-Only effect below
     // would immediately override it anyway, but this avoids a flash of a
     // broken Split-Leaf view before that effect fires.
-    setViewMode(hasAnyNotation ? readStoredViewMode(showLyrics) : 'lyrics')
+    setViewMode(hasAnyNotation ? stored : 'lyrics')
     setBaseSize(readStoredBaseSize())
     setMounted(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Keeps wasMusicNotesBeforeRef in sync for LATER (mid-session) tune
+  // switches into a zero-notation tune — see the ref's declaration above for
+  // the full rationale. Deliberately excludes updates while hasAnyNotation is
+  // false so a forced 'lyrics' state is never mistaken for a real preference.
+  useEffect(() => {
+    if (!mounted) return
+    if (!hasAnyNotation) return
+    wasMusicNotesBeforeRef.current = viewMode !== 'lyrics'
+  }, [viewMode, hasAnyNotation, mounted])
 
   // Fallback: if showLyrics flips off while user is in 'lyrics' mode, drop to staff.
   useEffect(() => {
@@ -223,10 +249,13 @@ export function SingingView({
   // lastFallbackTuneIdRef) so it only fires once per transition.
   //
   // Checkpoint round 1 (item 3a) removed this toast on load/tune-switch;
-  // checkpoint round 2 (item 3, REVERSAL) restored it — the automatic switch
-  // to Lyrics Only needs its own explanation on load too, in addition to (not
-  // instead of) the tap-triggered message in GearPopover's musicNotesBlocked
-  // handling. Both triggers now show the same message.
+  // checkpoint round 2 (item 3, REVERSAL) restored it unconditionally;
+  // checkpoint round 4 (item 3 refinement) narrowed it further — only
+  // auto-show it if the user's most-recently-used view mode (before this
+  // transition — see wasMusicNotesBeforeRef above) was a Music Notes mode.
+  // If they were already in Lyrics Only, they weren't expecting notation, so
+  // there's nothing to explain. The tap-triggered message in GearPopover's
+  // musicNotesBlocked handling always fires regardless of this check.
   const lastNoNotationTuneIdRef = useRef<number | null>(null)
   useEffect(() => {
     if (!mounted) return
@@ -234,7 +263,9 @@ export function SingingView({
     if (lastNoNotationTuneIdRef.current === (activeTune?.id ?? null)) return
     lastNoNotationTuneIdRef.current = activeTune?.id ?? null
     setViewMode('lyrics')
-    toast('No staff or solfège notation available for this tune — showing Lyrics Only. Audio may still be available via Play.')
+    if (wasMusicNotesBeforeRef.current) {
+      toast('No staff or solfège notation available for this tune — showing Lyrics Only. Audio may still be available via Play.')
+    }
   }, [activeTune, hasAnyNotation, mounted])
 
   // Persist (skip pre-mount window so we don't clobber storage with defaults)
@@ -728,13 +759,24 @@ export function SingingView({
          104 = 56 SiteHeader + 48 topbar (mobile).
          116 = 56 SiteHeader + 60 topbar (≥md).
          Glass bottom bar is fixed (z-40), accounted via pb-14/pb-15.
-         overflow-y is controlled by NotationRenderer's chromeless wrapper.
+         overflow-y is controlled by NotationRenderer's chromeless wrapper —
+         BUT 260717-mwv round 4 (item 5) found this assumption breaks
+         whenever the wrapper's measured height doesn't PERFECTLY match its
+         content (any small mismatch, or the dynamic PlayMiniBar spacer div
+         also inside <main>, tipping the total over): without its own
+         overflow constraint, <main> let that excess silently spill into the
+         page, growing <body> taller than the viewport and making the WHOLE
+         PAGE scrollable at the window/html level — invisible to every
+         data-notation-viewarea/slot-level content-fit check, since none of
+         those measure <main> itself. overflow-hidden here is a hard outer
+         backstop: <main> now NEVER leaks overflow into the page regardless
+         of any inner measurement being slightly off.
       */}
       <main
         ref={mainRef}
         data-notation-region
         data-tour-target="scroll-area"
-        className="overflow-x-hidden flex flex-col h-[calc(100dvh-104px)] md:h-[calc(100dvh-116px)] pb-11 md:pb-13 transition-[height,margin-top,padding-bottom] duration-200 ease-out motion-reduce:transition-none"
+        className="overflow-hidden flex flex-col h-[calc(100dvh-104px)] md:h-[calc(100dvh-116px)] pb-11 md:pb-13 transition-[height,margin-top,padding-bottom] duration-200 ease-out motion-reduce:transition-none"
         style={{
           height: topBarHidden ? '100dvh' : undefined,
           marginTop: topBarHidden ? '-104px' : undefined,
