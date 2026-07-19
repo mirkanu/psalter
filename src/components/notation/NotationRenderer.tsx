@@ -1184,6 +1184,12 @@ export function NotationRenderer({
       <p className="text-sm text-muted-foreground italic">Score image not available</p>
     )
 
+    // 260717-mwv checkpoint round 2 (item 1): the buttons were 44x44 (full
+    // touch-target size) with a 4px gap on both sides — on a ~375px mobile
+    // viewport that reserved ~100px of horizontal width for navigation,
+    // leaving little for the JPEG itself. Narrowed to a slim 28px-wide column
+    // (kept reasonably tall for a comfortable tap target) with no gap against
+    // the image, so more width goes to the JPEG.
     const navButton = (direction: 'prev' | 'next') => {
       const disabled = direction === 'prev' ? pageIndex === 0 : pageIndex === pages.length - 1
       return (
@@ -1196,16 +1202,16 @@ export function NotationRenderer({
             setPageIndex((i) => (direction === 'prev' ? Math.max(0, i - 1) : Math.min(pages.length - 1, i + 1)))
           }
           disabled={disabled}
-          className="h-11 w-11 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+          className="h-10 w-7 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
         >
-          {direction === 'prev' ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+          {direction === 'prev' ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         </button>
       )
     }
 
     const imageBlock = (
       <div className={cn(
-        'flex items-center gap-1',
+        'flex items-center gap-0',
         chromeless && !isSplit ? '-mx-4' : '',
         isSplit && chromeless ? 'flex-1 min-h-0' : '',
       )}>
