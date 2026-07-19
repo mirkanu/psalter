@@ -52,9 +52,10 @@ function exportCsv(psalms: PsalmRow[]) {
 interface PsalmListingGridProps {
   psalms: PsalmRow[]
   onSelect?: (psalm: PsalmRow) => void
+  hideExport?: boolean
 }
 
-export function PsalmListingGrid({ psalms, onSelect }: PsalmListingGridProps) {
+export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingGridProps) {
   const [query, setQuery] = useState('')
   const [advancedOpen, setAdvancedOpen] = useLocalStorage('psalms.advancedOpen', false)
   const [showFirstLine, setShowFirstLine] = useLocalStorage('psalms.showFirstLine', false)
@@ -66,7 +67,11 @@ export function PsalmListingGrid({ psalms, onSelect }: PsalmListingGridProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
-  useEffect(() => { inputRef.current?.focus() }, [])
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+      inputRef.current?.focus()
+    }
+  }, [])
 
   const trimmedQuery = query.trim()
   const isNumeric = /^\d+$/.test(trimmedQuery)
@@ -146,8 +151,8 @@ export function PsalmListingGrid({ psalms, onSelect }: PsalmListingGridProps) {
 
   const hasExpanded = showFirstLine || showMeter || showRecommendedTune || (trimmedQuery.length > 0 && !isNumeric)
   const gridCols = hasExpanded
-    ? "grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10"
-    : "grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-[repeat(15,minmax(0,1fr))]"
+    ? "grid-cols-[repeat(auto-fill,minmax(7rem,1fr))]"
+    : "grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))]"
 
   // Show book sections only when there's no active search or filter
   const isGrouped = !trimmedQuery && meterFilter === 'all'
@@ -231,7 +236,7 @@ export function PsalmListingGrid({ psalms, onSelect }: PsalmListingGridProps) {
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
                 {is119 ? 'Psalm 119, verses:' : `Psalm ${id}`}
               </p>
-              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))] gap-2">
                 {entries.map((psalm) => (
                   <PsalmNumberBox
                     key={psalm.slug}
@@ -260,7 +265,14 @@ export function PsalmListingGrid({ psalms, onSelect }: PsalmListingGridProps) {
 
   return (
     <div className="space-y-4">
-      <div id="psalms-sticky-header" className="sticky top-14 z-20 bg-background py-2 -mx-4 px-4 space-y-2">
+      <div
+        id="psalms-sticky-header"
+        className={
+          hideExport
+            ? "sticky top-0 z-20 bg-background pb-2 space-y-2"
+            : "sticky top-14 z-20 bg-background py-2 -mx-4 px-4 space-y-2"
+        }
+      >
         {/* Search bar */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -369,15 +381,17 @@ export function PsalmListingGrid({ psalms, onSelect }: PsalmListingGridProps) {
         <p className="text-sm text-muted-foreground">
           {filteredPsalms.length} {filteredPsalms.length === 1 ? 'versification' : 'versifications'}
         </p>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => exportCsv(psalms)}
-          className="gap-1.5 text-sm"
-        >
-          <Download className="h-3.5 w-3.5" />
-          Download CSV
-        </Button>
+        {!hideExport && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportCsv(psalms)}
+            className="gap-1.5 text-sm"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Download CSV
+          </Button>
+        )}
       </div>
 
       {/* Psalm grid / grouped sections */}
@@ -389,24 +403,26 @@ export function PsalmListingGrid({ psalms, onSelect }: PsalmListingGridProps) {
       ) : isGrouped ? (
         <div className="relative pr-10 md:pr-0">
           {/* Vertical book tabs — mobile only, fixed right side */}
-          <div className="fixed right-0 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-px md:hidden">
-            {BOOKS.map((book) => (
-              <button
-                key={book.sectionId}
-                onClick={() => {
-                  const el = document.getElementById(book.sectionId)
-                  if (!el) return
-                  const header = document.getElementById('psalms-sticky-header')
-                  const headerH = header ? header.offsetHeight : 80
-                  const top = window.scrollY + el.getBoundingClientRect().top - 56 - headerH - 8
-                  window.scrollTo({ top, behavior: 'smooth' })
-                }}
-                className="bg-background/95 border border-r-0 border-border rounded-l-md text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center overflow-hidden w-6 h-14"
-              >
-                <span className="text-[9px] font-mono whitespace-nowrap rotate-90 block">{book.range}</span>
-              </button>
-            ))}
-          </div>
+          {!hideExport && (
+            <div className="fixed right-0 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-px md:hidden">
+              {BOOKS.map((book) => (
+                <button
+                  key={book.sectionId}
+                  onClick={() => {
+                    const el = document.getElementById(book.sectionId)
+                    if (!el) return
+                    const header = document.getElementById('psalms-sticky-header')
+                    const headerH = header ? header.offsetHeight : 80
+                    const top = window.scrollY + el.getBoundingClientRect().top - 56 - headerH - 8
+                    window.scrollTo({ top, behavior: 'smooth' })
+                  }}
+                  className="bg-background/95 border border-r-0 border-border rounded-l-md text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center overflow-hidden w-6 h-14"
+                >
+                  <span className="text-[9px] font-mono whitespace-nowrap rotate-90 block">{book.range}</span>
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Book sections */}
           {BOOKS.map((book) => {
