@@ -97,9 +97,13 @@ export function GearPopover({
       toast('Coming soon', { description: 'Inline Solfège notation is not yet available — Split-Leaf shows the scanned Solfège' })
       return
     }
-    // Defensive guard — the button is already `disabled` in this state, but
-    // this prevents a synthetic click event from bypassing the gate (MOBILE-08).
+    // 260717-mwv checkpoint round 4 (new item A): this button is greyed out
+    // (aria-disabled, not native disabled — see JSX) specifically so a real
+    // tap still reaches this handler and can explain why, generalizing the
+    // "tap a disabled Music Notes control to see why" pattern beyond just
+    // the top-level Music Notes toggle (MOBILE-08 gate).
     if (layout === 'inline' && isStaff && !staffInlineApproved) {
+      toast("Inline Staff notation isn't approved for this tune yet — showing Split-Leaf. Pick a different view in Settings.")
       return
     }
     const newMode: ViewMode = isStaff
@@ -217,7 +221,7 @@ export function GearPopover({
                   aria-checked={isStaff}
                   aria-label="Staff"
                   onClick={() => handleNotationChange('staff')}
-                  disabled={!staffAvailable}
+                  aria-disabled={!staffAvailable ? 'true' : undefined}
                   className={[
                     'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
                     !staffAvailable && 'opacity-40 cursor-not-allowed',
@@ -235,7 +239,7 @@ export function GearPopover({
                   aria-checked={!isStaff}
                   aria-label="Solfege"
                   onClick={() => handleNotationChange('solfege')}
-                  disabled={!solfegeSplitAvailable}
+                  aria-disabled={!solfegeSplitAvailable ? 'true' : undefined}
                   className={[
                     'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
                     !solfegeSplitAvailable && 'opacity-40 cursor-not-allowed',
@@ -261,7 +265,7 @@ export function GearPopover({
                   aria-label="Inline"
                   title={isStaff ? "Inline Staff notation isn't approved for this tune yet" : "Inline Solfège coming soon"}
                   onClick={() => handleLayoutChange('inline')}
-                  disabled={inlineLayoutDisabled}
+                  aria-disabled={inlineLayoutDisabled ? 'true' : undefined}
                   className={[
                     'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
                     inlineLayoutDisabled && 'opacity-40 cursor-not-allowed',
