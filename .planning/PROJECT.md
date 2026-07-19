@@ -118,4 +118,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-14 — Phase 04.12 complete: /explore page rebuilt with 6 sections, anchor nav, authors table, NT quotations, Messianic by topic, Heidelberg catechism, sub-topic drill-down on Nave's detail route; Playwright UAT 11/11 GREEN*
+*Last updated: 2026-07-19 — Phase 04.9.15 complete: mobile inline-Staff optimization (clef/key/time-signature shrink, lyric-only A+/A- sizing, verse numbers in w: lines, row-stretch fix, explicit-approval gating on inline Staff); verified live on production, 5/5 must-haves confirmed.*
