@@ -37,7 +37,14 @@ export default function RootLayout({
         <Providers>
           <SiteHeader />
           <main className="flex-1">{children}</main>
-          <Toaster richColors />
+          {/* 260717-mwv checkpoint round 2 (item A): SingingView's fixed
+              GlassBottomBar (h-11/h-13 + safe-area padding) was overlapping
+              the default bottom-right toast position, blocking interaction
+              with the bar underneath. Sonner toasts are dismissible by
+              click/tap by default (verified: `dismissible` only needs to be
+              explicitly set to `false` to DISABLE that) — closeButton adds a
+              second, explicit affordance for the same tap-to-dismiss action. */}
+          <Toaster richColors closeButton offset={{ bottom: '88px' }} mobileOffset={{ bottom: '88px' }} />
           <SiteFooter />
           {process.env.NEXT_PUBLIC_PSALTER_UMAMI_WEBSITE_ID && (
             <Script
