@@ -71,7 +71,7 @@ export function PsalmsByTuneSection({
             </h3>
             {hasAlternates && (
               <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
-                Select different tune
+                Sing to a different psalm
               </Button>
             )}
           </div>
@@ -103,7 +103,7 @@ export function PsalmsByTuneSection({
                 </h3>
                 {hasAlternates && (
                   <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
-                    Select different tune
+                    Sing to a different psalm
                   </Button>
                 )}
               </div>
