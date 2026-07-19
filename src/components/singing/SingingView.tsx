@@ -731,6 +731,27 @@ export function SingingView({
     return () => setChromeHidden(false)
   }, [])
 
+  // Checkpoint round 4 (item 5, real root cause): the singing view is meant
+  // to be a fixed, app-shell-style experience with its own internal bottom
+  // bar — never page-scrollable. Found via Playwright that
+  // document.documentElement.scrollTop moved on a wheel scroll even after
+  // every data-notation-viewarea/slot-level content-fit check reported no
+  // overflow, and even after <main data-notation-region> itself got
+  // overflow-hidden. Root cause: the ROOT LAYOUT unconditionally renders
+  // <SiteFooter> as a SIBLING immediately after <main>{children}</main> —
+  // its height still contributes to the total document height regardless of
+  // this page's own fixed-height design, so the window/html itself remained
+  // scrollable to reveal it. Locking documentElement's overflow while this
+  // component is mounted is the correct, targeted fix — restored on
+  // unmount so every other (normally page-scrolling) route is unaffected.
+  useEffect(() => {
+    const prevOverflow = document.documentElement.style.overflow
+    document.documentElement.style.overflow = 'hidden'
+    return () => {
+      document.documentElement.style.overflow = prevOverflow
+    }
+  }, [])
+
   return (
     <div data-singing-view className="relative">
       <PsalmTopBar
