@@ -1332,7 +1332,18 @@ export function NotationRenderer({
       // container — tagged separately so SingingView's content-fits-viewport
       // measurement targets the real scrollable element.
       const stanzaBlock = showLyrics && stanzas.length > 0 ? (
-        <div data-lyrics-scroll className="h-full overflow-y-auto md:h-auto md:max-h-[80vh] overscroll-y-none">
+        <div
+          data-lyrics-scroll
+          className={cn(
+            'h-full overflow-y-auto md:h-auto md:max-h-[80vh] overscroll-y-none',
+            // Checkpoint round 2 (item C): trailing whitespace roughly the
+            // height of a stanza so the last lines can be scrolled fully
+            // above the bottom bar even if the scroll-hide auto-hide timing
+            // isn't perfect. Chromeless-only — desktop/study pages don't
+            // have the fixed bottom bar this compensates for.
+            chromeless && 'pb-28',
+          )}
+        >
           <StanzaList stanzas={stanzas} />
         </div>
       ) : null
@@ -1365,12 +1376,14 @@ export function NotationRenderer({
     // 260717-mwv checkpoint round 1 follow-up: data-lyrics-scroll marks the
     // real scroll container in split mode (see the staff-split branch above
     // for the full rationale).
+    // Checkpoint round 2 (item C): pb-28 trailing whitespace, chromeless
+    // split-leaf only — see the staff-split branch above for rationale.
     const stanzaBlock = showLyrics && stanzas.length > 0 ? (
       <div
         data-lyrics-scroll={isSplit ? true : undefined}
         className={
           isSplit
-            ? (chromeless ? 'h-full overflow-y-auto overscroll-y-none' : 'h-full overflow-y-auto md:h-auto md:max-h-[80vh] overscroll-y-none')
+            ? (chromeless ? 'h-full overflow-y-auto overscroll-y-none pb-28' : 'h-full overflow-y-auto md:h-auto md:max-h-[80vh] overscroll-y-none')
             : (chromeless ? '' : 'max-h-[60vh] overflow-y-auto overscroll-y-none')
         }>
         <StanzaList stanzas={stanzas} />
@@ -1401,11 +1414,15 @@ export function NotationRenderer({
     // Lyrics-only: single-column scrollable list of all stanzas (D-17 verse numbers).
     // 260517-cm0 #4a: in chromeless (singing) view, apply generous padding +
     // larger base font so lyrics read comfortably without staff context.
+    // Checkpoint round 2 (item C): pb-28 trailing whitespace (chromeless
+    // only) roughly the height of a stanza, so the last lines can be
+    // scrolled fully above the bottom bar even if the scroll-hide auto-hide
+    // timing isn't perfect.
     viewArea =
       stanzas.length === 0 ? (
         <p className="text-sm text-muted-foreground italic">No lyrics available.</p>
       ) : (
-        <div className={chromeless ? 'px-4 pt-4 space-y-4' : ''}>
+        <div className={chromeless ? 'px-4 pt-4 pb-28 space-y-4' : ''}>
           <StanzaList stanzas={stanzas} />
         </div>
       )
