@@ -125,7 +125,10 @@ export function PsalmPickerModal({
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose() }}>
-      <DialogContent className="max-w-5xl w-full max-h-[90vh] flex flex-col gap-4">
+      <DialogContent
+        className="max-w-5xl w-full max-h-[90vh] flex flex-col gap-4"
+        initialFocus={() => (typeof window !== 'undefined' && window.innerWidth < 768 ? false : true)}
+      >
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">{title ?? 'Select Psalm'}</DialogTitle>
         </DialogHeader>
