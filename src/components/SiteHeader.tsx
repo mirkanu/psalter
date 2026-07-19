@@ -79,7 +79,7 @@ export function SiteHeader() {
                 className="h-7 w-auto dark:[filter:invert(1)_hue-rotate(180deg)]"
               />
               <span className="text-[10px] font-semibold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full border border-primary/20 leading-none tracking-wide">
-                beta
+                v2 beta
               </span>
             </Link>
 
