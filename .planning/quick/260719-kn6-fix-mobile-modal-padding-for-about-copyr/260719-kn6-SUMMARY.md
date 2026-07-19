@@ -30,3 +30,9 @@ Scoped all five overrides to the `sm:` breakpoint (no change to `dialog.tsx`):
 - `src/components/SiteHeader.tsx`
 - `src/components/SiteFooter.tsx`
 - `src/components/FeedbackModal.tsx`
+
+## Deployment
+
+Rebuilt (`npm run build`) and redeployed via `pm2 restart psalter`. Confirmed the
+`sm:max-w-md`/`sm:max-w-lg` classes are present in the served build output.
+User approved live on psalter.gsdlabs.dev.
