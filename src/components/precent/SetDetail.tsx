@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { PsalmPickerModal } from '@/components/precent/PsalmPickerModal'
+import { PsalmPickerModal } from '@/components/PsalmPickerModal'
 import { TunePickerModal } from '@/components/precent/TunePickerModal'
 import { PastePsalmsDialog } from '@/components/precent/PastePsalmsDialog'
 import { SetItemsSortableList } from '@/components/precent/SetItemsSortableList'
