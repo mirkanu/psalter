@@ -52,7 +52,7 @@ export function FeedbackModal({ open, onClose }: FeedbackModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader><DialogTitle>Send Feedback</DialogTitle></DialogHeader>
         {status === 'success' ? (
           <div className="space-y-3 text-center py-4">
