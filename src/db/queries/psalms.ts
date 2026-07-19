@@ -110,7 +110,7 @@ export async function getEditoriallyLinkedTuneIdsForPsalm(psalmId: number): Prom
 /**
  * Returns the canonical PsalmRow[] used by <PsalmListingGrid>. This is the
  * exact query that was previously inlined in /psalms/page.tsx — extracted
- * here so SingingView's PsalmSelectorSheet can reuse it without duplication.
+ * here so PsalmPickerModal call sites can reuse it without duplication.
  * Behaviour byte-identical to the prior inline query.
  */
 export async function fetchPsalmListRows(): Promise<PsalmRow[]> {

@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { fetchTuneDetail, fetchTuneIds } from "@/db/queries/tunes"
-import { fetchPsalmsByMeter } from "@/db/queries/psalms"
+import { fetchPsalmsByMeter, fetchPsalmListRows } from "@/db/queries/psalms"
 import { deriveVersionSlug, stripStar } from "@/lib/psalm-slugs"
 import { Badge } from "@/components/ui/badge"
 import { NotationRendererClient } from "@/components/notation/NotationRendererClient"
@@ -78,6 +78,7 @@ export default async function TunePage({ params }: PageProps) {
 
   // All psalms with the same meter (for "Select different Psalm" dialog)
   const psalmsForMeter = tune.meter ? await fetchPsalmsByMeter(tune.meter) : []
+  const allPsalmRows = await fetchPsalmListRows()
 
   const moods = tune.tuneMoods.map((tm) => tm.mood.name).filter(Boolean) as string[]
   const rawAbc = pickAbcWithMarkers(tune.abcSatb, tune.abcNotation)
@@ -207,6 +208,7 @@ export default async function TunePage({ params }: PageProps) {
         recommendedPsalms={recommendedPsalms}
         otherPsalms={otherPsalms}
         psalmsForMeter={psalmsForMeter}
+        allPsalmRows={allPsalmRows}
         tuneId={tuneId}
         meter={tune.meter}
       />
