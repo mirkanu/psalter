@@ -222,11 +222,11 @@ export function SingingView({
   // notation slot. Guarded by a tune-id ref (same pattern as
   // lastFallbackTuneIdRef) so it only fires once per transition.
   //
-  // Checkpoint round 1 (item 3a): do NOT toast automatically on load/tune-switch
-  // — that was surprising when the user never asked for Music Notes in the
-  // first place. The explanation is now surfaced only if/when the user
-  // actively tries to open Music Notes for this tune (see GearPopover's
-  // musicNotesBlocked handling, which shows the same message on tap).
+  // Checkpoint round 1 (item 3a) removed this toast on load/tune-switch;
+  // checkpoint round 2 (item 3, REVERSAL) restored it — the automatic switch
+  // to Lyrics Only needs its own explanation on load too, in addition to (not
+  // instead of) the tap-triggered message in GearPopover's musicNotesBlocked
+  // handling. Both triggers now show the same message.
   const lastNoNotationTuneIdRef = useRef<number | null>(null)
   useEffect(() => {
     if (!mounted) return
@@ -234,6 +234,7 @@ export function SingingView({
     if (lastNoNotationTuneIdRef.current === (activeTune?.id ?? null)) return
     lastNoNotationTuneIdRef.current = activeTune?.id ?? null
     setViewMode('lyrics')
+    toast('No staff or solfège notation available for this tune — showing Lyrics Only. Audio may still be available via Play.')
   }, [activeTune, hasAnyNotation, mounted])
 
   // Persist (skip pre-mount window so we don't clobber storage with defaults)
@@ -440,8 +441,13 @@ export function SingingView({
     if (!pendingTuneIntent) return
     if (currentId == null) return // still no tune — nothing to resolve yet
     if (pendingTuneIntent === 'music-notes') {
-      // Item 2b: load directly into INLINE Staff (not split-leaf).
+      // Checkpoint round 2 (item 2, REVERSAL of round-1 item 2b): do NOT
+      // silently commit to inline Staff. Set Music Notes as the active
+      // category (so the popover shows it selected) and hand control back
+      // to the Gear popover — re-open it so the user explicitly picks
+      // Staff/Solfège and Inline/Split-Leaf themselves.
       setViewMode('staff')
+      setGearOpen(true)
     } else if (pendingTuneIntent === 'play') {
       // Item 2c: stay in Lyrics Only, but open the Play panel immediately.
       if (!miniBarMounted) {
