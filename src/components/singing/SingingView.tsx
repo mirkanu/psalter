@@ -593,6 +593,21 @@ export function SingingView({
           observedEls.add(el)
           ro.observe(el)
         }
+        // Checkpoint round 2 (item B): `el`'s OWN border-box is fixed by the
+        // surrounding flex layout, so it never itself resizes when its
+        // CONTENT grows/shrinks asynchronously (e.g. abcjs finishing an SVG
+        // render after mount, or a scanned JPEG's intrinsic size arriving
+        // after `onload`) — only `el.scrollHeight` changes, which
+        // ResizeObserver does not track on `el` itself. Observing the first
+        // child (the actual, naturally-sized content wrapper: AbcPlayer's
+        // wrapper div for Staff, the image/StanzaList wrapper for split-leaf)
+        // means THIS callback re-fires the moment that async content settles,
+        // instead of only ever measuring the pre-render snapshot.
+        const child = el.firstElementChild
+        if (child instanceof HTMLElement && !observedEls.has(child)) {
+          observedEls.add(child)
+          ro.observe(child)
+        }
         if (!mql.matches) {
           // Desktop: never touch overflow — this mobile-only feature simply
           // doesn't apply; leave the existing CSS classes in control.
@@ -613,6 +628,12 @@ export function SingingView({
     const ro = new ResizeObserver(() => applyScrollGate())
     ro.observe(main)
     applyScrollGate()
+    // Defensive re-checks: abcjs's SVG render and image `onload` sizing can
+    // settle on a timer that occasionally lands between ResizeObserver
+    // callback batches (e.g. a font swap reflowing text width without a
+    // height change at the observed node). A couple of delayed re-runs catch
+    // anything the observer-driven path alone might miss.
+    const settleTimers = [300, 800, 1500].map((ms) => setTimeout(applyScrollGate, ms))
 
     const lastByEl = new WeakMap<EventTarget, number>()
     const handleScroll = (e: Event) => {
@@ -658,6 +679,7 @@ export function SingingView({
       main.removeEventListener('scroll', handleScroll, { capture: true } as EventListenerOptions)
       mql.removeEventListener('change', handleMql)
       ro.disconnect()
+      settleTimers.forEach(clearTimeout)
       observedEls.forEach((el) => { el.style.overflowY = '' })
     }
   }, [activeTune?.id, viewMode])
