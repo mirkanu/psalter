@@ -2,8 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { SelectPsalmDialog } from '@/components/SelectPsalmDialog'
+import { PsalmPickerModal } from '@/components/PsalmPickerModal'
+import type { PsalmRow } from '@/components/PsalmListingGrid'
 
 interface PsalmEntry {
   id: number
@@ -17,6 +19,7 @@ interface PsalmsByTuneSectionProps {
   recommendedPsalms: PsalmEntry[]
   otherPsalms: PsalmEntry[]
   psalmsForMeter: { id: number; bibleTitle: string | null; firstLine: string | null; lyricsImportedRaw: string | null }[]
+  allPsalmRows: PsalmRow[]
   tuneId: number
   meter: string | null
 }
@@ -46,10 +49,12 @@ export function PsalmsByTuneSection({
   recommendedPsalms,
   otherPsalms,
   psalmsForMeter,
+  allPsalmRows,
   tuneId,
   meter,
 }: PsalmsByTuneSectionProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
+  const router = useRouter()
   const allPsalms = [...recommendedPsalms, ...otherPsalms]
   const existingIds = new Set(allPsalms.map((p) => p.id))
   const hasAlternates = psalmsForMeter.some((p) => !existingIds.has(p.id))
@@ -119,13 +124,12 @@ export function PsalmsByTuneSection({
         </>
       )}
 
-      <SelectPsalmDialog
+      <PsalmPickerModal
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
-        psalms={psalmsForMeter}
-        meter={meter}
-        existingPsalmIds={existingIds}
-        tuneId={tuneId}
+        psalms={allPsalmRows}
+        title="Select Psalm"
+        onSelect={(p) => { setDialogOpen(false); router.push(`/psalms/${p.slug}?tune=${tuneId}`) }}
       />
     </section>
   )

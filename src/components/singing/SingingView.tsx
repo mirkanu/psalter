@@ -7,7 +7,7 @@ import { GlassBottomBar } from './GlassBottomBar'
 import { PlayMiniBar } from './PlayMiniBar'
 import { GearPopover } from './GearPopover'
 import { OnboardingTour } from './OnboardingTour'
-import { PsalmSelectorSheet } from './PsalmSelectorSheet'
+import { PsalmPickerModal } from '@/components/PsalmPickerModal'
 import { TuneSwitcherSheet } from './TuneSwitcherSheet'
 import type { TuneOption, TuneSwitcherSections } from './types'
 import type { PsalmDetail } from '@/db/queries/psalms'
@@ -853,10 +853,11 @@ export function SingingView({
         />
       </main>
 
-      <PsalmSelectorSheet
+      <PsalmPickerModal
         open={psalmSelectorOpen}
-        onOpenChange={setPsalmSelectorOpen}
+        onClose={() => setPsalmSelectorOpen(false)}
         psalms={psalmListRows}
+        title="Jump to psalm"
       />
       <TuneSwitcherSheet
         open={tuneSwitcherOpen}
