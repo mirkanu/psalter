@@ -22,7 +22,7 @@ export function SiteFooter() {
 
       {open === 'about' && (
         <Dialog open onOpenChange={(v) => !v && setOpen(null)}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="sm:max-w-md">
             <DialogHeader><DialogTitle>About this Psalter</DialogTitle></DialogHeader>
             <div className="space-y-3 text-sm text-muted-foreground">
               <p>This small website provides practical resources for the psalm singing of the <a href="https://cprc.co.uk/" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Covenant Protestant Reformed Church of Ballymena</a>, Northern Ireland. For more information on the theology behind singing the psalms, see the &ldquo;Psalm Singing&rdquo; section <a href="https://cprc.co.uk/resources-on-psalm-singing/" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">here</a>.</p>
@@ -35,7 +35,7 @@ export function SiteFooter() {
 
       {open === 'copyright' && (
         <Dialog open onOpenChange={(v) => !v && setOpen(null)}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="sm:max-w-lg">
             <DialogHeader><DialogTitle>Copyright Notice</DialogTitle></DialogHeader>
             <div className="space-y-3 text-sm text-muted-foreground">
               <p>Public Domain: King James Version, Scottish Psalter 1650, Haddington&apos;s Commentary, Nave&apos;s Topical Bible</p>
