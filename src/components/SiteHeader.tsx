@@ -146,6 +146,21 @@ export function SiteHeader() {
                     >
                       Feedback
                     </SheetClose>
+                    {/* 260717-mwv checkpoint round 2 (item B): the singing
+                       view (/psalms/[id]) is a fixed-height layout with no
+                       page-level scroll, so SiteFooter's "Made by GSD Labs"
+                       credit (rendered below <main> in the root layout) is
+                       never reachable there on mobile. Mirrored here in the
+                       always-accessible hamburger menu, mobile-only (this
+                       whole block already lives inside the md:hidden Sheet). */}
+                    <a
+                      href="https://gsdlabs.dev"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted px-3 py-2 rounded-md text-left transition-colors w-full"
+                    >
+                      Made by GSD Labs
+                    </a>
                   </div>
                 </SheetContent>
               </Sheet>
