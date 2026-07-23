@@ -20,6 +20,7 @@ import {
   ZoomOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import AbcPlayer from '@/components/AbcPlayer'
 import { FullscreenOverlay } from './FullscreenOverlay'
 import { StanzaList } from './StanzaList'
@@ -523,6 +524,10 @@ export function NotationRenderer({
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
+  // Split-leaf layout axis: stacked (lyrics under notation) only in narrow
+  // portrait, where there isn't width to spare. Any wider viewport — phone
+  // landscape, tablet, desktop — lays lyrics out beside the notation instead.
+  const isNarrowPortrait = useMediaQuery('(orientation: portrait) and (max-width: 767px)')
   // Quick 260712-kov fix: the sub-1 narrowing factor above exists to force
   // abcjs to WRAP a single long phrase into more systems (more notes fit per
   // requested staffwidth than the viewport can show, so a narrower target
@@ -1239,8 +1244,14 @@ export function NotationRenderer({
   // Non-chromeless callers (e.g. /tunes/[id], /study) have no fixed-height
   // ancestor, so they always use the simple stacked layout regardless of
   // viewport width.
+  //
+  // Chromeless callers (SingingView) instead switch axis on `beside`: stacked
+  // (lyrics under notation) only in narrow portrait, where there's no width
+  // to spare; beside (lyrics beside notation, each half independently
+  // scrollable) at any wider viewport — phone landscape, tablet, desktop.
   function renderSplitLeaf(notationSlot: ReactNode, stanzaSlot: ReactNode, capBothHalvesOnDesktop = false): ReactNode {
     if (chromeless) {
+      const beside = !isNarrowPortrait
       if (capBothHalvesOnDesktop) {
         // 260712-tmm Bug (a): Solfège split-leaf must keep the 50/50 cap at
         // ALL widths (no md:h-auto / md:max-h-none escape hatch), so the
@@ -1248,8 +1259,15 @@ export function NotationRenderer({
         // a minimum 50%. SingingView's <main> is fixed-height on desktop
         // (md:h-[calc(100dvh-116px)]) so h-full resolves correctly here.
         return (
-          <div className="flex flex-col h-full gap-4 px-4 pt-4">
-            <div data-notation-slot className="flex-none min-h-0 max-h-[50%] overflow-hidden flex flex-col">
+          <div className={beside ? 'flex flex-row h-full gap-4 px-4 pt-4' : 'flex flex-col h-full gap-4 px-4 pt-4'}>
+            <div
+              data-notation-slot
+              className={
+                beside
+                  ? 'flex-1 min-w-0 h-full overflow-hidden flex flex-col'
+                  : 'flex-none min-h-0 max-h-[50%] overflow-hidden flex flex-col'
+              }
+            >
               {notationSlot}
             </div>
             {/* 260717-mwv checkpoint round 1 (item 1 follow-up): this half was
@@ -1260,21 +1278,38 @@ export function NotationRenderer({
                 consequential once Bug 1 routed Split-Leaf Staff's JPG
                 fallback through this same branch (previously only Solfège
                 used it). Now scrollable, matching the sibling branch below. */}
-            <div data-lyrics-slot className="flex-1 min-h-0 overflow-y-auto overscroll-y-none">
+            <div
+              data-lyrics-slot
+              className={beside ? 'flex-1 min-w-0 h-full overflow-y-auto overscroll-y-none' : 'flex-1 min-h-0 overflow-y-auto overscroll-y-none'}
+            >
               {stanzaSlot}
             </div>
           </div>
         )
       }
       return (
-        <div className="flex flex-col h-full gap-4 px-4 pt-4 md:h-auto md:gap-4">
+        <div className={beside ? 'flex flex-row h-full gap-4 px-4 pt-4' : 'flex flex-col h-full gap-4 px-4 pt-4 md:h-auto md:gap-4'}>
           {/* 260712-szw: data-notation-slot is a measurement hook for
               tests/diagnostics/split-leaf-staff-diff.mjs (clientHeight vs
               scrollHeight overflow check) — no behaviour change. */}
-          <div data-notation-slot className="flex-none min-h-0 max-h-[50%] overflow-y-auto md:max-h-none md:overflow-visible overscroll-y-none">
+          <div
+            data-notation-slot
+            className={
+              beside
+                ? 'flex-1 min-w-0 h-full overflow-y-auto overscroll-y-none'
+                : 'flex-none min-h-0 max-h-[50%] overflow-y-auto md:max-h-none md:overflow-visible overscroll-y-none'
+            }
+          >
             {notationSlot}
           </div>
-          <div data-lyrics-slot className="flex-1 min-h-0 overflow-y-auto md:max-h-none md:overflow-visible md:flex-none overscroll-y-none">
+          <div
+            data-lyrics-slot
+            className={
+              beside
+                ? 'flex-1 min-w-0 h-full overflow-y-auto overscroll-y-none'
+                : 'flex-1 min-h-0 overflow-y-auto md:max-h-none md:overflow-visible md:flex-none overscroll-y-none'
+            }
+          >
             {stanzaSlot}
           </div>
         </div>

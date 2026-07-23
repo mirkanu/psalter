@@ -16,7 +16,7 @@ import type { PsalmRow } from '@/components/PsalmListingGrid'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
 import { setChromeHidden } from '@/lib/chrome-hidden-store'
 import { resolveStaffInlineApproved, shouldFallbackToSplit } from '@/lib/inline-staff-gating'
-import { isIOSDevice, isStandaloneDisplayMode } from '@/lib/device'
+import { isIOSDevice, isStandaloneDisplayMode, isPhoneDevice } from '@/lib/device'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { toast } from 'sonner'
 
@@ -382,6 +382,20 @@ export function SingingView({
   const isPhoneLandscape = useMediaQuery('(orientation: landscape) and (max-width: 926px)')
   const showRotatePrompt = blockLandscapeOnIOS && isPhoneLandscape
 
+  // Phones (not tablets) get the chrome bars hidden immediately on rotating
+  // into a landscape that's actually supported (i.e. not blocked above),
+  // rather than only via the scroll-driven hide below — landscape has too
+  // little vertical room to spare on the bars regardless of scroll position.
+  // They come back only on rotating back to portrait (see the merge into the
+  // scroll-hide effect below), not via scroll-up — landscape has no "reveal"
+  // gesture, by design.
+  const [isPhone, setIsPhone] = useState(false)
+  useEffect(() => {
+    setIsPhone(isPhoneDevice())
+  }, [])
+  const isLandscapeOrientation = useMediaQuery('(orientation: landscape)')
+  const phoneLandscapeChromeHide = isPhone && isLandscapeOrientation && !showRotatePrompt
+
   // 04.9.15-02: A+/A− now drives ONLY the lyric-only baseSize. It no longer
   // resets referenceWidthRef — that ref belongs exclusively to the
   // notationBaseSize resize heuristic above, and a lyric-only A+/A− press
@@ -620,6 +634,18 @@ export function SingingView({
     setBottomBarHidden(false)
     setMiniBarAutoHidden(false)
 
+    // Phone landscape: force chrome hidden immediately, overriding the reset
+    // above. All guards below additionally check this flag so nothing else
+    // in this effect (the fits-viewport gate, the mql-crossing handler) can
+    // flip it back to visible while still in landscape — it only clears on
+    // the next run of this effect, when phoneLandscapeChromeHide itself
+    // flips false (rotated back to portrait).
+    if (phoneLandscapeChromeHide) {
+      setTopBarHidden(true)
+      setBottomBarHidden(true)
+      setMiniBarAutoHidden(true)
+    }
+
     const main = mainRef.current
     if (!main) return
 
@@ -684,7 +710,7 @@ export function SingingView({
         el.style.overflowY = fits ? 'hidden' : ''
         if (!fits) anyNeedsScroll = true
       })
-      if (!anyNeedsScroll) {
+      if (!anyNeedsScroll && !phoneLandscapeChromeHide) {
         setTopBarHidden(false)
         setBottomBarHidden(false)
         setMiniBarAutoHidden(false)
@@ -703,6 +729,9 @@ export function SingingView({
 
     const lastByEl = new WeakMap<EventTarget, number>()
     const handleScroll = (e: Event) => {
+      // Landscape has no scroll-driven reveal — bars stay hidden until the
+      // device rotates back to portrait (see phoneLandscapeChromeHide above).
+      if (phoneLandscapeChromeHide) return
       if (!mql.matches) return
       const el = e.target as HTMLElement | null
       if (!el || typeof el.scrollTop !== 'number') return
@@ -734,7 +763,7 @@ export function SingingView({
 
     const handleMql = () => {
       applyScrollGate()
-      if (!mql.matches) {
+      if (!mql.matches && !phoneLandscapeChromeHide) {
         setTopBarHidden(false); setBottomBarHidden(false); setMiniBarAutoHidden(false)
       }
     }
@@ -748,7 +777,7 @@ export function SingingView({
       settleTimers.forEach(clearTimeout)
       observedEls.forEach((el) => { el.style.overflowY = '' })
     }
-  }, [activeTune?.id, viewMode])
+  }, [activeTune?.id, viewMode, phoneLandscapeChromeHide])
 
   // Quick task 260712-kd1 (bug b fix): drive the shared chrome-hidden store
   // from the top-bar hidden flag so the root-layout SiteHeader hides together
