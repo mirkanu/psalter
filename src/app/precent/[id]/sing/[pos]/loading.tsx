@@ -19,7 +19,7 @@ export default function PrecentSingLoading() {
       {/* Notation body skeleton */}
       <div
         className="overflow-x-hidden p-4 space-y-3"
-        style={{ height: 'calc(100dvh - 114px)', paddingBottom: 'calc(56px + env(safe-area-inset-bottom))' }}
+        style={{ height: 'calc(100dvh - 114px - env(safe-area-inset-top))', paddingBottom: 'calc(56px + env(safe-area-inset-bottom))' }}
       >
         <Skeleton className="h-16 w-full rounded-md" />
         <Skeleton className="h-16 w-full rounded-md" />
