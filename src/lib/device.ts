@@ -19,3 +19,17 @@ export function isStandaloneDisplayMode(): boolean {
   if ((window.navigator as any).standalone === true) return true
   return window.matchMedia?.('(display-mode: standalone)').matches ?? false
 }
+
+/**
+ * Phone (not tablet) heuristic: iPhone/iPod match directly; iPad is
+ * deliberately excluded (falls through to false, including its iPadOS
+ * Mac-spoofed UA — that's handled by isIOSDevice, not here). Android phones
+ * include a "Mobile" token in the UA that Android tablets typically omit.
+ */
+export function isPhoneDevice(): boolean {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent
+  if (/iPhone|iPod/.test(ua)) return true
+  if (/Android/.test(ua)) return /Mobile/.test(ua)
+  return false
+}
