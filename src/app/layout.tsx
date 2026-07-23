@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader"
@@ -18,9 +18,26 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  viewportFit: 'cover',
+};
+
 export const metadata: Metadata = {
   title: "CPRC Psalter",
   description: "Scottish Psalter for CPRC congregation and precentors",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'CPRC Psalter',
+  },
+  other: {
+    // appleWebApp.capable above already auto-emits the unprefixed
+    // "mobile-web-app-capable=yes" tag. This adds the apple-prefixed
+    // variant for older iOS Safari, which does not recognize the
+    // unprefixed name. Do NOT add the unprefixed key again here —
+    // that would duplicate the auto-generated tag.
+    'apple-mobile-web-app-capable': 'yes',
+  },
 };
 
 export default function RootLayout({
