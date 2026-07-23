@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { RotateCcw } from 'lucide-react'
 import { NotationRendererClient } from '@/components/notation/NotationRendererClient'
 import { PsalmTopBar } from './PsalmTopBar'
 import { GlassBottomBar } from './GlassBottomBar'
@@ -15,6 +16,8 @@ import type { PsalmRow } from '@/components/PsalmListingGrid'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
 import { setChromeHidden } from '@/lib/chrome-hidden-store'
 import { resolveStaffInlineApproved, shouldFallbackToSplit } from '@/lib/inline-staff-gating'
+import { isIOSDevice, isStandaloneDisplayMode } from '@/lib/device'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { toast } from 'sonner'
 
 const STORAGE_MODE_KEY = 'psalter-score-mode'
@@ -346,6 +349,38 @@ export function SingingView({
       window.visualViewport?.removeEventListener('resize', handler)
     }
   }, [])
+
+  // Best-effort portrait lock — the singing view's landscape layout is
+  // unusable (chromeless notation was never designed for it), so we try to
+  // keep the device pinned to portrait. Works on some Android Chrome
+  // versions; silently no-ops on iOS Safari, which doesn't expose the API.
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(screen.orientation as any)?.lock?.('portrait')?.catch?.(() => {})
+    } catch { /* ignore */ }
+
+    return () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(screen.orientation as any)?.unlock?.()
+      } catch { /* ignore */ }
+    }
+  }, [])
+
+  // iOS Safari never exposes screen.orientation.lock, so the lock above is a
+  // no-op there. But landscape is only actually broken in a plain browser
+  // tab — once "Added to Home Screen" as a standalone PWA, iOS renders the
+  // singing view fine in landscape. Gate a blocking rotate-prompt overlay to
+  // exactly that unsupported case: iOS + browser tab + phone-width landscape.
+  // (iPad landscape is intentionally excluded — max-width below is narrower
+  // than any iPad's landscape viewport.)
+  const [blockLandscapeOnIOS, setBlockLandscapeOnIOS] = useState(false)
+  useEffect(() => {
+    setBlockLandscapeOnIOS(isIOSDevice() && !isStandaloneDisplayMode())
+  }, [])
+  const isPhoneLandscape = useMediaQuery('(orientation: landscape) and (max-width: 926px)')
+  const showRotatePrompt = blockLandscapeOnIOS && isPhoneLandscape
 
   // 04.9.15-02: A+/A− now drives ONLY the lyric-only baseSize. It no longer
   // resets referenceWidthRef — that ref belongs exclusively to the
@@ -752,6 +787,21 @@ export function SingingView({
     }
   }, [])
 
+  if (showRotatePrompt) {
+    return (
+      <div
+        role="alert"
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-background px-8 text-center"
+      >
+        <RotateCcw className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
+        <p className="text-base font-medium">Please rotate your device to portrait</p>
+        <p className="text-sm text-muted-foreground">
+          Landscape isn&apos;t supported here yet. Tip: adding this site to your Home Screen lets it work in landscape too.
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div data-singing-view className="relative">
       <PsalmTopBar
@@ -857,7 +907,6 @@ export function SingingView({
         open={psalmSelectorOpen}
         onClose={() => setPsalmSelectorOpen(false)}
         psalms={psalmListRows}
-        title="Jump to psalm"
       />
       <TuneSwitcherSheet
         open={tuneSwitcherOpen}
