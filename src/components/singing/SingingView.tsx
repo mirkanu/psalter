@@ -787,23 +787,24 @@ export function SingingView({
     }
   }, [])
 
-  if (showRotatePrompt) {
-    return (
-      <div
-        role="alert"
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-background px-8 text-center"
-      >
-        <RotateCcw className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
-        <p className="text-base font-medium">Please rotate your device to portrait</p>
-        <p className="text-sm text-muted-foreground">
-          Landscape isn&apos;t supported here yet. Tip: adding this site to your Home Screen lets it work in landscape too.
-        </p>
-      </div>
-    )
-  }
-
   return (
     <div data-singing-view className="relative">
+      {showRotatePrompt && (
+        // Layered on top rather than replacing the tree below — swapping out
+        // <main ref={mainRef}> here would unmount/remount it on every
+        // rotation, silently detaching the scroll-hide listener effect below
+        // (keyed on [activeTune?.id, viewMode], not on this overlay).
+        <div
+          role="alert"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-background px-8 text-center"
+        >
+          <RotateCcw className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
+          <p className="text-base font-medium">Please rotate your device to portrait</p>
+          <p className="text-sm text-muted-foreground">
+            Landscape isn&apos;t supported here yet. Tip: adding this site to your Home Screen lets it work in landscape too.
+          </p>
+        </div>
+      )}
       <PsalmTopBar
         prev={prevSlug}
         next={nextSlug}
