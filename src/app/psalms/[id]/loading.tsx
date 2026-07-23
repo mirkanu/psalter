@@ -17,7 +17,7 @@ export default function PsalmDetailLoading() {
       {/* Notation body skeleton: 100dvh - SiteHeader(56) - topbar(48) = 104 */}
       <div
         className="overflow-x-hidden p-4 space-y-3"
-        style={{ height: 'calc(100dvh - 104px)', paddingBottom: 'calc(56px + env(safe-area-inset-bottom))' }}
+        style={{ height: 'calc(100dvh - 104px - env(safe-area-inset-top))', paddingBottom: 'calc(56px + env(safe-area-inset-bottom))' }}
       >
         <Skeleton className="h-16 w-full rounded-md" />
         <Skeleton className="h-16 w-full rounded-md" />
