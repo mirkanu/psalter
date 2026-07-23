@@ -1370,7 +1370,16 @@ export function NotationRenderer({
         <div
           data-lyrics-scroll
           className={cn(
-            'h-full overflow-y-auto md:h-auto md:max-h-[80vh] overscroll-y-none',
+            'h-full overflow-y-auto overscroll-y-none',
+            // md:h-auto md:max-h-[80vh] is for the non-chromeless (tune-detail
+            // page) context only — chromeless (SingingView) must stay h-full
+            // at every width, including ≥768px landscape/tablet beside-layout,
+            // or this column stops filling its renderSplitLeaf-provided h-full
+            // slot and leaves a blank gap below the text (260723 bug: staff-split
+            // showed this gap in phone landscape beside-mode; solfege-split
+            // never had it because its chromeless branch already omitted the
+            // md: override — see the solfege-split stanzaBlock below).
+            !chromeless && 'md:h-auto md:max-h-[80vh]',
             // Checkpoint round 2 (item C) added ~1 stanza (112px) of trailing
             // whitespace so the last lines can be scrolled fully above the
             // bottom bar even if the scroll-hide auto-hide timing isn't
