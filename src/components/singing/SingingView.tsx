@@ -859,6 +859,14 @@ export function SingingView({
       {/*
          104 = 56 SiteHeader + 48 topbar (mobile).
          116 = 56 SiteHeader + 60 topbar (≥md).
+         260723-cpt: both the height calc and the hide-margin also subtract
+         env(safe-area-inset-top), so the layout accounts for the iOS
+         standalone/notch safe area (SiteHeader now reserves that inset as
+         top padding — see SiteHeader.tsx). This collapses to the exact old
+         104/116/-104 math whenever the inset is 0 (any browser tab, and
+         iPhone landscape — the notch becomes inset-left/right there, not
+         inset-top), so there is zero visual change outside standalone
+         portrait mode.
          Glass bottom bar is fixed (z-40), accounted via pb-14/pb-15.
          overflow-y is controlled by NotationRenderer's chromeless wrapper —
          BUT 260717-mwv round 4 (item 5) found this assumption breaks
@@ -877,10 +885,10 @@ export function SingingView({
         ref={mainRef}
         data-notation-region
         data-tour-target="scroll-area"
-        className="overflow-hidden flex flex-col h-[calc(100dvh-104px)] md:h-[calc(100dvh-116px)] pb-11 md:pb-13 transition-[height,margin-top,padding-bottom] duration-200 ease-out motion-reduce:transition-none"
+        className="overflow-hidden flex flex-col h-[calc(100dvh_-_104px_-_env(safe-area-inset-top))] md:h-[calc(100dvh_-_116px_-_env(safe-area-inset-top))] pb-11 md:pb-13 transition-[height,margin-top,padding-bottom] duration-200 ease-out motion-reduce:transition-none"
         style={{
           height: topBarHidden ? '100dvh' : undefined,
-          marginTop: topBarHidden ? '-104px' : undefined,
+          marginTop: topBarHidden ? 'calc(-104px - env(safe-area-inset-top))' : undefined,
           paddingBottom: bottomBarHidden ? '0px' : undefined,
         }}
       >
