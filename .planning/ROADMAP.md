@@ -677,7 +677,7 @@ Scope:
 **Goal:** Fix the inline Staff "fit one stanza-set on screen without scrolling" system to correctly account for landscape phone viewports, and add universal swipe-based stanza-set navigation.
 **Requirements**: MOBILE-09, MOBILE-10
 **Depends on:** Phase 4.9.15
-**Plans:** TBD
+**Plans:** 3 plans
 
 Scope:
   (a) The existing per-stanza-set fit-to-screen scaling (`compactSplitMobile`/`staffWidthFactor` in `NotationRenderer.tsx`) is gated by `viewportW < 768` — a width-only check that correctly identifies narrow portrait phones but misses landscape phones, which are wide (768-926px) yet just as height-constrained (390-430px). Measured live via Playwright: Psalm 1's inline Staff rendered 566px of content into a 412px-tall landscape viewport, forcing scroll. Extend the fit-to-screen gate to also trigger on landscape phones (Android and iOS), reusing this session's phone/orientation detection (`isPhoneDevice`, `phoneLandscapeChromeHide`) rather than width alone.
@@ -686,7 +686,9 @@ Scope:
   (d) Include a one-time, first-encounter tutorial explaining the swipe gesture (design direction — reuse the existing `OnboardingTour` spotlight system vs. a standalone animated-hand overlay — captured for `/gsd-sketch`).
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 04.9.15.1 to break down)
+- [ ] 04.9.15.1-01-PLAN.md — MOBILE-09: extend the inline-Staff compact-fit gate to phone landscape (Android + iOS)
+- [ ] 04.9.15.1-02-PLAN.md — MOBILE-10 building blocks: useSwipeGesture hook + StanzaDotIndicator pill + dot-pulse keyframe
+- [ ] 04.9.15.1-03-PLAN.md — MOBILE-10 integration: wire swipe + dot indicator into SingingView, add swipe tour step (human-verify)
 
 ### Phase 4.12: Explore Page Rebuild
 **Goal**: Rebuild /explore to match psalter.cprc.co.uk across all 6 sections — migrate missing schema fields, fetch new Airtable data, and redesign the page as a single scrollable layout with anchor sections. Users can browse psalms by theme, find NT quotations, explore Nave's topics with sub-topic drill-down, filter by author with historical metadata, and look up Heidelberg Catechism connections.
