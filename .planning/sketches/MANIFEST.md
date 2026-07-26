@@ -20,3 +20,4 @@ Live ABC notation with hymnal-inspired layout: staff notation paired with inline
 | 004 | Realistic Tune with Inline Lyrics | How should a realistic 2-line tune display with 3 stanzas of inline lyrics and a Lyrics Only toggle? | pending | tune, lyrics, toggle, inline, realistic |
 | 005 | Desktop Fullscreen Layout | How should a fullscreen tune view work on desktop with score and lyrics? | pending | fullscreen, desktop, layout, navigation, two-column |
 | 006 | Mobile Fullscreen Layout | How should a fullscreen tune view work on mobile (portrait and landscape) with score and lyrics? | pending | fullscreen, mobile, layout, responsive, tabs |
+| 007 | Swipe Tutorial (Tour Extension) | How should the swipe gesture be depicted inside the existing OnboardingTour bubble/spotlight, as one more step in that same tour? | **C: Hand + dot-indicator preview** | tutorial, gesture, onboarding, landscape, mobile |

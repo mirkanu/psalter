@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sketch 007: Swipe Tutorial (Tour Extension)</title>
+<style>
+  /* Approximates the REAL app's current shadcn/Tailwind tokens (light mode),
+     not the old Georgia hymnal theme from the 001-006 sketch era — this
+     sketch needs to be visually honest to OnboardingTour.tsx as it exists
+     today, since it's a direct extension of that real component. */
+  :root {
+    --background: #ffffff;
+    --foreground: #0a0a0a;
+    --muted-foreground: #6b7280;
+    --border: #e5e7eb;
+    --primary: #171717;
+    --primary-foreground: #fafafa;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #d9dde3;
+    padding-top: 48px;
+  }
+
+  /* ---- variant tab bar ---- */
+  #variant-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 9998;
+    background: #fff; border-bottom: 1px solid var(--border);
+    padding: 8px 16px; display: flex; gap: 8px; font-family: system-ui;
+  }
+  .variant-tab {
+    border: 1px solid var(--border); background: #f7f7f8; color: #333;
+    padding: 6px 12px; border-radius: 8px; font-size: 13px; cursor: pointer;
+  }
+  .variant-tab.active { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
+
+  .variant { display: none; }
+  .variant.active { display: block; }
+
+  /* ---- phone-landscape stage ---- */
+  .stage-wrap {
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    padding: 32px 16px 80px;
+  }
+  .stage-label { font-size: 13px; color: #555; font-family: system-ui; }
+  .phone-landscape {
+    position: relative;
+    width: 780px; height: 360px;
+    background: var(--background);
+    border-radius: 18px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+    overflow: hidden;
+    border: 6px solid #111;
+  }
+
+  /* Simulated singing-view content behind the tour overlay */
+  .fake-singing-view { position: absolute; inset: 0; display: flex; flex-direction: column; }
+  .fake-topbar { height: 0; } /* chrome auto-hidden in phone landscape, per this session's earlier work */
+  .fake-notation {
+    flex: 1; margin: 14px 14px 6px; border-radius: 8px;
+    background: #fbfbfa; border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+  .fake-staff-lines {
+    position: absolute; left: 24px; right: 24px; top: 50%; transform: translateY(-50%);
+    height: 64px;
+  }
+  .fake-staff-lines .line { position: absolute; left: 0; right: 0; height: 1px; background: #999; }
+  .fake-staff-lines .line:nth-child(1) { top: 0; }
+  .fake-staff-lines .line:nth-child(2) { top: 16px; }
+  .fake-staff-lines .line:nth-child(3) { top: 32px; }
+  .fake-staff-lines .line:nth-child(4) { top: 48px; }
+  .fake-staff-lines .line:nth-child(5) { top: 64px; }
+  .fake-notes { position: absolute; left: 40px; right: 40px; top: 50%; transform: translateY(-50%); display: flex; justify-content: space-between; }
+  .fake-notes span { width: 8px; height: 8px; border-radius: 50%; background: #333; display: inline-block; transform: translateY(6px); }
+  .fake-lyrics { position: absolute; left: 24px; right: 24px; bottom: 14px; font-size: 11px; color: #444; text-align: center; font-style: italic; }
+
+  /* ---- tour overlay (mirrors OnboardingTour.tsx exactly) ---- */
+  .tour-overlay { position: absolute; inset: 0; z-index: 30; pointer-events: none; }
+  .tour-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.30);
+    /* CSS mask cutout approximating the SVG rect-mask spotlight */
+    -webkit-mask-image: radial-gradient(120px 70px at 50% 46%, transparent 98%, black 100%);
+    mask-image: radial-gradient(120px 70px at 50% 46%, transparent 98%, black 100%);
+  }
+  .tour-spotlight-ring {
+    position: absolute; left: 50%; top: 46%; transform: translate(-50%,-50%);
+    width: 240px; height: 140px; border-radius: 8px;
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.55);
+    pointer-events: none;
+  }
+  .tour-bubble {
+    position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
+    width: min(280px, 90%);
+    background: var(--background); border: 1px solid var(--border);
+    border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    padding: 12px 14px; pointer-events: auto;
+  }
+  .tour-step-count { font-size: 11px; color: var(--muted-foreground); text-align: center; margin: 0 0 6px; }
+  .tour-copy { font-size: 13px; color: var(--foreground); margin: 0 0 10px; line-height: 1.35; text-align: center; }
+  .tour-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .tour-btn { border: none; border-radius: 6px; font-size: 12px; padding: 6px 10px; cursor: pointer; font-family: inherit; }
+  .tour-btn.ghost { background: transparent; color: var(--muted-foreground); }
+  .tour-btn.primary { background: var(--primary); color: var(--primary-foreground); font-weight: 500; }
+
+  /* ---- Variant A: static text + arrow glyphs, no animation ---- */
+  .swipe-hint-static {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    font-size: 20px; color: #444; margin-bottom: 2px; letter-spacing: 1px;
+  }
+  .swipe-hint-static .arrow { opacity: 0.55; }
+
+  /* ---- Variant B: animated hand icon sliding across the spotlight ---- */
+  .hand-swipe {
+    position: absolute; top: 50%; left: 50%; font-size: 30px;
+    transform: translate(-50%, -50%);
+    animation: handSlide 1.8s ease-in-out infinite;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.35));
+  }
+  @keyframes handSlide {
+    0%   { transform: translate(calc(-50% + 46px), -50%); opacity: 0; }
+    12%  { opacity: 1; }
+    50%  { transform: translate(calc(-50% - 46px), -50%); opacity: 1; }
+    88%  { opacity: 1; }
+    100% { transform: translate(calc(-50% - 46px), -50%); opacity: 0; }
+  }
+  .swipe-trail {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 110px; height: 2px; border-radius: 2px;
+    background: repeating-linear-gradient(90deg, rgba(120,120,120,0.5) 0 6px, transparent 6px 12px);
+  }
+
+  /* ---- Variant C: hand animation + live dot-indicator preview ---- */
+  .dot-indicator-preview {
+    position: absolute; bottom: 8px; right: 10px; z-index: 31;
+    display: flex; gap: 5px; background: rgba(255,255,255,0.85);
+    padding: 4px 8px; border-radius: 999px; border: 1px solid var(--border);
+  }
+  .dot-indicator-preview .dot { width: 6px; height: 6px; border-radius: 50%; background: #c9cdd3; }
+  .dot-indicator-preview .dot.active { background: #171717; animation: dotPulse 1.8s ease-in-out infinite; }
+  @keyframes dotPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.35); }
+  }
+  .dot-callout {
+    position: absolute; bottom: 34px; right: 6px; font-size: 10px; color: #555;
+    background: #fff; border: 1px solid var(--border); border-radius: 6px;
+    padding: 3px 6px; white-space: nowrap;
+  }
+
+  /* ---- sketch toolbar (standard) ---- */
+  #sketch-tools {
+    position: fixed; bottom: 12px; right: 12px; z-index: 9999;
+    font-family: system-ui; font-size: 12px;
+    background: rgba(0,0,0,0.7); color: white; padding: 8px 12px;
+    border-radius: 8px; opacity: 0.4; transition: opacity 0.2s;
+  }
+  #sketch-tools:hover { opacity: 1; }
+  #sketch-tools select { margin-left: 6px; }
+</style>
+</head>
+<body>
+
+<div id="variant-nav">
+  <button class="variant-tab active" onclick="showVariant('a', event)">A: Static text + arrows</button>
+  <button class="variant-tab" onclick="showVariant('b', event)">B: Animated swipe hand</button>
+  <button class="variant-tab" onclick="showVariant('c', event)">C: Hand + dot-indicator preview ★ Selected</button>
+</div>
+
+<!-- ============ VARIANT A ============ -->
+<div id="variant-a" class="variant active">
+  <div class="stage-wrap">
+    <div class="stage-label">Phone, landscape, chrome auto-hidden — same moment the existing OnboardingTour appears at, extended with one more step</div>
+    <div class="phone-landscape">
+      <div class="fake-singing-view">
+        <div class="fake-notation">
+          <div class="fake-staff-lines">
+            <div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div>
+          </div>
+          <div class="fake-notes">
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <div class="fake-lyrics">His shoulder I from burdens took, his hands from pots did free.</div>
+        </div>
+      </div>
+      <div class="tour-overlay">
+        <div class="tour-backdrop"></div>
+        <div class="tour-spotlight-ring"></div>
+        <div class="tour-bubble">
+          <p class="tour-step-count">Step 5 of 5</p>
+          <div class="swipe-hint-static"><span class="arrow">‹</span><span>swipe</span><span class="arrow">›</span></div>
+          <p class="tour-copy">Swipe left or right to move between stanza groups</p>
+          <div class="tour-actions">
+            <button class="tour-btn ghost">Skip tour</button>
+            <button class="tour-btn primary">Done</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ VARIANT B ============ -->
+<div id="variant-b" class="variant">
+  <div class="stage-wrap">
+    <div class="stage-label">Same bubble copy as A, but the spotlighted notation area itself demonstrates the gesture</div>
+    <div class="phone-landscape">
+      <div class="fake-singing-view">
+        <div class="fake-notation">
+          <div class="fake-staff-lines">
+            <div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div>
+          </div>
+          <div class="fake-notes">
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <div class="fake-lyrics">His shoulder I from burdens took, his hands from pots did free.</div>
+          <div class="swipe-trail"></div>
+          <div class="hand-swipe">🤚</div>
+        </div>
+      </div>
+      <div class="tour-overlay">
+        <div class="tour-backdrop"></div>
+        <div class="tour-spotlight-ring"></div>
+        <div class="tour-bubble">
+          <p class="tour-step-count">Step 5 of 5</p>
+          <p class="tour-copy">Swipe left or right to move between stanza groups</p>
+          <div class="tour-actions">
+            <button class="tour-btn ghost">Skip tour</button>
+            <button class="tour-btn primary">Done</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ VARIANT C ============ -->
+<div id="variant-c" class="variant">
+  <div class="stage-wrap">
+    <div class="stage-label">Adds a live preview of the new page-dot indicator, since it's a new element appearing at the same time as the gesture is taught</div>
+    <div class="phone-landscape">
+      <div class="fake-singing-view">
+        <div class="fake-notation">
+          <div class="fake-staff-lines">
+            <div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"></div>
+          </div>
+          <div class="fake-notes">
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <div class="fake-lyrics">His shoulder I from burdens took, his hands from pots did free.</div>
+          <div class="swipe-trail"></div>
+          <div class="hand-swipe">🤚</div>
+          <div class="dot-callout">stanza sets</div>
+          <div class="dot-indicator-preview">
+            <span class="dot active"></span><span class="dot"></span><span class="dot"></span>
+          </div>
+        </div>
+      </div>
+      <div class="tour-overlay">
+        <div class="tour-backdrop"></div>
+        <div class="tour-spotlight-ring"></div>
+        <div class="tour-bubble">
+          <p class="tour-step-count">Step 5 of 5</p>
+          <p class="tour-copy">Swipe left or right to move between stanza groups — the dots show where you are</p>
+          <div class="tour-actions">
+            <button class="tour-btn ghost">Skip tour</button>
+            <button class="tour-btn primary">Done</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="sketch-tools">
+  Sketch 007 — swipe tutorial
+</div>
+
+<script>
+function showVariant(id, evt) {
+  document.querySelectorAll('.variant').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.variant-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('variant-' + id).classList.add('active');
+  if (evt) evt.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>
