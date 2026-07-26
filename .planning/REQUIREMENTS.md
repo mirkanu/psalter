@@ -130,6 +130,11 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 - [x] **MOBILE-07**: Non-last rows in the inline Staff view fill available width with no wasted whitespace (row-stretch/justification bug fixed for rows 1 and 2, not just the last row).
 - [x] **MOBILE-08**: The inline Staff view is gated behind `tuneMelismaDecisions.status === 'approved'`; the Gear menu's Staff-inline option is grayed out for non-approved tunes, and JPEG split-leaf is shown with a toast if a non-approved tune is reached via navigation.
 
+### Inline Staff Landscape Fit + Swipe Stanza Navigation (Phase 04.9.15.1)
+
+- [ ] **MOBILE-09**: The inline Staff view's existing fit-one-stanza-set-on-screen-without-scrolling behavior (currently gated by `viewportW < 768`) also applies correctly on landscape phones (Android and iOS), which are wide but height-constrained — not just narrow portrait phones. A non-double CM tune fits one stanza-set on screen without vertical scrolling in phone landscape, same as it already does in portrait/desktop.
+- [ ] **MOBILE-10**: Swipe left/right navigates between stanza-sets in the inline Staff view, available on any device/orientation whenever there is more than one stanza-set — additive alongside the existing bottom-bar stanza display, not a replacement. Where the bottom chrome bar is auto-hidden (phone landscape with chrome hidden), the stanza display is replaced by a subtle page-dot indicator. A one-time tutorial explains the swipe gesture on first encounter.
+
 ### Footer & Feedback (Phase 05.2)
 
 - [x] **FOOT-01**: A site footer is present on every page (public and authenticated); it contains: About link, Copyright link, Feedback link, and "Made by GSD Labs" linking to gsdlabs.dev
@@ -262,3 +267,5 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 | MOBILE-06 | Phase 4.9.15: Mobile Inline Staff Optimization | Complete |
 | MOBILE-07 | Phase 4.9.15: Mobile Inline Staff Optimization | Complete |
 | MOBILE-08 | Phase 4.9.15: Mobile Inline Staff Optimization | Complete |
+| MOBILE-09 | Phase 04.9.15.1: Inline Staff Landscape Fit + Swipe Stanza Navigation | Pending |
+| MOBILE-10 | Phase 04.9.15.1: Inline Staff Landscape Fit + Swipe Stanza Navigation | Pending |

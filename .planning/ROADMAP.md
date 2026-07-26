@@ -673,6 +673,21 @@ Scope:
   (d) Fix row-stretch/justification bug causing wasted whitespace on non-last rows (confirmed on rows 1 and 2, not just last-row underfill)
   (e) Gate staff-inline abc view behind explicit `'approved'` status in `tuneMelismaDecisions` (unmarked/`'not_approved'` tunes are NOT enough — only explicit `'approved'` unlocks abc staff-inline): gray out the Staff-inline gear menu option for non-approved tunes; if reached anyway (e.g. via next/prev psalm navigation), fall back to JPEG split-leaf (same fallback already used for non-approved solfège) with messaging directing the user to Settings to pick a different view
 
+### Phase 04.9.15.1: Inline Staff Landscape Fit + Swipe Stanza Navigation (INSERTED)
+**Goal:** Fix the inline Staff "fit one stanza-set on screen without scrolling" system to correctly account for landscape phone viewports, and add universal swipe-based stanza-set navigation.
+**Requirements**: MOBILE-09, MOBILE-10
+**Depends on:** Phase 4.9.15
+**Plans:** TBD
+
+Scope:
+  (a) The existing per-stanza-set fit-to-screen scaling (`compactSplitMobile`/`staffWidthFactor` in `NotationRenderer.tsx`) is gated by `viewportW < 768` — a width-only check that correctly identifies narrow portrait phones but misses landscape phones, which are wide (768-926px) yet just as height-constrained (390-430px). Measured live via Playwright: Psalm 1's inline Staff rendered 566px of content into a 412px-tall landscape viewport, forcing scroll. Extend the fit-to-screen gate to also trigger on landscape phones (Android and iOS), reusing this session's phone/orientation detection (`isPhoneDevice`, `phoneLandscapeChromeHide`) rather than width alone.
+  (b) Add swipe left/right gesture navigation between stanza-sets, available on any device/orientation whenever there is more than one stanza-set — additive alongside the existing bottom-bar stanza display, not a replacement for it.
+  (c) Where the bottom chrome bar is auto-hidden (phone landscape with chrome hidden — Android always in landscape, iOS only when home-screen-installed), replace the now-invisible stanza display with a subtle page-dot indicator (carousel-style).
+  (d) Include a one-time, first-encounter tutorial explaining the swipe gesture (design direction — reuse the existing `OnboardingTour` spotlight system vs. a standalone animated-hand overlay — captured for `/gsd-sketch`).
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 04.9.15.1 to break down)
+
 ### Phase 4.12: Explore Page Rebuild
 **Goal**: Rebuild /explore to match psalter.cprc.co.uk across all 6 sections — migrate missing schema fields, fetch new Airtable data, and redesign the page as a single scrollable layout with anchor sections. Users can browse psalms by theme, find NT quotations, explore Nave's topics with sub-topic drill-down, filter by author with historical metadata, and look up Heidelberg Catechism connections.
 **Requirements**: EXPLORE-01, EXPLORE-02, EXPLORE-03, EXPLORE-04, EXPLORE-05, EXPLORE-06

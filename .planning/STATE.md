@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready_to_plan
+status: planning
 stopped_at: Completed 04.9.15-05-PLAN.md (approved after 4 checkpoint rounds)
-last_updated: "2026-07-17T16:23:48.898Z"
-last_activity: 2026-07-17
+last_updated: "2026-07-23T21:47:51.101Z"
+last_activity: "2026-07-23 - Completed quick task 260723-cpt: Fixed iOS home-screen landscape safe-area bug (viewport-fit=cover + env(safe-area-inset-top))"
 progress:
-  total_phases: 14
-  completed_phases: 12
+  total_phases: 15
+  completed_phases: 11
   total_plans: 57
   completed_plans: 57
-  percent: 86
+  percent: 100
 ---
 
 # Project State
@@ -97,6 +97,7 @@ Progress: [██████████] 100%
 - Phase 04.9.8 inserted after Phase 04.9.7: Staff Display Word Alignment Fix — 4 PHRASE_BREAKs per CM tune, z2 phantom-bar fix, archaic word overrides (URGENT)
 - Phase 5 edited: edited fields: goal, requirements, success_criteria — full precentor portal redesign with Precenting Sets, psalm table, meter mismatch checker, precenting mode
 - Phase 05.1 inserted after Phase 5: Auth Gate — Better Auth login, route protection, admin-created accounts, auto-populate Precentor from session (URGENT)
+- Phase 04.9.15.1 inserted after Phase 4.9.15: Inline Staff Landscape Fit + Swipe Stanza Navigation — captured from /gsd-explore session; not urgent, queued for later planning
 
 ### Decisions
 
