@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 04.9.15-05-PLAN.md (approved after 4 checkpoint rounds)
-last_updated: "2026-07-23T21:47:51.101Z"
+stopped_at: Phase 04.9.15.1 UI-SPEC approved
+last_updated: "2026-07-26T15:23:47.211Z"
 last_activity: "2026-07-23 - Completed quick task 260723-cpt: Fixed iOS home-screen landscape safe-area bug (viewport-fit=cover + env(safe-area-inset-top))"
 progress:
   total_phases: 15
@@ -241,9 +241,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-17T16:23:48.850Z
-Stopped at: Completed 04.9.15-05-PLAN.md (approved after 4 checkpoint rounds)
-Resume file: None
+Last session: 2026-07-26T15:23:47.087Z
+Stopped at: Phase 04.9.15.1 UI-SPEC approved
+Resume file: .planning/phases/04.9.15.1-inline-staff-landscape-fit-swipe-stanza-navigation-fix-the-i/04.9.15.1-UI-SPEC.md
 
 ### Deferred from 04.9.4 polish (separate tickets when needed)
 
