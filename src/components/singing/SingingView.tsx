@@ -1079,7 +1079,7 @@ export function SingingView({
       {phoneLandscapeChromeHide && (totalStanzas ?? 0) > 1 && (
         <StanzaDotIndicator current={currentStanza ?? 1} total={totalStanzas as number} />
       )}
-      <OnboardingTour key={tourKey} viewMode={viewMode} totalStanzas={totalStanzas} />
+      <OnboardingTour key={tourKey} totalStanzas={totalStanzas} />
     </div>
   )
 }

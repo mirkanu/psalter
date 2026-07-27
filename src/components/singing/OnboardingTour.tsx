@@ -3,12 +3,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Hand } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import type { ViewMode } from '@/components/notation/NotationRenderer'
 
 // Task 5 (04.9.14-01): bumped v1 → v2 to re-trigger the tour for existing
-// users now that it includes the new scroll-hide steps below.
-// 04.9.15.1-03: bumped v2 → v3 to re-trigger the tour again now that it
-// includes the new swipe step below (same precedent as the v1→v2 bump).
+// users when the scroll-hide explanation steps were added (those steps were
+// since removed — see the SWIPE_STEPS comment below — but the version-bump
+// precedent stands).
+// 04.9.15.1-03: bumped v2 → v3 to re-trigger the tour again when the swipe
+// step was added (same precedent as the v1→v2 bump). Not bumped again for
+// the scroll-hide-steps removal (checkpoint round 5) — that's content being
+// removed from an existing step set, not new functionality to gate.
 const TOUR_KEY = 'psalter_tour_v3'
 
 interface Step {
@@ -24,21 +27,13 @@ const STEPS: Step[] = [
   { target: 'view-controls', copy: 'Open settings to change views (e.g. lyrics only) and access the study guide' },
 ]
 
-// Task 5 (04.9.14-01): scroll-hide navigation steps — only shown when the
-// user is in split-leaf mode on mobile (<768px), where the new hide-on-scroll
-// top/bottom bars are most relevant. Deviation from the plan's literal
-// 3-target list: 'scroll-up' has no dedicated DOM element to spotlight (it
-// describes an action, not a UI control), so its step reuses the 'top-bar'
-// target — the same bar the user just watched hide is the one that reappears.
-const SCROLL_HIDE_STEPS: Step[] = [
-  { target: 'top-bar', copy: 'Scroll down to hide the top navigation and see more of the tune' },
-  { target: 'scroll-area', copy: 'Keep scrolling to hide the bottom controls too' },
-  { target: 'top-bar', copy: 'Scroll back up anytime to bring the bars back' },
-]
-
 // 04.9.15.1-03 (MOBILE-10): appended only when totalStanzas > 1. Reuses the
 // existing 'scroll-area' target (the <main data-tour-target="scroll-area">
 // already exists and is already measured today) — no new data-tour-target.
+// (The scroll-hide explanation steps that previously also used 'scroll-area'
+// / 'top-bar' were removed per checkpoint round 5 feedback — scroll-to-hide
+// is discoverable naturally — so this is now the ONLY step using this
+// target.)
 const SWIPE_STEPS: Step[] = [
   {
     target: 'scroll-area',
@@ -83,51 +78,32 @@ function unionBbox(rects: Rect[]): Rect {
 }
 
 interface Props {
-  /** Task 5 (04.9.14-01): current NotationRenderer view mode. Used to gate
-   *  the scroll-hide steps to split-leaf mode. Optional for backward
-   *  compatibility with any other caller that doesn't track view mode. */
-  viewMode?: ViewMode
   /** 04.9.15.1-03 (MOBILE-10): current stanza-set count. Used to gate the
    *  swipe tutorial step — only shown when there's more than one set to
-   *  swipe between. Optional, mirrors viewMode. */
+   *  swipe between. Optional. */
   totalStanzas?: number | null
 }
 
-export function OnboardingTour({ viewMode, totalStanzas }: Props = {}) {
+export function OnboardingTour({ totalStanzas }: Props = {}) {
   // SSR-safe: render nothing until mounted; assume seen=true to suppress
   // first-paint flash for returning visitors (hydration reads the real value).
   const [mounted, setMounted] = useState(false)
   const [tourSeen, setTourSeen] = useState(true)
   const [step, setStep] = useState(0)
   const [rects, setRects] = useState<Rect[] | null>(null)
-  const [isMobile, setIsMobile] = useState(false)
 
-  useEffect(() => {
-    const update = () => setIsMobile(window.innerWidth < 768)
-    update()
-    window.addEventListener('resize', update)
-    return () => window.removeEventListener('resize', update)
-  }, [])
-
-  // Task 5: gate scroll-hide steps to split-leaf mode on mobile.
-  const isSplitLeafMobile =
-    isMobile && (viewMode === 'staff-split' || viewMode === 'solfege-split')
   // 04.9.15.1-03: gate the swipe step to >1 stanza-set (nothing to swipe
   // between otherwise).
   const hasMultipleStanzas = totalStanzas != null && totalStanzas > 1
   const steps = useMemo<Step[]>(
-    () => [
-      ...STEPS,
-      ...(isSplitLeafMobile ? SCROLL_HIDE_STEPS : []),
-      ...(hasMultipleStanzas ? SWIPE_STEPS : []),
-    ],
-    [isSplitLeafMobile, hasMultipleStanzas],
+    () => [...STEPS, ...(hasMultipleStanzas ? SWIPE_STEPS : [])],
+    [hasMultipleStanzas],
   )
 
-  // CR-01 fix: if `steps` shrinks (e.g. a resize/rotation crosses the 768px
-  // breakpoint mid-tour, dropping SCROLL_HIDE_STEPS), clamp `step` so it never
-  // points past the end of the new, shorter array. Without this, the
-  // measurement effect below reads `steps[step]` as `undefined` and throws.
+  // CR-01 fix: if `steps` shrinks (e.g. totalStanzas drops to 1 mid-tour,
+  // dropping SWIPE_STEPS), clamp `step` so it never points past the end of
+  // the new, shorter array. Without this, the measurement effect below reads
+  // `steps[step]` as `undefined` and throws.
   useEffect(() => {
     setStep((s) => Math.min(s, steps.length - 1))
   }, [steps.length])
@@ -198,10 +174,10 @@ export function OnboardingTour({ viewMode, totalStanzas }: Props = {}) {
   const isLast = currentStep === steps.length - 1
   const padding = 8
 
-  // 04.9.15.1-03: identify the swipe step specifically (by target + copy,
-  // since SWIPE_STEPS reuses the 'scroll-area' target already used by
-  // SCROLL_HIDE_STEPS) so only this one step gets the extra in-spotlight
-  // hand + dot-preview visuals.
+  // 04.9.15.1-03: identify the swipe step specifically (by target + copy —
+  // 'scroll-area' is currently only used by SWIPE_STEPS, but matching on
+  // copy too keeps this correct if another step ever reuses the target)
+  // so only this one step gets the extra in-spotlight hand visual.
   const isSwipeStep =
     steps[currentStep]?.target === 'scroll-area' &&
     steps[currentStep]?.copy === SWIPE_STEPS[0].copy
@@ -215,20 +191,20 @@ export function OnboardingTour({ viewMode, totalStanzas }: Props = {}) {
   const placeBelow = bbox.top + bbox.height / 2 < viewportH / 2
 
   // Checkpoint round 2, issue 4: clamp the bubble's vertical position to the
-  // visible viewport. 'scroll-area' (used by both a SCROLL_HIDE_STEPS entry
-  // and SWIPE_STEPS) is an unusually large/tall spotlight target — the whole
-  // notation region — so `placeBelow` can evaluate false with a `bbox.top`
-  // near/above the top edge, pushing the un-clamped
-  // `top: bbox.top - padding - 8` (bubble's BOTTOM edge, since it's paired
-  // with `translate(-50%, -100%)`) high enough that most or all of the
-  // bubble rendered above the visible viewport (matching the reported
-  // "copy clipped/invisible" symptom). Clamp so the bubble's top AND bottom
-  // edges always stay within [BUBBLE_MARGIN, viewportH - BUBBLE_MARGIN],
-  // using a conservative height estimate — bubble content is short (one
-  // "Step N of M" line, 1-2 lines of copy, one button row) and width is
-  // capped at min(320px, 90vw), so it never realistically needs more than
-  // this. Applies to every step (not just the swipe step) since any step
-  // could in principle target a tall/near-edge element.
+  // visible viewport. 'scroll-area' (used by SWIPE_STEPS) is an unusually
+  // large/tall spotlight target — the whole notation region — so
+  // `placeBelow` can evaluate false with a `bbox.top` near/above the top
+  // edge, pushing the un-clamped `top: bbox.top - padding - 8` (bubble's
+  // BOTTOM edge, since it's paired with `translate(-50%, -100%)`) high
+  // enough that most or all of the bubble rendered above the visible
+  // viewport (matching the reported "copy clipped/invisible" symptom).
+  // Clamp so the bubble's top AND bottom edges always stay within
+  // [BUBBLE_MARGIN, viewportH - BUBBLE_MARGIN], using a conservative height
+  // estimate — bubble content is short (one "Step N of M" line, 1-2 lines of
+  // copy, one button row) and width is capped at min(320px, 90vw), so it
+  // never realistically needs more than this. Applies to every step (not
+  // just the swipe step) since any step could in principle target a
+  // tall/near-edge element.
   const BUBBLE_MARGIN = 12
   const ESTIMATED_BUBBLE_HEIGHT = 180
   const bubbleTop = placeBelow
