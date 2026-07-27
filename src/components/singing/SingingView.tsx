@@ -474,12 +474,57 @@ export function SingingView({
     setStanzaPage(current)
   }, [])
 
+  // Checkpoint round 3 (post-commit slide/fade stanza transition): tracks
+  // WHICH direction the most recent handleStanzaNext/handleStanzaPrev call
+  // was, so the animation effect below (keyed on stanzaPage) knows which way
+  // to slide from. Set INSIDE the handler, read+cleared inside the effect —
+  // deliberately NOT derived by diffing old/new stanzaPage in the effect
+  // itself (avoids off-by-one edge cases at the first/last page, where the
+  // clamped setStanzaPage updater may be a no-op and never actually change
+  // stanzaPage). Left null (no animation) for any stanzaPage change that
+  // did NOT originate from these two handlers — e.g. NotationRenderer's
+  // onStanzaChange sync-back on tune switch, or its own auto-advance during
+  // synth playback (both call setStanzaPage directly, bypassing these
+  // handlers) — matching the requested scope (swipe + bottom-bar buttons
+  // only, both of which route through these same two handlers).
+  const stanzaAnimDirectionRef = useRef<'next' | 'prev' | null>(null)
+
   const handleStanzaPrev = useCallback(() => {
+    stanzaAnimDirectionRef.current = 'prev'
     setStanzaPage((p) => Math.max(1, p - 1))
   }, [])
   const handleStanzaNext = useCallback(() => {
+    stanzaAnimDirectionRef.current = 'next'
     setStanzaPage((p) => (totalStanzas ? Math.min(totalStanzas, p + 1) : p + 1))
   }, [totalStanzas])
+
+  // Checkpoint round 3: brief (180ms) post-commit slide+fade on the
+  // notation region when stanzaPage changes via the handlers above. Applied
+  // via the Web Animations API to a STABLE wrapper (notationAnimRef) that
+  // never unmounts/remounts the NotationRendererClient subtree — a
+  // transform/opacity-only .animate() call never touches layout (no effect
+  // on any clientHeight/offsetHeight measurement, including the compact-fit
+  // height-fit-scale pass in AbcPlayer.tsx / the padding wrapper in
+  // NotationRenderer.tsx), so it's safe to fire regardless of view mode or
+  // orientation. `<main>` already has overflow-hidden, so the brief
+  // horizontal offset never causes a page-level scroll/overflow.
+  const notationAnimRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const direction = stanzaAnimDirectionRef.current
+    stanzaAnimDirectionRef.current = null
+    if (!direction) return
+    const el = notationAnimRef.current
+    if (!el || typeof el.animate !== 'function') return
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    const offset = direction === 'next' ? 24 : -24
+    el.animate(
+      [
+        { transform: `translateX(${offset}px)`, opacity: 0.4 },
+        { transform: 'translateX(0)', opacity: 1 },
+      ],
+      { duration: 180, easing: 'ease-out' },
+    )
+  }, [stanzaPage])
 
   // MOBILE-10: swipe left/right over the notation region pages stanza-sets,
   // reusing the SAME handlers already wired to GlassBottomBar's prev/next
@@ -927,35 +972,37 @@ export function SingingView({
            casing) as any other Lyrics Only view; viewMode is kept at 'lyrics'
            until a tune is chosen (see the hasAnyNotation-gated effects above
            and GearPopover's tune-selection-request flow). */}
-        <NotationRendererClient
-          abc={abc}
-          lyrics={lyrics}
-          scoreJpgUrl={scoreJpgUrl}
-          solfegeJpgUrl={solfegeJpgUrl}
-          tuneName={tuneName}
-          tuneMeter={meter}
-          phraseShapeOverride={activeTune?.phraseShapeOverride ?? null}
-          stanzaMeter={stanzaMeter}
-          lyricsStructured={lyricsStructured}
-          doubleLength={activeTune?.doubleLength ?? false}
-          solfegeOcrText={activeTune?.solfegeOcrText ?? null}
-          melismaPositions={activeTune?.melismaPositions ?? null}
-          showLyrics={showLyrics}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          baseSize={baseSize}
-          onBaseSizeChange={handleBaseSizeChange}
-          notationBaseSize={notationBaseSize}
-          chromeless={true}
-          onStanzaChange={handleStanzaChange}
-          stanzaPage={stanzaPage}
-          onStanzaPageChange={setStanzaPage}
-          youtubeUrl={youtubeUrl}
-          soundcloudUrl={soundcloudUrl}
-          staffPages={activeStaffPages}
-          solfegePages={activeSolfegePages}
-          staffInlineApproved={staffInlineApproved}
-        />
+        <div ref={notationAnimRef} className="flex-1 min-h-0 flex flex-col">
+          <NotationRendererClient
+            abc={abc}
+            lyrics={lyrics}
+            scoreJpgUrl={scoreJpgUrl}
+            solfegeJpgUrl={solfegeJpgUrl}
+            tuneName={tuneName}
+            tuneMeter={meter}
+            phraseShapeOverride={activeTune?.phraseShapeOverride ?? null}
+            stanzaMeter={stanzaMeter}
+            lyricsStructured={lyricsStructured}
+            doubleLength={activeTune?.doubleLength ?? false}
+            solfegeOcrText={activeTune?.solfegeOcrText ?? null}
+            melismaPositions={activeTune?.melismaPositions ?? null}
+            showLyrics={showLyrics}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            baseSize={baseSize}
+            onBaseSizeChange={handleBaseSizeChange}
+            notationBaseSize={notationBaseSize}
+            chromeless={true}
+            onStanzaChange={handleStanzaChange}
+            stanzaPage={stanzaPage}
+            onStanzaPageChange={setStanzaPage}
+            youtubeUrl={youtubeUrl}
+            soundcloudUrl={soundcloudUrl}
+            staffPages={activeStaffPages}
+            solfegePages={activeSolfegePages}
+            staffInlineApproved={staffInlineApproved}
+          />
+        </div>
         {/* Task 4 (04.9.14-03): dynamic spacer reserving exact room for
            PlayMiniBar (on top of the pb-11/md:pb-13 already reserved for
            GlassBottomBar), so content never sits hidden behind the two
