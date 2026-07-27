@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { isPhoneDevice } from '@/lib/device'
 import AbcPlayer from '@/components/AbcPlayer'
 import { FullscreenOverlay } from './FullscreenOverlay'
 import { StanzaList } from './StanzaList'
@@ -528,6 +529,22 @@ export function NotationRenderer({
   // portrait, where there isn't width to spare. Any wider viewport — phone
   // landscape, tablet, desktop — lays lyrics out beside the notation instead.
   const isNarrowPortrait = useMediaQuery('(orientation: portrait) and (max-width: 767px)')
+  // MOBILE-09: the fit gates below (staffWidthFactor + compactSplitMobile)
+  // were width-only (viewportW < 768), so they correctly caught narrow
+  // portrait phones but missed phone landscape — wide (768-926px, escapes
+  // the mobile branch) yet just as height-constrained (390-430px tall).
+  // Reuse the exact phone/orientation detection already established in
+  // SingingView.tsx (isPhone state + '(orientation: landscape) and
+  // (max-width: 926px)' query) rather than inventing a new gate. isPhone is
+  // SSR-safe (navigator-based, set in an effect); the media query hook is
+  // called unconditionally at top level, then combined with isPhone — never
+  // short-circuited into the hook call itself, to keep hooks order stable.
+  const [isPhone, setIsPhone] = useState(false)
+  useEffect(() => {
+    setIsPhone(isPhoneDevice())
+  }, [])
+  const isPhoneLandscapeMQ = useMediaQuery('(orientation: landscape) and (max-width: 926px)')
+  const isPhoneLandscapeForFit = isPhone && isPhoneLandscapeMQ
   // Quick 260712-kov fix: the sub-1 narrowing factor above exists to force
   // abcjs to WRAP a single long phrase into more systems (more notes fit per
   // requested staffwidth than the viewport can show, so a narrower target
@@ -552,7 +569,7 @@ export function NotationRenderer({
   const staffWidthFactor = chromeless
     ? isSplitForWidth
       ? 1
-      : viewportW < 768
+      : viewportW < 768 || isPhoneLandscapeForFit
       ? 0.55
       : 0.85
     : 1
@@ -575,7 +592,9 @@ export function NotationRenderer({
   // /study) stay byte-identical; inline/split-leaf Solfège (JPG-based, sized
   // separately) are unaffected.
   const compactSplitMobile =
-    chromeless && viewportW < 768 && (viewMode === 'staff' || viewMode === 'staff-split')
+    chromeless &&
+    (viewportW < 768 || isPhoneLandscapeForFit) &&
+    (viewMode === 'staff' || viewMode === 'staff-split')
 
   // How many sub-systems to break each source phrase into. abcjs only wraps
   // music where the ABC source contains an explicit newline; staffwidth alone

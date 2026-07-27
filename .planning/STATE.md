@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 04.9.15.1 UI-SPEC approved
-last_updated: "2026-07-26T22:11:22.274Z"
-last_activity: 2026-07-26 -- Phase 04.9.15.1 planning complete
+last_updated: "2026-07-27T08:18:55.316Z"
+last_activity: 2026-07-27 -- Phase 04.9.15.1 execution started
 progress:
   total_phases: 15
   completed_phases: 11
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-07)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 04.9.15 — mobile-inline-staff-optimization
+**Current focus:** Phase 04.9.15.1 — inline-staff-landscape-fit-swipe-stanza-navigation-fix-the-i
 
 ## Current Position
 
-Phase: 04.10
-Plan: Not started
+Phase: 04.9.15.1 (inline-staff-landscape-fit-swipe-stanza-navigation-fix-the-i) — EXECUTING
+Plan: 1 of 3
 UI-SPEC: Phase 04.9.4 closed out. Singing-view chrome refined across 4 polish rounds (chrome-dedup, singing-chrome-polish, r3, r4); audio first-press bug fixed; tour redesigned (4 steps, per-element spotlights); mobile bar h-11 (44px); lyrics/solfège views get bigger font + padding + inline YouTube embed; "Ps 119:N-M" range titles.
-Status: Ready to execute
-Last activity: 2026-07-26 -- Phase 04.9.15.1 planning complete
+Status: Executing Phase 04.9.15.1
+Last activity: 2026-07-27 -- Phase 04.9.15.1 execution started
 
 Progress: [██████████] 100%
 
