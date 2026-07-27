@@ -48,6 +48,12 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* MOBILE-10 (Phase 04.9.15.1 Plan 02) — StanzaDotIndicator active-dot pulse. */
+@keyframes psalter-dot-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.35); }
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
