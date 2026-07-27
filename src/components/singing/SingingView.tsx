@@ -459,6 +459,9 @@ export function SingingView({
       // added) — clear both keys so restart works regardless of which
       // version a given browser last completed.
       localStorage.removeItem('psalter_tour_v2')
+      // 04.9.15.1-03: bumped v2 → v3 (swipe step added) — clear the current
+      // key too, same precedent, so "Restart tour" keeps working.
+      localStorage.removeItem('psalter_tour_v3')
     } catch {
       /* ignore */
     }
