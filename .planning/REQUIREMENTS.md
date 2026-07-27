@@ -133,7 +133,7 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 ### Inline Staff Landscape Fit + Swipe Stanza Navigation (Phase 04.9.15.1)
 
 - [ ] **MOBILE-09**: The inline Staff view's existing fit-one-stanza-set-on-screen-without-scrolling behavior (currently gated by `viewportW < 768`) also applies correctly on landscape phones (Android and iOS), which are wide but height-constrained — not just narrow portrait phones. A non-double CM tune fits one stanza-set on screen without vertical scrolling in phone landscape, same as it already does in portrait/desktop.
-- [ ] **MOBILE-10**: Swipe left/right navigates between stanza-sets in the inline Staff view, available on any device/orientation whenever there is more than one stanza-set — additive alongside the existing bottom-bar stanza display, not a replacement. Where the bottom chrome bar is auto-hidden (phone landscape with chrome hidden), the stanza display is replaced by a subtle page-dot indicator. A one-time tutorial explains the swipe gesture on first encounter.
+- [x] **MOBILE-10**: Swipe left/right navigates between stanza-sets in the inline Staff view, available on any device/orientation whenever there is more than one stanza-set — additive alongside the existing bottom-bar stanza display, not a replacement. Where the bottom chrome bar is auto-hidden (phone landscape with chrome hidden), the stanza display is replaced by a subtle page-dot indicator. A one-time tutorial explains the swipe gesture on first encounter.
 
 ### Footer & Feedback (Phase 05.2)
 
@@ -268,4 +268,4 @@ Updated: 2026-05-09 (added PSLT-01–03, TUNE-05–07, PERF-01–02 revisions fo
 | MOBILE-07 | Phase 4.9.15: Mobile Inline Staff Optimization | Complete |
 | MOBILE-08 | Phase 4.9.15: Mobile Inline Staff Optimization | Complete |
 | MOBILE-09 | Phase 04.9.15.1: Inline Staff Landscape Fit + Swipe Stanza Navigation | Pending |
-| MOBILE-10 | Phase 04.9.15.1: Inline Staff Landscape Fit + Swipe Stanza Navigation | Pending |
+| MOBILE-10 | Phase 04.9.15.1: Inline Staff Landscape Fit + Swipe Stanza Navigation | Complete |
