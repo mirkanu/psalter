@@ -23,7 +23,10 @@ import { useSwipeGesture } from '@/hooks/useSwipeGesture'
 import { toast } from 'sonner'
 
 const STORAGE_MODE_KEY = 'psalter-score-mode'
+// Split-leaf (staff-split/solfege-split) + inline solfège share one stored
+// size; Lyrics Only has its own — see `readStoredSize`/`activeBaseSize` below.
 const STORAGE_SIZE_KEY = 'psalter-staff-size'
+const STORAGE_LYRICS_SIZE_KEY = 'psalter-lyrics-size'
 
 interface Props {
   psalm: PsalmDetail
@@ -72,9 +75,9 @@ function readStoredViewMode(showLyrics: boolean): ViewMode {
   return 'staff'
 }
 
-function readStoredBaseSize(): number {
+function readStoredSize(key: string): number {
   try {
-    const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_SIZE_KEY) : null
+    const raw = typeof window !== 'undefined' ? localStorage.getItem(key) : null
     const n = raw ? Number(raw) : NaN
     if (Number.isFinite(n) && n >= 4 && n <= 120) return n
   } catch { /* ignore */ }
@@ -146,7 +149,12 @@ export function SingingView({
   // ViewMode + baseSize state (owned here; passed controlled to NotationRenderer)
   const showLyrics = !!lyrics
   const [viewMode, setViewMode] = useState<ViewMode>('staff')
+  // `baseSize` = solfège (inline) + both split-leaf modes (staff-split,
+  // solfege-split); `lyricsBaseSize` = Lyrics Only, stored separately so
+  // zooming one doesn't affect the other. `activeBaseSize` below picks
+  // whichever applies to the current viewMode.
   const [baseSize, setBaseSize] = useState<number>(14)
+  const [lyricsBaseSize, setLyricsBaseSize] = useState<number>(14)
   // 04.9.15-02: notationBaseSize is a SECOND, independent size state driving
   // ONLY the chromeless inline-Staff abcjs scale (via computeNotationScale).
   // It is seeded at the pre-existing inline-Staff mobile default (13, matches
@@ -193,7 +201,8 @@ export function SingingView({
     // would immediately override it anyway, but this avoids a flash of a
     // broken Split-Leaf view before that effect fires.
     setViewMode(hasAnyNotation ? stored : 'lyrics')
-    setBaseSize(readStoredBaseSize())
+    setBaseSize(readStoredSize(STORAGE_SIZE_KEY))
+    setLyricsBaseSize(readStoredSize(STORAGE_LYRICS_SIZE_KEY))
     setMounted(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -282,6 +291,10 @@ export function SingingView({
     if (!mounted) return
     try { localStorage.setItem(STORAGE_SIZE_KEY, String(baseSize)) } catch { /* ignore */ }
   }, [baseSize, mounted])
+  useEffect(() => {
+    if (!mounted) return
+    try { localStorage.setItem(STORAGE_LYRICS_SIZE_KEY, String(lyricsBaseSize)) } catch { /* ignore */ }
+  }, [lyricsBaseSize, mounted])
 
   // 04.9.4-03: Keep baseSizeRef in sync with state so the resize handler always
   // reads the latest value without re-binding listeners.
@@ -413,8 +426,19 @@ export function SingingView({
   // notationBaseSize resize heuristic above, and a lyric-only A+/A− press
   // must not perturb the notation scale's resize reference.
   const handleBaseSizeChange = useCallback((newSize: number) => {
-    setBaseSize(newSize)
-  }, [])
+    if (viewMode === 'lyrics') {
+      setLyricsBaseSize(newSize)
+    } else {
+      setBaseSize(newSize)
+    }
+  }, [viewMode])
+
+  // The size that actually applies to the current view — Lyrics Only reads/
+  // writes its own bucket, everything else (solfège inline + both split-leaf
+  // modes) shares `baseSize`. Inline Staff ignores this entirely (driven by
+  // `notationBaseSize` instead — see computeNotationScale) so its A+/A−
+  // controls are hidden rather than wired to either bucket.
+  const activeBaseSize = viewMode === 'lyrics' ? lyricsBaseSize : baseSize
 
   // Sheet open state
   const [psalmSelectorOpen, setPsalmSelectorOpen] = useState(false)
@@ -989,7 +1013,7 @@ export function SingingView({
             showLyrics={showLyrics}
             viewMode={viewMode}
             onViewModeChange={setViewMode}
-            baseSize={baseSize}
+            baseSize={activeBaseSize}
             onBaseSizeChange={handleBaseSizeChange}
             notationBaseSize={notationBaseSize}
             chromeless={true}
@@ -1028,8 +1052,9 @@ export function SingingView({
       />
 
       <GlassBottomBar
-        baseSize={baseSize}
+        baseSize={activeBaseSize}
         onBaseSizeChange={handleBaseSizeChange}
+        hideSizeControls={viewMode === 'staff'}
         currentStanza={viewMode === 'staff' ? currentStanza : null}
         totalStanzas={viewMode === 'staff' ? totalStanzas : null}
         onStanzaPrev={handleStanzaPrev}
