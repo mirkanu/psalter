@@ -1,12 +1,15 @@
 'use client'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { Hand } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
 
 // Task 5 (04.9.14-01): bumped v1 → v2 to re-trigger the tour for existing
 // users now that it includes the new scroll-hide steps below.
-const TOUR_KEY = 'psalter_tour_v2'
+// 04.9.15.1-03: bumped v2 → v3 to re-trigger the tour again now that it
+// includes the new swipe step below (same precedent as the v1→v2 bump).
+const TOUR_KEY = 'psalter_tour_v3'
 
 interface Step {
   target: string // data-tour-target value
@@ -31,6 +34,16 @@ const SCROLL_HIDE_STEPS: Step[] = [
   { target: 'top-bar', copy: 'Scroll down to hide the top navigation and see more of the tune' },
   { target: 'scroll-area', copy: 'Keep scrolling to hide the bottom controls too' },
   { target: 'top-bar', copy: 'Scroll back up anytime to bring the bars back' },
+]
+
+// 04.9.15.1-03 (MOBILE-10): appended only when totalStanzas > 1. Reuses the
+// existing 'scroll-area' target (the <main data-tour-target="scroll-area">
+// already exists and is already measured today) — no new data-tour-target.
+const SWIPE_STEPS: Step[] = [
+  {
+    target: 'scroll-area',
+    copy: 'Swipe left or right to move between stanza groups — the dots show where you are.',
+  },
 ]
 
 interface Rect {
@@ -74,9 +87,13 @@ interface Props {
    *  the scroll-hide steps to split-leaf mode. Optional for backward
    *  compatibility with any other caller that doesn't track view mode. */
   viewMode?: ViewMode
+  /** 04.9.15.1-03 (MOBILE-10): current stanza-set count. Used to gate the
+   *  swipe tutorial step — only shown when there's more than one set to
+   *  swipe between. Optional, mirrors viewMode. */
+  totalStanzas?: number | null
 }
 
-export function OnboardingTour({ viewMode }: Props = {}) {
+export function OnboardingTour({ viewMode, totalStanzas }: Props = {}) {
   // SSR-safe: render nothing until mounted; assume seen=true to suppress
   // first-paint flash for returning visitors (hydration reads the real value).
   const [mounted, setMounted] = useState(false)
@@ -95,9 +112,16 @@ export function OnboardingTour({ viewMode }: Props = {}) {
   // Task 5: gate scroll-hide steps to split-leaf mode on mobile.
   const isSplitLeafMobile =
     isMobile && (viewMode === 'staff-split' || viewMode === 'solfege-split')
+  // 04.9.15.1-03: gate the swipe step to >1 stanza-set (nothing to swipe
+  // between otherwise).
+  const hasMultipleStanzas = totalStanzas != null && totalStanzas > 1
   const steps = useMemo<Step[]>(
-    () => (isSplitLeafMobile ? [...STEPS, ...SCROLL_HIDE_STEPS] : STEPS),
-    [isSplitLeafMobile],
+    () => [
+      ...STEPS,
+      ...(isSplitLeafMobile ? SCROLL_HIDE_STEPS : []),
+      ...(hasMultipleStanzas ? SWIPE_STEPS : []),
+    ],
+    [isSplitLeafMobile, hasMultipleStanzas],
   )
 
   // CR-01 fix: if `steps` shrinks (e.g. a resize/rotation crosses the 768px
@@ -174,6 +198,14 @@ export function OnboardingTour({ viewMode }: Props = {}) {
   const isLast = currentStep === steps.length - 1
   const padding = 8
 
+  // 04.9.15.1-03: identify the swipe step specifically (by target + copy,
+  // since SWIPE_STEPS reuses the 'scroll-area' target already used by
+  // SCROLL_HIDE_STEPS) so only this one step gets the extra in-spotlight
+  // hand + dot-preview visuals.
+  const isSwipeStep =
+    steps[currentStep]?.target === 'scroll-area' &&
+    steps[currentStep]?.copy === SWIPE_STEPS[0].copy
+
   // Bubble placement is based on the union bbox so it never overlaps any spotlight.
   const bbox = unionBbox(rects)
 
@@ -215,6 +247,48 @@ export function OnboardingTour({ viewMode }: Props = {}) {
         </defs>
         <rect width="100%" height="100%" fill="rgba(0,0,0,0.30)" mask="url(#tour-mask)" />
       </svg>
+      {/* 04.9.15.1-03 (MOBILE-10): swipe-step-only visuals — animated hand +
+         live dot-indicator preview, positioned inside the spotlight cutout
+         (Sketch 007 Variant C). Sits above the mask (201) but below the
+         bubble (202). Reduced motion falls back to a static, centered hand
+         glyph and non-pulsing dots. */}
+      {isSwipeStep && (
+        <div
+          aria-hidden
+          className="absolute overflow-hidden rounded-lg pointer-events-none"
+          style={{ top: bbox.top, left: bbox.left, width: bbox.width, height: bbox.height, zIndex: 201 }}
+        >
+          <style>{`
+            @keyframes psalter-hand-swipe {
+              0%   { transform: translate(calc(-50% + 46px), -50%); opacity: 0; }
+              12%  { opacity: 1; }
+              50%  { transform: translate(calc(-50% - 46px), -50%); opacity: 1; }
+              88%  { opacity: 1; }
+              100% { transform: translate(calc(-50% - 46px), -50%); opacity: 0; }
+            }
+          `}</style>
+          {/* dotted swipe trail */}
+          <div
+            className="absolute top-1/2 left-1/2 h-0.5 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full motion-reduce:hidden"
+            style={{
+              backgroundImage:
+                'repeating-linear-gradient(90deg, rgba(120,120,120,0.5) 0 6px, transparent 6px 12px)',
+            }}
+          />
+          {/* animated hand glyph — static + centered when reduced motion is set */}
+          <Hand
+            className="absolute top-1/2 left-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 text-foreground/80 animate-[psalter-hand-swipe_1.8s_ease-in-out_infinite] motion-reduce:animate-none"
+          />
+          {/* live preview of the page-dot indicator — clones StanzaDotIndicator's
+             dot visuals (real component is fixed bottom-right and can't be
+             relocated into the spotlight) */}
+          <div className="absolute bottom-2 right-2 flex items-center gap-1.5 rounded-full border border-border bg-background/85 backdrop-blur-sm px-2 py-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-foreground animate-[psalter-dot-pulse_1.8s_ease-in-out_infinite] motion-reduce:animate-none" />
+            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
+            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
+          </div>
+        </div>
+      )}
       {/* Tip bubble */}
       <div
         role="dialog"
