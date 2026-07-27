@@ -23,6 +23,12 @@ import { useSwipeGesture } from '@/hooks/useSwipeGesture'
 import { toast } from 'sonner'
 
 const STORAGE_MODE_KEY = 'psalter-score-mode'
+// Tracks the last non-'lyrics' viewMode separately from STORAGE_MODE_KEY
+// (which is overwritten with 'lyrics' the moment the user switches to Lyrics
+// Only). GearPopover's "Music Notes" toggle reads THIS key to restore the
+// exact prior Music Notes selection (e.g. staff-split) instead of always
+// falling back to plain 'staff'.
+const STORAGE_LAST_MUSIC_MODE_KEY = 'psalter-score-mode-last-music'
 // Split-leaf (staff-split/solfege-split) + inline solfège share one stored
 // size; Lyrics Only has its own — see `readStoredSize`/`activeBaseSize` below.
 const STORAGE_SIZE_KEY = 'psalter-staff-size'
@@ -286,6 +292,11 @@ export function SingingView({
   useEffect(() => {
     if (!mounted) return
     try { localStorage.setItem(STORAGE_MODE_KEY, viewMode) } catch { /* ignore */ }
+  }, [viewMode, mounted])
+  useEffect(() => {
+    if (!mounted) return
+    if (viewMode === 'lyrics') return
+    try { localStorage.setItem(STORAGE_LAST_MUSIC_MODE_KEY, viewMode) } catch { /* ignore */ }
   }, [viewMode, mounted])
   useEffect(() => {
     if (!mounted) return
