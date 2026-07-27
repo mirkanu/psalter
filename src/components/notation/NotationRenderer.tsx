@@ -596,6 +596,23 @@ export function NotationRenderer({
     (viewportW < 768 || isPhoneLandscapeForFit) &&
     (viewMode === 'staff' || viewMode === 'staff-split')
 
+  // 04.9.15.1-03 checkpoint fix: reserve top (portrait + landscape) / bottom
+  // (landscape only) breathing room around inline (non-split) Staff on
+  // mobile. CRITICAL: this padding must NOT land directly on
+  // `data-notation-viewarea`/`data-notation-fit-slot` — that's the exact
+  // element AbcPlayer's height-fit pass measures via `clientHeight` to
+  // compute its SVG scale (see AbcPlayer.tsx's `slotHeight`/`fitScale`).
+  // Padding placed on THAT element would inflate its own clientHeight
+  // without shrinking the space actually available to content, so the
+  // SVG would be scaled to fill the padded (larger) height and overflow by
+  // the padding amount, reintroducing MOBILE-09's scroll bug. Instead the
+  // padding lives on a plain wrapper OUTSIDE that element (see render below)
+  // — flexbox content-box math then naturally reduces the inner fit-slot's
+  // OWN clientHeight by the padding amount, so AbcPlayer's fit computation
+  // sees the already-reduced budget and scales correctly within it.
+  const isInlineStaffFitMobile =
+    chromeless && viewMode === 'staff' && (viewportW < 768 || isPhoneLandscapeForFit)
+
   // How many sub-systems to break each source phrase into. abcjs only wraps
   // music where the ABC source contains an explicit newline; staffwidth alone
   // does not split a single music-line.
@@ -1565,39 +1582,51 @@ export function NotationRenderer({
       {!chromeless && controlBar}
       {chromeless ? (
         <div
-          data-notation-viewarea
-          // 260716: also tagged as a `data-notation-fit-slot` target for
-          // AbcPlayer's height-fit-scale pass (see `compactSplitMobile`
-          // below) when NOT split. Deliberately a DIFFERENT attribute than
-          // split-leaf's `data-notation-slot` (not reused) so the existing
-          // `tests/diagnostics/split-leaf-staff-diff.mjs` script's
-          // `document.querySelector('[data-notation-slot]')` (a global
-          // first-match query, unlike AbcPlayer's ancestor-relative
-          // `closest()`) keeps resolving only the split-leaf inner slot.
-          data-notation-fit-slot
+          data-notation-viewarea-wrap
           className={cn(
-            'flex-1 min-h-0',
-            // Split-leaf mode composes its OWN two independently-scrolling
-            // regions (notation ≤50%, lyrics remainder) below <768px, so this
-            // outer wrapper must not also scroll/clip on mobile — it would
-            // double-scroll. At ≥768px the split-leaf inner container reverts
-            // to simple document flow, so the outer wrapper resumes normal
-            // scrolling (Task 1 + Task 2).
-            isSplit
-              ? 'overflow-hidden md:overflow-y-auto overscroll-y-none'
-              // 260716: inline Staff on mobile (compactSplitMobile) — hidden
-              // so the AbcPlayer height-fit-scale pass can shrink the SVG to
-              // fit without a page scroll. Non-Staff modes (lyrics, inline
-              // solfège placeholder) are plain text/JPG with no fit-scale
-              // mechanism, so they must keep scrolling — only gate the
-              // overflow change to the exact viewMode compactSplitMobile
-              // targets, not "any non-split chromeless view."
-              : compactSplitMobile
-              ? 'overflow-hidden md:overflow-y-auto overscroll-y-none'
-              : 'overflow-y-auto overscroll-y-none',
+            'flex-1 min-h-0 flex flex-col',
+            // See isInlineStaffFitMobile derivation above for why this
+            // padding lives on a wrapper OUTSIDE the fit-measured element
+            // rather than on it directly.
+            isInlineStaffFitMobile && 'pt-2',
+            isInlineStaffFitMobile && isPhoneLandscapeForFit && 'pb-2',
           )}
         >
-          {viewArea}
+          <div
+            data-notation-viewarea
+            // 260716: also tagged as a `data-notation-fit-slot` target for
+            // AbcPlayer's height-fit-scale pass (see `compactSplitMobile`
+            // below) when NOT split. Deliberately a DIFFERENT attribute than
+            // split-leaf's `data-notation-slot` (not reused) so the existing
+            // `tests/diagnostics/split-leaf-staff-diff.mjs` script's
+            // `document.querySelector('[data-notation-slot]')` (a global
+            // first-match query, unlike AbcPlayer's ancestor-relative
+            // `closest()`) keeps resolving only the split-leaf inner slot.
+            data-notation-fit-slot
+            className={cn(
+              'flex-1 min-h-0',
+              // Split-leaf mode composes its OWN two independently-scrolling
+              // regions (notation ≤50%, lyrics remainder) below <768px, so this
+              // outer wrapper must not also scroll/clip on mobile — it would
+              // double-scroll. At ≥768px the split-leaf inner container reverts
+              // to simple document flow, so the outer wrapper resumes normal
+              // scrolling (Task 1 + Task 2).
+              isSplit
+                ? 'overflow-hidden md:overflow-y-auto overscroll-y-none'
+                // 260716: inline Staff on mobile (compactSplitMobile) — hidden
+                // so the AbcPlayer height-fit-scale pass can shrink the SVG to
+                // fit without a page scroll. Non-Staff modes (lyrics, inline
+                // solfège placeholder) are plain text/JPG with no fit-scale
+                // mechanism, so they must keep scrolling — only gate the
+                // overflow change to the exact viewMode compactSplitMobile
+                // targets, not "any non-split chromeless view."
+                : compactSplitMobile
+                ? 'overflow-hidden md:overflow-y-auto overscroll-y-none'
+                : 'overflow-y-auto overscroll-y-none',
+            )}
+          >
+            {viewArea}
+          </div>
         </div>
       ) : (
         viewArea
