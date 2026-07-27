@@ -217,6 +217,24 @@ export function OnboardingTour({ viewMode, totalStanzas }: Props = {}) {
     ? { top: bbox.top + bbox.height + padding + 8, left: '50%', transform: 'translateX(-50%)' }
     : { top: bbox.top - padding - 8, left: '50%', transform: 'translate(-50%, -100%)' }
 
+  // Checkpoint fix: 'scroll-area' (the singing view's <main>) can be taller
+  // than — or shifted above/below — the visible viewport (e.g. the
+  // scroll-hide reflow applies a negative margin-top / grows to 100dvh when
+  // the chrome bars are hidden), so centering the hand + dot-preview inside
+  // the RAW bbox can place them off-screen (dot preview invisible) or over
+  // real rendered content instead of clean space. Clamp/intersect the
+  // spotlight rect to the visible viewport before using it as the anchor for
+  // the swipe-step-only visuals below — bubble placement above is
+  // unaffected (bbox itself, and the spotlight mask cutout, stay exact).
+  const swipeVisualTop = Math.max(bbox.top, 0)
+  const swipeVisualLeft = Math.max(bbox.left, 0)
+  const swipeVisualRect = {
+    top: swipeVisualTop,
+    left: swipeVisualLeft,
+    width: Math.min(bbox.width, viewportW - swipeVisualLeft),
+    height: Math.min(bbox.height, viewportH - swipeVisualTop),
+  }
+
   const overlay = (
     <div data-onboarding-tour className="fixed inset-0 z-[200] pointer-events-auto">
       {/* 260517-ht8 #1b — SVG-mask spotlight supports MULTIPLE simultaneous cutouts
@@ -256,7 +274,13 @@ export function OnboardingTour({ viewMode, totalStanzas }: Props = {}) {
         <div
           aria-hidden
           className="absolute overflow-hidden rounded-lg pointer-events-none"
-          style={{ top: bbox.top, left: bbox.left, width: bbox.width, height: bbox.height, zIndex: 201 }}
+          style={{
+            top: swipeVisualRect.top,
+            left: swipeVisualRect.left,
+            width: swipeVisualRect.width,
+            height: swipeVisualRect.height,
+            zIndex: 201,
+          }}
         >
           <style>{`
             @keyframes psalter-hand-swipe {
