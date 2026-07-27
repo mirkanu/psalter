@@ -22,6 +22,9 @@ interface Props {
   /** Task 3 (04.9.14-01): scroll-hide navigation. When true, slides down and
    *  fades out; scrolling back up restores it. */
   hidden?: boolean
+  /** Inline Staff ignores `baseSize` (scale is driven by viewport-resize
+   *  instead — see computeNotationScale), so A-/A+ have no effect there. */
+  hideSizeControls?: boolean
 }
 
 /**
@@ -45,6 +48,7 @@ export function GlassBottomBar({
   onGearOpen,
   gear,
   hidden = false,
+  hideSizeControls = false,
 }: Props) {
   const showStanza =
     currentStanza != null && totalStanzas != null && currentStanza > 0 && totalStanzas > 1
@@ -63,27 +67,29 @@ export function GlassBottomBar({
       aria-label="Psalm view controls"
     >
       <div className="max-w-4xl mx-auto flex items-center gap-1 px-2 h-11 md:h-13">
-        {/* Left: A-/A+ */}
-        <div className="flex items-center shrink-0">
-          <button
-            type="button"
-            aria-label="Decrease size"
-            onClick={() => onBaseSizeChange(Math.max(8, baseSize - SIZE_STEP))}
-            disabled={baseSize <= 8}
-            className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
-          >
-            A−
-          </button>
-          <button
-            type="button"
-            aria-label="Increase size"
-            onClick={() => onBaseSizeChange(Math.min(MAX_SIZE, baseSize + SIZE_STEP))}
-            disabled={baseSize >= MAX_SIZE}
-            className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
-          >
-            A+
-          </button>
-        </div>
+        {/* Left: A-/A+ — hidden in Inline Staff, where they have no effect */}
+        {!hideSizeControls && (
+          <div className="flex items-center shrink-0">
+            <button
+              type="button"
+              aria-label="Decrease size"
+              onClick={() => onBaseSizeChange(Math.max(8, baseSize - SIZE_STEP))}
+              disabled={baseSize <= 8}
+              className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+            >
+              A−
+            </button>
+            <button
+              type="button"
+              aria-label="Increase size"
+              onClick={() => onBaseSizeChange(Math.min(MAX_SIZE, baseSize + SIZE_STEP))}
+              disabled={baseSize >= MAX_SIZE}
+              className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+            >
+              A+
+            </button>
+          </div>
+        )}
 
         {/* Centre: stanzas indicator with prev/next nav (absorbs remaining space) */}
         <div className="flex-1 flex items-center justify-center min-w-0">
