@@ -8,6 +8,7 @@ import { GlassBottomBar } from './GlassBottomBar'
 import { PlayMiniBar } from './PlayMiniBar'
 import { GearPopover } from './GearPopover'
 import { OnboardingTour } from './OnboardingTour'
+import { StanzaDotIndicator } from './StanzaDotIndicator'
 import { PsalmPickerModal } from '@/components/PsalmPickerModal'
 import { TuneSwitcherSheet } from './TuneSwitcherSheet'
 import type { TuneOption, TuneSwitcherSections } from './types'
@@ -1022,7 +1023,13 @@ export function SingingView({
         />
       )}
       {/* GearDrawer removed — settings now via GearPopover rendered in GlassBottomBar gear slot */}
-      <OnboardingTour key={tourKey} viewMode={viewMode} />
+      {/* MOBILE-10: dot indicator replaces GlassBottomBar's (now-invisible)
+         stanza display exactly when the bar auto-hides in phone landscape —
+         the two are mutually exclusive by construction. */}
+      {phoneLandscapeChromeHide && (totalStanzas ?? 0) > 1 && (
+        <StanzaDotIndicator current={currentStanza ?? 1} total={totalStanzas as number} />
+      )}
+      <OnboardingTour key={tourKey} viewMode={viewMode} totalStanzas={totalStanzas} />
     </div>
   )
 }
