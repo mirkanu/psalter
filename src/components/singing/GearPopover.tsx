@@ -126,8 +126,13 @@ export function GearPopover({
       toast('No staff or solfège notation available for this tune — showing Lyrics Only. Audio may still be available via Play.')
       return
     }
-    // Restore last music mode — default to staff if nothing saved
-    const stored = typeof window !== 'undefined' ? localStorage.getItem('psalter-score-mode') : null
+    // Restore last music mode — default to staff if nothing saved. Reads
+    // 'psalter-score-mode-last-music' (written by SingingView only while
+    // viewMode !== 'lyrics'), NOT the general 'psalter-score-mode' key —
+    // that one gets overwritten with 'lyrics' the moment the user switches
+    // to Lyrics Only, which previously made this always fall back to plain
+    // 'staff' instead of the user's actual last Music Notes selection.
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('psalter-score-mode-last-music') : null
     if (stored === 'staff-split' || stored === 'solfege' || stored === 'solfege-split') {
       // Inline Solfège isn't built yet — a stale localStorage value of
       // 'solfege' would otherwise silently restore the disabled inline
