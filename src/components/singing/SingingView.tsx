@@ -8,6 +8,7 @@ import { GlassBottomBar } from './GlassBottomBar'
 import { PlayMiniBar } from './PlayMiniBar'
 import { GearPopover } from './GearPopover'
 import { OnboardingTour } from './OnboardingTour'
+import { StanzaDotIndicator } from './StanzaDotIndicator'
 import { PsalmPickerModal } from '@/components/PsalmPickerModal'
 import { TuneSwitcherSheet } from './TuneSwitcherSheet'
 import type { TuneOption, TuneSwitcherSections } from './types'
@@ -18,6 +19,7 @@ import { setChromeHidden } from '@/lib/chrome-hidden-store'
 import { resolveStaffInlineApproved, shouldFallbackToSplit } from '@/lib/inline-staff-gating'
 import { isIOSDevice, isStandaloneDisplayMode, isPhoneDevice } from '@/lib/device'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useSwipeGesture } from '@/hooks/useSwipeGesture'
 import { toast } from 'sonner'
 
 const STORAGE_MODE_KEY = 'psalter-score-mode'
@@ -396,6 +398,16 @@ export function SingingView({
   const isLandscapeOrientation = useMediaQuery('(orientation: landscape)')
   const phoneLandscapeChromeHide = isPhone && isLandscapeOrientation && !showRotatePrompt
 
+  // MOBILE-10: SSR-safe touch-capability detection (mirrors isPhone above) —
+  // read in a mount-only effect, never in the render body, so the first
+  // client render matches SSR output (false) and no hydration mismatch
+  // occurs. Combined with totalStanzas > 1 below (render-body derivation,
+  // no window/navigator access there).
+  const [isTouchDevice, setIsTouchDevice] = useState(false)
+  useEffect(() => {
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0)
+  }, [])
+
   // 04.9.15-02: A+/A− now drives ONLY the lyric-only baseSize. It no longer
   // resets referenceWidthRef — that ref belongs exclusively to the
   // notationBaseSize resize heuristic above, and a lyric-only A+/A− press
@@ -447,6 +459,9 @@ export function SingingView({
       // added) — clear both keys so restart works regardless of which
       // version a given browser last completed.
       localStorage.removeItem('psalter_tour_v2')
+      // 04.9.15.1-03: bumped v2 → v3 (swipe step added) — clear the current
+      // key too, same precedent, so "Restart tour" keeps working.
+      localStorage.removeItem('psalter_tour_v3')
     } catch {
       /* ignore */
     }
@@ -465,6 +480,17 @@ export function SingingView({
   const handleStanzaNext = useCallback(() => {
     setStanzaPage((p) => (totalStanzas ? Math.min(totalStanzas, p + 1) : p + 1))
   }, [totalStanzas])
+
+  // MOBILE-10: swipe left/right over the notation region pages stanza-sets,
+  // reusing the SAME handlers already wired to GlassBottomBar's prev/next
+  // buttons — no parallel pagination path. Touch-only (desktop mouse-only
+  // never attaches); disabled entirely when there's only one stanza-set.
+  const enableSwipe = isTouchDevice && (totalStanzas ?? 0) > 1
+  useSwipeGesture(mainRef, {
+    onSwipeLeft: handleStanzaNext,
+    onSwipeRight: handleStanzaPrev,
+    enabled: enableSwipe,
+  })
 
   const handlePlayToggle = useCallback(() => {
     // Item 2c: no tune active at all — open the tune selector instead of
@@ -885,6 +911,7 @@ export function SingingView({
         ref={mainRef}
         data-notation-region
         data-tour-target="scroll-area"
+        aria-label={enableSwipe ? 'Swipe left or right for previous or next stanza group' : undefined}
         className="overflow-hidden flex flex-col h-[calc(100dvh_-_104px_-_env(safe-area-inset-top))] md:h-[calc(100dvh_-_116px_-_env(safe-area-inset-top))] pb-11 md:pb-13 transition-[height,margin-top,padding-bottom] duration-200 ease-out motion-reduce:transition-none"
         style={{
           height: topBarHidden ? '100dvh' : undefined,
@@ -999,7 +1026,13 @@ export function SingingView({
         />
       )}
       {/* GearDrawer removed — settings now via GearPopover rendered in GlassBottomBar gear slot */}
-      <OnboardingTour key={tourKey} viewMode={viewMode} />
+      {/* MOBILE-10: dot indicator replaces GlassBottomBar's (now-invisible)
+         stanza display exactly when the bar auto-hides in phone landscape —
+         the two are mutually exclusive by construction. */}
+      {phoneLandscapeChromeHide && (totalStanzas ?? 0) > 1 && (
+        <StanzaDotIndicator current={currentStanza ?? 1} total={totalStanzas as number} />
+      )}
+      <OnboardingTour key={tourKey} viewMode={viewMode} totalStanzas={totalStanzas} />
     </div>
   )
 }
