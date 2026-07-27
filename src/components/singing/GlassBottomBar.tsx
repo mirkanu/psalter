@@ -1,5 +1,5 @@
 'use client'
-import type { ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { Settings, Play, Pause, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MAX_SIZE, SIZE_STEP } from '@/components/notation/NotationRenderer'
@@ -54,6 +54,26 @@ export function GlassBottomBar({
     currentStanza != null && totalStanzas != null && currentStanza > 0 && totalStanzas > 1
   const canPrev = showStanza && (currentStanza as number) > 1
   const canNext = showStanza && (currentStanza as number) < (totalStanzas as number)
+
+  // Brief grow/shrink pulse on the current-stanza digit whenever it changes
+  // (swipe or the prev/next buttons — both funnel through the same
+  // `currentStanza` prop) — reinforces that the page actually turned.
+  // Skipped on mount / first-known value so there's no pulse on initial load.
+  const stanzaNumberRef = useRef<HTMLSpanElement | null>(null)
+  const prevStanzaRef = useRef<number | null>(null)
+  useEffect(() => {
+    const prev = prevStanzaRef.current
+    prevStanzaRef.current = currentStanza
+    if (prev == null || currentStanza == null || prev === currentStanza) return
+    const el = stanzaNumberRef.current
+    if (!el) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    el.animate(
+      [{ transform: 'scale(1)' }, { transform: 'scale(1.35)' }, { transform: 'scale(1)' }],
+      { duration: 260, easing: 'ease-out' },
+    )
+  }, [currentStanza])
+
   return (
     <nav
       data-glass-bottom-bar
@@ -67,29 +87,37 @@ export function GlassBottomBar({
       aria-label="Psalm view controls"
     >
       <div className="max-w-4xl mx-auto flex items-center gap-1 px-2 h-11 md:h-13">
-        {/* Left: A-/A+ — hidden in Inline Staff, where they have no effect */}
-        {!hideSizeControls && (
-          <div className="flex items-center shrink-0">
-            <button
-              type="button"
-              aria-label="Decrease size"
-              onClick={() => onBaseSizeChange(Math.max(8, baseSize - SIZE_STEP))}
-              disabled={baseSize <= 8}
-              className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
-            >
-              A−
-            </button>
-            <button
-              type="button"
-              aria-label="Increase size"
-              onClick={() => onBaseSizeChange(Math.min(MAX_SIZE, baseSize + SIZE_STEP))}
-              disabled={baseSize >= MAX_SIZE}
-              className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
-            >
-              A+
-            </button>
-          </div>
-        )}
+        {/* Left: A-/A+ — hidden in Inline Staff, where they have no effect.
+           Kept in the DOM (invisible + disabled, not removed) so the centre
+           stanza indicator's flex box keeps the exact same width either way
+           — removing this block entirely made the indicator visually
+           off-centre (it was only ever centred WITHIN its own flex-1 box,
+           which shrank without this block reserving space on the left). */}
+        <div
+          aria-hidden={hideSizeControls}
+          className={cn('flex items-center shrink-0', hideSizeControls && 'invisible')}
+        >
+          <button
+            type="button"
+            tabIndex={hideSizeControls ? -1 : undefined}
+            aria-label="Decrease size"
+            onClick={() => onBaseSizeChange(Math.max(8, baseSize - SIZE_STEP))}
+            disabled={hideSizeControls || baseSize <= 8}
+            className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+          >
+            A−
+          </button>
+          <button
+            type="button"
+            tabIndex={hideSizeControls ? -1 : undefined}
+            aria-label="Increase size"
+            onClick={() => onBaseSizeChange(Math.min(MAX_SIZE, baseSize + SIZE_STEP))}
+            disabled={hideSizeControls || baseSize >= MAX_SIZE}
+            className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+          >
+            A+
+          </button>
+        </div>
 
         {/* Centre: stanzas indicator with prev/next nav (absorbs remaining space) */}
         <div className="flex-1 flex items-center justify-center min-w-0">
@@ -109,7 +137,11 @@ export function GlassBottomBar({
             data-stanzas-indicator
             className="text-xs text-muted-foreground tabular-nums text-center whitespace-nowrap px-1"
           >
-            {showStanza ? `Stanza ${currentStanza} / ${totalStanzas}` : ''}
+            {showStanza && (
+              <>
+                Stanza <span ref={stanzaNumberRef} className="inline-block tabular-nums">{currentStanza}</span> / {totalStanzas}
+              </>
+            )}
           </span>
           {showStanza && (
             <button
