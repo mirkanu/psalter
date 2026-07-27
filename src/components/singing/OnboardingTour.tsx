@@ -42,7 +42,7 @@ const SCROLL_HIDE_STEPS: Step[] = [
 const SWIPE_STEPS: Step[] = [
   {
     target: 'scroll-area',
-    copy: 'Swipe left or right to move between stanza groups — the dots show where you are.',
+    copy: 'Swipe left or right to move between stanza groups.',
   },
 ]
 
@@ -213,9 +213,36 @@ export function OnboardingTour({ viewMode, totalStanzas }: Props = {}) {
   const viewportH = typeof window !== 'undefined' ? window.innerHeight : 800
   const viewportW = typeof window !== 'undefined' ? window.innerWidth : 375
   const placeBelow = bbox.top + bbox.height / 2 < viewportH / 2
+
+  // Checkpoint round 2, issue 4: clamp the bubble's vertical position to the
+  // visible viewport. 'scroll-area' (used by both a SCROLL_HIDE_STEPS entry
+  // and SWIPE_STEPS) is an unusually large/tall spotlight target — the whole
+  // notation region — so `placeBelow` can evaluate false with a `bbox.top`
+  // near/above the top edge, pushing the un-clamped
+  // `top: bbox.top - padding - 8` (bubble's BOTTOM edge, since it's paired
+  // with `translate(-50%, -100%)`) high enough that most or all of the
+  // bubble rendered above the visible viewport (matching the reported
+  // "copy clipped/invisible" symptom). Clamp so the bubble's top AND bottom
+  // edges always stay within [BUBBLE_MARGIN, viewportH - BUBBLE_MARGIN],
+  // using a conservative height estimate — bubble content is short (one
+  // "Step N of M" line, 1-2 lines of copy, one button row) and width is
+  // capped at min(320px, 90vw), so it never realistically needs more than
+  // this. Applies to every step (not just the swipe step) since any step
+  // could in principle target a tall/near-edge element.
+  const BUBBLE_MARGIN = 12
+  const ESTIMATED_BUBBLE_HEIGHT = 180
+  const bubbleTop = placeBelow
+    ? Math.max(
+        BUBBLE_MARGIN,
+        Math.min(bbox.top + bbox.height + padding + 8, viewportH - ESTIMATED_BUBBLE_HEIGHT - BUBBLE_MARGIN),
+      )
+    : Math.min(
+        viewportH - BUBBLE_MARGIN,
+        Math.max(bbox.top - padding - 8, ESTIMATED_BUBBLE_HEIGHT + BUBBLE_MARGIN),
+      )
   const bubbleStyle: React.CSSProperties = placeBelow
-    ? { top: bbox.top + bbox.height + padding + 8, left: '50%', transform: 'translateX(-50%)' }
-    : { top: bbox.top - padding - 8, left: '50%', transform: 'translate(-50%, -100%)' }
+    ? { top: bubbleTop, left: '50%', transform: 'translateX(-50%)' }
+    : { top: bubbleTop, left: '50%', transform: 'translate(-50%, -100%)' }
 
   // Checkpoint fix: 'scroll-area' (the singing view's <main>) can be taller
   // than — or shifted above/below — the visible viewport (e.g. the
@@ -265,11 +292,13 @@ export function OnboardingTour({ viewMode, totalStanzas }: Props = {}) {
         </defs>
         <rect width="100%" height="100%" fill="rgba(0,0,0,0.30)" mask="url(#tour-mask)" />
       </svg>
-      {/* 04.9.15.1-03 (MOBILE-10): swipe-step-only visuals — animated hand +
-         live dot-indicator preview, positioned inside the spotlight cutout
-         (Sketch 007 Variant C). Sits above the mask (201) but below the
-         bubble (202). Reduced motion falls back to a static, centered hand
-         glyph and non-pulsing dots. */}
+      {/* 04.9.15.1-03 (MOBILE-10): swipe-step-only visual — animated hand,
+         positioned inside the spotlight cutout (Sketch 007 Variant C, minus
+         the dot-preview clone per checkpoint round 2 feedback: the tour no
+         longer references or previews the dot indicator at all — the real
+         StanzaDotIndicator, mounted separately in SingingView, speaks for
+         itself). Sits above the mask (201) but below the bubble (202).
+         Reduced motion falls back to a static, centered hand glyph. */}
       {isSwipeStep && (
         <div
           aria-hidden
@@ -303,14 +332,6 @@ export function OnboardingTour({ viewMode, totalStanzas }: Props = {}) {
           <Hand
             className="absolute top-1/2 left-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 text-foreground/80 animate-[psalter-hand-swipe_1.8s_ease-in-out_infinite] motion-reduce:animate-none"
           />
-          {/* live preview of the page-dot indicator — clones StanzaDotIndicator's
-             dot visuals (real component is fixed bottom-right and can't be
-             relocated into the spotlight) */}
-          <div className="absolute bottom-2 right-2 flex items-center gap-1.5 rounded-full border border-border bg-background/85 backdrop-blur-sm px-2 py-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-foreground animate-[psalter-dot-pulse_1.8s_ease-in-out_infinite] motion-reduce:animate-none" />
-            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
-            <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
-          </div>
         </div>
       )}
       {/* Tip bubble */}
