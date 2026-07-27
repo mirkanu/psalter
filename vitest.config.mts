@@ -15,5 +15,13 @@ export default defineConfig({
       'scripts/**/*.test.{ts,tsx}',
     ],
     testTimeout: 15000,
+    // VPS-wide NODE_ENV=production (see STATE.md) otherwise leaks into the
+    // test worker process, resolving React's production build — which strips
+    // the `React.act` testing export and breaks every @testing-library/react
+    // render()/renderHook() call. Force `test` here so React resolves its
+    // development build during test runs only (no effect on the app build).
+    env: {
+      NODE_ENV: 'test',
+    },
   },
 })
