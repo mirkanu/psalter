@@ -35,3 +35,11 @@ Thumbs.db
 
 # Script output (runtime-generated, can be large)
 scripts/output/*.json
+
+# .planning operational history — may contain infra-specific details
+# Keep: ROADMAP.md, PROJECT.md, REQUIREMENTS.md, milestones/, seeds/, notes/, research/, todos/
+.planning/phases/
+.planning/quick/
+.planning/debug/
+.planning/threads/
+.planning/config.json
