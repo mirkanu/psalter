@@ -70,6 +70,20 @@ This held up through v1.0 and v1.1: the notation+lyrics singing view (mobile-fir
 - **Future extensibility:** Architecture should support easy addition of features (vibe-code-friendly).
 - **VPS resources:** Hetzner VPS has 3.7GB RAM total; shared with other GSD projects — see global CLAUDE.md memory-hygiene rules.
 
+## Current Milestone: v2.0 Public Beta
+
+**Goal:** Get the site ready for its first outside testers (2-3 friends) — fix known bugs, close UX rough edges in the psalm/tune selectors and tune list, add a changelog + email updates, and finish the deferred visual polish, without adding new core capability.
+
+**Target features:**
+- Bug fixes: Ps 148b duplicate row, Aurelia-style meter-mismatch warning, psalm selector always-collapsed-on-load
+- Psalm selector polish: meter tags on multi-version toggles, search/filter width fix
+- Tune selector consolidation into one shared picker component
+- /tunes list overhaul: mirrors /psalms display, Recording column + mobile-fit table, sticky header, real Backup/Historical tune data (migrated from Airtable), inline embed player, name-based tune slugs
+- Changelog: /changelog page with inline admin authoring, homepage hero, email subscribe via Resend
+- Feedback: emails manuelkuhs@gmail.com via Resend, rate-limited
+- JPEG compression for tune images
+- Folded-in polish backlog: OG images, favicon, 404 page, Lighthouse 90+, remaining loading skeletons, click-feedback states
+
 ## Requirements
 
 ### Validated (v1.0 — Public Psalter, shipped 2026-07-29)
@@ -98,13 +112,14 @@ Full detail: `.planning/milestones/v1.1-REQUIREMENTS.md`
 
 ### Active
 
-No milestone is currently active. See Backlog below and `.planning/ROADMAP.md` "## Backlog" — run `/gsd-new-milestone` to plan the next chunk of work, or pull a backlog item directly.
+- [ ] v2.0 Public Beta — see Current Milestone above. Requirements to be scoped in `.planning/REQUIREMENTS.md`.
 
-### Backlog (moved out of v1.1 rather than block that close)
+### Backlog
 
-- [ ] Airtable exit verification (gap audit, R2 backup completeness, pg_dump backup, pgweb read-only viewer, cancellation checklist) — Backlog Phase 999.1 (was Phase 05.4)
-- [ ] Remaining loading.tsx skeletons (search, explore, daily, homepage) + click-feedback + OG images + Lighthouse 90+ — Backlog Phase 999.2 (was Phase 6)
+- [ ] Airtable exit verification (gap audit, R2 backup completeness, pg_dump backup, pgweb read-only viewer, cancellation checklist) — Backlog Phase 999.1 (was Phase 05.4). Note: v2.0 migrates the specific Backup/Historical tune fields needed for the tune list, but does not close out full Airtable decommissioning.
 - [ ] Melisma/notation OCR corpus: 70/172 tunes reviewed and approved in `/dev/melisma-editor`; 102 remain — ongoing background curation, not phase-tracked
+
+~~Phase 999.2 (Polish: OG images, Lighthouse 90+, remaining loading skeletons, click-feedback) — folded into v2.0 Public Beta rather than run as a separate milestone.~~
 
 ### Carried-over technical debt (not formal requirements, tracked for future scoping)
 
@@ -136,4 +151,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-29 after v1.0 and v1.1 milestone close. No milestone currently active — see Backlog (Phase 999.1 Airtable Exit Verification, Phase 999.2 Polish) or run `/gsd-new-milestone`.*
+*Last updated: 2026-07-29 — started milestone v2.0 Public Beta (Phase 999.2 Polish folded in; Phase 999.1 Airtable Exit Verification remains in Backlog).*

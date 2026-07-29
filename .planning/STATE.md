@@ -1,10 +1,9 @@
 ---
 gsd_state_version: 1.0
-milestone: none
-milestone_name: none
-status: idle
-stopped_at: v1.0 and v1.1 both archived; no active milestone
-last_updated: "2026-07-29T13:50:00.000Z"
+milestone: v2.0
+milestone_name: Public Beta
+status: planning
+last_updated: "2026-07-29T14:09:24.256Z"
 last_activity: 2026-07-29
 progress:
   total_phases: 0
@@ -25,13 +24,10 @@ See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone clos
 
 ## Current Position
 
-Milestone: v1.0 Public Psalter — ✅ SHIPPED 2026-07-29 (see .planning/milestones/v1.0-ROADMAP.md)
-Milestone: v1.1 Precentor Portal & Polish — ✅ SHIPPED 2026-07-29 (see .planning/milestones/v1.1-ROADMAP.md)
-Phase: none — between milestones
-Status: Idle. Backlog: Phase 999.1 (Airtable Exit Verification), Phase 999.2 (Polish), ongoing melisma/notation curation via /dev/melisma-editor
-Last activity: 2026-07-29
-
-Progress: v1.0 complete. v1.1 complete (4/6 originally-planned phases shipped; 2 moved to Backlog).
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-07-29 — Milestone v2.0 started
 
 ## Performance Metrics
 
