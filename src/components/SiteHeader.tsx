@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu, Search, Moon, Sun } from 'lucide-react'
+import { Menu, Search, Moon, Sun, MonitorSmartphone } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Sheet, SheetTrigger, SheetContent, SheetClose } from '@/components/ui/sheet'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -24,19 +24,31 @@ const navLinks = [
 // it (offset adjusted in that component). Body height in SingingView subtracts
 // SiteHeader height (~56px) accordingly. (TuneSubBar removed in 04.9.4-02.)
 
+const THEME_CYCLE = ['light', 'dark', 'system'] as const
+
 function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme()
+  const { theme, resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   if (!mounted) return <div className="size-8" />
+  const current = theme === 'dark' || theme === 'system' ? theme : 'light'
+  const next = THEME_CYCLE[(THEME_CYCLE.indexOf(current) + 1) % THEME_CYCLE.length]
+  const label = current === 'system' ? 'Matching system theme' : current === 'dark' ? 'Dark mode' : 'Light mode'
   return (
     <button
       type="button"
-      onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-      aria-label="Toggle dark mode"
+      onClick={() => setTheme(next)}
+      aria-label={`${label} — click for ${next}`}
+      title={label}
       className="p-2 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
     >
-      {resolvedTheme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
+      {current === 'system' ? (
+        <MonitorSmartphone className="size-4" />
+      ) : resolvedTheme === 'dark' ? (
+        <Sun className="size-4" />
+      ) : (
+        <Moon className="size-4" />
+      )}
     </button>
   )
 }
