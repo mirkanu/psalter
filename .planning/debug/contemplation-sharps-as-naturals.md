@@ -1,9 +1,10 @@
 ---
 slug: contemplation-sharps-as-naturals
-status: investigating
+status: resolved
 trigger: "Contemplation tune: sharps in ABC play as naturals during abcjs audio playback, while other tunes' sharps play correctly. Investigate ABC source for Contemplation vs a working comparator, check key signature, accidental scope, and abcjs synth handling."
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-07-29
+resolved_via: "quick task 260601-i5d (commit 38a6093) — trailing `|` normalisation in splitMusicIntoSubLines, verified via MIDI pitch dump + regression sweep"
 phase: 04.11
 ---
 

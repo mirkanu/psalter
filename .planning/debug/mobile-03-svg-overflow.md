@@ -1,8 +1,9 @@
 ---
-status: investigating
+status: resolved
 trigger: "MOBILE-03 production bug: abcjs SVG renders 722px wide in 375px container on /psalms/23 at 375x812 viewport"
 created: 2026-05-16T00:00:00Z
-updated: 2026-05-16T00:00:00Z
+updated: 2026-07-29T00:00:00Z
+resolved_via: "Re-enabled responsive:'resize' + staffwidth/phraseSubdivisions rework in AbcPlayer.tsx and NotationRenderer.tsx — verified live on production via Playwright (mobile + desktop, no overflow)"
 ---
 
 ## Current Focus

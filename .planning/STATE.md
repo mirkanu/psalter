@@ -1,37 +1,36 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
+milestone: v1.1
+milestone_name: Precentor Portal & Polish
 status: executing
-stopped_at: Phase 04.9.15.1 UI-SPEC approved
-last_updated: "2026-07-27T19:50:59.547Z"
-last_activity: 2026-07-27
+stopped_at: v1.0 milestone archived; v1.1 continuing at Phase 05.4
+last_updated: "2026-07-29T13:30:00.000Z"
+last_activity: 2026-07-29
 progress:
-  total_phases: 15
-  completed_phases: 12
-  total_plans: 60
-  completed_plans: 60
-  percent: 100
+  total_phases: 2
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-07)
+See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 milestone close)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 04.9.15.1 — inline-staff-landscape-fit-swipe-stanza-navigation-fix-the-i
+**Current focus:** v1.1 Precentor Portal & Polish — Phase 05.4 (Airtable Exit Verification) and Phase 6 (Polish) remain; Phase 5, 05.1–05.3 already shipped
 
 ## Current Position
 
-Phase: 04.9.15.1 (inline-staff-landscape-fit-swipe-stanza-navigation-fix-the-i) — EXECUTING
-Plan: 1 of 3
-UI-SPEC: Phase 04.9.4 closed out. Singing-view chrome refined across 4 polish rounds (chrome-dedup, singing-chrome-polish, r3, r4); audio first-press bug fixed; tour redesigned (4 steps, per-element spotlights); mobile bar h-11 (44px); lyrics/solfège views get bigger font + padding + inline YouTube embed; "Ps 119:N-M" range titles.
-Status: Executing Phase 04.9.15.1
-Last activity: 2026-07-27
+Milestone: v1.0 Public Psalter — ✅ SHIPPED 2026-07-29 (see .planning/milestones/v1.0-ROADMAP.md)
+Phase: 05.4 (Airtable Exit Verification) — NOT STARTED, next up
+Status: Between milestones — v1.1 phases 5/05.1/05.2/05.3 already complete, 05.4/6 remain
+Last activity: 2026-07-29
 
-Progress: [██████████] 100%
+Progress: v1.0 complete. v1.1: 4/6 phases complete (05.4, 6 remaining)
 
 ## Performance Metrics
 
@@ -239,6 +238,13 @@ None yet.
 | v2 | abcjs audio on public tune pages | Deferred | Init |
 | v2 | Dark mode | Deferred | Init |
 | Out of scope | Four-part SATB rendering | Out of scope | Init |
+| v1 close | Phase 4.9 Tune Notation Conversion | Superseded by manual /dev/melisma-editor workflow (4.11) | v1.0 close |
+| v1 close | Phase 4.10 Verified MusicXML Pilot (Crimond) | Superseded by 4.11; 4/5 plans done, sing-test checkpoint never run | v1.0 close |
+| v1 close | Phase 4.11 Solfège Underline OCR | Pivoted to manual per-tune editor; 70/172 tunes approved, rest fall back to JPEG (no breakage) | v1.0 close |
+| v1 close | Phase 4.9.11 Lyric-Count False Positive Fix | Not started — Playwright checker + phrase-4 note-count investigation | v1.0 close |
+| v1 close | Phase 4.9.12 Melisma positions as tune-level data | 3/4 plans done; Wave 4 NotationRenderer positions-based rewire not applied | v1.0 close |
+| v1 close | UAT gaps: Phases 02, 04.9.14, 05 | Partial human-verification checkpoints (4 pending scenarios each); all in production with no reported breakage | v1.0 close |
+| v1 close | Verification gaps: Phases 02, 04.5, 04.7, 04.9.8, 04.9.9, 04.9.14, 05, 05.1, 05.3 | `human_needed` or `gaps_found` verification status, unresolved; all in production with no reported breakage | v1.0 close |
 
 ## Session Continuity
 
