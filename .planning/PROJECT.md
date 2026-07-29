@@ -2,13 +2,13 @@
 
 ## What This Is
 
-A rebuild of **psalter.cprc.co.uk** — the Covenanter Presbyterian Reformed Congregation (CPRC) Scottish Psalter website. Migrated off Airtable (backend) + Softr (frontend) onto a self-hosted Next.js 15 + PostgreSQL app, deployed live at **psalter.gsdlabs.dev**. Milestone 1 (Public Psalter) shipped 2026-07-29: full public browse, search, and the flagship feature — **live abcjs notation rendering** with syllable-aligned lyrics under the staff, replacing static JPG score images for the majority of the tune corpus. Milestone 2 (Precentor Portal & Polish) is in progress: authenticated precentor tooling is live; Airtable exit and final polish remain.
+A rebuild of **psalter.cprc.co.uk** — the Covenanter Presbyterian Reformed Congregation (CPRC) Scottish Psalter website. Migrated off Airtable (backend) + Softr (frontend) onto a self-hosted Next.js 15 + PostgreSQL app, deployed live at **psalter.gsdlabs.dev**. Both planned milestones shipped 2026-07-29: v1.0 Public Psalter (full public browse, search, and the flagship feature — **live abcjs notation rendering** with syllable-aligned lyrics under the staff) and v1.1 Precentor Portal & Polish (authenticated precentor tooling, live in production). No milestone is currently active — Airtable exit verification, final polish, and ongoing melisma/notation curation live in the Backlog.
 
 ## Core Value
 
 A precentor during worship can instantly find the psalms chosen for a service and follow the live-rendered tune notation with lyrics beneath the notes — hymnal-style — without relying on slow Softr or static images.
 
-This held up through v1.0: the notation+lyrics singing view (mobile-first, chromeless, swipe-navigable) is the app's centre of gravity, and the precentor portal (Milestone 2, already live) builds directly on it.
+This held up through v1.0 and v1.1: the notation+lyrics singing view (mobile-first, chromeless, swipe-navigable) is the app's centre of gravity, and the precentor portal (v1.1, live in production) builds directly on it.
 
 ## Who It's For
 
@@ -18,10 +18,10 @@ This held up through v1.0: the notation+lyrics singing view (mobile-first, chrom
 
 **Future:** User accounts for congregation members (favourites, personalisation) — deferred to v2.
 
-## Current State (post-v1.0)
+## Current State (post-v1.0, post-v1.1)
 
 - **Live at:** psalter.gsdlabs.dev (Hetzner VPS, PM2 process `psalter`, port 3005, Cloudflare Tunnel)
-- **Backend:** PostgreSQL (`psalter-db` Docker container) — fully migrated off Airtable for all read paths; Airtable itself not yet decommissioned (Phase 05.4, in progress)
+- **Backend:** PostgreSQL (`psalter-db` Docker container) — fully migrated off Airtable for all read paths; Airtable itself not yet decommissioned (Backlog Phase 999.1)
 - **Frontend:** Next.js 15 App Router, static-rendered psalm/tune pages
 - **Notation:** abcjs live SVG for 172 tunes total; 70 tunes currently marked `approved` in `/dev/melisma-editor` (unlocks live inline-Staff notation), remainder gracefully fall back to the original JPG scan — ongoing content curation, not a correctness gap
 - **Auth:** Better Auth, precentor accounts admin-created only, live in production
@@ -56,7 +56,7 @@ This held up through v1.0: the notation+lyrics singing view (mobile-first, chrom
 | abcjs for notation | Renders ABC notation in-browser; melody-only is copyright-safe | ✓ Good — core differentiator, works well once syllable-alignment was solved |
 | Melody-only encoding | 1979 RPCI typographical copyright expired 2004; traditional Scots tunes are public domain | ✓ Good — no legal issues surfaced |
 | Four-part harmony deferred | Copyright status needs further legal check | — Pending, still deferred to v2 |
-| Admin UI post-launch | Airtable continues to serve editorial needs short-term | ⚠️ Revisit — Airtable subscription still active pending Phase 05.4 exit verification; `/dev/melisma-editor` has become the de facto tune-data admin UI |
+| Admin UI post-launch | Airtable continues to serve editorial needs short-term | ⚠️ Revisit — Airtable subscription still active pending Backlog Phase 999.1 exit verification; `/dev/melisma-editor` has become the de facto tune-data admin UI |
 | Next.js + shadcn/ui | Project-wide convention; fast, accessible, self-hosted | ✓ Good |
 | Deploy to psalter.gsdlabs.dev | Hetzner VPS via Cloudflare Tunnel; port 3005; psalter-db PostgreSQL container | ✓ Good — stable in production |
 | Structured lyrics data model (`Stanza→Line→Syllable`) | Heuristic blob-based alignment couldn't handle DCM pairing, mid-stanza verse splits, or alternate meters correctly (Phase 4.9.6) | ✓ Good — closed a long-running class of staff-alignment bugs |
@@ -87,18 +87,27 @@ This held up through v1.0: the notation+lyrics singing view (mobile-first, chrom
 
 Full detail: `.planning/milestones/v1.0-REQUIREMENTS.md`
 
-### Active (v1.1 — Precentor Portal & Polish, in progress)
+### Validated (v1.1 — Precentor Portal & Polish, shipped 2026-07-29)
 
 - [x] Precentor login — Phase 05.1
 - [x] Precentor: create/manage service events, assign psalm+tune pairs, live precenting mode — Phase 5
 - [x] Site footer, feedback form, analytics — Phase 05.2
 - [x] Daily reading plan calendar view — Phase 05.3
-- [ ] Airtable exit verification (gap audit, R2 backup completeness, pg_dump backup, pgweb read-only viewer, cancellation checklist) — Phase 05.4
-- [ ] Remaining loading.tsx skeletons (search, explore, daily, homepage) + click-feedback + OG images + Lighthouse 90+ — Phase 6
+
+Full detail: `.planning/milestones/v1.1-REQUIREMENTS.md`
+
+### Active
+
+No milestone is currently active. See Backlog below and `.planning/ROADMAP.md` "## Backlog" — run `/gsd-new-milestone` to plan the next chunk of work, or pull a backlog item directly.
+
+### Backlog (moved out of v1.1 rather than block that close)
+
+- [ ] Airtable exit verification (gap audit, R2 backup completeness, pg_dump backup, pgweb read-only viewer, cancellation checklist) — Backlog Phase 999.1 (was Phase 05.4)
+- [ ] Remaining loading.tsx skeletons (search, explore, daily, homepage) + click-feedback + OG images + Lighthouse 90+ — Backlog Phase 999.2 (was Phase 6)
+- [ ] Melisma/notation OCR corpus: 70/172 tunes reviewed and approved in `/dev/melisma-editor`; 102 remain — ongoing background curation, not phase-tracked
 
 ### Carried-over technical debt (not formal requirements, tracked for future scoping)
 
-- Melisma/notation OCR corpus: 70/172 tunes reviewed and approved in `/dev/melisma-editor`; 102 remain — ongoing background curation
 - UAT/verification sign-off gaps on several shipped phases (02, 04.5, 04.7, 04.9.8, 04.9.9, 04.9.14, 05, 05.1, 05.3) — all live in production with no reported breakage, formal checkpoints never closed
 
 ### Out of Scope (v1)
@@ -127,4 +136,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-29 after v1.0 Public Psalter milestone close. Next up: Phase 05.4 (Airtable Exit Verification) and Phase 6 (Polish) to close out v1.1.*
+*Last updated: 2026-07-29 after v1.0 and v1.1 milestone close. No milestone currently active — see Backlog (Phase 999.1 Airtable Exit Verification, Phase 999.2 Polish) or run `/gsd-new-milestone`.*

@@ -1,13 +1,13 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Precentor Portal & Polish
-status: executing
-stopped_at: v1.0 milestone archived; v1.1 continuing at Phase 05.4
-last_updated: "2026-07-29T13:30:00.000Z"
+milestone: none
+milestone_name: none
+status: idle
+stopped_at: v1.0 and v1.1 both archived; no active milestone
+last_updated: "2026-07-29T13:50:00.000Z"
 last_activity: 2026-07-29
 progress:
-  total_phases: 2
+  total_phases: 0
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -18,19 +18,20 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 milestone close)
+See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone close)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** v1.1 Precentor Portal & Polish — Phase 05.4 (Airtable Exit Verification) and Phase 6 (Polish) remain; Phase 5, 05.1–05.3 already shipped
+**Current focus:** No milestone active. Backlog holds Phase 999.1 (Airtable Exit Verification) and Phase 999.2 (Polish). Run `/gsd-new-milestone` or pull a backlog item directly.
 
 ## Current Position
 
 Milestone: v1.0 Public Psalter — ✅ SHIPPED 2026-07-29 (see .planning/milestones/v1.0-ROADMAP.md)
-Phase: 05.4 (Airtable Exit Verification) — NOT STARTED, next up
-Status: Between milestones — v1.1 phases 5/05.1/05.2/05.3 already complete, 05.4/6 remain
+Milestone: v1.1 Precentor Portal & Polish — ✅ SHIPPED 2026-07-29 (see .planning/milestones/v1.1-ROADMAP.md)
+Phase: none — between milestones
+Status: Idle. Backlog: Phase 999.1 (Airtable Exit Verification), Phase 999.2 (Polish), ongoing melisma/notation curation via /dev/melisma-editor
 Last activity: 2026-07-29
 
-Progress: v1.0 complete. v1.1: 4/6 phases complete (05.4, 6 remaining)
+Progress: v1.0 complete. v1.1 complete (4/6 originally-planned phases shipped; 2 moved to Backlog).
 
 ## Performance Metrics
 
@@ -245,6 +246,8 @@ None yet.
 | v1 close | Phase 4.9.12 Melisma positions as tune-level data | 3/4 plans done; Wave 4 NotationRenderer positions-based rewire not applied | v1.0 close |
 | v1 close | UAT gaps: Phases 02, 04.9.14, 05 | Partial human-verification checkpoints (4 pending scenarios each); all in production with no reported breakage | v1.0 close |
 | v1 close | Verification gaps: Phases 02, 04.5, 04.7, 04.9.8, 04.9.9, 04.9.14, 05, 05.1, 05.3 | `human_needed` or `gaps_found` verification status, unresolved; all in production with no reported breakage | v1.0 close |
+| Backlog 999.1 | Phase 05.4 Airtable Exit Verification | Never started (0 plans); moved to ROADMAP.md Backlog. Airtable subscription remains active but is a cost line, not a dependency — all reads already off Airtable | v1.1 close |
+| Backlog 999.2 | Phase 6 Polish | Never started (0 plans); moved to ROADMAP.md Backlog. Covers OG images, Lighthouse 90+, remaining loading skeletons, click-feedback states | v1.1 close |
 
 ## Session Continuity
 
