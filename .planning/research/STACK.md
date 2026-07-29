@@ -1,324 +1,157 @@
-# Technology Stack
+# Stack Research
 
-**Project:** CPRC Psalter (psalter.cprc.co.uk rebuild)
-**Researched:** 2026-05-07
-**Confidence:** HIGH for all five domains (verified against official docs and npm registry)
+**Domain:** v2.0 Public Beta additions — transactional/broadcast email, batch JPEG compression, inline admin authoring, third-party audio embed
+**Researched:** 2026-07-29
+**Confidence:** HIGH (Context7 + official docs verified for all four capabilities; npm registry checked for exact current versions)
 
----
+> This file supersedes the v1.0-era STACK.md (2026-05-07, abcjs/Next.js/Drizzle foundation research). Those decisions are validated and unchanged — see PROJECT.md "Target Stack (achieved)". This research is scoped strictly to the four NEW capabilities in the v2.0 Public Beta milestone.
+
+## Context: what's already installed
+
+`sharp@^0.34.5` is **already a devDependency** in `package.json` (used at build/migration time already). `react`/`react-dom` are 19.2.4, Next.js is actually `16.2.5` in `package.json` (CLAUDE.md's "Next.js 15" is stale — App Router APIs used below are unchanged across that bump). Better Auth session helpers already exist at `src/lib/precent-auth.ts` (`getSessionOr401()`, `session.user.role === 'admin'` checks) — reuse this exact pattern for changelog admin-gating, don't invent a new auth helper.
 
 ## Recommended Stack
 
-### Core Framework (already decided)
+### Core Technologies
 
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Next.js | 15.x | Full-stack React framework | Project convention; App Router enables server components for SEO-critical psalm pages, streaming for perceived performance |
-| shadcn/ui | latest (copy-paste) | UI component system | Project convention; zero bundle overhead, Tailwind-native |
-| Tailwind CSS | 4.x | Styling | Project convention |
-| TypeScript | 5.x | Type safety | Required for Drizzle schema inference to work properly |
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| `resend` (npm) | **6.18.1** | Transactional email (feedback → owner) + audience/broadcast email (changelog subscribers) | One SDK covers both needs in this milestone. Free tier = 3,000 transactional emails/mo (100/day cap) **and separately** unlimited sends to up to 1,000 marketing contacts — both live under the same free account, no second product to provision. Already listed in Stack Registry pattern (`{PROJECT}_RESEND_API_KEY`) used elsewhere in the GSD infra, so provisioning is a known, repeatable step (see `stackRegistry.js`). |
+| `sharp` (npm) | **0.35.3** (installed: `^0.34.5`, minor bump optional) | Batch JPEG re-compression of 172 scanned score images | Already installed as a devDependency — no new package needed, only a new script. Native libvips binding, fastest Node image library, and its `mozjpeg`/`quality` options give fine control to preserve notation legibility. Runs as a one-off CLI script (`scripts/compress-tune-images.ts`), not a runtime dependency, so it never touches the production request path or the app's RAM budget. |
+| `react-markdown` | **10.1.0** | Render stored changelog Markdown as HTML on the public `/changelog` page | Zero-config, no `dangerouslySetInnerHTML`, actively maintained, tiny (no VDOM diffing tricks, just AST→React). Peer requirement `react >= 18` — satisfied by React 19.2.4 already in use. |
+| `remark-gfm` | **4.0.1** | GitHub-flavoured Markdown (tables, strikethrough, autolinks) as a `react-markdown` plugin | Changelog entries will want bullet lists, bold, links, maybe a table for "what changed" — GFM covers all of it without extra syntax the admin has to learn. |
 
----
+### Supporting Libraries
 
-### Notation Rendering
+| Library | Version | Purpose | When to Use |
+|---------|---------|---------|-------------|
+| `@react-email/render` | 2.1.0 (optional peer of `resend`) | Render JSX email templates instead of raw HTML strings | **Skip for this milestone.** Two email types (feedback notification, changelog broadcast) are simple enough for plain HTML template-literal strings passed to `resend.emails.send({ html })`. `@react-email/render` is an *optional* peer of `resend` (confirmed via `npm view resend peerDependenciesMeta`) — add it later only if email templates grow complex enough to need component reuse. Adding it now is unnecessary build weight for two short emails. |
 
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| abcjs | **6.6.3** (stable) | ABC notation rendering to SVG | Only mature, actively-maintained ABC renderer for the browser; melody-only rendering keeps score simple and copyright-safe; outputs responsive SVG |
+### Development Tools
 
-**Integration pattern — CRITICAL:** abcjs manipulates the DOM directly and cannot run on the server. It must be used in a `"use client"` component with `dynamic()` import and `ssr: false`.
-
-```typescript
-// app/components/AbcNotation.tsx
-"use client"
-import { useEffect, useRef } from "react"
-import dynamic from "next/dynamic"
-
-// abcjs is imported inside useEffect to guarantee DOM availability
-export function AbcNotation({ abc, className }: { abc: string; className?: string }) {
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    // Dynamic import inside effect: no SSR execution, no window-not-defined crash
-    import("abcjs").then((ABCJS) => {
-      if (!ref.current) return
-      ABCJS.renderAbc(ref.current, abc, {
-        responsive: "resize",  // SVG fills container width
-        add_classes: true,     // enables CSS targeting of note elements
-      })
-    })
-  }, [abc])
-
-  return <div ref={ref} className={className} />
-}
-```
-
-Do NOT use `process.browser ? require('abcjs') : null` — that is the old Nuxt/CJS pattern. In Next.js App Router the correct pattern is dynamic `import()` inside `useEffect`.
-
-**Why not the `react-abc` wrapper (`/fuhton/react-abc`):** Only 13 code snippets in Context7, medium reputation, last meaningful update years ago. Use abcjs directly — it is 422 snippets of well-documented API with a high source reputation.
-
-**Lyrics beneath notes (hymnal layout):** ABC `w:` lines attach syllables to notes natively. abcjs renders them as SVG text beneath the staff. For the precentor view this is the only approach needed; do not build a custom lyrics-overlay layer.
-
-```
-X:1
-T:Crimond
-M:3/4
-L:1/8
-K:D
-...notes...
-w:The Lord's my shep-herd, I'll not want,
-```
-
-**Responsive rendering:** Pass `{ responsive: "resize" }` as the options object. The rendered SVG fills its container width automatically — essential for mobile precentor use.
-
----
-
-### Database
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| PostgreSQL | 16.x | Primary database | Self-hosted, owns all data, eliminates Airtable cost |
-| **Drizzle ORM** | **0.45.2** | ORM and query layer | See rationale below |
-| **drizzle-kit** | **0.31.10** | Schema migrations | Companion CLI to Drizzle ORM |
-| `postgres` (postgres.js) | **3.4.9** | PostgreSQL driver | Lighter than `pg`, better TypeScript support, officially supported by Drizzle |
-
-**Why Drizzle over Prisma:**
-
-Prisma 7.8.0 is the current stable version. Both are mature. Choose Drizzle for this project for three reasons:
-
-1. **Schema as TypeScript, not DSL.** With ~20 Airtable tables having rich relationships, you want full TypeScript inference on every query. Drizzle's schema is plain `.ts` files — no `.prisma` file, no code generation step in the development loop. The type-safe query result is inferred directly from the schema at the call site.
-
-2. **Better Auth integration.** Better Auth (the chosen auth library — see below) has a first-class `drizzleAdapter` that shares the same schema file, meaning auth tables live alongside application tables with consistent typing. The Prisma adapter for Better Auth works but requires a separate Prisma schema file.
-
-3. **Lightweight and serverless-friendly.** The `postgres.js` driver + Drizzle ORM has no binary dependencies and no background connection manager process. If the project later moves to Vercel or a serverless host, this matters. Prisma requires a query engine binary.
-
-**Why not raw `pg`:** Raw pg requires hand-writing every query with no type safety on results. For a schema with 13+ tables and complex join queries (psalm → verses → tune → events), this creates unacceptable maintenance burden.
-
-**Connection setup:**
-
-```typescript
-// lib/db.ts
-import { drizzle } from "drizzle-orm/postgres-js"
-import postgres from "postgres"
-import * as schema from "./schema"
-
-const queryClient = postgres(process.env.DATABASE_URL!)
-export const db = drizzle({ client: queryClient, schema })
-```
-
-**drizzle.config.ts:**
-
-```typescript
-import { defineConfig } from "drizzle-kit"
-
-export default defineConfig({
-  schema: "./lib/schema.ts",
-  out: "./drizzle/migrations",
-  dialect: "postgresql",
-  dbCredentials: { url: process.env.DATABASE_URL! },
-  introspect: { casing: "camel" },
-})
-```
-
----
-
-### Authentication
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| **Better Auth** | **1.6.9** (stable) | Precentor login + future user accounts | See rationale below |
-| `better-auth/adapters/drizzle` | bundled with 1.6.9 | Drizzle schema adapter | Shares existing Drizzle instance, no second DB connection |
-
-**Why Better Auth over Auth.js v5 (NextAuth):**
-
-Auth.js v5 (next-auth@beta, currently 5.0.0-beta.31) is still in beta as of the research date. The `latest` tag on npm is still v4.24.14, which does not support the App Router natively and requires a workaround. Using a beta library as the auth foundation of a production app is unnecessary risk when a stable alternative exists.
-
-Better Auth 1.6.9 is marked `latest` on npm and is stable. Its advantages for this project:
-
-- **Native App Router support.** Middleware, server components, and route handlers are all first-class. The `auth.api.getSession({ headers })` pattern works cleanly in both middleware and server components.
-- **Drizzle adapter ships in the box.** `drizzleAdapter(db, { provider: "pg" })` requires no extra package and no separate schema file.
-- **Designed for extensibility.** The project requires "precentor login now, congregation accounts later." Better Auth's plugin architecture (username, magic link, passkey) makes this incremental path clean without rearchitecting auth.
-- **Email/password with full control.** Password hashing policy, custom verification flows, and reset-password email are all configurable in the same config object.
-
-**Why not Lucia:** Lucia v3 moved to a "reference implementation" model rather than a maintained library. The project was explicitly wound down in favour of community-maintained forks. It should not be used for new projects.
-
-**Why not Clerk:** Clerk is a hosted SaaS service. This project explicitly aims to eliminate third-party dependencies and recurring service costs.
-
-**Minimal setup:**
-
-```typescript
-// lib/auth.ts
-import { betterAuth } from "better-auth"
-import { drizzleAdapter } from "better-auth/adapters/drizzle"
-import { db } from "./db"
-
-export const auth = betterAuth({
-  database: drizzleAdapter(db, { provider: "pg" }),
-  emailAndPassword: {
-    enabled: true,
-    disableSignUp: true,  // precentors are admin-created, not self-registered
-    requireEmailVerification: false,  // small known user list, not public signup
-  },
-})
-```
-
-**Middleware for protected precentor routes:**
-
-```typescript
-// middleware.ts
-import { NextRequest, NextResponse } from "next/server"
-import { getSessionCookie } from "better-auth/cookies"
-
-export async function middleware(request: NextRequest) {
-  const sessionCookie = getSessionCookie(request)
-  if (!sessionCookie) {
-    return NextResponse.redirect(new URL("/login", request.url))
-  }
-  return NextResponse.next()
-}
-
-export const config = {
-  matcher: ["/precentor/:path*"],
-}
-```
-
----
-
-### File Storage (Airtable Attachment Migration)
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| **Cloudflare R2** | — | Store migrated JPG score images | S3-compatible, zero egress fees, generous free tier (10 GB storage + unlimited egress on R2.dev subdomain), permanent URLs |
-| `@aws-sdk/client-s3` | **3.1044.0** | R2 upload/access (S3-compatible API) | R2 uses the S3 API; this SDK covers upload scripts and any future signed URL generation |
-
-**Why R2 over S3:** Score images are read-only after migration. Zero egress cost is the deciding factor for a church website with no budget.
-
-**Why not uploadthing:** uploadthing (7.7.4) is designed for user-upload flows (drag-and-drop, browser-initiated uploads). The migration is a one-time server-side script downloading from Airtable and re-uploading to R2. uploadthing adds unnecessary complexity.
-
----
+| Tool | Purpose | Notes |
+|------|---------|-------|
+| None new | — | No new dev tooling needed. The compression script uses the already-installed `sharp` devDependency; email and changelog code paths reuse existing Drizzle/Better Auth/Next.js tooling. |
 
 ## Installation
 
 ```bash
-# Database
-npm install drizzle-orm postgres
-npm install -D drizzle-kit
+# Core
+npm install resend react-markdown remark-gfm
 
-# Auth
-npm install better-auth
-
-# Notation
-npm install abcjs
-
-# File storage (for migration script and future signed URLs)
-npm install @aws-sdk/client-s3
+# sharp is already installed (devDependency) — optional version bump:
+npm install -D sharp@latest
 ```
 
----
+No other packages are required for this milestone's four capabilities.
+
+## Capability-by-capability detail
+
+### 1. Email — Resend (feedback notification + changelog broadcast/audience)
+
+**Package:** `resend@6.18.1`, Node engine requirement `>=20` (verify VPS Node version matches — check `node -v` before deploy; if VPS runs Node 18 this blocks the upgrade path entirely and needs resolving first).
+
+**Two distinct Resend primitives needed:**
+- **Transactional send** (`resend.emails.send`) — for the feedback form. One call, `to: 'manuelkuhs@gmail.com'`, no audience involved.
+- **Audiences + Broadcasts** (`resend.audiences.create`, `resend.contacts.create`, `resend.broadcasts.create`) — for changelog subscribers. Create one Audience ("Changelog Subscribers") once (manually via Resend dashboard or a one-off script), then:
+  - Subscribe flow: homepage/changelog email input → route handler calls `resend.contacts.create({ audienceId, email, unsubscribed: false })`.
+  - Publish flow: when an admin publishes a changelog post, server action calls `resend.broadcasts.create({ audienceId, from, subject, html, send: true })`.
+
+**Integration with existing stack:**
+- `RESEND_API_KEY` goes in `/home/services/.env.production` as `PSALTER_RESEND_API_KEY` (project-scoped, per global CLAUDE.md convention) and is loaded into the PM2 process the same way other psalter secrets already are.
+- Feedback route (`src/app/api/feedback/route.ts`) — add a `resend.emails.send(...)` call after the existing `db.insert(feedbackSubmissions)`, wrapped in try/catch so an email failure never blocks the DB write (the whole point of the current DB-first design is that feedback isn't lost if email breaks).
+- Rate limiting the feedback form (explicit v2.0 requirement) — **do not add a rate-limiting package.** This is a single PM2 process (not serverless, not multi-instance), so an in-memory `Map<ip, timestamp[]>` sliding-window check (~15 lines) inside the route handler is sufficient and has zero footprint. It resets on PM2 restart, which is an acceptable tradeoff for a low-traffic personal-use feedback form.
+- Audience ID and contacts table: **no new Postgres table needed for subscriber storage** — Resend's Audience *is* the subscriber list (with built-in unsubscribe links via `{{{RESEND_UNSUBSCRIBE_URL}}}` merge tag). Only store the `audienceId` as a constant/env var, not per-subscriber rows in Postgres. This avoids a sync problem between two sources of truth.
+
+**RAM/footprint:** Resend SDK is a thin fetch wrapper over HTTPS — negligible RAM impact, no persistent connections, no background workers.
+
+### 2. Batch JPEG compression — sharp (already installed)
+
+**No new package.** `sharp` is already a devDependency at `^0.34.5`; latest is `0.35.3`. This is a build-time/one-off-script tool, not a runtime dependency — it must **not** be imported anywhere in `src/app/` request paths (per project convention: static rendering on the read path).
+
+**RAM-safe batch script pattern for the 3.7GB VPS (181Mi free / ~1.0Gi available observed):**
+- Process images **sequentially in a `for` loop with `await`**, not `Promise.all()` — bounds memory to one image in flight at a time. 172 scanned score JPGs one at a time is fast enough (seconds each) that parallelism buys nothing but RAM risk.
+- Call `sharp.cache(false)` at the top of the script to disable libvips' operation cache (default cache can retain decoded pixel buffers across calls, unwanted for a one-shot batch job).
+- Call `sharp.concurrency(1)` to stop libvips from spinning up a thread pool per image — irrelevant when running sequentially anyway, but prevents accidental thread-pool memory growth if the loop is later parallelized.
+- Use `.jpeg({ quality: 82, mozjpeg: true })` as a starting point — `mozjpeg: true` gives meaningfully smaller files than baseline libjpeg encoding at the same visual quality (verified via Context7 sharp docs), which matters more than raw quality number for preserving thin notation lines/text legibility. Test a handful of the densest scores (most ledger lines / smallest print) manually before running the full batch — pick the lowest quality that still reads clearly on a phone screen, don't blindly trust a single quality number across all 172 scans.
+- **Back up originals first, unconditionally, before the script runs** — copy the existing JPG directory to a sibling `*-originals-backup/` on the same Docker named volume (or off-volume) as a plain `cp -r`, not as part of the sharp script itself. Keep this a manual pre-step, not code, so a script bug can never delete the only copy.
+- Run the script standalone via `tsx scripts/compress-tune-images.ts`, not through `npm run dev`/`build` — avoids competing with the Next.js dev/build process for the ~1GB available RAM.
+
+**What NOT to use:** Don't reach for `imagemin` or its plugin ecosystem (`imagemin-mozjpeg` etc.) — that whole toolchain is in maintenance mode, pulls in more transitive dependencies than `sharp` alone, and `sharp` already does everything needed (resize + mozjpeg-quality JPEG re-encode) with one already-installed package.
+
+### 3. Inline changelog authoring — Drizzle table + Markdown, not a CMS
+
+**No CMS. No rich-text editor library.** This is one admin (the site owner) writing occasional short posts — the existing `/dev/melisma-editor` precedent in this codebase (a custom Postgres-table-backed page, not a generic admin panel) is the right model to repeat, and PROJECT.md already explicitly ruled out a general admin CMS (Directus/NocoDB) as out of scope.
+
+**Recommended shape:**
+- New Drizzle table, e.g. `changelogPosts` (`id`, `slug`, `title`, `bodyMarkdown` text, `publishedAt` timestamp nullable, `createdAt`, `updatedAt`) — same style as the other ~28 tables already in `src/db/schema.ts`.
+- Public `/changelog` page: Server Component queries published posts, renders `bodyMarkdown` through `react-markdown` + `remark-gfm`.
+- Inline authoring: on the same `/changelog` route, if `getSessionOr401()` (reused from `src/lib/precent-auth.ts`) succeeds and `session.user.role === 'admin'`, render an "Edit"/"New post" affordance that swaps the rendered Markdown for a `<textarea>` bound to the raw `bodyMarkdown`, with a "Preview" toggle that re-uses the same `react-markdown` renderer client-side. Save via a Server Action or a small route handler that does an authenticated `db.update`/`db.insert` — mirrors the existing `precenting_sets` admin-gated mutation pattern already in the codebase.
+
+**Why not a WYSIWYG editor (Tiptap/Lexical/Slate):** Only one person authors changelog posts, and Markdown syntax for a short "what changed" post (bullets, bold, a link) is trivial to hand-write. A WYSIWYG editor is real added complexity (selection/serialization state, SSR-safety concerns similar to what abcjs already requires client-only handling for) for a feature that will be used a handful of times per milestone. If post volume or author count grows later, `@uiw/react-md-editor` (split-pane Markdown editor+preview, ~single component, no schema/plugin system) is the next reasonable step up — not a full editor framework.
+
+**RAM/footprint:** `react-markdown` + `remark-gfm` only run where used (public changelog page + admin preview), not globally — negligible server RAM impact since Markdown parsing is cheap and per-request.
+
+### 4. SoundCloud embed — no package, direct iframe (oEmbed optional)
+
+**No SDK needed.** SoundCloud's widget iframe URL is a stable, documented, unauthenticated public pattern:
+```
+https://w.soundcloud.com/player/?url=<url-encoded-track-url>&color=%23ff5500&auto_play=false&show_comments=true
+```
+This can be built directly from a stored SoundCloud track URL (new nullable column on `tunes`, e.g. `soundcloudUrl`) with zero server-side fetch, which fits the project's static-rendering convention (`generateStaticParams`, no runtime DB queries on the read path) — the iframe `src` is just string interpolation at build time.
+
+**oEmbed is an optional enhancement, not a requirement:** `https://soundcloud.com/oembed?format=json&url=<track_url>` (no auth/API key, CORS-enabled) returns metadata (title, the same iframe `html`, dimensions) if the "embed player" trigger wants to show a track title without hand-entering it. If used, fetch it once at data-entry time (e.g. when the admin pastes a SoundCloud URL) and cache the returned title in the `tunes` row — never fetch oEmbed at page-render time, that would violate the static-rendering rule and add an external-network dependency to every page load.
+
+**What NOT to use:** Skip `react-soundcloud-embed`/`react-soundcloud-widget`-style npm wrappers — they're thin, sparsely maintained wrappers around exactly the iframe URL pattern above, and add a dependency for something that's three lines of template-string code.
 
 ## Alternatives Considered
 
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| ORM | Drizzle ORM 0.45.2 | Prisma 7.8.0 | Prisma requires a separate DSL schema file, binary engine, and code generation step; Drizzle integrates more cleanly with Better Auth |
-| ORM | Drizzle ORM | Raw pg | No type safety on query results; 13+ table schema with joins would be unmaintainable |
-| Auth | Better Auth 1.6.9 | Auth.js v5 (next-auth@beta) | Auth.js v5 still in beta (5.0.0-beta.31 as of research date); v4 `latest` is not App Router native |
-| Auth | Better Auth 1.6.9 | Lucia | Project wound down; explicitly no longer maintained as a library |
-| Auth | Better Auth 1.6.9 | Clerk | SaaS with monthly cost; contradicts self-hosting goal |
-| Storage | Cloudflare R2 | AWS S3 | R2 has zero egress fees; S3 charges per GB egress |
-| Storage | Cloudflare R2 | Local filesystem | Not durable; no CDN; breaks on server redeploy |
-| PostgreSQL driver | postgres.js | pg (node-postgres) | postgres.js is lighter, has better TypeScript types, and is the Drizzle-preferred driver for new projects |
+| Recommended | Alternative | When to Use Alternative |
+|-------------|-------------|--------------------------|
+| `resend` Audiences/Broadcasts for changelog subscribers | Self-managed subscriber table + `resend.emails.send` in a loop | If subscriber count ever needs custom segmentation logic beyond what one Audience supports, or if you want subscriber data queryable in your own Postgres for other features. For a beta with 2-3 testers, Resend's built-in Audience is simpler and handles unsubscribe compliance for free. |
+| Plain HTML template strings for emails | `@react-email/components` + `@react-email/render` | If email templates grow to need shared headers/footers/branding across many email types — worth the extra dependency once there are 4+ distinct emails, not for 2. |
+| In-memory rate limiter (hand-rolled) | `@upstash/ratelimit` + Upstash Redis | Only if the app moves to multi-instance/serverless deployment where in-memory state can't be shared across instances. Single PM2 process on one VPS doesn't need this. |
+| `react-markdown` + `remark-gfm` render-only | `@uiw/react-md-editor` (editor + live preview in one component) | If changelog authoring UX needs a proper split-pane editor rather than textarea+toggle — reasonable upgrade later, not needed for MVP. |
+| Direct SoundCloud widget iframe URL | SoundCloud oEmbed fetch per page render | Only if you need SoundCloud-hosted metadata (title, waveform image) to always stay in sync automatically rather than being cached at data-entry time. |
 
----
+## What NOT to Use
 
-## Q5: Airtable to PostgreSQL Migration Strategy
+| Avoid | Why | Use Instead |
+|-------|-----|--------------|
+| A headless CMS (Directus, Sanity, Payload, Contentful) for the changelog | Massive overkill for one admin writing occasional short posts; PROJECT.md already explicitly scoped a general admin UI out for this exact reason (`/dev/melisma-editor` precedent) | One Drizzle table (`changelogPosts`) + Markdown textarea gated by existing Better Auth admin role check |
+| Tiptap / Lexical / Slate rich-text editors | Adds significant client-side state/serialization complexity and SSR-safety handling (similar burden to abcjs) for a feature used a handful of times per milestone by one author | `react-markdown` (render) + plain `<textarea>` (edit) |
+| `imagemin` + plugin ecosystem for JPEG compression | Maintenance-mode project, more transitive dependencies than needed; `sharp` (already installed) does the same job with mozjpeg quality | `sharp` with `.jpeg({ quality, mozjpeg: true })` |
+| `@upstash/ratelimit` or any Redis-backed rate limiter | Requires provisioning external infra (Upstash account or a Redis container) for a single-process, low-traffic feedback form | Hand-rolled in-memory sliding-window Map in the route handler |
+| `react-soundcloud-embed` / similar npm iframe wrappers | Thin, sparsely-maintained wrappers around a documented public iframe URL pattern | Direct `https://w.soundcloud.com/player/?url=...` iframe `src` string |
+| Fetching SoundCloud oEmbed at page-render time | Violates the project's static-rendering convention (no runtime fetches on the read path) and adds an external network dependency to every page load | Cache track metadata (or just the URL) in Postgres at data-entry time; build the iframe URL statically |
+| Promise.all() over all 172 images in the compression script | Risks a RAM spike decoding many large scanned JPGs concurrently on a VPS with ~1GB available RAM | Sequential `for` loop with `await`, one image in flight at a time |
 
-This is a one-time script, not an ongoing concern. The recommended approach:
+## Stack Patterns by Variant
 
-### Phase 1: Schema
+**If the VPS Node version is below 20 at deploy time:**
+- `resend@6.18.1` requires Node `>=20`. Check `node -v` on the VPS before adding the dependency — if it's on an older Node LTS, either upgrade Node for the psalter PM2 process first, or pin to an older `resend` major version compatible with the installed Node (check `npm view resend@<version> engines` for the last version supporting your Node).
 
-1. Define the Drizzle schema in TypeScript based on the Airtable table structure (13 tables listed in PROJECT.md).
-2. Run `npx drizzle-kit generate` to produce SQL migrations.
-3. Apply with `npx drizzle-kit migrate` against the target PostgreSQL database.
+**If changelog volume grows beyond occasional short posts:**
+- Move from raw `<textarea>` to `@uiw/react-md-editor` for a nicer split-pane authoring experience, still without a full editor framework.
 
-### Phase 2: Data migration script
+## Version Compatibility
 
-Write a Node.js script (not part of the Next.js app) that:
-
-1. Calls the Airtable REST API using the `airtable` npm package (0.12.2) to page through all records.
-2. For each table, maps Airtable field names to Drizzle schema column names.
-3. Inserts rows into PostgreSQL using `db.insert(table).values(...)` — leveraging Drizzle for type-safe inserts.
-4. For attachment fields (tune JPG score images): downloads each Airtable temporary URL, re-uploads to Cloudflare R2 via `@aws-sdk/client-s3`, stores the permanent R2 public URL in the database.
-
-```typescript
-// scripts/migrate-airtable.ts (run once, not part of the app)
-import Airtable from "airtable"
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
-
-const base = new Airtable({ apiKey: process.env.AIRTABLE_KEY }).base("appY3dB1EHtex0fUJ")
-const r2 = new S3Client({
-  region: "auto",
-  endpoint: process.env.R2_ENDPOINT,  // https://<account>.r2.cloudflarestorage.com
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY!,
-    secretAccessKey: process.env.R2_SECRET_KEY!,
-  },
-})
-```
-
-**Important:** Airtable attachment URLs are temporary (expire after a few hours). The migration script must download and re-host them before the export window closes. Run the script promptly after generating the API key.
-
-### Phase 3: Validate
-
-- Row counts must match between Airtable and PostgreSQL for each table.
-- Spot-check 5-10 records per table for field mapping correctness.
-- Verify all R2 image URLs are publicly accessible before removing Airtable access.
-
----
-
-## Q3: ABC Notation Sources for Scottish Psalter Tunes
-
-**Summary:** No ready-made, comprehensive ABC notation corpus for traditional Scottish Psalter tunes was found. Manual encoding or MusicXML conversion is required for most tunes. Here is what does exist:
-
-### What exists
-
-| Source | Content | Format | License | Notes |
-|--------|---------|--------|---------|-------|
-| `dieuwedeboer/scottishmetricalpsalter` (GitHub) | 7 tunes: Crimond, Felix, Old 100th, Richmond, Spohr, Tallis, Tallis' Canon | MusicXML | No license stated (source: FCC 2013 Psalmody) | MEDIUM confidence on copyright status; taken from a church publication; contact repo author before using |
-| thesession.org API | Irish/Scottish traditional tunes; psalm tunes not present (0 results for "psalm" query) | ABC (CC BY) | Creative Commons Attribution | Not a source for psalter tunes |
-| abcnotation.com | Community-submitted ABC files; no verified psalm tune collection | ABC | Varies per submitter | Site returned 404 on search; use with caution |
-| IMSLP | Public domain editions of psalter music (pre-1928) as PDFs | PDF scans | Public domain | Requires manual transcription to ABC |
-
-### Recommended approach
-
-The traditional Scottish Psalter tunes (e.g., Dundee, Martyrs, French, Old 124th, Coleshill, Abbey) predate 1700. Their melodies are unequivocally public domain worldwide. The practical blocker is not copyright but the absence of a machine-readable source.
-
-**Recommended encoding workflow:**
-
-1. Use MuseScore (free, open source) to engrave each tune from a public domain printed edition (pre-1928 psalters on IMSLP or the 1929 Church of Scotland psalter).
-2. Export from MuseScore as MusicXML.
-3. Convert MusicXML to ABC using `xml2abc` (Python tool, available on PyPI) or the online converter at `https://www.mandolintab.net/abcconverter.php`.
-4. Store the resulting `.abc` files in the database's `abc_notation` column on the `tunes` table.
-
-This is a data-entry project, not a technical one. For ~100 tunes, estimate 5-15 minutes per tune. The dieuwedeboer MusicXML files (7 tunes) can be used as starting points for those specific tunes, but verify the copyright situation before using them in a public site.
-
-**Do NOT use AI-generated ABC notation for tunes.** LLMs hallucinate note sequences convincingly. Any AI-generated ABC must be verified against a printed source bar-by-bar before use.
-
----
+| Package A | Compatible With | Notes |
+|-----------|-----------------|-------|
+| `resend@6.18.1` | Node `>=20` | Confirmed via `npm view resend engines`. Verify VPS Node version before install. |
+| `react-markdown@10.1.0` | `react >=18` | Confirmed via `npm view react-markdown peerDependencies`; satisfied by installed React 19.2.4. |
+| `resend@6.18.1` | `@react-email/render` (optional peer, not installed) | Confirmed via `npm view resend peerDependenciesMeta` — `{ optional: true }`. Safe to omit; only needed if switching from HTML strings to JSX email templates later. |
+| `sharp@^0.34.5` (installed) → `0.35.3` (latest) | Node-API native module, no React/Next coupling | Devdependency only; never imported in `src/app/` runtime code. |
 
 ## Sources
 
-- abcjs Context7 docs: `/paulrosen/abcjs` (HIGH confidence — official GitHub repo documentation)
-- abcjs FAQ on SSR: https://github.com/paulrosen/abcjs/blob/main/docs/overview/faq.md
-- abcjs version: `npm view abcjs dist-tags` — confirmed `latest: 6.6.3`
-- Drizzle ORM Context7 docs: `/drizzle-team/drizzle-orm-docs` (HIGH confidence)
-- Drizzle version: `npm view drizzle-orm version` — confirmed `0.45.2`
-- drizzle-kit version: `npm view drizzle-kit version` — confirmed `0.31.10`
-- postgres.js version: `npm view postgres version` — confirmed `3.4.9`
-- Auth.js Context7 docs: `/websites/authjs_dev` (HIGH confidence)
-- Auth.js npm dist-tags: confirmed `latest: 4.24.14`, `beta: 5.0.0-beta.31`
-- Better Auth Context7 docs: `/llmstxt/better-auth_llms_txt` (HIGH confidence)
-- Better Auth version: `npm view better-auth dist-tags` — confirmed `latest: 1.6.9`
-- `dieuwedeboer/scottishmetricalpsalter`: https://github.com/dieuwedeboer/scottishmetricalpsalter — 7 MusicXML psalm tunes
-- thesession.org API: queried directly — confirmed 0 results for "psalm" tune type
-- @aws-sdk/client-s3 version: `npm view @aws-sdk/client-s3 version` — confirmed `3.1044.0`
-- Airtable npm package: `npm view airtable version` — confirmed `0.12.2`
+- Context7 `/websites/resend` — audiences/create, contacts/create, broadcasts/create, Next.js App Router send examples, rate limiting note (5 req/s default per team)
+- Context7 `/lovell/sharp` — `.jpeg()` options (`quality`, `mozjpeg`, `chromaSubsampling`), `sharp.concurrency()`, `sharp.cache()`, `limitInputPixels`
+- `npm view resend / react-markdown / remark-gfm / sharp` — exact current versions and peer/engine requirements (2026-07-29)
+- https://resend.com/docs/knowledge-base/account-quotas-and-limits (via WebFetch) — free tier: 100/day, 3,000/mo transactional; unlimited sends to up to 1,000 marketing contacts, same account, separate quota mechanisms — MEDIUM-HIGH confidence (fetched directly, cross-checked against WebSearch summaries of Resend's pricing page)
+- https://developers.soundcloud.com/docs/oembed (via WebFetch) — oEmbed endpoint shape, no auth required, CORS-enabled — HIGH confidence, official docs
+- Codebase inspection: `package.json`, `src/lib/precent-auth.ts`, `src/app/api/feedback/route.ts`, `src/db/schema.ts` — existing patterns to reuse (Better Auth session gating, DB-first-then-email-best-effort pattern, Drizzle table conventions)
+
+---
+*Stack research for: CPRC Psalter v2.0 Public Beta — email, image compression, changelog authoring, audio embed*
+*Researched: 2026-07-29*

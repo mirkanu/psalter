@@ -1,319 +1,304 @@
-# Domain Pitfalls
+# Pitfalls Research — v2.0 Public Beta
 
-**Domain:** Scottish Psalter web app — Airtable/Softr to Next.js/PostgreSQL migration
-**Researched:** 2026-05-07
-**Confidence:** HIGH (Airtable API confirmed via official docs; abcjs SSR confirmed via official docs and Context7; Next.js patterns confirmed via Context7; copyright from established UK law; continuity patterns from software engineering practice)
+**Domain:** Adding 6 features to an existing production Next.js 15 app (CPRC Psalter) on a resource-constrained VPS, about to open to first outside beta testers
+**Researched:** 2026-07-29
+**Confidence:** HIGH (grounded in direct inspection of this repo's code, `.env.production`, PM2/docker state, and VPS memory — not generic advice)
+
+> **Note:** This file was rewritten for the v2.0 Public Beta milestone (previously covered v1.0's Airtable/abcjs migration pitfalls, researched 2026-05-07). Those earlier pitfalls (Airtable attachment URL expiry, abcjs SSR incompatibility, copyright, etc.) are now resolved/shipped and are preserved in the "Hard rules" section of the project's `CLAUDE.md` and the `.planning/research/` alignment/notation docs referenced there — this file now focuses on the pitfalls specific to adding v2.0's 6 new capabilities.
+
+## Codebase facts that shape every pitfall below
+
+Verified directly against the running system before writing this doc:
+
+- **PM2 runs `psalter` in `fork` mode, single instance** (not cluster) — confirmed via `pm2 list`. This changes the in-memory rate-limit risk profile from "split across workers" to "wiped on every restart/deploy."
+- **`src/middleware.ts` does not exist.** There is no global route-gating layer. Every `/dev/*` page and every `/api/dev/*` route is responsible for its own auth check.
+- **`/dev/melisma-editor` and all 8 of its `/api/dev/*` routes currently have zero session/auth checks** (`grep` for `getSession`/`auth.` returned 0 hits in every one). PROJECT.md calls this page "the de facto tune-data admin UI" — it is live on `psalter.gsdlabs.dev` right now, publicly reachable, unauthenticated, and writes directly to the tunes table.
+- **Tune score images are NOT in R2** despite CLAUDE.md's stack table saying so. They are local files at `public/tunes/` (328 files, 1.4GB), served as Next.js static assets, and are **git-ignored** (`public/tunes/.gitignore: *.jpg`) — meaning there is no version-control safety net if a batch script overwrites them.
+- **VPS memory is already tight at rest:** `free -h` shows 2.5Gi used / 398Mi free / 4.0Gi swap in use, out of 3.7Gi total, before any new batch job runs.
+- **`next.config.ts` already has a `redirects()` array** (one entry, `/search` → `/psalms`, `permanent: true`) — this is the established, in-repo pattern to extend for slug migration, not middleware.
+- **`scripts/migrate-airtable.ts`** already uses an idempotent two-pass pattern (`onConflictDoUpdate` keyed on `airtable_id`) and a `SKIP_IMAGES=1` escape hatch — any new migration script should match this pattern, not reinvent it.
+- **No Resend key exists yet** anywhere in `.env.production` (checked `PSALTER_RESEND_API_KEY` — absent). This is a from-scratch integration, not a config change.
+- **`feedback_submissions` already has server-side validation** (message length cap, email regex, trimming) but **zero rate limiting** — confirmed by reading `src/app/api/feedback/route.ts` in full.
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: Airtable Attachment URLs Expire in ~2 Hours
+### Pitfall 1: Shipping the changelog's inline admin authoring with the same "gate later" gap that `/dev/melisma-editor` already has
 
-**What goes wrong:** You export the Airtable data (all tune JPG score images) via the API, store the `url` field values in PostgreSQL, then start the app — and within hours all image URLs return 403. The download URLs Airtable returns in the `fields.Attachments[].url` property are time-limited signed URLs from `airtableusercontent.com`. They are not permanent CDN links.
+**What goes wrong:**
+The team builds `/changelog` with inline admin authoring, protects the *write* action with a Better Auth session check, but leaves the *page route itself* or a companion API route unauthenticated — repeating the exact gap that already exists in `/dev/melisma-editor` today. Because there's no `middleware.ts`, there is no safety net; each route is only as safe as its own code remembers to be.
 
-**Why it happens:** Airtable confirmed in official support docs: "The download URL property links to these files and will expire every few hours, typically remaining active for at least 2 hours." The URL is a pre-signed S3-style token, not a stable identifier.
+**Why it happens:**
+The project's precedent (`/dev/melisma-editor`) was built as an internal tool before public beta was ever planned, when "nobody but me will ever hit this URL" was a reasonable assumption. That assumption breaks the moment outside testers exist and the URL is guessable/crawlable. The new admin-authoring feature is being bolted onto a codebase where the existing admin surface has no enforced pattern to copy correctly.
 
-**Consequences:** If the migration script writes raw Airtable URLs to the database, every tune image in production breaks silently a few hours after migration. This is easy to miss because the images work during testing (within the window) and break later.
+**How to avoid:**
+- Do not copy `/dev/melisma-editor`'s auth pattern (or lack thereof) as a template.
+- Use `getSessionOr401()` from `src/lib/precent-auth.ts` (already exists, already tested) at the top of every new admin-authoring API route, and check `session.user.role === 'admin'` (the `admin()` Better Auth plugin is already installed in `src/lib/auth.ts`) — not just "any logged-in user."
+- For the page component itself, do a server-side session check in the RSC page (not just client-side hide/show of the editor UI) — client-side-only gating still serves the full HTML/JS bundle and leaves the API routes reachable by anyone who reads the network tab.
+- While in this area, retrofit the same check onto `/dev/melisma-editor`'s 8 API routes — it is currently a live unauthenticated write surface on the public production domain and should not ship a public beta milestone without being closed.
+- Add a `robots.txt` disallow for `/dev/*` as defense-in-depth (none exists currently — confirmed no `robots.txt`/`sitemap` files in `src/app`), but treat this as a courtesy to crawlers, never as the actual security boundary.
 
-**Prevention:**
-- During the migration script, **download every attachment** to local storage or an S3/R2 bucket immediately after fetching each record. Do not store the Airtable URL as the canonical image URL.
-- Structure the migration as two passes: first fetch all record data; second, for each attachment URL, download the binary and upload to permanent storage, then write the permanent URL to Postgres.
-- Rate-limit download requests: Airtable's API is capped at 5 requests per second per base. Sleeping 200ms between API calls (not between downloads — the downloads are direct S3 fetches) is safe.
+**Warning signs:**
+- `curl https://psalter.gsdlabs.dev/api/dev/melisma-save` (or the new changelog write endpoint) returns anything other than a 401/403 without a session cookie.
+- The admin authoring UI is reachable and renders content in a browser with no active session.
 
-**Warning signs:** Images display correctly during dev/staging immediately after migration; broken images appear in production or after a few hours have passed.
-
-**Phase:** Migration phase. Must be solved before the database can be considered stable.
-
----
-
-### Pitfall 2: abcjs Cannot Run Server-Side — Causes Next.js Build Failures or Hydration Errors
-
-**What goes wrong:** Importing abcjs in a React Server Component or at module scope in any component that is server-rendered causes the build to fail with `ReferenceError: document is not defined` (or `window is not defined`). abcjs calls DOM APIs (`document.createElement`, SVG operations) at render time and has no server-safe export path.
-
-**Why it happens:** abcjs is a browser-only library. The official abcjs FAQ explicitly documents this and provides a workaround: `const abcjs = process.browser ? require('abcjs') : null`. The modern Next.js App Router equivalent is `next/dynamic` with `{ ssr: false }`.
-
-**Consequences:** If not handled correctly: build errors in CI that are confusing to debug; or, more subtly, hydration mismatch errors that cause the notation to appear briefly then vanish, because the server renders nothing and the client tries to patch a DOM that doesn't match.
-
-**Prevention:**
-- Wrap every abcjs-using component with `dynamic(() => import('./AbcNotation'), { ssr: false })`.
-- Keep the abcjs component entirely within a `'use client'` boundary. Never import from a Server Component.
-- Use a `Suspense` fallback (skeleton or static JPG placeholder) to cover the client-side load gap.
-- The abcjs import itself should live inside the component module, not at the app level.
-
-```tsx
-// Correct pattern
-const AbcNotation = dynamic(() => import('@/components/AbcNotation'), {
-  ssr: false,
-  loading: () => <Skeleton className="h-32 w-full" />,
-})
-```
-
-**Warning signs:** `document is not defined` errors in build logs; React hydration mismatch warnings in browser console; notation div renders empty on first load.
-
-**Phase:** Notation rendering phase. Test in a Next.js environment before building the full tune page UI.
+**Phase to address:** Changelog/admin-authoring phase — must be a launch-blocking check, not a follow-up.
 
 ---
 
-### Pitfall 3: Airtable Linked Record Fields Become Arrays of IDs — Relationships Are Lost Without a Resolution Pass
+### Pitfall 2: XSS via unsanitized rich text in changelog entries
 
-**What goes wrong:** In Airtable, a "Link to another record" field returns `["recABC123", "recDEF456"]` — just record IDs. Foreign key relationships between tables (Psalms ↔ Tunes ↔ Events, etc.) are expressed through these ID arrays. If the migration script writes these raw ID arrays as JSON blobs into Postgres, you lose relational integrity and cannot query across tables.
+**What goes wrong:**
+Changelog entries are authored as rich text/HTML (even a minimal WYSIWYG or Markdown-with-HTML-passthrough) and rendered on a public page with `dangerouslySetInnerHTML` or an unsanitized Markdown renderer. A single malicious or careless paste (e.g. copying formatted text from a webpage that carries embedded `<script>` or `onerror=` attributes) becomes a stored XSS payload served to every beta tester's browser, including session-cookie theft against Better Auth sessions on the same origin.
 
-**Why it happens:** Airtable's API returns linked record fields as `Array<string>` (record IDs) in the default format, per official API docs. The human-readable linked names are only present when you expand the request or fetch the related table separately.
+**Why it happens:**
+"It's just me writing changelog entries" feels safe, but (a) the admin's own browser/clipboard can carry malicious markup from copy-paste, and (b) the moment this pattern exists in the codebase it becomes the template for any future admin-authored content, some of which may not stay single-admin-only (e.g. if precentors ever get authoring rights later).
 
-**Consequences:** Data migrates but is not relational. SQL joins fail. Features like "show all psalms for this tune" require re-fetching from Airtable instead of querying Postgres. Rollup/count fields (which depend on linked records) have no equivalent in the migrated schema.
+**How to avoid:**
+- Prefer Markdown source stored as plain text, rendered through a Markdown library that escapes raw HTML by default (do not enable an `allowDangerousHtml`/`rehype-raw` style passthrough).
+- If rich text HTML must be stored, sanitize on write (not just on render) with an allowlist-based sanitizer (e.g. `sanitize-html` or DOMPurify server-side) so the stored data itself is never a payload — belt-and-suspenders against a future render path that forgets to sanitize.
+- Never use `dangerouslySetInnerHTML` directly on unsanitized DB content, even content the admin themselves wrote.
 
-**Prevention:**
-- Before writing migration SQL, map the full Airtable schema: list every table, every linked-record field, and which table it points to.
-- Build a two-pass migration: first, fetch all tables and build an in-memory `recordId → rowId` map for each table; second, insert rows and resolve linked IDs to foreign key integers.
-- Formula fields and rollup fields in Airtable should become computed columns or materialized values in Postgres — they are not migrated directly.
-- Lookup fields that aggregate linked values (e.g., a count of linked psalms) become SQL `COUNT` queries or Postgres computed columns.
+**Warning signs:**
+- Any component in the changelog render path uses `dangerouslySetInnerHTML` with content sourced from `db.query...` without a sanitize step visible in the same file or an imported helper.
+- The rich-text editor library's default config allows raw HTML paste-through (many WYSIWYG editors do by default).
 
-**Warning signs:** Migration script completes with no errors but joined queries return no results; JSONB columns contain raw `recXXXXXX` strings.
-
-**Phase:** Migration phase. Schema design must be done before any migration code is written.
-
----
-
-### Pitfall 4: Precentor Workflow Disruption — Dual-Writes to Both Systems Create Divergence
-
-**What goes wrong:** During the migration period, precentors continue creating service events in Airtable (via Softr). New records created after the one-time data dump are not in Postgres. When the new app launches, recent services are missing. Worse: if some precentors switch to the new app while others are still on Softr, the two systems diverge and reconciliation becomes painful.
-
-**Why it happens:** The "keep Airtable as admin UI" decision combined with a hard-cutover launch means there is an interval where both systems exist but are not synchronised. The Airtable → Postgres migration is a one-time dump, not a live sync.
-
-**Consequences:** Events created in Airtable after the migration snapshot are invisible in the new app. If the new app also creates events, those are invisible in Airtable. Data forks.
-
-**Prevention:**
-- Choose a precise cutover time (e.g., immediately after the last Sunday service of a given week).
-- Run a "delta migration" immediately before launch: re-export only Events and Psalm & Tune CPRC records created after the initial snapshot; apply them to Postgres.
-- Alternatively, build a lightweight Airtable webhook → Postgres sync for the Events and service tables only, to keep them live during the transition period.
-- Communicate the cutover date explicitly to all precentors with clear instructions: "After [date], use the new app to create services."
-- Do a dry-run migration + smoke test at least one week before the real cutover, on a staging database, so surprises are caught early.
-
-**Warning signs:** Precentors report missing services on the morning of the launch; services show the wrong psalm assignments.
-
-**Phase:** Deployment/cutover planning. Must be addressed in the launch phase, not an afterthought.
+**Phase to address:** Changelog/admin-authoring phase, same phase as Pitfall 1 — sanitize on write, escape on render.
 
 ---
 
-## Moderate Pitfalls
+### Pitfall 3: Resend integration ships without domain verification, so beta emails land in spam or fail silently
 
-### Pitfall 5: abcjs `staffwidth` is Fixed-Pixel by Default — Notation Overflows on Mobile
+**What goes wrong:**
+The Resend API key is wired up and `resend.emails.send()` works in testing (sending from Resend's shared `onboarding@resend.dev` sandbox domain or an unverified custom domain), but for real beta testers on Gmail/Outlook, mail either bounces, lands in spam, or silently fails DMARC/SPF alignment — because the sending domain (`gsdlabs.dev` or a psalter subdomain) was never added and verified in the Resend dashboard with SPF + DKIM DNS records.
 
-**What goes wrong:** abcjs defaults to `staffwidth: 740` pixels. On a 375px-wide mobile screen the SVG is rendered at 740px, overflows its container, and either clips or causes horizontal scroll on the entire page. The precentor service view (a primary use case) is likely viewed on a phone or tablet during worship.
+**Why it happens:**
+Resend's sandbox/test mode works without any DNS setup, which masks the gap during development. The DNS step lives outside the codebase (Cloudflare DNS dashboard, not a file Claude edits), so it's easy for a coding-focused workflow to skip it or assume "the API key is enough."
 
-**Why it happens:** The default `staffwidth` is set to a desktop-comfortable pixel value. Unlike CSS, SVG layout does not automatically reflow to container width.
+**How to avoid:**
+- Add a sending subdomain (e.g. `mail.psalter.gsdlabs.dev` or `send.gsdlabs.dev`) in the Resend dashboard, not the bare apex — the `From:` address must live on whatever subdomain Resend issues DKIM for, or DKIM/DMARC alignment fails.
+- Add the SPF TXT, DKIM TXT (`resend._domainkey.<subdomain>`), and DMARC records via Cloudflare DNS (already the DNS provider per project CLAUDE.md) and wait for Resend to report the domain as verified before sending real beta emails.
+- Start DMARC at `p=none` to observe reports rather than `p=reject`, per project's low email volume and no prior sending reputation on this domain.
+- Store the key as `PSALTER_RESEND_API_KEY` in `/home/services/.env.production` per the project's existing naming convention (`PROJECT_` prefix) — do not hardcode it in `ecosystem.config.js` or any committed file (this is a hard global rule already established for this VPS).
+- Test with a real Gmail and a real Outlook/Hotmail address before considering the feature done — Resend's own delivery log (dashboard) shows bounce/spam-complaint status per send, use it.
 
-**Prevention:**
-- Always use `responsive: 'resize'` option when calling `ABCJS.renderAbc`. This causes abcjs to render into the container's actual width.
-- Additionally, always pass `expandToWidest: true` to prevent jagged right edges when one line of music is wider than others.
-- Test notation rendering at 375px, 768px, and 1200px viewport widths before shipping.
+**Warning signs:**
+- Test emails only ever get checked via Resend's dashboard log ("delivered") without confirming the beta tester's own inbox (not spam folder) actually received it.
+- The `From:` address is on the apex domain (`gsdlabs.dev`) rather than a subdomain Resend explicitly verified.
+- No DMARC record has been added at all (Resend can pass SPF+DKIM but land in spam without any DMARC policy present, depending on receiving provider heuristics).
 
-```javascript
-ABCJS.renderAbc("paper", abcString, {
-  responsive: 'resize',
-  expandToWidest: true,
-})
-```
-
-**Warning signs:** Horizontal scrollbar appears on a tune page on mobile; notation SVG width is wider than the viewport.
-
-**Phase:** Notation rendering phase.
+**Phase to address:** Resend integration phase — DNS setup is a manual/dashboard prerequisite that should be scheduled before the first real send, not discovered after a beta tester reports "I never got the email."
 
 ---
 
-### Pitfall 6: Next.js App Router — Accidentally Making Everything a Client Component
+### Pitfall 4: Feedback-notify email and changelog broadcast email share one Resend integration but have very different compliance requirements
 
-**What goes wrong:** A developer adds `'use client'` to a component that needs a small interactive element (e.g., a search input), which propagates the client boundary upward and causes all child Server Components (including database-querying ones) to re-render on the client, defeating the performance gains of the App Router.
+**What goes wrong:**
+The feedback-to-`manuelkuhs@gmail.com` notification (transactional, triggered by one user's submission) and the changelog broadcast to subscribers (bulk, opt-in marketing-adjacent) get built with the same `resend.emails.send()` call and no unsubscribe mechanism, because from the code's perspective they're "just an email." The broadcast list then has no unsubscribe link, which is both a deliverability problem (spam-complaint-triggered sender reputation damage) and, if the beta ever grows past a handful of friends, a CAN-SPAM/GDPR compliance gap.
 
-**Why it happens:** In the App Router, `'use client'` marks the boundary where React's server tree hands off to the client bundle. Everything below that boundary is included in the JS bundle and runs in the browser. Putting a `'use client'` component high in the tree re-clients the entire subtree.
+**Why it happens:**
+At 2-3 beta testers, "just email them" feels informal enough that unsubscribe mechanics seem like premature engineering. But the broadcast list is explicitly described as "changelog subscribers" (an opt-in list, implying growth), and Resend's own delivery reputation is shared across all sends from the domain — spam complaints on the broadcast list can degrade deliverability for the transactional feedback-notify email too, since both originate from the same verified domain.
 
-**Consequences:** Large client bundles; database query logic exposed to client; the main reason Softr is slow (everything client-side) gets accidentally reproduced.
+**How to avoid:**
+- Treat the two email types as architecturally separate even if they share the Resend client: the feedback-notify email needs no unsubscribe (it's not sent to the subscriber, it's sent to the site owner about a submission) but the changelog broadcast does.
+- Add a one-click unsubscribe link (a simple token-based route, e.g. `/api/changelog/unsubscribe?token=...`) even for a tiny list — it's cheap to build now and expensive to retrofit once real beta testers exist and expect it.
+- Store subscriber consent (timestamp of subscribe action) so there's a record if this ever needs to be audited later.
+- Do not use Resend's shared sending reputation carelessly — if the broadcast list ever gets a spam complaint, both email flows are on the same domain and both are affected.
 
-**Prevention:**
-- Keep `'use client'` at the lowest possible level. Push interactive elements (buttons, notation components) into small leaf components.
-- Psalm detail pages, tune pages, and daily reading pages should be Server Components with only the `AbcNotation` component isolated as a client leaf.
-- Use the Next.js bundle analyser (`ANALYZE=true next build`) periodically to audit what is in the client bundle.
+**Warning signs:**
+- The changelog subscribe form exists but there's no corresponding unsubscribe route/link in the sent email template.
+- Both feedback-notify and changelog-broadcast use one un-parameterized `sendEmail()` helper with no distinction in headers/list-unsubscribe metadata.
 
-**Warning signs:** Page components that only display data (no interaction) have `'use client'` at the top.
-
-**Phase:** Every phase. Enforce as a code review rule from day one.
-
----
-
-### Pitfall 7: Next.js App Router — N+1 Database Queries Without Awareness
-
-**What goes wrong:** A Psalm list page renders 150 psalm cards. Each card is a Server Component that independently queries the database for its tune name, topic count, etc. This executes 150+ sequential round-trips to Postgres for one page load.
-
-**Why it happens:** Server Components make it natural to co-locate data fetching with the component, but without explicit awareness of batching, nested components create N+1 query patterns. Unlike REST/GraphQL where this is visible, Server Component waterfalls can be invisible.
-
-**Prevention:**
-- For list pages, fetch all necessary data in the top-level page component in a single query with JOINs, then pass data down as props.
-- Use `Promise.all()` to parallelise independent queries rather than sequentially awaiting them.
-- For psalm pages (150 static routes), use `generateStaticParams` to pre-render at build time — eliminating runtime database queries entirely for the public-facing read path.
-
-```tsx
-// Good: single query at page level
-export default async function PsalmsPage() {
-  const psalms = await db.query.psalms.findMany({
-    with: { tunes: true, topics: true }
-  })
-  return <PsalmList psalms={psalms} />
-}
-```
-
-**Warning signs:** Database logs show dozens of identical queries per page request; psalm list page takes >500ms to load.
-
-**Phase:** Data fetching design phase. Establish the pattern early.
+**Phase to address:** Changelog + Resend integration phase, before first broadcast send.
 
 ---
 
-### Pitfall 8: ABC Notation Encoding Errors Are Silent at Upload But Cause Blank Renders
+### Pitfall 5: Batch JPEG compression runs at full concurrency and either OOM-kills the VPS or destroys the only copies of the score images
 
-**What goes wrong:** You encode a tune in ABC notation with a syntax error (e.g., mismatched bar counts, invalid key signature, unsupported `%%` directive). abcjs parses the string without throwing a JavaScript exception, but renders nothing, or renders a partial/incorrect score.
+**What goes wrong:**
+Two compounding risks, both concrete on this specific VPS:
+1. **Memory:** A naive script that does `Promise.all(files.map(compressImage))` across 172 (328 counting solfège+staff variants) images spikes memory sharply — `sharp`/libvips must fully decompress progressive JPEGs into memory, and concurrent operations multiply that. This VPS is already at 398Mi free / 4Gi swap in use at idle. A concurrent batch job risks tripping `earlyoom` (which kills the greediest process — possibly this script, possibly an unrelated service on the same box) or the `claude` user's 2.4GB cgroup cap.
+2. **Irreversibility:** The images live at `public/tunes/*.jpg`, are git-ignored, and are not actually in R2 (contrary to what CLAUDE.md's stack table claims). If the compression script overwrites files in place and something goes wrong (wrong quality setting, corrupt output, script bug), there is currently **no backup and no version history** to recover from — these are scanned sheet-music images that can't be regenerated from source data.
 
-**Why it happens:** `ABCJS.renderAbc` is tolerant — it does not throw on malformed ABC. Errors are only available via `ABCJS.parseOnly(abc)` which returns an object containing a `warnings` array. Many unsupported `%%` directives (e.g., `%%autoclef`, `%%pango`, `%%select`) are silently ignored.
+**Why it happens:**
+`sharp` is fast and its examples in docs use `Promise.all` for "batch processing," which is fine on a normal dev machine but not on a 3.7GB shared VPS. Separately, the assumption "images are in R2" (per CLAUDE.md) turns out to be false for this project — the actual deploy uses local static files — so anyone trusting the stack doc into skipping a manual backup step is working from stale/incorrect documentation.
 
-**Consequences:** A tune page shows a blank white box where the notation should be. Without monitoring, this goes undetected until a precentor complains during a service.
+**How to avoid:**
+- **Back up `public/tunes/` before running anything.** `tar czf` to a separate path (e.g. `/home/services/psalter/backups/tunes-pre-compression-$(date +%Y%m%d).tar.gz`) or push to R2/an external location — do this first, unconditionally, even though it wasn't required by any existing script. Verify the archive is readable (untar to a temp dir and diff file count) before proceeding.
+- **Process sequentially or with `p-limit` concurrency of 1–2**, not `Promise.all` across all 328 files. Set `sharp.cache(false)` and `sharp.concurrency(1)` to reduce libvips' internal thread/cache overhead.
+- **Write to a new directory first** (`public/tunes-compressed/`), verify output visually/dimensionally against a sample of originals, and only then swap directories — never compress in place on the first pass.
+- **Check for progressive JPEGs** among the source scans before running at scale; these need full decompression into memory and are the specific case that caused documented OOM crashes in `sharp`'s own issue tracker. If any are found, process those specifically one at a time.
+- **Verify legibility, not just file size, on notation-bearing images.** These are OCR'd sheet-music scans that solfège underlines and staff notation were painstakingly hand-reviewed from (`/dev/melisma-editor`, 70/172 tunes approved so far per PROJECT.md). Over-aggressive JPEG quality reduction can blur exactly the fine details (underlines, ledger lines) that the melisma-editor workflow depends on humans being able to read. Spot-check compressed output against originals at 100% zoom for a handful of representative tunes, prioritizing ones already marked `approved`.
+- Run the script with `free -h` monitoring before/during/after, and consider running during low-traffic hours since the VPS is shared with other services and the `psalter` PM2 process itself will keep serving traffic during the batch job.
 
-**Prevention:**
-- Build a validation step into the admin workflow: when ABC notation is saved for a tune, call `ABCJS.parseOnly()` and surface any warnings to the editor.
-- Store the `warnings` array result alongside the ABC text in the database so problems are visible in the admin view.
-- Maintain a test suite that renders all ~100 tunes and asserts that each produces a non-empty SVG.
-- Fall back gracefully to the JPG score image if the ABC string is empty or produces parse warnings.
+**Warning signs:**
+- `free -h` available memory drops toward zero while the script runs, or `earlyoom` logs a kill event.
+- Compressed file sizes drop dramatically (e.g. >80%) — a sign quality was set too aggressively.
+- No `tar`/backup file exists anywhere before the script's first write.
 
-**Warning signs:** Tune page displays a blank or empty `<div>` where notation should appear; no error in browser console.
-
-**Phase:** ABC encoding phase. Validate each tune at encoding time, not at display time.
-
----
-
-### Pitfall 9: Copyright — Four-Part Harmony Encoding Is Not Safe Without Verification
-
-**What goes wrong:** The project correctly defers four-part harmonisations but incorrectly assumes all melody lines are unambiguously public domain. The risk is conflating the traditional Gaelic melody (public domain) with a specific typeset or harmonised arrangement.
-
-**Why it happens:** UK copyright in a musical work expires 70 years after the death of the last surviving author. For arrangements and harmonisations, the arranger holds a separate copyright from the underlying melody. The 1650 Scottish Psalter (words) and traditional Common Metre tunes are clearly public domain. The 1929 Church Hymnary harmonisations are likely still in copyright (last arranger deaths would be mid-to-late 20th century). The 1973/1979 RPCI Psalter harmonisations are similarly under review.
-
-**Specifically safe:**
-- Melody-only encoding of traditional tunes sourced from pre-1900 or openly licensed sources.
-- ABC notation files from session.org, abcnotation.com, or the ABC tunebooks pre-dating 1926 (US) / pre-1956 (UK) publications.
-
-**Specifically risky (do not encode without legal check):**
-- Four-part harmonisations from any published psalter or hymnal (even if the printed edition appears old).
-- Transcriptions derived specifically from a 20th-century edition's specific rhythmic interpretation or ornamentation.
-
-**Prevention:**
-- Document the source for every ABC tune encoded: URL or publication provenance.
-- For tunes sourced from session.org or similar, confirm the submitter's stated provenance.
-- Never encode from a printed 20th-century psalter edition directly — verify the melody against a pre-1926 source first.
-- Defer all harmony voices to a post-launch milestone when a clear legal opinion has been obtained.
-
-**Warning signs:** ABC file has multiple voices (`V:` fields) — that is a harmonisation, not melody-only.
-
-**Phase:** ABC sourcing phase. Must be established as policy before encoding begins.
+**Phase to address:** JPEG compression phase — backup step must be the literal first action taken, before any code that touches `public/tunes/` is even written.
 
 ---
 
-## Minor Pitfalls
+### Pitfall 6: In-memory rate limiting on the feedback API gives a false sense of protection because PM2 fork-mode restarts wipe it silently
 
-### Pitfall 10: Airtable Pagination — 100 Records Per Page, Easy to Miss Tail Records
+**What goes wrong:**
+A `Map`-based in-memory rate limiter is added to `src/app/api/feedback/route.ts` and works correctly in manual testing. But every PM2 restart — deploys, crash recovery, or a future `max_memory_restart` threshold if one gets added to the ecosystem config — silently resets the counters to zero. On a single-fork-mode PM2 process (confirmed: `psalter` runs as 1 fork instance, not cluster), this isn't the "split across workers" failure mode most in-memory-rate-limiter warnings describe — it's simpler: any deploy (which happens routinely during active development of this milestone) gives every client a clean slate.
 
-**What goes wrong:** The Airtable API returns a maximum of 100 records per request. Tables with more than 100 records (Verses likely has 3,000+; Topics - Verses likely has thousands) return a `nextOffset` cursor. A naive migration script that only fetches the first page misses most records.
+**Why it happens:**
+Fork mode (vs. cluster mode) makes it easy to assume "single process = single source of truth, in-memory is fine." That's true moment-to-moment, but this project deploys frequently (active GSD phase work), and each deploy is a full process restart.
 
-**Prevention:**
-- All migration fetch functions must loop until `response.offset` is undefined.
-- Log record counts per table and verify against Airtable's UI record count before marking migration complete.
+**How to avoid:**
+- For a public beta with 2-3 known testers plus general public read traffic, an in-memory `Map` keyed by IP with a modest window (e.g. 5 submissions/hour) is proportionate — this is not a high-abuse-risk target, and Redis is not in this project's stack (adding it purely for rate limiting would be disproportionate infra for the actual risk level).
+- If persistence across restarts matters more than "good enough," use the existing PostgreSQL database (already in the stack, already has a `feedback_submissions` table) as the rate-limit store instead of adding Redis — e.g. count recent rows by IP/email within a time window as part of the same insert transaction. This survives restarts for free and matches the project's "don't add new infra without checking the stack registry" convention (per global CLAUDE.md Stack Registry Rule).
+- Document the tradeoff explicitly in code comments: in-memory is a deliberate choice for this traffic scale, not an oversight — so a future maintainer doesn't "fix" it into unnecessary Redis infra.
+- Rate-limit on a composite signal if possible (IP + no message dedup within N seconds) since IP alone is coarse (shared NAT/VPN users), but don't over-engineer this for a 2-3-tester beta.
 
-**Phase:** Migration phase.
+**Warning signs:**
+- Rate limit "resets" observed immediately after every `pm2 restart psalter` or deploy.
+- No code comment or decision record explaining why in-memory (vs. DB-backed) was chosen — signals it wasn't a deliberate tradeoff.
 
----
-
-### Pitfall 11: Airtable Formula and Rollup Fields — Values Are Read-Only and Cannot Be Migrated Directly
-
-**What goes wrong:** Formula fields (e.g., a concatenated display name) and rollup fields (e.g., count of linked psalms) appear in the API response as computed values. You cannot write them to Postgres as a column and expect them to stay current — they need to become SQL expressions, views, or be recomputed at query time.
-
-**Prevention:**
-- Audit each formula field: decide whether to materialise as a static value, compute via SQL, or simply remove if it was only a display convenience in Airtable.
-- Rollup counts become SQL `COUNT()` aggregates or Postgres `GENERATED` columns.
-- Do not create a Postgres column called `formula_field` with a static value unless it is truly static data, not a computation.
-
-**Phase:** Migration schema design phase.
+**Phase to address:** Feedback rate-limiting phase — decide in-memory vs. DB-backed explicitly, don't default to in-memory by accident.
 
 ---
 
-### Pitfall 12: abcjs Container Must Exist in the DOM Before `renderAbc` Is Called
+### Pitfall 7: Numeric-to-name tune slug migration breaks `generateStaticParams`, existing bookmarked links, and any hardcoded `/tunes/<id>` references without redirects
 
-**What goes wrong:** Calling `ABCJS.renderAbc("paper", abcString)` before the `<div id="paper">` element is mounted to the DOM silently does nothing — no error, no render.
+**What goes wrong:**
+`src/app/tunes/[id]/page.tsx` currently uses numeric Airtable-derived IDs as the route param (confirmed: directory is literally `tunes/[id]`) and the project's static-rendering convention (`generateStaticParams`, no runtime DB queries on the read path, per project CLAUDE.md) means old numeric URLs simply won't exist as generated pages once slugs change — they don't gracefully "fall through" to a lookup, they 404, unless `dynamicParams` handling or explicit redirects are added. Any existing bookmarks, the precentor portal's set-list links (`precenting_sets`/`set_items` reference tunes), or external links from `psalter.cprc.co.uk`'s prior life break silently.
 
-**Why it happens:** abcjs uses `document.getElementById()` internally. If the element does not exist yet (e.g., called in a `useState` initialiser or too early in the component lifecycle), the call is a no-op.
+**Why it happens:**
+Static generation with `generateStaticParams` is optimized for "build every known page ahead of time," which is exactly right for read-path performance but means there's no runtime fallback path by default — a migration has to be planned as "generate new + explicitly redirect old," not just "rename the param."
 
-**Prevention:**
-- Always call `renderAbc` inside a `useEffect` with the container ref as a dependency.
-- Use a `useRef` rather than a string ID when possible, to avoid ID collision on pages with multiple notation renders.
+**How to avoid:**
+- Generate the full old-ID → new-slug mapping at build/migration time (172 known tunes, a finite list) and add it to `next.config.ts`'s existing `redirects()` array (already has one entry — this is the established, working pattern in this repo, don't introduce middleware for something `next.config.ts` already handles) with `permanent: true`.
+- Keep both `/tunes/[id]` (numeric, old) and `/tunes/[slug]` (name-based, new) resolvable during a transition window if any internal code (precenting sets, service history) stores the numeric ID as a foreign key reference rather than resolving through a join — audit `precenting_sets`/`set_items` schema for hardcoded tune ID storage vs. relational FK before assuming redirects alone are sufficient.
+- **Slug uniqueness:** tune names are not guaranteed unique or URL-safe as-is (check for tunes sharing a name with different meters/arrangements, punctuation, or non-ASCII characters) — reuse the existing `slugifyTuneName()` helper already in `scripts/download-tunes.ts` (lowercase, non-alphanumeric → hyphen) for consistency rather than writing a second slugify implementation, and add a uniqueness check/disambiguation suffix (e.g. append meter or a numeric suffix) for any collisions found in the actual 172-tune dataset before generating routes.
+- Since pages are static, adding/renaming a slug requires a full rebuild — remember the project's known build-memory constraint (`next.config.ts` already caps `experimental.cpus: 1` because default build concurrency previously got SIGTERM'd by OOM pressure on this VPS) — this isn't a new risk from this migration, but it means testing the full rebuild locally/in CI before assuming it'll succeed unattended on the VPS.
+- Update the sitemap (none currently exists per this audit) and any OG-image generation (planned in this same milestone's polish backlog) to use the new slugs from the start rather than generating them against old numeric routes that are about to be redirected.
 
-```tsx
-const containerRef = useRef<HTMLDivElement>(null)
+**Warning signs:**
+- `grep -rn "tunes/\[id\]\|tunes/\${.*id}" src` still finds numeric-ID link construction after the migration lands.
+- Visiting an old bookmarked `/tunes/169`-style URL 404s instead of 308-redirecting.
+- Two tunes end up generating the same slug and one silently overwrites/shadows the other in `generateStaticParams`'s output.
 
-useEffect(() => {
-  if (containerRef.current) {
-    ABCJS.renderAbc(containerRef.current, abcString, { responsive: 'resize' })
-  }
-}, [abcString])
-```
-
-**Warning signs:** Notation container is present in the DOM but remains empty; no errors in console.
-
-**Phase:** Notation rendering phase.
+**Phase to address:** Tune slug migration phase — build the old→new mapping and redirects as one atomic change, not slug-rename-now/redirects-later.
 
 ---
 
-### Pitfall 13: Postgres Connection Pool Exhaustion in Serverless/Edge Environments
+### Pitfall 8: New Airtable field migration repeats the same field-name assumption errors the last migration already paid for
 
-**What goes wrong:** If the app is deployed to Vercel (serverless functions), each function invocation may open a new Postgres connection. With 150 concurrent page requests, 150 connections are opened, exhausting a typical Postgres `max_connections` limit (default 100) and causing connection errors.
+**What goes wrong:**
+The project has already been burned once: PROJECT.md/CLAUDE.md history notes the original Airtable migration "surfaced 6 incorrect field-name assumptions across 4 tables" and needed a `SKIP_IMAGES` flag for disk constraints. A new migration script for Backup/Historical tune data risks repeating exactly this: assuming a field name/shape from memory or from the Airtable UI's display label (which often differs from the API field name — spacing, casing, or renamed-but-not-migrated fields) instead of verifying against the live schema via the API before writing insert logic.
 
-**Prevention:**
-- Use a connection pooler: PgBouncer (self-hosted) or Neon/Supabase's built-in pooler if using a managed Postgres service.
-- For self-hosted Postgres on a VPS, set `max_connections` appropriately and use a singleton connection pool module that is reused across requests in the same Node.js process.
-- If deploying to a traditional VPS with a long-lived Node process, a standard `pg` pool with `max: 10` is sufficient.
+**Why it happens:**
+Airtable's UI display names and its API `field.name` values can drift (fields get renamed in the UI without anyone updating downstream assumptions), and it's faster to eyeball the Airtable grid and start coding than to first fetch and print the actual field list via the API.
 
-**Phase:** Infrastructure/deployment phase.
+**How to avoid:**
+- Before writing any new migration logic, run a throwaway script that does `base(tableName).select({ maxRecords: 1 }).firstPage()` and `console.log(Object.keys(record.fields))` for every table/field this migration touches, and diff that against the assumed field names in the script — this is a 5-minute step that would have caught all 6 prior errors.
+- Reuse the exact idempotent pattern already established in `scripts/migrate-airtable.ts` (`onConflictDoUpdate` keyed on `airtable_id`, two-pass primary-then-junction inserts) rather than writing a one-off script with different semantics — this keeps the new script safely re-runnable if it's interrupted or needs a field-name fix mid-run.
+- Since this migration is explicitly for **Backup/Historical tune data** (not the already-migrated core fields), treat every field name as unverified going in, even ones that sound similar to already-migrated fields (e.g. a "Backup Score" field is not guaranteed to have the same shape/type as the primary "Score" attachment field that's already handled).
+- Reuse the `str()`/`normaliseMeter()`/`parsePosition()` style defensive parsing helpers already in the script rather than assuming Airtable always returns the expected type — Airtable fields can be `undefined`, empty string, or unexpected type depending on how sparsely a given historical record was filled in.
+- Given the disk-constraint lesson already learned (`SKIP_IMAGES=1`), check current disk headroom before deciding whether this migration also needs an image-skip escape hatch, especially since `public/tunes/` is already 1.4GB and any additional historical images add to that footprint directly (not to R2, per the corrected understanding above).
 
----
+**Warning signs:**
+- Any `r.get('Field Name')` call in the new script hasn't been checked against an actual `console.log(Object.keys(record.fields))` dump from the live base.
+- The new script inserts without `onConflictDoUpdate`, meaning a second run (e.g. to pick up post-snapshot Airtable edits, which the existing script's docstring explicitly anticipates as a normal re-run scenario) would create duplicates instead of updating.
 
-### Pitfall 14: `loading.tsx` Missing from Route Segments — Returns Softr-Like White Flash
-
-**What goes wrong:** The entire motivation for rebuilding this app is that Softr is slow. If Next.js route segments do not have `loading.tsx` files, navigating between psalm pages shows a white screen while data loads — reproducing the exact behaviour users disliked.
-
-**Prevention:**
-- Every route segment that fetches data must have a `loading.tsx` with skeleton components matching the page layout.
-- This is enforced as a project convention (see CLAUDE.md global rules).
-
-**Phase:** Every phase with a new route.
+**Phase to address:** Real Airtable field migration phase — the field-verification step should be the literal first commit/script, before any insert logic is written.
 
 ---
 
-## Phase-Specific Warnings
+## Technical Debt Patterns
 
-| Phase Topic | Likely Pitfall | Mitigation |
-|-------------|---------------|------------|
-| Initial data migration | Attachment URL expiry (#1), linked record ID resolution (#3), rollup fields (#11), pagination (#10) | Two-pass migration with permanent file storage; schema-first design |
-| ABC encoding | Silent parse errors (#8), copyright (#9) | `parseOnly` validation at save; source documentation policy |
-| Notation rendering | SSR build failure (#2), DOM timing (#12), mobile overflow (#5) | `dynamic({ ssr: false })`, `useRef`, `responsive: 'resize'` |
-| Psalm/tune pages | N+1 queries (#7), missing `loading.tsx` (#14) | `generateStaticParams` for 150 psalms; per-route skeletons |
-| App-wide architecture | Client component sprawl (#6) | `'use client'` at leaf nodes only; bundle analysis |
-| Launch cutover | Precentor workflow disruption (#4) | Delta migration; explicit cutover date; precentor briefing |
-| Deployment | Postgres connection exhaustion (#13) | PgBouncer or managed pooler |
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|-----------------|------------------|
+| In-memory `Map` rate limiter instead of DB-backed | Fast to build, no schema change | Silently resets on every deploy; false sense of protection | Acceptable now (2-3 testers, low abuse risk) — revisit if traffic/abuse grows |
+| Skip robots.txt disallow for `/dev/*` | One less file | Search engines can index/crawl admin tooling once public | Never acceptable for a site about to be public — cheap to add now |
+| Ship changelog broadcast without unsubscribe | Faster to ship | Deliverability/reputation risk shared with transactional feedback email on same domain | Never acceptable, even at small list size — cheap to build now |
+| Compress `public/tunes/` in place without a prior backup | Saves one `tar` command | Irrecoverable loss of hand-curated OCR source scans if something goes wrong | Never acceptable — no version control safety net exists for these files |
+| Leave `/dev/melisma-editor` unauthenticated a bit longer | Nothing needs to change today | Live public write access to tune notation data on production domain | Never acceptable once the site has outside visitors — close before/with this milestone |
+
+## Integration Gotchas
+
+| Integration | Common Mistake | Correct Approach |
+|-------------|-----------------|-------------------|
+| Resend | Sending from unverified apex domain, assuming sandbox-mode success means production readiness | Verify a sending subdomain (SPF+DKIM+DMARC) in Resend dashboard first; test against real Gmail/Outlook inboxes, not just the Resend delivery log |
+| Resend | Storing API key inline in `ecosystem.config.js` or a committed file | `PSALTER_RESEND_API_KEY` in `/home/services/.env.production`, loaded via `env_file` per project's established secrets convention |
+| Airtable (new migration) | Trusting Airtable UI display-name as the API `field.name` | Dump `Object.keys(record.fields)` from a live fetch before writing any `r.get(...)` calls |
+| sharp / libvips | `Promise.all` over all 328 images at once | Sequential or `p-limit`(1-2) processing, `sharp.concurrency(1)`, `sharp.cache(false)` |
+
+## Performance Traps
+
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|-----------------|
+| Concurrent `sharp` batch compression on a 3.7GB VPS | `free -h` available memory collapses; `earlyoom` kill events; other PM2 services (unrelated projects sharing the box) get OOM-killed | Sequential processing, monitor `free -h` during run, process during low-traffic window | Immediately at default `Promise.all` concurrency — this VPS is already at ~400Mi free at idle |
+| `next build` default worker concurrency | Build gets SIGTERM'd mid-build | Already mitigated (`experimental.cpus: 1` in `next.config.ts`) — remember this constraint still applies to any rebuild triggered by the slug migration | Confirmed already broken once before this fix landed |
+| Static generation of 172+ tune pages growing further with slug migration duplicates | Build time/memory grows if old numeric + new slug routes are both statically generated indefinitely | Redirect old routes rather than dual-generating them forever; treat the numeric routes as a transition window, not a permanent second route set | Noticeable once both route sets are generated on every build going forward |
+
+## Security Mistakes
+
+| Mistake | Risk | Prevention |
+|---------|------|------------|
+| `/dev/melisma-editor` and its 8 API routes ship to public beta with no auth check | Any outside beta tester (or search engine, or anyone who finds the URL) can read and overwrite tune notation/melisma data in production | Add `getSessionOr401()` + admin-role check to every route before beta opens |
+| Admin-authored changelog rendered via `dangerouslySetInnerHTML` without sanitization | Stored XSS reachable by every site visitor, including session-cookie theft against Better Auth | Sanitize on write with an allowlist sanitizer; prefer Markdown-without-raw-HTML |
+| Feedback API accepts unlimited submissions | Trivial spam/abuse vector once URL is public, especially once rate limiting is "in name only" due to PM2-restart resets | DB-backed or intentionally-scoped in-memory limiter, documented as a deliberate tradeoff |
+
+## UX Pitfalls
+
+| Pitfall | User Impact | Better Approach |
+|---------|-------------|-------------------|
+| Old `/tunes/<numeric-id>` links 404 after slug migration | Beta testers' bookmarks/shared links break, undermining first-impression trust during the exact week they're being asked to test the site | Redirect via `next.config.ts`, verified against every existing numeric ID before cutover |
+| Changelog subscribe with no unsubscribe | A friend-group beta tester who subscribed out of politeness has no way to opt out, creating awkward social pressure instead of goodwill | One-click unsubscribe link in every broadcast email |
+| Feedback submission with no rate-limit feedback to legitimate users | A tester who resubmits after a typo correction could get silently blocked with no error message explaining why | Return a clear "you've reached the limit, try again in X minutes" response rather than a generic failure |
+
+## "Looks Done But Isn't" Checklist
+
+- [ ] **Resend integration:** Often missing domain verification — verify sending domain shows "Verified" in the Resend dashboard, not just that `resend.emails.send()` returns 200 in a test.
+- [ ] **JPEG compression script:** Often missing a pre-run backup — verify a `tar`/external copy of `public/tunes/` exists and was validated (untarred, file count checked) before the script's first write.
+- [ ] **Admin authoring (changelog):** Often missing server-side (not just client-side) auth enforcement — verify `curl` against the write API route with no session cookie returns 401/403.
+- [ ] **Feedback rate limiting:** Often missing restart-survival consideration — verify the chosen approach (in-memory vs. DB-backed) was a documented decision, and test that a `pm2 restart psalter` does or doesn't reset the counter as intended.
+- [ ] **Tune slug migration:** Often missing the redirect map for 100% of old IDs — verify every one of the 172 existing numeric tune IDs resolves via redirect to its new slug, not just a spot-checked sample.
+- [ ] **Airtable field migration:** Often missing live-schema verification — verify every `r.get('Field Name')` in the new script was checked against an actual field dump, not assumed from memory of the last migration.
+
+## Recovery Strategies
+
+| Pitfall | Recovery Cost | Recovery Steps |
+|---------|---------------|-----------------|
+| JPEG compression corrupts/over-compresses images without a backup | HIGH | If no backup exists, originals may be unrecoverable from this VPS — check R2/Airtable attachments (still active per Backlog Phase 999.1) as a last-resort re-download source before accepting data loss |
+| `/dev/melisma-editor` was exploited while unauthenticated | MEDIUM | Compare current tune/melisma data against the most recent `backups/*.sql` snapshot or a fresh `pg_dump`; Airtable (not yet decommissioned) may also serve as a cross-check source of truth |
+| Slug migration breaks old links post-launch | LOW | Since routes are statically generated and `next.config.ts` redirects are code, this is a fast follow-up deploy — add the missed mapping and rebuild |
+| Rate limiter proves ineffective against real spam | LOW | Swap the in-memory approach for the DB-backed approach described in Pitfall 6 — the `feedback_submissions` table already exists, no schema migration needed beyond a query |
+
+## Pitfall-to-Phase Mapping
+
+| Pitfall | Prevention Phase | Verification |
+|---------|-------------------|----------------|
+| Unauthenticated admin routes (`/dev/melisma-editor` + new changelog authoring) | Changelog/admin-authoring phase | `curl` every admin write route with no session cookie, confirm 401/403 |
+| XSS via unsanitized changelog rich text | Changelog/admin-authoring phase | Attempt to save a `<script>`-containing entry, confirm it's stripped/escaped on both write and render |
+| Resend domain/deliverability | Resend integration phase | Domain shows "Verified" in Resend dashboard; test send lands in real Gmail/Outlook inbox, not spam |
+| Broadcast list compliance (unsubscribe) | Resend integration / changelog phase | Every broadcast email contains a working one-click unsubscribe link |
+| Batch JPEG compression memory/irreversibility | JPEG compression phase | Backup archive exists and was validated before any in-place write; `free -h` monitored during run; spot-checked legibility on approved tunes |
+| In-memory rate limiter reset on restart | Feedback rate-limiting phase | Restart `psalter` via PM2 mid-testing, confirm rate-limit behavior matches the documented intended tradeoff (not an accidental gap) |
+| Tune slug migration breaking old links | Slug migration phase | Every existing numeric tune ID (all 172) redirects correctly; `generateStaticParams` builds without slug collisions |
+| Airtable field-name assumption errors | Airtable field migration phase | Live field dump (`Object.keys(record.fields)`) checked against every `r.get(...)` call before first insert run |
 
 ## Sources
 
-- Airtable API — Rate limits: https://airtable.com/developers/web/api/rate-limits (confirmed 5 req/s)
-- Airtable Support — Attachment URL behaviour: https://support.airtable.com/docs/airtable-attachment-url-behavior (confirmed ~2-hour expiry)
-- Airtable API — Field model, linked records: https://airtable.com/developers/web/api/field-model
-- Airtable API — List records pagination: https://airtable.com/developers/web/api/list-records
-- abcjs FAQ — SSR/Next.js usage: https://github.com/paulrosen/abcjs/blob/main/docs/overview/faq.md (confirmed DOM-only)
-- abcjs render options — `responsive`, `staffwidth`, `expandToWidest`: https://github.com/paulrosen/abcjs/blob/main/docs/visual/render-abc-options.md
-- abcjs ABC notation — Unsupported directives: https://github.com/paulrosen/abcjs/blob/main/docs/overview/abc-notation.md
-- Next.js — Dynamic imports with `ssr: false`: https://github.com/vercel/next.js/blob/canary/docs/01-app/02-guides/lazy-loading.mdx
-- Next.js — `generateStaticParams`: https://github.com/vercel/next.js/blob/canary/docs/01-app/03-api-reference/04-functions/generate-static-params.mdx
-- Next.js — Streaming and Suspense: https://github.com/vercel/next.js/blob/canary/docs/01-app/02-guides/streaming.mdx
-- UK copyright law — musical works: Duration of Copyright and Rights in Performances Regulations 1995 (70 years pma)
+- Direct repository inspection: `src/app/api/feedback/route.ts`, `src/lib/auth.ts`, `src/lib/precent-auth.ts`, `src/app/api/dev/*/route.ts`, `src/app/dev/melisma-editor/*`, `scripts/migrate-airtable.ts`, `scripts/download-tunes.ts`, `next.config.ts`, `package.json` — read 2026-07-29.
+- Direct VPS state: `pm2 list`, `free -h`, `docker volume ls`, `git check-ignore`/`git ls-files public/tunes` — checked 2026-07-29.
+- Project docs: `.planning/PROJECT.md`, project `CLAUDE.md` (stack table, global secrets-hygiene rules, memory constraints section).
+- [Email Deliverability for SaaS: SPF, DKIM, DMARC Setup and Resend Integration](https://dev.to/whoffagents/email-deliverability-for-saas-spf-dkim-dmarc-setup-and-resend-integration-1hpd) — MEDIUM confidence, WebSearch-sourced, cross-checked against multiple Resend-specific setup guides in the same search batch.
+- [How do I set up a custom sending domain in Resend (SPF, DKIM, DMARC) step by step?](https://codeables.dev/article/how-do-i-set-up-a-custom-sending-domain-in-resend-spf-dkim-dmarc-step) — MEDIUM confidence.
+- [Trying to understand sharp memory usage · Issue #349 · lovell/sharp](https://github.com/lovell/sharp/issues/349) — HIGH confidence (official sharp GitHub issue, documents the progressive-JPEG OOM failure mode directly).
+- [Preventing Memory Issues in Node.js Sharp: A Journey](https://www.context.dev/blog/preventing-memory-issues-in-node-js-sharp-a-journey) — MEDIUM confidence.
+- [sharp Performance docs](https://sharp.pixelplumbing.com/performance/) — HIGH confidence (official docs).
+- [next.config.js: redirects | Next.js official docs](https://nextjs.org/docs/app/api-reference/config/next-config-js/redirects) — HIGH confidence (official Next.js docs).
+- [Functions: generateStaticParams | Next.js official docs](https://nextjs.org/docs/app/api-reference/functions/generate-static-params) — HIGH confidence.
+- [301 Redirect inside RSC · vercel/next.js Discussion #54182](https://github.com/vercel/next.js/discussions/54182) — MEDIUM confidence (community discussion, cross-checked against official docs on 307/308 behavior).
+- PM2 in-memory rate-limiting cluster/restart caveats — MEDIUM confidence, synthesized from multiple PM2/rate-limiter community sources in the same WebSearch batch; the fork-mode-specific restart-reset claim was independently verified against this project's actual `pm2 list` output (fork mode, 1 instance) rather than taken purely from search results.
+
+---
+*Pitfalls research for: CPRC Psalter v2.0 Public Beta milestone*
+*Researched: 2026-07-29*

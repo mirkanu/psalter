@@ -1,555 +1,367 @@
-# Architecture: CPRC Scottish Psalter Web App
+# Architecture Research — v2.0 Public Beta Integration
 
-**Project:** psalter.cprc.co.uk rebuild
-**Researched:** 2026-05-07
-**Overall confidence:** HIGH (Next.js/PostgreSQL patterns), MEDIUM (ABC sourcing), HIGH (abcjs integration)
+**Domain:** Feature integration into an existing production Next.js App Router app (CPRC Psalter)
+**Researched:** 2026-07-29
+**Confidence:** HIGH (all findings grounded in direct inspection of the current `src/` tree — no external ecosystem research needed for this milestone)
 
----
+## Scope Note
 
-## 1. PostgreSQL Schema Design
-
-### Design Philosophy
-
-The Airtable base maps cleanly to a normalized relational schema. The key insight is that Airtable's link fields become either foreign keys (for one-to-many) or junction tables (for many-to-many). Do NOT flatten — the richness of the theological cross-reference data is the product's depth.
-
-### Core Tables
-
-```sql
--- The canonical 150 psalms
-psalms (
-  id            integer PRIMARY KEY,  -- psalm number 1–150
-  title         text NOT NULL,
-  book          integer NOT NULL,     -- 1–5 (Books of Psalms)
-  kjv_text      text,                 -- full KJV prose text
-  haddington_intro text,              -- intro note from Haddington commentary
-  author        text                  -- traditional attribution
-)
-
--- Metrical versifications (Scottish Psalter 1650)
--- One psalm can have multiple versifications (e.g., Ps 23 has two)
-psalm_versions (
-  id            serial PRIMARY KEY,
-  psalm_id      integer NOT NULL REFERENCES psalms(id),
-  version_label text,                 -- e.g. "1650" or "Alternative"
-  meter         text NOT NULL,        -- e.g. "CM", "SM", "LM"
-  full_text     text                  -- full metrical text for display
-)
-
--- Individual verses for both KJV and metrical text
-verses (
-  id            serial PRIMARY KEY,
-  psalm_id      integer NOT NULL REFERENCES psalms(id),
-  verse_number  integer NOT NULL,
-  kjv_text      text NOT NULL,
-  metrical_text text,
-  UNIQUE(psalm_id, verse_number)
-)
-
--- Tunes (~100 traditional tunes)
-tunes (
-  id            serial PRIMARY KEY,
-  name          text NOT NULL UNIQUE,
-  meter         text NOT NULL,        -- must match psalm_versions.meter for assignment
-  abc_notation  text,                 -- ABC string, NULL until encoded/sourced
-  score_jpg_url text,                 -- existing JPG (S3/CDN) during transition
-  youtube_url   text,
-  soundcloud_url text,
-  source_notes  text                  -- provenance of ABC (manual/dataset/OCR)
-)
-
--- Junction: which tunes can be used with which psalm versions
--- (replaces Airtable "Tune assignments" link field)
-psalm_version_tunes (
-  psalm_version_id integer NOT NULL REFERENCES psalm_versions(id),
-  tune_id          integer NOT NULL REFERENCES tunes(id),
-  is_primary       boolean DEFAULT false,
-  PRIMARY KEY (psalm_version_id, tune_id)
-)
-
--- Service events
-events (
-  id            serial PRIMARY KEY,
-  event_date    date NOT NULL,
-  session       text NOT NULL CHECK (session IN ('AM', 'PM', 'Evening', 'Special')),
-  precentor     text,
-  notes         text,
-  UNIQUE(event_date, session)
-)
-
--- Service set list: psalms sung at a service
-service_items (
-  id            serial PRIMARY KEY,
-  event_id      integer NOT NULL REFERENCES events(id) ON DELETE CASCADE,
-  position      integer NOT NULL,     -- ordering within service (1, 2, 3...)
-  psalm_version_id integer REFERENCES psalm_versions(id),
-  tune_id       integer REFERENCES tunes(id),
-  verses_sung   text,                 -- e.g. "1-4" or "all"
-  UNIQUE(event_id, position)
-)
-```
-
-### Reference / Cross-reference Tables
-
-```sql
--- 365-day daily reading plan
-daily_readings (
-  day_of_year   integer PRIMARY KEY CHECK (day_of_year BETWEEN 1 AND 365),
-  psalm_id      integer NOT NULL REFERENCES psalms(id),
-  reading_notes text
-)
-
--- Topical index (from Topics - Psalms table)
-topics (
-  id            serial PRIMARY KEY,
-  name          text NOT NULL UNIQUE,
-  category      text                  -- grouping if present
-)
-
-psalm_topics (
-  psalm_id      integer NOT NULL REFERENCES psalms(id),
-  topic_id      integer NOT NULL REFERENCES topics(id),
-  PRIMARY KEY (psalm_id, topic_id)
-)
-
--- Nave's Topical Bible cross-references (verse-level)
-naves_topics (
-  id            serial PRIMARY KEY,
-  name          text NOT NULL
-)
-
-verse_naves_topics (
-  verse_id      integer NOT NULL REFERENCES verses(id),
-  naves_topic_id integer NOT NULL REFERENCES naves_topics(id),
-  PRIMARY KEY (verse_id, naves_topic_id)
-)
-
--- Messianic classification
-messianic_psalms (
-  psalm_id      integer PRIMARY KEY REFERENCES psalms(id),
-  messianic_type text,               -- e.g. "Direct Prophecy", "Typological"
-  references    text                 -- NT cross-references
-)
-
--- Section headings within a psalm
-section_headings (
-  id            serial PRIMARY KEY,
-  psalm_id      integer NOT NULL REFERENCES psalms(id),
-  verse_start   integer NOT NULL,
-  heading_text  text NOT NULL
-)
-
--- Doctrinal cross-references
-doctrines (
-  id            serial PRIMARY KEY,
-  name          text NOT NULL UNIQUE
-)
-
-psalm_doctrines (
-  psalm_id      integer NOT NULL REFERENCES psalms(id),
-  doctrine_id   integer NOT NULL REFERENCES doctrines(id),
-  PRIMARY KEY (psalm_id, doctrine_id)
-)
-
--- Tune mood tags
-moods (
-  id            serial PRIMARY KEY,
-  name          text NOT NULL UNIQUE  -- e.g. "Majestic", "Penitential"
-)
-
-tune_moods (
-  tune_id       integer NOT NULL REFERENCES tunes(id),
-  mood_id       integer NOT NULL REFERENCES moods(id),
-  PRIMARY KEY (tune_id, mood_id)
-)
-
--- Auth: precentor accounts (minimal)
-users (
-  id            serial PRIMARY KEY,
-  email         text NOT NULL UNIQUE,
-  password_hash text NOT NULL,
-  role          text NOT NULL DEFAULT 'precentor' CHECK (role IN ('precentor', 'admin')),
-  created_at    timestamptz DEFAULT now()
-)
-```
-
-### Key Schema Decisions
-
-**Psalm number as PK:** Use the actual psalm number (1–150) as the primary key, not a serial ID. It is stable, meaningful, and simplifies URLs (`/psalm/23`).
-
-**Tune.abc_notation nullable:** Start NULL. The JPG fallback renders until ABC is available. This decouples the migration of data from the sourcing of ABC strings.
-
-**psalm_version_tunes junction:** Many Scottish Psalter psalms have exactly one metrical version with one or two common tunes. Some have alternatives. The junction table models this without over-engineering.
-
-**Verses denormalized by psalm_id:** Direct FK to psalm skips the join through psalm_versions for the common case of displaying KJV verses alongside metrical text.
+This supersedes the original 2026-05-07 `ARCHITECTURE.md` written before v1.0/v1.1 shipped (that doc's proposed schema is now stale — the real `src/db/schema.ts` has diverged substantially). This is a **subsequent-milestone integration** doc for v2.0 Public Beta, not greenfield architecture. Every recommendation below anchors to a specific file already in the repo. Line numbers are current as of this research date and will drift as code changes — treat them as pointers, not permanent citations.
 
 ---
 
-## 2. Next.js App Router Architecture
-
-### Server vs Client Component Boundary
-
-The core rule: data lives on the server, interactivity lives on the client.
+## System Overview
 
 ```
-Server Components (no 'use client'):
-  - All page-level components (app/psalm/[id]/page.tsx, etc.)
-  - Data fetching via direct Drizzle queries
-  - Static content: KJV text, metrical lyrics, theological metadata
-  - Tune metadata (name, meter, media links)
-
-Client Components ('use client'):
-  - AbcRenderer — abcjs requires DOM, cannot run server-side
-  - ServiceBuilder — precentor drag-and-drop set list (interactive)
-  - SearchBar — real-time search input with debounce
-  - TabBar — psalm detail page tab switching (Overview/Study/Messianic)
-  - AudioPlayer — SoundCloud/YouTube embed controls
+┌───────────────────────────────────────────────────────────────────────────┐
+│  Public (unauthenticated)                                                 │
+│  ┌───────────┐  ┌────────────┐  ┌──────────────┐  ┌─────────────────┐    │
+│  │ /psalms   │  │ /tunes     │  │ /changelog    │  │ SiteFooter       │    │
+│  │ PsalmTabs │  │ TuneTable  │  │ (NEW)         │  │ feedback form    │    │
+│  └─────┬─────┘  └─────┬──────┘  └──────┬────────┘  └────────┬─────────┘    │
+│        │  NotationRendererClient (Staff/Solfège + meter-mismatch banner)  │
+├────────┼──────────────┼────────────────┼───────────────────┼──────────────┤
+│        │              │                │                   │             │
+│  ┌─────┴──────────────┴────────────────┴───────────────────┴─────────┐   │
+│  │                    API Routes (src/app/api/**)                     │   │
+│  │  /api/feedback (MODIFIED — + Resend)                                │   │
+│  │  /api/changelog/subscribe (NEW)                                     │   │
+│  │  /api/admin/changelog (NEW, session-gated)                          │   │
+│  │  /api/precent/** (existing, unchanged)                              │   │
+│  └─────┬──────────────────────────────────────────────────┬───────────┘   │
+├────────┼──────────────────────────────────────────────────┼───────────────┤
+│  Auth (session-gated)                                       │             │
+│  ┌─────┴─────┐  ┌────────────────┐                          │             │
+│  │ /precent  │  │ /admin-only     │  ← changelog admin surface joins here  │
+│  │ SetItemRow│  │ /feedback (RO)  │                                        │
+│  └───────────┘  └────────────────┘                                        │
+├─────────────────────────────────────────────────────────────────────────┤
+│  src/lib/ (pure utils)             src/db/queries/ (Drizzle reads)        │
+│  meter-mismatch.ts (NEW)           tunes.ts (MODIFIED — sort, columns)    │
+│  resend.ts (NEW)                   changelog.ts (NEW)                    │
+│  rate-limit.ts (NEW)               precent-auth.ts / admin-auth.ts (NEW) │
+│  tune-jpg-urls.ts (slug fn reused) │                                     │
+├─────────────────────────────────────────────────────────────────────────┤
+│  PostgreSQL (Drizzle schema.ts)          External: Resend, Airtable(RO) │
+│  + changelog_posts, changelog_subscribers, tunes.* backup/historical    │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Data Fetching Strategy
+### Component Responsibilities
 
-**Direct Drizzle queries in Server Components** — no API layer for read operations. The database is co-located; HTTP round trips are waste.
+| Component | Responsibility | New / Modified |
+|-----------|-----------------|-----------------|
+| `src/lib/resend.ts` | Single Resend client instance + `sendFeedbackNotification()`, `sendChangelogBroadcast()` | NEW |
+| `src/lib/rate-limit.ts` | In-memory IP+route rate limiter (single PM2 process, no Redis in stack) | NEW |
+| `src/db/schema.ts` — `changelogPosts`, `changelogSubscribers` | Changelog content + email list persistence | NEW tables |
+| `src/db/queries/changelog.ts` | Read/write query module for changelog domain | NEW |
+| `src/app/changelog/page.tsx` + client editor | Public changelog feed; inline admin authoring when `session.user.role === 'admin'` | NEW |
+| `src/app/api/admin/changelog/**` | Create/update/delete changelog posts, session+role gated | NEW |
+| `src/app/api/changelog/subscribe/route.ts` | Public subscribe endpoint, writes `changelog_subscribers` | NEW |
+| `src/lib/meter-mismatch.ts` | Single `isMeterMismatch(psalmMeter, tuneMeter)` predicate | NEW (extracted) |
+| `src/components/precent/SetItemRow.tsx` | Consumes extracted predicate instead of inline check | MODIFIED |
+| `src/components/notation/NotationRenderer.tsx` | Renders warning banner using same predicate + existing `stanzaMeter`/`tuneMeter` props | MODIFIED |
+| `scripts/migrate-tune-backup-historical.ts` | One-off Airtable→Postgres backfill for the 4 real fields | NEW (mirrors `migrate-double-length.ts`) |
+| `src/db/queries/tunes.ts` | Extend `fetchTunesByMeter`/`fetchAllTunes` with backup/historical columns; multi-tier sort | MODIFIED |
+| `src/components/TuneTable.tsx` | Extend `psalmId`-aware sort block (lines ~183–190) to 3-tier Backup→Historical→meter ordering | MODIFIED |
+| `src/lib/tune-jpg-urls.ts` — `tuneNameToSlug()` | Already-existing slug function, reused (not reinvented) for routing | REUSED, no change needed |
+| `src/app/tunes/[id]/` → `src/app/tunes/[slug]/` | Slug-based tune routing with numeric-id redirect | MODIFIED (directory rename + logic) |
 
+---
+
+## Recommended Project Structure (deltas only)
+
+```
+src/
+├── app/
+│   ├── changelog/
+│   │   ├── page.tsx                 # NEW — public feed + inline admin authoring
+│   │   └── loading.tsx              # NEW — skeleton, matches /tunes, /psalms convention
+│   ├── api/
+│   │   ├── changelog/
+│   │   │   └── subscribe/route.ts   # NEW — public POST, rate-limited
+│   │   ├── admin/
+│   │   │   └── changelog/
+│   │   │       ├── route.ts         # NEW — POST create (admin-gated)
+│   │   │       └── [id]/route.ts    # NEW — PATCH/DELETE (admin-gated)
+│   │   └── feedback/route.ts        # MODIFIED — + Resend send + rate-limit
+│   └── tunes/
+│       └── [slug]/                  # RENAMED from [id]/ — page.tsx, loading.tsx
+├── components/
+│   ├── ChangelogEditor.tsx          # NEW — client component, inline edit affordances
+│   ├── ChangelogSubscribeForm.tsx   # NEW
+│   ├── MeterMismatchBanner.tsx      # NEW — public-facing banner variant (reuses lib predicate)
+│   ├── TuneTable.tsx                # MODIFIED — sort tiers, slug hrefs, exportCsv columns
+│   └── precent/SetItemRow.tsx       # MODIFIED — imports lib/meter-mismatch
+├── db/
+│   ├── schema.ts                    # MODIFIED — 2 new tables + tunes/serviceItems columns
+│   └── queries/
+│       ├── changelog.ts             # NEW
+│       └── tunes.ts                 # MODIFIED — new columns, new sort logic
+├── lib/
+│   ├── resend.ts                    # NEW
+│   ├── rate-limit.ts                # NEW
+│   ├── meter-mismatch.ts            # NEW
+│   ├── admin-auth.ts                # NEW — extracted from ad hoc checks in admin-only/feedback/page.tsx
+│   └── tune-jpg-urls.ts             # UNCHANGED — tuneNameToSlug() reused by tune slug routing
+└── scripts/
+    └── migrate-tune-backup-historical.ts   # NEW — one-off, mirrors migrate-double-length.ts
+```
+
+### Structure Rationale
+
+- **`src/lib/` stays flat** — the existing convention (35+ files, no subfolders) is deliberate; don't introduce `src/lib/email/` as a nested dir. Follow suit: `resend.ts`, `rate-limit.ts`, `meter-mismatch.ts`, `admin-auth.ts` sit alongside `auth.ts`, `precent-auth.ts`.
+- **`src/lib/admin-auth.ts` is a new extraction, not a new pattern.** Today, admin-gating is inlined ad hoc in `src/app/admin-only/feedback/page.tsx` (`if (!session || session.user.role !== 'admin') redirect('/login')`). Once the changelog admin surface needs the *same* check (both as a page guard and inside 2+ API routes), inline duplication becomes a real DRY violation — extract now, matching the existing `getSessionOr401`/`canAccessSet` shape already established in `src/lib/precent-auth.ts` (which is scoped to the precenting-sets domain and shouldn't be stretched to cover changelog).
+- **`src/app/tunes/[id]/` → `src/app/tunes/[slug]/` is a rename, not a new route family.** Next.js dynamic segments accept any string; the existing `generateStaticParams`/`generateMetadata`/page shape is preserved, only the param source and lookup change.
+
+---
+
+## Architectural Patterns
+
+### Pattern 1: Extract-then-consume for the meter-mismatch check
+
+**What:** Pull the 4-line inline boolean out of `SetItemRow.tsx` into a pure, unit-testable function; both existing precentor UI and new public notation UI import it.
+
+**Current inline logic** (`src/components/precent/SetItemRow.tsx:66-69`):
 ```typescript
-// app/psalm/[id]/page.tsx — Server Component
-import { db } from '@/lib/db'
-import { psalms, verses, psalmVersions } from '@/lib/schema'
+const isMismatch =
+  psalmMeter != null &&
+  item.tune?.meter != null &&
+  psalmMeter.trim().toUpperCase() !== item.tune.meter.trim().toUpperCase()
+```
 
-export default async function PsalmPage({ params }) {
-  const psalm = await db.query.psalms.findFirst({
-    where: eq(psalms.id, parseInt(params.id)),
-    with: {
-      verses: true,
-      versions: { with: { tunes: true } },
-      topics: true,
-      messianicData: true,
-    }
+**Recommended `src/lib/meter-mismatch.ts`:**
+```typescript
+export function isMeterMismatch(
+  psalmMeter: string | null | undefined,
+  tuneMeter: string | null | undefined,
+): boolean {
+  if (!psalmMeter || !tuneMeter) return false
+  return psalmMeter.trim().toUpperCase() !== tuneMeter.trim().toUpperCase()
+}
+```
+
+**Why this is a clean extraction, not a redesign:** `src/components/notation/NotationRenderer.tsx` **already receives both `stanzaMeter` and `tuneMeter` as props** (`NotationRendererProps`, lines 47-63) — the data is already threaded through to exactly the two public consumer surfaces that need the banner (`src/components/PsalmTabs.tsx` and `src/components/singing/SingingView.tsx`, both of which already import `NotationRendererClient`). No new prop plumbing is required — only a banner render using the same predicate.
+
+**Trade-off:** The existing check silently returns `false` when either meter is `null` (SetItemRow's `!= null` guards) — preserve that exact semantic in the extracted function so behavior doesn't change for the precentor portal.
+
+### Pattern 2: One-off Airtable backfill script (established convention)
+
+**What:** `scripts/migrate-double-length.ts` is the canonical template for a single-field Airtable→Postgres backfill: fetch all records from one Airtable table, `db.update(...).where(eq(tunes.airtableId, airtableId))` per record, log a summary count at the end. `scripts/migrate-tune-backup-historical.ts` should follow this exact shape for the 4 real fields (2 field pulls from `Tunes`, plus `Psalm & Tune CPRC` for the lookup pair).
+
+**When to use:** Any remaining Airtable-sourced field that hasn't made it into Postgres yet (there will likely be more after this milestone — Backlog Phase 999.1 is explicit about this).
+
+**Verification required before writing schema:** The milestone brief describes "CPRC 2024 backup" / "CPRC historical" as **lookups** on the `Psalm & Tune CPRC` (→ `serviceItems`) join table. In Airtable, a "lookup" field type is a read-only mirror of a field on a *linked* record — it is not new data, it's a display convenience. Before adding columns to `serviceItems`, inspect the live Airtable field config (`r.get('CPRC 2024 backup')` in a throwaway script, check what table it's actually linked to) to confirm whether this lookup mirrors a `Tunes`-level field (in which case no new `serviceItems` column is needed — join at query time instead) or introduces genuinely per-service-item data. Don't assume the schema from the field name alone; `migrate-double-length.ts`'s `console.log` diagnostic pattern is the right way to confirm before committing to a column design.
+
+### Pattern 3: Admin-role-gated inline content editing (new pattern, no strong precedent)
+
+**What:** The closest existing precedent for "edit content on the same page you view it" is `/dev/melisma-editor` (`MelismaEditorClient.tsx`), but that surface is gated by URL obscurity (`/dev/*`) rather than Better Auth session, and it's a heavy dedicated editor UI, not inline-on-a-public-page editing.
+
+**Recommended shape for `/changelog`:** Server component `page.tsx` fetches session server-side (`auth.api.getSession`) alongside the published posts, passes `isAdmin: boolean` down to a client component (`ChangelogEditor.tsx` or inline in a `ChangelogFeed.tsx`). When `isAdmin`, render editable affordances (edit/delete buttons per post, an "add post" composer) that call the new `/api/admin/changelog/**` routes. When not admin, render the same feed read-only. This avoids a route split (`/changelog` vs `/admin-only/changelog`) since the milestone explicitly asks for *inline* authoring on the public page, and keeps SEO/static-friendliness for the 99% of visitors who aren't admin.
+
+**Trade-off:** Because `/changelog` needs to know `isAdmin` at request time, it cannot be a purely static-rendered page (breaks the "Static rendering" hard rule in CLAUDE.md for *fully public* pages, but that rule is scoped to psalm/tune pages specifically — `/changelog` should follow the same `force-dynamic` pattern already used by `/admin-only/feedback/page.tsx` and `/api/feedback/route.ts`).
+
+### Pattern 4: Pure-derivation slugs, not stored slug columns (established convention)
+
+**What:** `src/lib/psalm-slugs.ts` derives psalm slugs from data at request time (`deriveVersionSlug`) rather than storing a `slug` column. `src/lib/naves-slugs.ts` does the same for Nave's topics, with a `Map<id, slug>` + `-<id>` disambiguation suffix for collisions. `src/lib/tune-jpg-urls.ts` **already has `tuneNameToSlug()`** and it's already load-bearing — it's how the existing JPG asset filenames on disk were derived (`{slug}-staff-0.jpg`).
+
+**For tune slug routing, reuse `tuneNameToSlug()` directly rather than inventing a second slug function or a stored column.** This guarantees the URL slug and the JPG filename slug never drift apart — a correctness win, not just a convenience.
+
+**Recommended `src/app/tunes/[slug]/page.tsx` shape:**
+```typescript
+export default async function TunePage({ params }: PageProps) {
+  const { slug } = await params
+  if (/^\d+$/.test(slug)) {
+    // Legacy numeric link — resolve id, then redirect to canonical name slug
+    const tune = await fetchTuneDetail(Number(slug))
+    if (!tune) notFound()
+    redirect(`/tunes/${tuneNameToSlug(tune.name)}`)  // uses next/navigation redirect(), already imported elsewhere in the codebase (e.g. admin-only/feedback/page.tsx)
+  }
+  const tune = await fetchTuneBySlug(slug)  // NEW query: matches tuneNameToSlug(name) === slug
+  if (!tune) notFound()
+  // ...unchanged rendering
+}
+```
+
+**`generateStaticParams` becomes slug-based:** replace `fetchTuneIds()` with a slug-producing equivalent (e.g. `fetchAllTunes().then(rows => rows.map(t => ({ slug: tuneNameToSlug(t.name) })))`), guarding against the theoretical (but with 172 unique tune names, low-probability) case of two names collapsing to the same slug — apply the same `-<id>` disambiguation suffix pattern from `naves-slugs.ts` if a collision is detected, rather than assuming uniqueness.
+
+**Every call site building `/tunes/${tune.id}` must be updated to use the slug instead** — confirmed exhaustive list from the current tree:
+- `src/components/GlobalSearch.tsx:73`
+- `src/components/PsalmTabs.tsx:314` and `:430`
+- `src/components/TuneGrid.tsx:171`
+- `src/components/TuneTable.tsx:114` (Enter-key navigation) and `:513` (row link)
+
+`next.config.js` static redirects are not viable here — the redirect logic needs a DB lookup to map numeric id → canonical name slug, which static `redirects()` config can't do. Keep it inline in the page component as shown above.
+
+### Pattern 5: Transactional vs. broadcast email — two different sending shapes through one client
+
+**What:** Feedback-notify is single-recipient, fire-and-forget, triggered synchronously inside an existing POST handler. Changelog-subscriber broadcast is one-to-many, triggered from an admin action (publish/edit a post), and needs the subscriber list from `changelog_subscribers`.
+
+**Recommended `src/lib/resend.ts` shape:**
+```typescript
+import { Resend } from 'resend'
+
+const resend = new Resend(process.env.PSALTER_RESEND_API_KEY)
+
+export async function sendFeedbackNotification(input: { message: string; name: string | null; email: string | null; pageUrl: string | null }) {
+  await resend.emails.send({
+    from: 'CPRC Psalter <noreply@...>',        // verified sending domain required
+    to: process.env.PSALTER_ADMIN_EMAIL!,       // already exists in .env — reuse, don't hardcode
+    subject: 'New feedback submission',
+    html: /* ... */,
   })
-  // Pass to Client Components as props
-  return <PsalmDetail psalm={psalm} />
+}
+
+export async function sendChangelogBroadcast(post: { title: string; bodyHtml: string }, subscriberEmails: string[]) {
+  // Resend batch send (or looped single sends under Resend's rate limits — check
+  // current Resend API for batch endpoint support before implementing)
 }
 ```
 
-**Caching strategy by data type:**
+**Environment variable naming:** per the global VPS convention (`PROJECT_` prefix for project-scoped secrets), this should be `PSALTER_RESEND_API_KEY` — a **new key**, added to `/home/services/.env.production` and referenced in `.env`/`.env.example`, following the Stack Registry rule (check `server/gsd/provisioning/stackRegistry.js` in the dashboard repo before wiring — Resend is a known registry service per the naming pattern already listed there, `{PROJECT}_RESEND_API_KEY`).
 
-| Data | Cache approach | Rationale |
-|------|---------------|-----------|
-| Psalms, verses, KJV text | `unstable_cache` with long TTL (24h) | Never changes |
-| Tunes, ABC notation | `unstable_cache` with tag `tunes` | Changes during ABC population phase |
-| Theological metadata (topics, doctrines, messianic) | `unstable_cache` with 24h TTL | Rarely changes |
-| Service events | `cache: 'no-store'` or short TTL (60s) | Precentors update before/during service |
-| Daily reading plan | `unstable_cache` with 365-day TTL | Static dataset |
+**Failure isolation:** the feedback route currently does `db.insert(...)` then returns `{ ok: true }`. Wrap the new `sendFeedbackNotification` call so a Resend failure (e.g. API outage, quota) **does not** fail the user-facing submission — log and swallow, matching the existing `console.error` pattern in `route.ts:39` for DB failures, but don't let email delivery block the DB write path that already works.
 
-Use `revalidateTag('tunes')` in a server action when a tune's ABC notation is added during the population workflow.
+### Pattern 6: Simple in-process rate limiting (no new infra)
 
-**Route Handler (API) usage — only for mutations:**
-- `POST /api/events` — create service event
-- `POST /api/events/[id]/items` — add psalm+tune to service
-- `PATCH /api/tunes/[id]/abc` — add ABC notation (admin only)
+**What:** The stack has no Redis/KV store and the app runs as a single PM2 process on the VPS (3.7GB RAM budget, memory-constrained per global CLAUDE.md). A dependency like `@upstash/ratelimit` would be overkill and adds an external service dependency for a personal-use, low-traffic (2-3 beta testers) app.
 
-### Route Structure
+**Recommended:** an in-memory `Map<ip, timestamps[]>` sliding-window limiter in `src/lib/rate-limit.ts`, applied inside `/api/feedback` and `/api/changelog/subscribe`. This resets on every deploy/restart, which is an acceptable trade-off at this traffic scale — flag this explicitly as a known limitation rather than hiding it, since it's a real one if this ever needs to survive a bot attack.
 
-```
-app/
-  (public)/
-    page.tsx                    — home / today's daily reading
-    psalm/
-      page.tsx                  — psalm list (all 150)
-      [id]/
-        page.tsx                — psalm detail (Overview/Study/Messianic tabs)
-        loading.tsx             — skeleton
-    tune/
-      page.tsx                  — tune index
-      [id]/
-        page.tsx                — tune detail with notation
-        loading.tsx             — skeleton
-    plan/
-      page.tsx                  — 365-day reading plan
-    search/
-      page.tsx                  — search results
-  (precentor)/
-    login/
-      page.tsx
-    dashboard/
-      page.tsx                  — upcoming services
-      loading.tsx
-    events/
-      new/page.tsx
-      [id]/
-        page.tsx                — service detail / set builder
-        loading.tsx
-  api/
-    events/route.ts
-    events/[id]/items/route.ts
-    tunes/[id]/abc/route.ts
-```
-
-Route groups `(public)` and `(precentor)` share no layout conflict and allow separate middleware auth.
-
-### Authentication
-
-Use `next-auth` v5 (Auth.js) with credentials provider for the single precentor role. Session stored as a JWT cookie. Middleware at `middleware.ts` protects the `(precentor)` route group.
-
-```typescript
-// middleware.ts
-export const config = {
-  matcher: ['/dashboard/:path*', '/events/:path*']
-}
-```
-
-This keeps the auth check at the edge, before any Server Component renders.
+**Anti-pattern to avoid:** don't reach for a new Postgres table (`rate_limit_hits`) for this — it adds write load and migration surface for a problem that in-memory state solves adequately at this scale. Reconsider only if the app moves to multi-instance/serverless deployment (not currently planned per CLAUDE.md's single-Docker-container-on-VPS deployment model).
 
 ---
 
-## 3. ABC Notation Sourcing
+## Data Flow
 
-### The Problem
-
-~100 traditional Scottish Psalter tunes need ABC notation strings. No existing ABC files exist in the project. Current assets are JPG photos of printed scores.
-
-### Research Findings on Existing ABC Datasets
-
-**Confidence on dataset existence: MEDIUM** — WebSearch was unavailable; findings draw on training-data knowledge of music notation repositories.
-
-#### Option A: Existing ABC Datasets (HIGH priority, investigate first)
-
-The Scottish Psalter tunes are a well-defined set of ~100 traditional psalm tunes. Several repositories are known to contain them:
-
-1. **The Session (thesession.org)** — Largest community ABC database. Primarily Irish/Scottish folk tunes. Scottish psalm tunes (OLD HUNDREDTH, DUNDEE, KILMARNOCK, FRENCH, ST. COLUMBA, etc.) are traditional melodies that overlap with the folk tradition. Many are likely present. The Session's data is CC-BY (attribution required for reuse). Start here.
-
-2. **abcnotation.com tune search** — Community archive. Search by tune name. Traditional Scottish psalm tunes are public domain and commonly uploaded.
-
-3. **Musescore / IMSLP** — Not ABC format natively, but MusicXML export from these sources can be converted to ABC using `music21` (Python) or `abc2xml`. IMSLP hosts 1650 Scottish Psalter editions in the public domain.
-
-4. **Hymnal ABC collections** — Several folk/sacred music enthusiasts have published ABC hymnal collections on GitHub and folk music sites. Search GitHub for `"scottish psalter" ABC` or `"old hundredth" ABC notation`.
-
-5. **NotaMusica / Chant databases** — Less likely to have Reformed psalm tunes but worth checking.
-
-**Recommended first action:** Query The Session API for each of the ~100 tune names. The Session has a REST API: `https://thesession.org/tunes/search?q={name}&format=json`. This can be scripted. Match returned tunes against the psalter meter to verify correctness.
-
-#### Option B: Music OCR on JPG Images (LOW priority, last resort)
-
-Tools: **Audiveris** (Java, open source) and **PhotoScore** (commercial) are the leading OMR (Optical Music Recognition) tools. Both accept image input and output MusicXML, which converts to ABC.
-
-**Practical assessment:**
-- JPG photos of printed sheets have variable quality (lighting, angle, resolution)
-- OMR accuracy on photos vs. clean scans: typically 60–80% note-correct on good input
-- Each output requires manual correction — essentially manual encoding with a head start
-- Audiveris is open source and could be run locally; PhotoScore is commercial (~$200)
-- **Verdict:** Use only if Option A yields fewer than ~50 tunes. The correction time per tune likely exceeds clean manual encoding.
-
-#### Option C: Manual ABC Encoding (MEDIUM priority, fill gaps)
-
-For any tunes not found in datasets:
-- Traditional psalm tunes are single-line melodies, typically 8–16 measures
-- An ABC-literate musician can encode one tune in 15–30 minutes from a clean printed score or from memory
-- The existing JPG score images serve as the reference
-- A single skilled contributor could encode all remaining tunes in a focused weekend session
-- Tools: ABC editors include EasyABC (GUI), abcjs online editor (browser), and standard text editors with preview
-
-**Verdict: Option A + C is the practical path.** Script a lookup against The Session for all 100 tune names. Expect ~50–70% hit rate. Hand-encode the remainder from the JPG references. Skip OMR — the correction overhead exceeds direct encoding.
-
-### ABC Format for Hymnal Use
-
-Scottish Psalter tunes need the `w:` field for lyrics. The ABC format supports syllable-aligned lyrics:
-
-```abc
-X:1
-T: Old Hundredth
-C: Louis Bourgeois (1551)
-M: 4/4
-L: 1/4
-K: G
-G G A B | c B A G | ... |
-w: All peo-ple that on earth do dwell,
-w: Sing to the Lord with cheer-ful voice;
+### Feedback-notify flow (modified)
+```
+SiteFooter form (client)
+    ↓ POST /api/feedback
+route.ts: validate → rate-limit check (NEW) → db.insert(feedbackSubmissions)
+    ↓ (fire-and-forget, errors swallowed)
+resend.ts: sendFeedbackNotification() → Resend API → PSALTER_ADMIN_EMAIL inbox
 ```
 
-**Recommendation:** Store ABC notation WITHOUT embedded lyrics in the `tunes.abc_notation` column. The metrical lyrics live in `psalm_versions` and `verses`. At render time, the `AbcRenderer` client component dynamically injects the appropriate verse lyrics into the ABC string via string interpolation before calling `ABCJS.renderAbc`. This keeps tune data and lyric data properly separated in the schema while enabling the hymnal layout at render time.
-
----
-
-## 4. Score Data Storage and Serving
-
-### ABC Strings in PostgreSQL
-
-Store ABC strings directly in `tunes.abc_notation` as `text`. Rationale:
-- ABC strings for single-voice psalm tunes are tiny: typically 200–600 bytes
-- No file system management, no CDN configuration, no cache invalidation across storage layers
-- Fetched with the tune row in a single query
-- Easily editable via admin interface or direct SQL during the sourcing phase
-
-Do NOT store in files or S3. The size does not justify the complexity.
-
-### JPG Score Images During Transition
-
-The existing JPGs are Airtable attachments. Migration path:
-
-1. During data migration, download all Airtable attachment URLs and upload to **Cloudflare R2** (zero egress cost) or **Vercel Blob** (simplest for a Next.js project)
-2. Store the resulting CDN URL in `tunes.score_jpg_url`
-3. The tune page renders: if `abc_notation` is present → render with abcjs; else → render `<img src={score_jpg_url} />`
-4. As ABC strings are added, the JPG gracefully disappears from the UI
-5. Once all tunes have ABC, remove the `score_jpg_url` column (or keep it as archival reference)
-
-**Recommended storage: Vercel Blob** — one-line upload during migration script, native Next.js integration, no egress fees for small assets.
-
----
-
-## 5. Component Boundaries
-
-### Component Hierarchy
-
+### Changelog broadcast flow (new)
 ```
-Page (Server Component)
-  └── queries DB with Drizzle
-  └── passes serializable props to:
-      ├── Static sections (Server Components, no boundary crossing)
-      │     PsalmHeader, VerseList, TopicList, MessianicPanel
-      └── Interactive sections (Client Components, 'use client')
-            ├── AbcRenderer         — owns abcjs lifecycle
-            ├── TabBar              — tab state
-            ├── SearchBar           — search input + debounce
-            └── ServiceBuilder      — drag-and-drop set list
+Admin edits/publishes post on /changelog (ChangelogEditor, session.user.role === 'admin')
+    ↓ POST/PATCH /api/admin/changelog(/[id])
+route.ts: getAdminSessionOr403 (NEW, admin-auth.ts) → db.upsert(changelogPosts)
+    ↓ on publish transition specifically (not every edit — avoid re-spamming subscribers on typo fixes)
+resend.ts: sendChangelogBroadcast() → db.select(changelogSubscribers) → Resend batch send
 ```
 
-### AbcRenderer Component (Critical Detail)
-
-abcjs is browser-only. It calls `document.getElementById` internally and cannot run in a Node.js server context. The Context7 docs confirm the official SSR pattern:
-
-```typescript
-// components/AbcRenderer.tsx
-'use client'
-
-import { useEffect, useRef } from 'react'
-import dynamic from 'next/dynamic'  // if needed for module-level side effects
-
-interface Props {
-  abcNotation: string       // passed from server
-  lyrics?: string[][]       // verse lines to inject (from server)
-  responsive?: boolean
-}
-
-export function AbcRenderer({ abcNotation, lyrics, responsive = true }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    // Dynamic import avoids SSR execution entirely
-    import('abcjs').then((ABCJS) => {
-      if (!containerRef.current) return
-      const abc = lyrics ? injectLyrics(abcNotation, lyrics) : abcNotation
-      ABCJS.renderAbc(containerRef.current, abc, {
-        responsive: responsive ? 'resize' : undefined,
-        add_classes: true,
-      })
-    })
-  }, [abcNotation, lyrics])
-
-  return <div ref={containerRef} className="abcjs-container" />
-}
+### Meter-mismatch flow (unified)
+```
+Precentor set list (SetItemRow)         Public notation view (NotationRenderer)
+    psalmMeter, item.tune.meter               stanzaMeter, tuneMeter (already props)
+              ↓                                          ↓
+        lib/meter-mismatch.ts::isMeterMismatch()  ← SAME function, both call sites
+              ↓                                          ↓
+     inline tooltip badge (existing)          new warning banner (new render branch)
 ```
 
-**Key:** Use dynamic `import('abcjs')` inside `useEffect` rather than a top-level import. This prevents Next.js from attempting to evaluate abcjs during SSR. The `process.browser` pattern shown in older abcjs docs works but dynamic import is cleaner and more reliable in App Router.
-
-### Data Flow Direction
-
+### Tune sort flow (new tiering)
 ```
-PostgreSQL
-    ↓  (Drizzle query, server-side)
-Server Component (page.tsx)
-    ↓  (serialized props, no functions/class instances)
-Client Component
-    ↓  (DOM ref)
-abcjs renderAbc (browser only)
-    ↓  (SVG injected into DOM)
-User sees notation
-```
-
-The lyrics injection happens at the Client Component boundary: the server passes `abcNotation` (tune melody string) and `lyrics` (verse array from `psalm_versions`/`verses`) as separate props. The client composes them at render time.
-
----
-
-## 6. Build Order — Phases with Dependency Reasoning
-
-### Dependency Graph
-
-```
-PostgreSQL schema + Drizzle ORM
-    ↓ (everything depends on this)
-Data migration from Airtable
+Airtable "Manuel CPRC backup" / "CPRC historical tune usage" / "Weighted..." (Tunes table)
+    ↓ scripts/migrate-tune-backup-historical.ts (one-off, run after schema push)
+tunes.backup_tune_id / tunes.historical_usage / tunes.weighted_historical_frequency (Postgres)
     ↓
-Public browse (psalms, tunes, verses)
+db/queries/tunes.ts: fetchTunesByMeter() / fetchAllTunes() select the new columns
     ↓
-Search / filtering
-    ↓               ↓
-ABC sourcing      Auth (precentor login)
-    ↓                    ↓
-Notation render   Service event management
-    ↓                    ↓
-Hymnal layout     Service set list view with notation
-                         ↓
-                  Precentor worship view
+components/TuneTable.tsx: psalmId-aware sort block extended —
+    tier 1: tune.backupFor === psalmId
+    tier 2: sort desc by weightedHistoricalFrequency
+    tier 3: existing meter/name sort (unchanged)
 ```
 
-### Recommended Phase Order
+---
 
-**Phase 1: Foundation — Schema + ORM + Migration**
-- Define Drizzle schema for all tables
-- Write Airtable export → PostgreSQL migration script
-- Download and upload all JPG attachments to Vercel Blob
-- Verify data integrity (row counts, FK validity)
-- **Why first:** Everything else depends on real data in the database. No component can be meaningfully built without it.
+## Anti-Patterns to Avoid
 
-**Phase 2: Public Read Layer — Psalm and Tune Browse**
-- Psalm list page (`/psalm`)
-- Psalm detail page with tabs (Overview: KJV text + metrical lyrics; Study: topics/doctrines; Messianic)
-- Tune index and tune detail (JPG score display, YouTube/SoundCloud links)
-- 365-day reading plan (`/plan`)
-- `loading.tsx` skeletons for all routes
-- **Why second:** Core public value of the site. Unblocked as soon as Phase 1 data is present. Validates the schema design against real display requirements.
+### Anti-Pattern 1: Duplicating the meter-mismatch check instead of extracting it
 
-**Phase 3: Search**
-- Full-text search across psalm titles, KJV text, metrical text, topics
-- PostgreSQL `tsvector` / `to_tsquery` full-text search (no external search service needed at this scale)
-- **Why third:** Depends on Phase 2 routes for navigation integration. Independent of auth and notation.
+**What people do:** Copy the 4-line inline boolean from `SetItemRow.tsx` into `NotationRenderer.tsx` with slightly different null-handling, because it's "just a few lines."
+**Why it's wrong:** The requirement explicitly names this as shared logic; two near-identical-but-subtly-different implementations is exactly the kind of drift that causes "why does the portal say mismatch but the public page doesn't" bug reports later.
+**Do this instead:** Extract to `src/lib/meter-mismatch.ts` first (this is explicitly the correct build-order step before touching `NotationRenderer.tsx` — see Build Order below), unit test it once, import everywhere.
 
-**Phase 4: ABC Notation Population + Rendering**
-- Script to query The Session API for each of the ~100 tunes by name
-- Manual encoding workflow for gaps (text files, admin SQL import)
-- `AbcRenderer` client component with dynamic abcjs import
-- Replace JPG display with abcjs render when `abc_notation` present
-- **Why fourth:** Depends on Phase 2 tune pages. ABC sourcing can run in parallel with Phase 3. Notation is the flagship feature — polish it once the base is stable.
+### Anti-Pattern 2: Building the Backup/Historical sort against guessed Airtable field shapes
 
-**Phase 5: Authentication + Precentor Features**
-- Next-auth v5 credentials provider
-- Middleware protection for `(precentor)` routes
-- Service event create/edit (`/events/new`)
-- Service set list builder (psalm+tune assignment, ordering)
-- Service view: all assigned psalms with AbcRenderer for each
-- **Why fifth:** Depends on Phase 4 for the notation in the worship view. Precentor feature is the most interactive, highest-complexity phase — build it on a stable foundation.
+**What people do:** Design the `serviceItems`/`tunes` schema columns from the English field names alone ("CPRC historical" → add a boolean column) without opening Airtable to check the actual field type (lookup vs. real data, link vs. text, single vs. multi).
+**Why it's wrong:** `migrate-double-length.ts` shows the established discipline — log the raw Airtable value, confirm the shape, *then* design the column. Guessing wrong here means a second migration script and a schema patch mid-milestone.
+**Do this instead:** Write a 10-line throwaway inspection script (`base('Tunes').select({maxRecords: 3}).firstPage()` + `console.log(record.fields)`) before writing `migrate-tune-backup-historical.ts` for real.
 
-**Phase 6: Polish + Performance**
-- `<Suspense>` boundaries on all data-loading sections
-- Optimistic updates for service item mutations
-- OG images per psalm page (next/og)
-- Dark mode (next-themes)
-- **Why last:** Polish applies to existing features; no new dependencies.
+### Anti-Pattern 3: Making `/changelog` fully static when admin state is involved
 
-### Phases with Most Dependencies (Risk Flags)
+**What people do:** Reflexively apply the CLAUDE.md "Static rendering... no runtime DB queries on the read path" rule to every public page, including `/changelog`.
+**Why it's wrong:** That rule is scoped to psalm/tune pages in CLAUDE.md specifically because they use `generateStaticParams`. `/changelog` needs a live session check to decide whether to render admin affordances — this is architecturally the same shape as `/admin-only/feedback/page.tsx`, which is already `force-dynamic`.
+**Do this instead:** Mark `/changelog` `export const dynamic = 'force-dynamic'` (matching the existing convention in `admin-only/feedback/page.tsx` and `api/feedback/route.ts`), and don't fight the framework to force static rendering on a page with session-dependent content.
 
-| Phase | Risk | Mitigation |
-|-------|------|------------|
-| Phase 1 — Migration | Airtable has undocumented field types; attachment download may hit rate limits | Export to CSV first, validate schema against CSV before writing migration script |
-| Phase 4 — ABC sourcing | 100 tunes is a content task, not just engineering | Timebox The Session API lookup (1 day). If < 50 matches, plan a manual encoding sprint. Do not block Phase 5 on 100% ABC coverage — partial coverage is shippable. |
-| Phase 5 — Service builder | Complex interactive state (ordering, drag-and-drop) | Use `@dnd-kit/sortable` for drag-and-drop. Keep service state server-authoritative with optimistic UI updates. |
+### Anti-Pattern 4: A second slug-generation function for tunes
+
+**What people do:** Write a fresh `slugifyTuneName()` in a new file because the tune-slug work "feels like" a routing concern, separate from the JPG-asset concern in `tune-jpg-urls.ts`.
+**Why it's wrong:** Two slug functions for the same 172 tune names will eventually diverge (different punctuation-stripping edge cases), breaking the JPG↔route correspondence that currently holds by construction.
+**Do this instead:** Import and reuse `tuneNameToSlug` from `src/lib/tune-jpg-urls.ts` for routing too. If it needs to move to a more neutrally-named file for cleanliness, that's a rename, not a rewrite — but even the rename is optional; reuse first.
 
 ---
+
+## Integration Points
+
+### External Services
+
+| Service | Integration Pattern | Notes |
+|---------|---------------------|-------|
+| Resend | New `src/lib/resend.ts` client, `PSALTER_RESEND_API_KEY` env var (add to `/home/services/.env.production` + local `.env`) | Verify sending domain in Resend dashboard before first send or emails land in spam/get rejected. Check Stack Registry (`stackRegistry.js` in gsddashboard) for existing per-project Resend key pattern before creating a new key. |
+| Airtable (read-only, migration only) | Reuse existing `airtable` npm package + `AIRTABLE_PAT`/`AIRTABLE_BASE_ID` env vars already in `.env`, following `migrate-double-length.ts` pattern | This is a one-off script run, not a runtime dependency — no new ongoing Airtable coupling introduced by this milestone. |
+
+### Internal Boundaries
+
+| Boundary | Communication | Notes |
+|----------|---------------|-------|
+| `src/lib/meter-mismatch.ts` ↔ `SetItemRow.tsx` / `NotationRenderer.tsx` | Direct function import, pure predicate | No new prop plumbing needed for `NotationRenderer` — `stanzaMeter`/`tuneMeter` props already exist. |
+| `src/lib/resend.ts` ↔ `api/feedback/route.ts` / `api/admin/changelog/**` | Direct async function call, errors caught and logged, never thrown back to the HTTP response for feedback (email is best-effort); for changelog broadcast, consider whether a failed broadcast should surface to the admin UI (recommend: yes, surface a toast, since the admin explicitly triggered it) | Different failure-handling philosophy per call site — be deliberate, not uniform. |
+| `src/lib/admin-auth.ts` (NEW) ↔ `admin-only/feedback/page.tsx` (existing, should be refactored to use it) / `api/admin/changelog/**` (new) | Shared session+role check, mirrors `precent-auth.ts`'s `getSessionOr401` shape | Refactoring `admin-only/feedback/page.tsx` to use the new helper is optional cleanup, not required — but doing it avoids a 3rd inline copy of the same check. |
+| `scripts/migrate-tune-backup-historical.ts` ↔ `src/db/schema.ts` | Script runs against Drizzle schema; **schema push (`npm run db:push`) must happen before the script runs**, and the script must happen before `TuneTable.tsx`/`fetchTunesByMeter` consume the new columns | Hard sequencing dependency — see Build Order. |
+| `src/app/tunes/[slug]/page.tsx` ↔ all `/tunes/${tune.id}` call sites | Every hardcoded numeric-id link becomes a slug-based link; the redirect logic in the page component is the *only* place old numeric bookmarks are handled | Missing even one call site (e.g. `GlobalSearch.tsx`) means an internal link still redirects unnecessarily — not broken, but adds a hop. Worth grep-verifying after the change: `grep -rn '/tunes/\${' src`. |
+
+---
+
+## Recommended Build Order
+
+Given the dependencies surfaced above, the sensible sequencing is:
+
+1. **`src/lib/meter-mismatch.ts` extraction** (Pattern 1) — zero external dependencies, unblocks both the `SetItemRow.tsx` refactor and the new notation-view banner. Do this first; it's low-risk and immediately useful as a foundation for item 2.
+2. **Meter-mismatch banner in `NotationRenderer.tsx`** — depends on (1). No schema or migration dependency, can ship independently of everything else.
+3. **Airtable field inspection + schema design** (Pattern 2's verification step) — a short throwaway script to confirm actual Airtable field types for the 4 backup/historical fields **before** writing `schema.ts` changes. This gates step 4.
+4. **`schema.ts` changes + `db:push`** for the new `tunes`/`serviceItems` columns — depends on (3)'s findings.
+5. **`scripts/migrate-tune-backup-historical.ts`** — depends on (4) (columns must exist to write into).
+6. **`fetchTunesByMeter`/`fetchAllTunes` query updates + `TuneTable.tsx` 3-tier sort** — depends on (5) (real data must exist, or the sort has nothing to sort by — this is the explicit dependency named in the milestone brief).
+7. **Numeric→name tune slug migration** (routes, redirect, all call-site updates) — independent of the backup/historical work, but touches the *same* `TuneTable.tsx` file (row links) and `fetchTuneDetail`/`fetchTuneIds` in `tunes.ts` — sequencing it **after** step 6 avoids two separate rounds of merge conflicts/re-review in the same files. Not a hard dependency, but a practical one given file overlap.
+8. **`changelog_posts`/`changelog_subscribers` schema + `db/queries/changelog.ts`** — independent of everything else above; can run in parallel with steps 1-7 if using separate phases/agents.
+9. **`/changelog` page + inline admin editor + admin API routes** — depends on (8).
+10. **`src/lib/admin-auth.ts` extraction** — do this alongside (9), since it's the first point a *second* admin-gated surface exists (justifying the extraction) — retrofit `admin-only/feedback/page.tsx` to use it in the same pass if convenient, but not required.
+11. **`src/lib/resend.ts` + feedback-notify wiring** — independent of changelog schema; can happen any time after `PSALTER_RESEND_API_KEY` is provisioned. Low risk, no dependents.
+12. **`src/lib/rate-limit.ts` + wiring into `/api/feedback` and `/api/changelog/subscribe`** — depends on (9) existing (the subscribe route) for the second call site, but the limiter itself and the feedback wiring can land as soon as (11) does.
+13. **Changelog-subscriber broadcast on publish** — depends on (8) [subscriber table], (9) [publish action to hook into], and (11) [Resend client] all being in place. This is the last piece to land since it's the union of the other three tracks.
+
+**Two independent tracks can run in parallel:** {1, 2} and {3-7} (meter-mismatch + backup/historical/slug work, both centered on `TuneTable.tsx`/notation) vs. {8-13} (changelog + email, centered on new tables and new routes). Sequencing within each track matters; between tracks it mostly doesn't, except that both tracks touch `TuneTable.tsx` (track A for sort+slug, track B not at all) — no actual cross-track file conflict, they're safe to interleave.
+
+---
+
+## Scaling Considerations
+
+Not meaningfully applicable — this is a personal/congregation project with 2-3 beta testers at this milestone (per PROJECT.md), single Docker container on a 3.7GB VPS. The in-memory rate limiter (Pattern 6) and single-instance assumptions throughout this doc are correct choices *at this scale* and should be revisited only if the project's traffic profile changes materially (not currently anticipated).
 
 ## Sources
 
-- abcjs SSR pattern: https://github.com/paulrosen/abcjs/blob/main/docs/overview/faq.md (Context7, HIGH confidence)
-- abcjs lyrics via `w:` field and responsive options: Context7 /paulrosen/abcjs (HIGH confidence)
-- Next.js unstable_cache + revalidateTag: https://github.com/vercel/next.js/blob/canary/docs/01-app/02-guides/incremental-static-regeneration.mdx (Context7, HIGH confidence)
-- Next.js Server Component + Drizzle direct query pattern: https://github.com/vercel/next.js/blob/canary/docs/01-app/01-getting-started/06-fetching-data.mdx (Context7, HIGH confidence)
-- Next.js authentication + middleware: https://github.com/vercel/next.js/blob/canary/docs/01-app/02-guides/authentication.mdx (Context7, HIGH confidence)
-- Drizzle ORM many-to-many with junction tables: Context7 /drizzle-team/drizzle-orm-docs (HIGH confidence)
-- The Session ABC database: training data knowledge, MEDIUM confidence — verify at https://thesession.org/tunes/search
-- OMR tools (Audiveris, PhotoScore): training data knowledge, MEDIUM confidence
+- Direct inspection of `/home/services/psalter/src/**` (schema.ts, db/queries/tunes.ts, components/TuneTable.tsx, components/precent/SetItemRow.tsx, components/notation/NotationRenderer.tsx, lib/psalm-slugs.ts, lib/naves-slugs.ts, lib/tune-jpg-urls.ts, lib/precent-auth.ts, lib/auth.ts, app/api/feedback/route.ts, app/admin-only/feedback/page.tsx, app/tunes/**)
+- `scripts/migrate-double-length.ts` (established one-off Airtable migration pattern)
+- `.planning/PROJECT.md` (milestone goal, requirements, current state)
+- `package.json` (confirms no existing Resend/rate-limit dependency; `@aws-sdk/client-s3` present for R2 but not relevant to this milestone's runtime paths)
+- `.env` key inventory (confirms `PSALTER_ADMIN_EMAIL` already exists and should be reused, not hardcoded, for feedback-notify recipient)
+- Global CLAUDE.md (`/home/claude/.claude/CLAUDE.md`) — Stack Registry rule, project-scoped env var naming convention, VPS memory constraints informing the rate-limit design choice
+
+---
+*Architecture research for: CPRC Psalter v2.0 Public Beta milestone*
+*Researched: 2026-07-29*
