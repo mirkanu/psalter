@@ -8,8 +8,25 @@ Rebuild of psalter.cprc.co.uk from Airtable + Softr to a self-hosted Next.js 15 
 
 - ✅ **v1.0 Public Psalter** — Phases 1–4.12 (shipped 2026-07-29, see [v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md))
 - ✅ **v1.1 Precentor Portal & Polish** — Phases 5, 05.1–05.3 (shipped 2026-07-29, see [v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md))
+- 🚧 **v2.0 Public Beta** — Phases 6–14 (active)
 
 ## Phases
+
+**Phase Numbering:**
+- Integer phases (6, 7, 8...): Planned v2.0 milestone work, continuing from v1.1's last phase (05.3)
+- Decimal phases (N.1, N.2): Urgent insertions (marked with INSERTED)
+
+### v2.0 Public Beta (active)
+
+- [ ] **Phase 6: Security & Data-Safety Prerequisites** - Close the unauthenticated `/dev/*` admin surface and back up tune JPGs before anything else touches them
+- [ ] **Phase 7: Email Foundation (Resend Provisioning)** - Provision Resend, verify sending domain, confirm real-inbox delivery
+- [ ] **Phase 8: Feedback Email & Rate Limiting** - Feedback submissions notify the owner by email and can't be spammed
+- [ ] **Phase 9: Changelog** - Public changelog feed, inline admin authoring, homepage hero, email subscribe/broadcast
+- [ ] **Phase 10: Tune Data Fixes** - Ps 148b duplicate, meter-mismatch banner, Backup/Historical data migration + sort, name-based slugs
+- [ ] **Phase 11: Tune List & Selector Overhaul** - `/tunes` mirrors `/psalms`, mobile-fit sticky table, inline embed player, shared tune-picker component
+- [ ] **Phase 12: Psalm Selector Polish** - Always-collapsed multi-version toggle, meter tags, search bar width fix
+- [ ] **Phase 13: Tune Image Compression** - Compress tune JPEGs for faster load, originals verified safe
+- [ ] **Phase 14: Launch Polish** - OG images, favicon/404, Lighthouse 90+, remaining skeletons, click-feedback states
 
 <details>
 <summary>✅ v1.0 Public Psalter (Phases 1–4.12) — SHIPPED 2026-07-29</summary>
@@ -59,19 +76,123 @@ Authenticated precentor portal, service set lists, site footer/feedback/analytic
 - [x] Phase 05.2: Footer, Feedback & Analytics (3/3 plans) — completed 2026-06-20
 - [x] Phase 05.3: /daily Calendar View (3/3 plans) — completed 2026-06-21
 
-**Deferred at v1.1 close** (see [v1.1-REQUIREMENTS.md](milestones/v1.1-REQUIREMENTS.md) "Scope Decisions"): Phase 05.4 (Airtable Exit Verification) and Phase 6 (Polish) never started — moved to `## Backlog` below as Phase 999.1 and 999.2.
+**Deferred at v1.1 close** (see [v1.1-REQUIREMENTS.md](milestones/v1.1-REQUIREMENTS.md) "Scope Decisions"): Phase 05.4 (Airtable Exit Verification) and Phase 6 (Polish) never started — moved to `## Backlog` below as Phase 999.1 and 999.2. Phase 999.2's scope is now folded into v2.0 Phase 14 (Launch Polish) — see Backlog note below.
 
 </details>
 
+## Phase Details
+
+### Phase 6: Security & Data-Safety Prerequisites
+**Goal**: The site's admin surfaces are no longer publicly writable, and the irreplaceable tune-score images are safely backed up before anything else touches them
+**Depends on**: Nothing (first phase of v2.0)
+**Requirements**: SEC-01, SEC-02, SEC-03
+**Success Criteria** (what must be TRUE):
+  1. Visiting any `/dev/melisma-editor` page or `/api/dev/*` route while logged out (or as a non-admin) is rejected server-side (401/redirect), not rendered or executed
+  2. `GET /robots.txt` lists `Disallow: /dev/*`
+  3. A tarball backup of `public/tunes/` exists off the live directory, verified to match the source file count and spot-checked for JPEG integrity
+**Plans**: TBD
+
+### Phase 7: Email Foundation (Resend Provisioning)
+**Goal**: The site can send real email through Resend, from a domain that lands in real inboxes, not spam
+**Depends on**: Nothing (independent of Phase 6)
+**Requirements**: EMAIL-01, EMAIL-02
+**Success Criteria** (what must be TRUE):
+  1. `PSALTER_RESEND_API_KEY` is present in the shared env file and a Resend client sends successfully from the psalter sending subdomain
+  2. Cloudflare DNS shows SPF, DKIM, and DMARC records verified in the Resend dashboard for the sending subdomain
+  3. A test email sent through the new client is confirmed to land in the inbox (not spam) of a real Gmail account and a real Outlook account
+**Plans**: TBD
+
+### Phase 8: Feedback Email & Rate Limiting
+**Goal**: Every feedback submission reaches the site owner's inbox immediately, and the endpoint can't be spammed
+**Depends on**: Phase 7
+**Requirements**: FEED-01, FEED-02
+**Success Criteria** (what must be TRUE):
+  1. Submitting the feedback form sends an email to manuelkuhs@gmail.com containing the submission content, for every submission
+  2. A feedback DB write still succeeds even if the email send fails (email is fire-and-forget, never blocks the save)
+  3. Submitting the feedback form rapidly above the configured threshold is rejected with a rate-limit response instead of sending unlimited emails
+**Plans**: TBD
+
+### Phase 9: Changelog
+**Goal**: Visitors can read what's new, the admin can publish updates without a separate admin panel, and subscribers get notified by email
+**Depends on**: Phase 7 (subscribe/broadcast slice needs the Resend client)
+**Requirements**: CHLG-01, CHLG-02, CHLG-03, CHLG-04, CHLG-05
+**Success Criteria** (what must be TRUE):
+  1. `/changelog` lists all published posts reverse-chronologically with title, date, and body
+  2. A logged-in admin sees an inline "write post" affordance directly on the live `/changelog` page and can publish a post without leaving the site or using a separate tool
+  3. The homepage hero announces the v2.0 release
+  4. A visitor can enter their email in a single field and subscribe with one action (no confirmation email required)
+  5. Publishing a new changelog post emails all subscribers, and that email contains a working unsubscribe link that actually removes the subscriber
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 10: Tune Data Fixes
+**Goal**: Tune data is correct and complete — no duplicate rows, meter-mismatch warnings surface everywhere they should, and tune URLs are permanent, readable slugs
+**Depends on**: Nothing (independent track, can run parallel with Phases 7-9)
+**Requirements**: TUNE-01, TUNE-02, TUNE-03, TUNE-04, TUNE-05
+**Success Criteria** (what must be TRUE):
+  1. Psalm 148b's tune listing shows exactly one row (no duplicate), because no two `psalm_version_tunes` rows are both flagged `is_primary` for the same version
+  2. Viewing a psalm whose active tune's meter doesn't match the psalm's stated meter shows a mismatch warning banner in Staff, Solfège, and Sing views alike (e.g., Aurelia on Ps 119)
+  3. Real Backup and Historical tune-usage data from Airtable is present in Postgres, visible where it previously showed placeholder or missing data
+  4. Visiting an old numeric tune URL (`/tunes/169`) redirects to the new name-based slug (`/tunes/beatitudo`), and no old link 404s
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 11: Tune List & Selector Overhaul
+**Goal**: `/tunes` looks and works like `/psalms`, fits on mobile, and there's one shared tune-picker component instead of duplicates
+**Depends on**: Phase 10 (list sort order and slugs must exist before finalizing display)
+**Requirements**: TLIST-01, TLIST-02, TLIST-03, TLIST-04, TSEL-01
+**Success Criteria** (what must be TRUE):
+  1. `/tunes` shows the same split-leaf staff/solfège toggle views as `/psalms` (without lyrics), sorted Backup → Historical → other matching-meter tunes, with the redundant Meter indicator and old Backup/Historical tabs removed
+  2. On a mobile-width viewport, the tune table's Recording column is visible by default and the table either fits or falls back to horizontal scroll cleanly
+  3. Scrolling down a long tune list keeps the table header visible (sticky)
+  4. Clicking a tune's URL icon expands an inline embed player (SoundCloud or ABC player) in place without navigating away; CSV export of that tune still contains the raw SoundCloud destination URL
+  5. Both the single-psalm tune picker and the precent-list tune picker use the same shared component (one code change updates both)
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 12: Psalm Selector Polish
+**Goal**: The psalm selector on multi-version psalms behaves predictably and its search bar fits the layout
+**Depends on**: Nothing (independent of other phases)
+**Requirements**: PSEL-01, PSEL-02, PSEL-03
+**Success Criteria** (what must be TRUE):
+  1. Reloading or revisiting a multi-version psalm page always shows the version toggle collapsed, regardless of prior expand state from a past visit
+  2. A non-CM multi-version toggle box shows its meter abbreviation (e.g. "LM") next to the version label
+  3. The search/filter bar's width matches the psalm listing grid and no longer overlaps the bookmark nav tabs on the right
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 13: Tune Image Compression
+**Goal**: Tune score JPEGs load faster without losing legibility, and the originals stay safely backed up
+**Depends on**: Phase 6 (backup must exist before compression touches originals)
+**Requirements**: ASSET-01
+**Success Criteria** (what must be TRUE):
+  1. All compressed tune JPEGs are smaller in file size than their originals while remaining legible on a melisma-approved tune spot-check
+  2. The pre-compression backup from Phase 6 is confirmed intact and untouched after the compression run
+**Plans**: TBD
+
+### Phase 14: Launch Polish
+**Goal**: The site looks and performs like a finished public product before beta testers arrive — social previews, a real 404, fast Lighthouse scores, and consistent loading/click feedback everywhere
+**Depends on**: Phases 6-13 (touches routes and pages finalized by the other phases)
+**Requirements**: POLISH-01, POLISH-02, POLISH-03, POLISH-04, POLISH-05
+**Success Criteria** (what must be TRUE):
+  1. Sharing a psalm or tune page link on social media shows a generated OG image preview (not a blank/default card)
+  2. The site has a real favicon and a styled 404 page instead of the Next.js default
+  3. A Lighthouse run on the psalm list and psalm detail pages scores 90+ on Performance
+  4. Navigating to search, explore, daily, or the homepage never shows a blank screen during load — a skeleton appears within one frame
+  5. Every button, link, and card gives an immediate visual `:active`/pending state when clicked
+**Plans**: TBD
+**UI hint**: yes
+
 ## Backlog
 
-Deferred at v1.1 milestone close (2026-07-29) — never started, no plans executed. Not blocking; pick up via `/gsd-phase` + `/gsd-discuss-phase` whenever prioritised.
+Deferred, not part of the active v2.0 milestone. Pick up via `/gsd-phase` + `/gsd-discuss-phase` whenever prioritised.
 
 ### Phase 999.1: Airtable Exit Verification (BACKLOG)
 
 **Goal**: Every byte of Airtable data is accounted for in PostgreSQL and R2 before the Airtable subscription is cancelled; a permanent backup and read-only DB viewer are in place
 **Source phase**: 05.4 (INSERTED)
 **Deferred at**: 2026-07-29 during v1.1 milestone close
+**Note**: v2.0 Phase 10 migrates the specific Backup/Historical tune fields needed for TUNE-03/04, but does not close out full Airtable decommissioning — that remains here.
 **Requirements**: ADMIN-01, ADMIN-02, ADMIN-03, ADMIN-04, ADMIN-05, ADMIN-06, ADMIN-07
 **Success Criteria** (what must be TRUE):
   1. A gap audit script compares every Airtable table's schema and row count against PostgreSQL and produces a written gap report — no data changes happen before this report is reviewed
@@ -83,15 +204,25 @@ Deferred at v1.1 milestone close (2026-07-29) — never started, no plans execut
   7. A written "safe to cancel Airtable" checklist is produced and all items are checked off before the subscription is cancelled
 **Plans**: [ ] Not planned (0 plans)
 
-### Phase 999.2: Polish (BACKLOG)
+### ~~Phase 999.2: Polish (BACKLOG)~~ — folded into v2.0 Phase 14
 
-**Goal**: OG images in place for social sharing; Lighthouse 90+ on key pages; bundle clean; every remaining route transition shows a skeleton; all clickable elements give immediate visual feedback
-**Source phase**: 6
-**Deferred at**: 2026-07-29 during v1.1 milestone close
-**Requirements**: PERF-02, PERF-01 (remaining routes), OG images (next/og), Lighthouse 90+
-**Success Criteria** (what must be TRUE):
-  1. Each psalm and tune page generates a dynamic OG image (next/og) visible when the URL is shared on social platforms
-  2. A bundle analysis confirms no unintended large dependencies; Lighthouse performance score is 90+ on the psalm list and psalm detail pages
-  3. Navigating to any route not covered by Phase 4.5 skeletons (search, explore, daily, homepage) never shows a blank screen — a skeleton appears within one frame
-  4. Every button, link, and card shows a CSS `:active` state change and a `useTransition` pending indicator when clicked
-**Plans**: [ ] Not planned (0 plans)
+~~**Goal**: OG images in place for social sharing; Lighthouse 90+ on key pages; bundle clean; every remaining route transition shows a skeleton; all clickable elements give immediate visual feedback~~
+
+This scope (PERF-01, PERF-02, OG images, Lighthouse 90+, remaining skeletons, click-feedback) was folded into v2.0 as Phase 14 (Launch Polish) rather than run as a separate backlog phase — see `.planning/REQUIREMENTS.md` POLISH-01 through POLISH-05.
+
+## Progress
+
+**Execution Order (v2.0):**
+Phases 7 and 10 have no dependencies on Phase 6 or each other and may be worked in any order; Phase 8 and Phase 9 depend on Phase 7; Phase 11 depends on Phase 10; Phase 13 depends on Phase 6; Phase 14 depends on all prior v2.0 phases.
+
+| Phase | Plans Complete | Status | Completed |
+|-------|-----------------|--------|-----------|
+| 6. Security & Data-Safety Prerequisites | 0/TBD | Not started | - |
+| 7. Email Foundation (Resend Provisioning) | 0/TBD | Not started | - |
+| 8. Feedback Email & Rate Limiting | 0/TBD | Not started | - |
+| 9. Changelog | 0/TBD | Not started | - |
+| 10. Tune Data Fixes | 0/TBD | Not started | - |
+| 11. Tune List & Selector Overhaul | 0/TBD | Not started | - |
+| 12. Psalm Selector Polish | 0/TBD | Not started | - |
+| 13. Tune Image Compression | 0/TBD | Not started | - |
+| 14. Launch Polish | 0/TBD | Not started | - |

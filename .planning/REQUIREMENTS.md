@@ -103,43 +103,43 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SEC-01 | TBD | Pending |
-| SEC-02 | TBD | Pending |
-| SEC-03 | TBD | Pending |
-| EMAIL-01 | TBD | Pending |
-| EMAIL-02 | TBD | Pending |
-| FEED-01 | TBD | Pending |
-| FEED-02 | TBD | Pending |
-| CHLG-01 | TBD | Pending |
-| CHLG-02 | TBD | Pending |
-| CHLG-03 | TBD | Pending |
-| CHLG-04 | TBD | Pending |
-| CHLG-05 | TBD | Pending |
-| TUNE-01 | TBD | Pending |
-| TUNE-02 | TBD | Pending |
-| TUNE-03 | TBD | Pending |
-| TUNE-04 | TBD | Pending |
-| TUNE-05 | TBD | Pending |
-| PSEL-01 | TBD | Pending |
-| PSEL-02 | TBD | Pending |
-| PSEL-03 | TBD | Pending |
-| TSEL-01 | TBD | Pending |
-| TLIST-01 | TBD | Pending |
-| TLIST-02 | TBD | Pending |
-| TLIST-03 | TBD | Pending |
-| TLIST-04 | TBD | Pending |
-| ASSET-01 | TBD | Pending |
-| POLISH-01 | TBD | Pending |
-| POLISH-02 | TBD | Pending |
-| POLISH-03 | TBD | Pending |
-| POLISH-04 | TBD | Pending |
-| POLISH-05 | TBD | Pending |
+| SEC-01 | Phase 6 | Pending |
+| SEC-02 | Phase 6 | Pending |
+| SEC-03 | Phase 6 | Pending |
+| EMAIL-01 | Phase 7 | Pending |
+| EMAIL-02 | Phase 7 | Pending |
+| FEED-01 | Phase 8 | Pending |
+| FEED-02 | Phase 8 | Pending |
+| CHLG-01 | Phase 9 | Pending |
+| CHLG-02 | Phase 9 | Pending |
+| CHLG-03 | Phase 9 | Pending |
+| CHLG-04 | Phase 9 | Pending |
+| CHLG-05 | Phase 9 | Pending |
+| TUNE-01 | Phase 10 | Pending |
+| TUNE-02 | Phase 10 | Pending |
+| TUNE-03 | Phase 10 | Pending |
+| TUNE-04 | Phase 10 | Pending |
+| TUNE-05 | Phase 10 | Pending |
+| PSEL-01 | Phase 12 | Pending |
+| PSEL-02 | Phase 12 | Pending |
+| PSEL-03 | Phase 12 | Pending |
+| TSEL-01 | Phase 11 | Pending |
+| TLIST-01 | Phase 11 | Pending |
+| TLIST-02 | Phase 11 | Pending |
+| TLIST-03 | Phase 11 | Pending |
+| TLIST-04 | Phase 11 | Pending |
+| ASSET-01 | Phase 13 | Pending |
+| POLISH-01 | Phase 14 | Pending |
+| POLISH-02 | Phase 14 | Pending |
+| POLISH-03 | Phase 14 | Pending |
+| POLISH-04 | Phase 14 | Pending |
+| POLISH-05 | Phase 14 | Pending |
 
 **Coverage:**
-- v1 requirements: 30 total
-- Mapped to phases: 0 (pending roadmap creation)
-- Unmapped: 30 ⚠️
+- v1 requirements: 31 total
+- Mapped to phases: 31/31 ✓
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-07-29*
-*Last updated: 2026-07-29 after initial definition*
+*Last updated: 2026-07-29 after roadmap creation (Phases 6-14 mapped, 31/31 requirements covered)*

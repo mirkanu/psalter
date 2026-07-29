@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
-status: planning
+status: roadmapped
 last_updated: "2026-07-29T14:09:24.256Z"
 last_activity: 2026-07-29
 progress:
-  total_phases: 0
+  total_phases: 9
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone close)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** No milestone active. Backlog holds Phase 999.1 (Airtable Exit Verification) and Phase 999.2 (Polish). Run `/gsd-new-milestone` or pull a backlog item directly.
+**Current focus:** v2.0 Public Beta roadmapped — 9 phases (6-14), 31/31 requirements mapped. Not yet planned into executable plans. Backlog still holds Phase 999.1 (Airtable Exit Verification); Phase 999.2 (Polish) scope folded into v2.0 Phase 14. Run `/gsd-plan-phase 6` to start.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-07-29 — Milestone v2.0 started
+Phase: 6 (Security & Data-Safety Prerequisites) — first of 9 v2.0 phases
+Plan: — (not yet planned)
+Status: Roadmapped, awaiting `/gsd-plan-phase 6`
+Last activity: 2026-07-29 — v2.0 ROADMAP.md created (Phases 6-14, 31/31 requirements mapped)
 
 ## Performance Metrics
 
@@ -87,6 +87,7 @@ Last activity: 2026-07-29 — Milestone v2.0 started
 
 ### Roadmap Evolution
 
+- v2.0 Public Beta roadmap created 2026-07-29: 9 phases (6-14), continuing numbering from v1.1's last phase (05.3). Derived from research/SUMMARY.md's 6-phase suggestion (Security prereqs -> Resend provisioning -> Feedback -> Changelog -> Tune Data Fixes -> Embed player+JPEG compression), split into 9 to fold in Psalm Selector (12), Tune Selector consolidation (merged into 11), and Tune List display/mobile/sticky-header (11) as their own coherent phases, and to separate Assets/JPEG compression (13) from the embed player (kept in 11 with Tune List, since both touch TuneTable.tsx) so compression's Phase 6 backup dependency stays explicit. Phase 14 (Launch Polish) absorbs the old Backlog Phase 999.2 scope and runs last since it depends on routes finalized by every other phase. 31/31 requirements mapped, no orphans.
 - Phase 4.9.12 added: Melisma positions as tune-level data — strip w: lines from stored ABC, add tunes.melisma_positions jsonb column, migrate 17 approved tunes, update save route + editor + NotationRenderer to use positions at render time (dropping embedded-w: branch)
 - Phase 4.9.4 inserted after Phase 4.9.3: Staff View Refinements & Onboarding — header cleanup, first-run tour, dynamic zoom, glass bottom bar, A+/A- relocation, Play/Gear split (URGENT)
 - Phase 4.9.6 inserted after Phase 4.9.5: Psalter Alignment Implementation — promotes seeds/psalter-alignment-implementation.md; consumes Phase 4.9.5 doc; fixes DCM/alternate-meter/amen alignment bugs (URGENT)
