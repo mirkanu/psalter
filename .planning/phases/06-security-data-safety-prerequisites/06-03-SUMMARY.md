@@ -125,3 +125,14 @@ None - no external service configuration required. This is a local VPS filesyste
 ---
 *Phase: 06-security-data-safety-prerequisites*
 *Completed: 2026-07-30*
+
+## Self-Check: PASSED
+
+- FOUND: scripts/backup-tunes.sh
+- FOUND: scripts/verify-tunes-backup.sh
+- FOUND: .planning/phases/06-security-data-safety-prerequisites/BACKUP-MANIFEST.md
+- FOUND: .planning/phases/06-security-data-safety-prerequisites/06-03-SUMMARY.md
+- FOUND: /home/services/psalter-backups/tunes-pre-compression-20260730.tar.gz
+- FOUND: commit 062e977 (Task 1)
+- FOUND: commit dbbacaf (Task 2)
+- FOUND: commit 180080d (SUMMARY)
