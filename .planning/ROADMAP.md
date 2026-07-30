@@ -92,7 +92,7 @@ Authenticated precentor portal, service set lists, site footer/feedback/analytic
   3. A tarball backup of `public/tunes/` exists off the live directory, verified to match the source file count and spot-checked for JPEG integrity
 **Plans**: 3 plans (2 waves)
 - [x] 06-01-PLAN.md — Relocate dead middleware into src/, extend it over /api/dev/*, add getAdminSessionOr401() helper + robots.ts
-- [ ] 06-02-PLAN.md — Per-route admin guards on all 8 /api/dev/* routes and 4 /dev pages, plus a 12-surface regression sweep
+- [x] 06-02-PLAN.md — Per-route admin guards on all 8 /api/dev/* routes and 4 /dev pages, plus a 12-surface regression sweep
 - [x] 06-03-PLAN.md — Verified off-repo tarball backup of the 326 tune score images
 
 ### Phase 7: Email Foundation (Resend Provisioning)
