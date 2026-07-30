@@ -1,8 +1,12 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { NextRequest, NextResponse } from 'next/server';
+import { getAdminSessionOr401 } from '@/lib/admin-auth';
 
 export async function GET(req: NextRequest) {
+  const { res: authRes } = await getAdminSessionOr401();
+  if (authRes) return authRes;
+
   const { searchParams } = new URL(req.url);
   const file = searchParams.get('file');
 
