@@ -3,10 +3,16 @@ import { tunes } from "@/db/schema"
 import { isNotNull, asc } from "drizzle-orm"
 import { NotationCompareClient } from "./NotationCompareClient"
 import { HYMNARY_FETCH_IDS } from "@/lib/hymnary-lookup"
+import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
 
 export const dynamic = "force-dynamic"
 
 export default async function NotationComparePage() {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session || session.user.role !== 'admin') redirect('/login')
+
   const rows = await db
     .select({
       id: tunes.id,

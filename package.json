@@ -11,6 +11,7 @@
     "db:studio": "drizzle-kit studio",
     "migrate": "tsx scripts/migrate-airtable.ts",
     "verify": "tsx scripts/verify-migration.ts",
+    "verify:dev-locked": "bash scripts/verify-dev-surface-locked.sh",
     "test": "vitest"
   },
   "dependencies": {
