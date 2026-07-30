@@ -167,6 +167,20 @@ A tool whose entire purpose is to be the safety net for this exact class of bug 
 
 ---
 
+## Resolution Update (2026-07-30T08:40:00Z)
+
+**CR-01 resolved.** Deployed the fix to production: `npm run build` (fresh `.next` with the middleware and per-route guards compiled in, confirmed via `functions-config-manifest.json`'s `/_middleware` entry) → `pm2 restart psalter` → re-ran `scripts/verify-dev-surface-locked.sh http://localhost:3005` against the real prod port.
+
+```
+=== Summary: 0 failure(s) ===
+```
+
+All 16 checks pass: `/dev/*` pages redirect (307), all 8 `/api/dev/*` routes return 401 anonymously, `robots.txt` serves the disallow rules, and public routes (`/psalms/23`, `/tunes`) remain unaffected (200). The live data leak confirmed in CR-01 is closed.
+
+WR-01 through WR-06 and IN-01 through IN-03 remain open as non-blocking follow-ups — not required to close this phase.
+
+---
+
 _Reviewed: 2026-07-30T07:50:00Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
