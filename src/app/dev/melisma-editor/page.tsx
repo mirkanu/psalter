@@ -1,5 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { db } from '@/db'
 import { tunes, psalmVersionTunes, psalmVersions, tuneMelismaDecisions } from '@/db/schema'
 import { isNotNull, asc, eq, desc, sql } from 'drizzle-orm'
@@ -335,6 +338,9 @@ async function loadTunes(): Promise<TuneOption[]> {
 }
 
 export default async function MelismaEditorPage() {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session || session.user.role !== 'admin') redirect('/login')
+
   const tuneRows = await loadTunes()
   return <MelismaEditorClient tunes={tuneRows} />
 }
