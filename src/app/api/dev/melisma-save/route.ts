@@ -32,6 +32,7 @@ import { db } from '@/db'
 import { tunes, psalmVersionTunes, psalmVersions } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { expectedSyllablesByLine } from '@/lib/meter-syllable-shape'
+import { getAdminSessionOr401 } from '@/lib/admin-auth'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -53,6 +54,9 @@ interface SaveBody {
 }
 
 export async function POST(req: Request) {
+  const { res: authRes } = await getAdminSessionOr401()
+  if (authRes) return authRes
+
   let body: SaveBody
   try {
     body = (await req.json()) as SaveBody

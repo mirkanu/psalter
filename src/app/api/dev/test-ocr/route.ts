@@ -7,6 +7,7 @@ import * as path from 'node:path'
 import * as fs from 'node:fs'
 import { extractTuneV2, extractStaffToAbc, transcribeOnly } from '@/lib/ocr-solfege-v2'
 import { HYMNARY_FETCH_IDS } from '@/lib/hymnary-lookup'
+import { getAdminSessionOr401 } from '@/lib/admin-auth'
 
 function slugify(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -154,6 +155,9 @@ cv2.imwrite(sys.argv[2], out)
 }
 
 export async function GET(request: NextRequest) {
+  const { res: authRes } = await getAdminSessionOr401()
+  if (authRes) return authRes
+
   const tuneId = request.nextUrl.searchParams.get('tuneId')
   if (!tuneId) return NextResponse.json({ error: 'tuneId required' }, { status: 400 })
 

@@ -17,6 +17,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { tuneMelismaDecisions, tunes } from '@/db/schema'
 import { eq, desc, and, isNotNull } from 'drizzle-orm'
+import { getAdminSessionOr401 } from '@/lib/admin-auth'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -33,6 +34,9 @@ export interface DecisionEntry {
 const ALLOWED_STATUSES: ReadonlyArray<MelismaStatus> = ['approved', 'not_approved']
 
 export async function GET(req: Request) {
+  const { res: authRes } = await getAdminSessionOr401()
+  if (authRes) return authRes
+
   const url = new URL(req.url)
   const tuneIdRaw = url.searchParams.get('tuneId')
   const tuneId = tuneIdRaw ? Number(tuneIdRaw) : NaN
@@ -68,6 +72,9 @@ interface PostBody {
 }
 
 export async function POST(req: Request) {
+  const { res: authRes } = await getAdminSessionOr401()
+  if (authRes) return authRes
+
   let body: PostBody
   try {
     body = (await req.json()) as PostBody
