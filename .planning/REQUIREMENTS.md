@@ -9,9 +9,9 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Security & Data Safety
 
-- [ ] **SEC-01**: `/dev/melisma-editor` and its 8 `/api/dev/*` routes require an authenticated admin session (server-side check, not client-only) — currently live and publicly writable on production
-- [ ] **SEC-02**: `robots.txt` disallows `/dev/*`
-- [ ] **SEC-03**: A verified, restorable backup of `public/tunes/` JPGs exists before any compression script touches the originals
+- [x] **SEC-01**: `/dev/melisma-editor` and its 8 `/api/dev/*` routes require an authenticated admin session (server-side check, not client-only) — currently live and publicly writable on production — Phase 6
+- [x] **SEC-02**: `robots.txt` disallows `/dev/*` — Phase 6
+- [x] **SEC-03**: A verified, restorable backup of `public/tunes/` JPGs exists before any compression script touches the originals — Phase 6
 
 ### Email Infrastructure
 
@@ -103,9 +103,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SEC-01 | Phase 6 | Pending |
-| SEC-02 | Phase 6 | Pending |
-| SEC-03 | Phase 6 | Pending |
+| SEC-01 | Phase 6 | Complete |
+| SEC-02 | Phase 6 | Complete |
+| SEC-03 | Phase 6 | Complete |
 | EMAIL-01 | Phase 7 | Pending |
 | EMAIL-02 | Phase 7 | Pending |
 | FEED-01 | Phase 8 | Pending |

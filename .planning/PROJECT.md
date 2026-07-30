@@ -113,6 +113,7 @@ Full detail: `.planning/milestones/v1.1-REQUIREMENTS.md`
 ### Active
 
 - [ ] v2.0 Public Beta — see Current Milestone above. Requirements to be scoped in `.planning/REQUIREMENTS.md`.
+  - [x] SEC-01, SEC-02, SEC-03 (Security & Data-Safety Prerequisites) — Phase 6, validated 2026-07-30. Closed a live production auth hole (middleware never compiled, 12 admin surfaces publicly reachable) and backed up 326 unbacked-up tune images before any compression work touches them.
 
 ### Backlog
 
@@ -151,4 +152,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-29 — started milestone v2.0 Public Beta (Phase 999.2 Polish folded in; Phase 999.1 Airtable Exit Verification remains in Backlog).*
+*Last updated: 2026-07-30 — Phase 6 (Security & Data-Safety Prerequisites) complete: SEC-01/02/03 validated.*
