@@ -12,6 +12,7 @@
     "migrate": "tsx scripts/migrate-airtable.ts",
     "verify": "tsx scripts/verify-migration.ts",
     "verify:dev-locked": "bash scripts/verify-dev-surface-locked.sh",
+    "email:test": "tsx scripts/send-test-email.ts",
     "test": "vitest"
   },
   "dependencies": {
