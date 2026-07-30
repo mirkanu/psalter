@@ -103,7 +103,10 @@ Authenticated precentor portal, service set lists, site footer/feedback/analytic
   1. `PSALTER_RESEND_API_KEY` is present in the shared env file and a Resend client sends successfully from the psalter sending subdomain
   2. Cloudflare DNS shows SPF, DKIM, and DMARC records verified in the Resend dashboard for the sending subdomain
   3. A test email sent through the new client is confirmed to land in the inbox (not spam) of a real Gmail account and a real Outlook account
-**Plans**: TBD
+**Plans**: 3 plans (2 waves)
+- [ ] 07-01-PLAN.md — Publish the missing DMARC record + DNS gate script, provision the sending-only PSALTER_RESEND_API_KEY, make the PM2 entrypoint load the shared env safely
+- [ ] 07-02-PLAN.md — Tested non-throwing sendEmail() wrapper around the Resend SDK (src/lib/email.ts) + CLI test-send script
+- [ ] 07-03-PLAN.md — Real-inbox delivery proof: Gmail + Outlook sends, SPF/DKIM/DMARC header verification, recorded evidence
 
 ### Phase 8: Feedback Email & Rate Limiting
 **Goal**: Every feedback submission reaches the site owner's inbox immediately, and the endpoint can't be spammed
