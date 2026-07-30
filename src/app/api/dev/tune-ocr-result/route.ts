@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
 import { eq, and } from 'drizzle-orm'
 import { tuneOcrResults } from '@/db/schema'
+import { getAdminSessionOr401 } from '@/lib/admin-auth'
 
 export async function GET(req: NextRequest) {
+  const { res: authRes } = await getAdminSessionOr401()
+  if (authRes) return authRes
+
   const tuneId = parseInt(req.nextUrl.searchParams.get('tuneId') ?? '')
   const mode = req.nextUrl.searchParams.get('mode') ?? ''
   if (!tuneId || !mode) return NextResponse.json({ error: 'Missing params' }, { status: 400 })
@@ -16,6 +20,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const { res: authRes } = await getAdminSessionOr401()
+  if (authRes) return authRes
+
   const { tuneId, mode, result } = await req.json()
   if (!tuneId || !mode || !result) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
