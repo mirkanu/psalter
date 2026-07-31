@@ -96,3 +96,40 @@ export function resetRateLimit(key?: string): void {
 export function trackedKeyCount(): number {
   return store.size
 }
+
+export const UNKNOWN_CLIENT_IP = 'unknown'
+
+/** Only characters valid in an IPv4/IPv6 literal, capped at 45 chars (max IPv6 literal length). */
+const IP_LIKE = /^[0-9a-fA-F:.]{1,45}$/
+
+/**
+ * Turn a `Request` into a bounded, log-safe client-IP string for use as a
+ * rate-limit key.
+ *
+ * Trust boundary: this value is client-controlled at the TCP level and is
+ * only trustworthy because Cloudflare Tunnel is the sole public ingress for
+ * psalter.gsdlabs.dev and overwrites `x-forwarded-for`. Anyone able to reach
+ * port 3005 directly on the VPS can forge it and bypass the limit; that is
+ * an accepted risk for this deployment, not a silently assumed one.
+ *
+ * All clients failing validation share the single `UNKNOWN_CLIENT_IP`
+ * bucket, which means they collectively share one budget. Accepted: in
+ * normal operation behind the tunnel this bucket is empty.
+ */
+export function getClientIp(req: Request): string {
+  const forwardedFor = req.headers.get('x-forwarded-for')
+  // The first entry is the original client — proxies append themselves to the right.
+  let candidate = forwardedFor ? forwardedFor.split(',')[0].trim() : ''
+  if (!candidate) {
+    candidate = req.headers.get('x-real-ip')?.trim() ?? ''
+  }
+  // Character-class + length check only (no full IPv4/IPv6 semantic validation):
+  // (a) this value becomes a Map key, so an attacker must not be able to supply
+  //     arbitrary-length garbage; (b) it must never reach a log line with CR/LF
+  //     in it (log injection). An over-strict semantic regex would risk silently
+  //     collapsing real clients into the shared 'unknown' bucket instead.
+  if (!candidate || !IP_LIKE.test(candidate)) {
+    return UNKNOWN_CLIENT_IP
+  }
+  return candidate
+}
