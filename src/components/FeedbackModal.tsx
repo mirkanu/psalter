@@ -14,7 +14,7 @@ interface FeedbackModalProps {
 }
 
 export function FeedbackModal({ open, onClose }: FeedbackModalProps) {
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error' | 'rate-limited'>('idle')
   const [message, setMessage] = useState('')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -42,6 +42,10 @@ export function FeedbackModal({ open, onClose }: FeedbackModalProps) {
           pageUrl: includeUrl ? window.location.href : null,
         }),
       })
+      if (res.status === 429) {
+        setStatus('rate-limited')
+        return
+      }
       if (!res.ok) throw new Error('server error')
       setStatus('success')
     } catch (err) {
@@ -84,6 +88,11 @@ export function FeedbackModal({ open, onClose }: FeedbackModalProps) {
             </div>
             {status === 'error' && (
               <p className="text-sm text-destructive">Something went wrong. Please try again, or email us directly.</p>
+            )}
+            {status === 'rate-limited' && (
+              <p className="text-sm text-destructive">
+                You&apos;ve sent several messages just now. Please wait a minute and try again.
+              </p>
             )}
             <div className="flex justify-end">
               <Button type="submit" disabled={status === 'loading'} className="w-full sm:w-auto">
