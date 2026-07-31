@@ -1,5 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { checkRateLimit, resetRateLimit, trackedKeyCount, MAX_TRACKED_KEYS } from './rate-limit'
+import {
+  checkRateLimit,
+  resetRateLimit,
+  trackedKeyCount,
+  MAX_TRACKED_KEYS,
+  getClientIp,
+  UNKNOWN_CLIENT_IP,
+} from './rate-limit'
 
 const OPTS = { limit: 5, windowMs: 60_000 }
 const T0 = 1_800_000_000_000
@@ -97,5 +104,71 @@ describe('checkRateLimit', () => {
     checkRateLimit('new', { ...OPTS, now: T0 + 120_000 })
     const r = checkRateLimit('old', { ...OPTS, now: T0 + 120_000 })
     expect(r).toEqual({ allowed: true, remaining: 4 })
+  })
+})
+
+function makeRequest(headers: Record<string, string>): Request {
+  return new Request('http://test/api/feedback', { method: 'POST', headers })
+}
+
+describe('getClientIp', () => {
+  it('returns the x-forwarded-for value', () => {
+    const req = makeRequest({ 'x-forwarded-for': '203.0.113.7' })
+    expect(getClientIp(req)).toBe('203.0.113.7')
+  })
+
+  it('returns the first entry of a multi-hop x-forwarded-for', () => {
+    const req = makeRequest({ 'x-forwarded-for': '203.0.113.7, 70.41.3.18, 150.172.238.178' })
+    expect(getClientIp(req)).toBe('203.0.113.7')
+  })
+
+  it('trims whitespace around the first entry', () => {
+    const req = makeRequest({ 'x-forwarded-for': '  203.0.113.7 , 70.41.3.18 ' })
+    expect(getClientIp(req)).toBe('203.0.113.7')
+  })
+
+  it('falls back to x-real-ip when x-forwarded-for is absent', () => {
+    const req = makeRequest({ 'x-real-ip': '198.51.100.4' })
+    expect(getClientIp(req)).toBe('198.51.100.4')
+  })
+
+  it('returns UNKNOWN_CLIENT_IP when neither header is present', () => {
+    const req = makeRequest({})
+    expect(getClientIp(req)).toBe(UNKNOWN_CLIENT_IP)
+  })
+
+  it('falls through an empty x-forwarded-for to x-real-ip, then to unknown', () => {
+    const withRealIp = makeRequest({ 'x-forwarded-for': '', 'x-real-ip': '198.51.100.4' })
+    expect(getClientIp(withRealIp)).toBe('198.51.100.4')
+
+    const withNeither = makeRequest({ 'x-forwarded-for': '' })
+    expect(getClientIp(withNeither)).toBe(UNKNOWN_CLIENT_IP)
+  })
+
+  it('returns an IPv6 value unchanged', () => {
+    const req = makeRequest({ 'x-forwarded-for': '2001:db8::1' })
+    expect(getClientIp(req)).toBe('2001:db8::1')
+  })
+
+  it('returns UNKNOWN_CLIENT_IP for a non-IP value', () => {
+    const req = makeRequest({ 'x-forwarded-for': '<script>alert(1)</script>' })
+    expect(getClientIp(req)).toBe(UNKNOWN_CLIENT_IP)
+  })
+
+  it('returns UNKNOWN_CLIENT_IP for a value containing a newline', () => {
+    // Node's real Headers/Request implementation already rejects a raw CR/LF
+    // header value at construction time, so a genuine Request can never carry
+    // one — that is itself defense-in-depth. This test exercises getClientIp's
+    // OWN validation directly via a minimal duck-typed headers object, so the
+    // regex guard is verified independently of the runtime's behaviour.
+    const fakeReq = {
+      headers: { get: (name: string) => (name === 'x-forwarded-for' ? '1.2.3.4\r\nX-Injected: 1' : null) },
+    } as unknown as Request
+    expect(getClientIp(fakeReq)).toBe(UNKNOWN_CLIENT_IP)
+  })
+
+  it('returns UNKNOWN_CLIENT_IP for a value over the 45-char IPv6 max length', () => {
+    const req = makeRequest({ 'x-forwarded-for': '1'.repeat(200) })
+    expect(getClientIp(req)).toBe(UNKNOWN_CLIENT_IP)
   })
 })
