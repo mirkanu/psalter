@@ -1,9 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+type NotifyInput = {
+  message: string
+  name: string | null
+  email: string | null
+  pageUrl: string | null
+  submittedAt?: Date
+}
+type NotifyResult = { ok: boolean; error?: string; id?: string }
+
 const { insertMock, valuesMock, notifyMock } = vi.hoisted(() => {
   const valuesMock = vi.fn(async () => undefined)
   const insertMock = vi.fn(() => ({ values: valuesMock }))
-  const notifyMock = vi.fn(async () => ({ ok: true, id: 'msg-1' }))
+  const notifyMock = vi.fn(async (_input: NotifyInput): Promise<NotifyResult> => ({
+    ok: true,
+    id: 'msg-1',
+  }))
   return { insertMock, valuesMock, notifyMock }
 })
 vi.mock('@/db', () => ({ db: { insert: insertMock } }))
