@@ -117,8 +117,8 @@ Authenticated precentor portal, service set lists, site footer/feedback/analytic
   2. A feedback DB write still succeeds even if the email send fails (email is fire-and-forget, never blocks the save)
   3. Submitting the feedback form rapidly above the configured threshold is rejected with a rate-limit response instead of sending unlimited emails
 **Plans**: 4 plans (3 waves)
-- [ ] 08-01-PLAN.md — In-memory sliding-window rate limiter + hardened client-IP extraction (src/lib/rate-limit.ts)
-- [ ] 08-02-PLAN.md — Injection-safe owner-notification email builder + fire-and-forget send wrapper (src/lib/feedback-email.ts)
+- [x] 08-01-PLAN.md — In-memory sliding-window rate limiter + hardened client-IP extraction (src/lib/rate-limit.ts)
+- [x] 08-02-PLAN.md — Injection-safe owner-notification email builder + fire-and-forget send wrapper (src/lib/feedback-email.ts)
 - [ ] 08-03-PLAN.md — Wire 5/60s throttle + 429 and the notification send into POST /api/feedback, plus the modal's rate-limit message
 - [ ] 08-04-PLAN.md — Deploy, live burst test (5x200 + 429), and human confirmation of real inbox delivery
 
