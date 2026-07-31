@@ -20,8 +20,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Feedback
 
-- [ ] **FEED-01**: Feedback form submissions trigger an email to the site owner (manuelkuhs@gmail.com) on every submission
-- [ ] **FEED-02**: Feedback API is rate-limited
+- [x] **FEED-01**: Feedback form submissions trigger an email to the site owner (manuelkuhs@gmail.com) on every submission
+- [ ] **FEED-02**: Feedback API is rate-limited — **partial**: rate limiting is fully verified live end-to-end at the API level (real deployed endpoint, real per-IP counter, `200 200 200 200 200 429` burst sequence with `Retry-After` header), but the browser-UI rendering of the rate-limit message on the 6th rapid submission was not human-verified live — human explicitly skipped that check as redundant with the API-level proof; see `.planning/phases/08-feedback-email-rate-limiting/08-04-LIVE-EVIDENCE.md`
 
 ### Changelog
 
@@ -108,8 +108,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SEC-03 | Phase 6 | Complete |
 | EMAIL-01 | Phase 7 | Complete |
 | EMAIL-02 | Phase 7 | Partial — Gmail confirmed; Outlook/Microsoft-family unverified (skipped by human decision, see 07-03-DELIVERY-EVIDENCE.md) |
-| FEED-01 | Phase 8 | Pending |
-| FEED-02 | Phase 8 | Pending |
+| FEED-01 | Phase 8 | Complete |
+| FEED-02 | Phase 8 | Partial — API-level rate limiting fully verified live; UI message display skipped by human decision (see 08-04-LIVE-EVIDENCE.md) |
 | CHLG-01 | Phase 9 | Pending |
 | CHLG-02 | Phase 9 | Pending |
 | CHLG-03 | Phase 9 | Pending |
