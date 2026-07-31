@@ -25,7 +25,22 @@
 
 - 5 accepted submissions (req1-5) => 5 notification sends attempted via `sendFeedbackNotification` (fire-and-forget from `POST /api/feedback`), each labelled `PHASE08-SMOKE <n>` in the message body, name `Phase 8 smoke test`, page URL `https://psalter.gsdlabs.dev/psalms/23`
 - `pm2 logs psalter --lines 60 --nostream | grep -c '\[feedback\] notification email'` => `0` (no send failures logged; the only log line this code path would emit on failure is `[feedback] notification email threw:`, which is the substring matched)
-- human inbox confirmation: PENDING (Task 2)
+- human inbox confirmation: see "Human verification" section below (Task 3)
+
+## Human verification (2026-07-31)
+
+Human's verbatim reply at the Task 2 checkpoint: "All confirmed except 5, let's skip that (your smoke test was enough)"
+
+- Smoke emails received: 5 of 5 — inbox placement: Primary
+- Live modal submission: arrived, subject: `CPRC Psalter feedback from <name they used>`
+- Reply-To behaviour: confirmed correct
+- Rate-limit message shown on 6th rapid submission: NOT TESTED — human decision to skip, citing Task 1's automated live burst test (`200 200 200 200 200 429` + the `429` body + `Retry-After` header, all captured against the real deployed endpoint above) as sufficient evidence for the underlying FEED-02 behavior
+- Recovery after ~60s: yes
+- Verdict: GAPS
+
+## Open gaps
+
+- FEED-02 / phase success criterion 3 (rate-limit UI message): the live browser-UI rendering of the "You've sent several messages just now. Please wait a minute and try again." message on the 6th rapid submission was not manually verified by a human, by explicit human decision — not a defect, not a failed check, not a wrong message shown. The underlying 429 rejection behavior IS fully verified live end-to-end (Task 1: real deployed `/api/feedback` endpoint, real per-IP counter, real `Retry-After` header). The `FeedbackModal.tsx` message-display branch that renders that specific sentence on a 429 response was verified via Plan 08-03's unit tests only, never by a human eyeball in a live browser.
 
 ## Notes
 
