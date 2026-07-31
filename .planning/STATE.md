@@ -4,8 +4,8 @@ milestone: v2.0
 milestone_name: Public Beta
 status: executing
 stopped_at: Phase 07 Plan 03 complete — EMAIL-02 Partial (Gmail verified, Outlook gap open)
-last_updated: "2026-07-31T18:08:35.349Z"
-last_activity: 2026-07-31 -- Phase 8 planning complete
+last_updated: "2026-07-31T18:10:49.371Z"
+last_activity: 2026-07-31 -- Phase 08 execution started
 progress:
   total_phases: 10
   completed_phases: 2
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone close)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 07 — email-foundation-resend-provisioning
+**Current focus:** Phase 08 — Feedback Email & Rate Limiting
 
 ## Current Position
 
-Phase: 8
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-07-31 -- Phase 8 planning complete
+Phase: 08 (Feedback Email & Rate Limiting) — EXECUTING
+Plan: 1 of 4
+Status: Executing Phase 08
+Last activity: 2026-07-31 -- Phase 08 execution started
 
 ## Performance Metrics
 
