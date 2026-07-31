@@ -16,7 +16,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 ### Email Infrastructure
 
 - [x] **EMAIL-01**: Resend API key provisioned (`PSALTER_RESEND_API_KEY`); sending subdomain verified (SPF/DKIM/DMARC) in Cloudflare DNS — Phase 7 (07-01)
-- [ ] **EMAIL-02**: Test sends confirmed landing in real Gmail/Outlook inboxes, not just the Resend dashboard log
+- [ ] **EMAIL-02**: Test sends confirmed landing in real Gmail/Outlook inboxes, not just the Resend dashboard log — **partial**: Gmail confirmed (Primary inbox, spf/dkim/dmarc all pass at mail.gsdlabs.dev), Outlook/Microsoft-family explicitly skipped by human decision, not yet attempted — see `.planning/phases/07-email-foundation-resend-provisioning/07-03-DELIVERY-EVIDENCE.md`
 
 ### Feedback
 
@@ -107,7 +107,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SEC-02 | Phase 6 | Complete |
 | SEC-03 | Phase 6 | Complete |
 | EMAIL-01 | Phase 7 | Complete |
-| EMAIL-02 | Phase 7 | Pending |
+| EMAIL-02 | Phase 7 | Partial — Gmail confirmed; Outlook/Microsoft-family unverified (skipped by human decision, see 07-03-DELIVERY-EVIDENCE.md) |
 | FEED-01 | Phase 8 | Pending |
 | FEED-02 | Phase 8 | Pending |
 | CHLG-01 | Phase 9 | Pending |
