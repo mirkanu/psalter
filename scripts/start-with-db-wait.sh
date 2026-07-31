@@ -1,10 +1,19 @@
 #!/bin/bash
 set -e
 
-# Load environment variables from .env file
-if [ -f /home/services/psalter/.env ]; then
-  export $(grep -v '^#' /home/services/psalter/.env | xargs)
-fi
+# Load environment variables.
+# Order matters: shared VPS secrets first, project .env second, so project-local
+# values (DATABASE_URL, BETTER_AUTH_*, TUNES_DIR) override anything shared.
+# `set -a` auto-exports and, unlike `export $(... | xargs)`, survives values that
+# contain spaces — PSALTER_RESEND_FROM_ADDRESS is "CPRC Psalter <psalter@mail.gsdlabs.dev>".
+# Sourcing is wrapped so a malformed shared file can never kill startup under `set -e`
+# (see Phase 07 Plan 01 discovered_facts).
+set +e
+set -a
+[ -f /home/services/.env.production ] && . /home/services/.env.production
+[ -f /home/services/psalter/.env ] && . /home/services/psalter/.env
+set +a
+set -e
 
 # Wait for PostgreSQL to be ready, with timeout
 TIMEOUT=60
