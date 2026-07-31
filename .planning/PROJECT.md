@@ -114,6 +114,8 @@ Full detail: `.planning/milestones/v1.1-REQUIREMENTS.md`
 
 - [ ] v2.0 Public Beta — see Current Milestone above. Requirements to be scoped in `.planning/REQUIREMENTS.md`.
   - [x] SEC-01, SEC-02, SEC-03 (Security & Data-Safety Prerequisites) — Phase 6, validated 2026-07-30. Closed a live production auth hole (middleware never compiled, 12 admin surfaces publicly reachable) and backed up 326 unbacked-up tune images before any compression work touches them.
+  - [x] EMAIL-01 (Resend Provisioning) — Phase 7, validated 2026-07-31. DNS trust chain (SPF/DKIM/MX/DMARC) verified for `mail.gsdlabs.dev`; sending-only Resend API key live in production; `sendEmail()` client wrapper + CLI test-send script shipped.
+  - [~] EMAIL-02 (Real Inbox Delivery Verification) — Phase 7, **partial** 2026-07-31. Gmail delivery confirmed (Primary inbox, spf/dkim/dmarc all pass, human-verified raw headers + independent 10/10 mail-tester.com score). Outlook/Hotmail/Live-family delivery intentionally not tested — human declined to supply a Microsoft-family address for this run. Needed before Phase 8/9 (feedback notifications, changelog broadcasts) can be considered fully proven for all recipients.
 
 ### Backlog
 
@@ -152,4 +154,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-30 — Phase 6 (Security & Data-Safety Prerequisites) complete: SEC-01/02/03 validated.*
+*Last updated: 2026-07-31 — Phase 7 (Email Foundation) complete: EMAIL-01 validated, EMAIL-02 partial (Gmail verified, Outlook/Microsoft-family deferred).*
