@@ -128,9 +128,8 @@ describe('buildFeedbackEmail', () => {
     expect(payload.html).not.toContain('<script>')
   })
 
-  it('html escapes an onerror attribute in the name', () => {
+  it('html escapes an onerror attribute in the name (no live <img tag)', () => {
     const payload = buildFeedbackEmail({ ...base, name: '<img src=x onerror=alert(1)>' })
-    expect(payload.html).not.toContain('onerror=alert(1)')
     expect(payload.html).not.toMatch(/<img/)
   })
 
