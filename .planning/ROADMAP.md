@@ -116,7 +116,11 @@ Authenticated precentor portal, service set lists, site footer/feedback/analytic
   1. Submitting the feedback form sends an email to manuelkuhs@gmail.com containing the submission content, for every submission
   2. A feedback DB write still succeeds even if the email send fails (email is fire-and-forget, never blocks the save)
   3. Submitting the feedback form rapidly above the configured threshold is rejected with a rate-limit response instead of sending unlimited emails
-**Plans**: TBD
+**Plans**: 4 plans (3 waves)
+- [ ] 08-01-PLAN.md — In-memory sliding-window rate limiter + hardened client-IP extraction (src/lib/rate-limit.ts)
+- [ ] 08-02-PLAN.md — Injection-safe owner-notification email builder + fire-and-forget send wrapper (src/lib/feedback-email.ts)
+- [ ] 08-03-PLAN.md — Wire 5/60s throttle + 429 and the notification send into POST /api/feedback, plus the modal's rate-limit message
+- [ ] 08-04-PLAN.md — Deploy, live burst test (5x200 + 429), and human confirmation of real inbox delivery
 
 ### Phase 9: Changelog
 **Goal**: Visitors can read what's new, the admin can publish updates without a separate admin panel, and subscribers get notified by email
@@ -225,7 +229,7 @@ Phases 7 and 10 have no dependencies on Phase 6 or each other and may be worked 
 |-------|-----------------|--------|-----------|
 | 6. Security & Data-Safety Prerequisites | 0/TBD | Not started | - |
 | 7. Email Foundation (Resend Provisioning) | 0/TBD | Not started | - |
-| 8. Feedback Email & Rate Limiting | 0/TBD | Not started | - |
+| 8. Feedback Email & Rate Limiting | 0/4 | Planned | - |
 | 9. Changelog | 0/TBD | Not started | - |
 | 10. Tune Data Fixes | 0/TBD | Not started | - |
 | 11. Tune List & Selector Overhaul | 0/TBD | Not started | - |
