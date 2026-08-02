@@ -57,3 +57,72 @@ export function maskEmail(email: string): string {
   if (!domain || !local) return email
   return `${local[0]}${'*'.repeat(Math.max(local.length - 1, 3))}@${domain}`
 }
+
+export type ChangelogEmailInput = {
+  to: string
+  title: string
+  body: string
+  unsubscribeToken: string
+}
+
+export type ChangelogEmailPayload = {
+  to: string
+  subject: string
+  html: string
+  text: string
+}
+
+export function buildChangelogEmail(input: ChangelogEmailInput): ChangelogEmailPayload {
+  const { to, title, body, unsubscribeToken } = input
+
+  const safeTitle = sanitizeHeaderValue(title)
+  const subject = `CPRC Psalter update: ${safeTitle}`.slice(0, MAX_SUBJECT_LENGTH)
+
+  const changelogUrl = `${getSiteBaseUrl()}/changelog`
+  const unsubscribeUrl = buildUnsubscribeUrl(unsubscribeToken)
+
+  const text = [
+    safeTitle,
+    '',
+    body,
+    '',
+    `Read all updates: ${changelogUrl}`,
+    '',
+    `Unsubscribe: ${unsubscribeUrl}`,
+  ].join('\n')
+
+  const html = [
+    `<p><strong>${escapeHtml(safeTitle)}</strong></p>`,
+    `<p style="white-space:pre-wrap">${escapeHtml(body)}</p>`,
+    `<p><a href="${escapeHtml(changelogUrl)}">Read all updates on psalter.gsdlabs.dev</a></p>`,
+    '<hr>',
+    `<p style="font-size:12px;color:#666">Unsubscribe: <a href="${escapeHtml(unsubscribeUrl)}">${escapeHtml(unsubscribeUrl)}</a></p>`,
+  ].join('\n')
+
+  return { to, subject, html, text }
+}
+
+/**
+ * Fire-and-forget wrapper: builds the broadcast for one subscriber, sends it through
+ * Phase 07's `sendEmail`, and never throws. The publish route calls this once per
+ * subscriber in a sequential loop — a single bad recipient must never abort the rest of
+ * the broadcast or affect the already-committed post.
+ *
+ * Never logs the recipient address or the post body — only the failure reason.
+ */
+export async function sendChangelogBroadcastEmail(
+  input: ChangelogEmailInput,
+): Promise<SendEmailResult> {
+  try {
+    const payload = buildChangelogEmail(input)
+    const result = await sendEmail(payload)
+    if (!result.ok) {
+      console.error('[changelog] broadcast email failed:', result.error)
+    }
+    return result
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'unknown error'
+    console.error('[changelog] broadcast email failed:', message)
+    return { ok: false, error: message }
+  }
+}

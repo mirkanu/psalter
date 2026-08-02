@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import type { SendEmailResult } from './email'
 
 const { sendEmailMock } = vi.hoisted(() => ({
-  sendEmailMock: vi.fn(async () => ({ ok: true, id: 'msg-1' })),
+  sendEmailMock: vi.fn<(...args: unknown[]) => Promise<SendEmailResult>>(async () => ({
+    ok: true,
+    id: 'msg-1',
+  })),
 }))
 vi.mock('./email', () => ({ sendEmail: sendEmailMock }))
 
