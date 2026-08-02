@@ -531,3 +531,35 @@ export const feedbackSubmissions = pgTable('feedback_submissions', {
   pageUrl: text('page_url'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
+
+// ─── Changelog ───────────────────────────────────────────────────────────────
+
+/**
+ * changelog_posts — public release notes, authored inline by an admin on /changelog.
+ * No draft state: insert == publish. createdAt doubles as publishedAt (Phase 9, CHLG-01/02).
+ */
+export const changelogPosts = pgTable('changelog_posts', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  body: text('body').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+/**
+ * changelog_subscribers — public opt-in email list for changelog broadcasts (Phase 9, CHLG-04/05).
+ *
+ * `email` MUST be unique: `POST /api/subscribe` relies on
+ * `.onConflictDoNothing({ target: changelogSubscribers.email })`, and Postgres raises
+ * "no unique or exclusion constraint matching the ON CONFLICT specification" at runtime
+ * without a matching constraint.
+ *
+ * `unsubscribeToken` is a `crypto.randomUUID()` value and is the ONLY credential proving
+ * ownership of an unsubscribe request — it must be unique so a delete-by-token can never
+ * match more than one row.
+ */
+export const changelogSubscribers = pgTable('changelog_subscribers', {
+  id: serial('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  unsubscribeToken: text('unsubscribe_token').notNull().unique(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
