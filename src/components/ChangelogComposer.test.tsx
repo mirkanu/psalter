@@ -3,8 +3,10 @@ import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 // eslint-disable-next-line import/no-unresolved
 import composerSource from './ChangelogComposer.tsx?raw'
 
+type MockSession = { data: { user: { id: string; role: string } } | null; isPending: boolean }
+
 const { useSessionMock, refreshMock } = vi.hoisted(() => ({
-  useSessionMock: vi.fn(() => ({ data: null, isPending: true })),
+  useSessionMock: vi.fn((): MockSession => ({ data: null, isPending: true })),
   refreshMock: vi.fn(),
 }))
 vi.mock('@/lib/auth-client', () => ({ authClient: { useSession: useSessionMock } }))
