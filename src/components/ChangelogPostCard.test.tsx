@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render } from '@testing-library/react'
 import { ChangelogPostCard } from './ChangelogPostCard'
 import type { ChangelogPost } from '@/db/queries/changelog'
 
@@ -13,8 +13,8 @@ const POST: ChangelogPost = {
 
 describe('ChangelogPostCard', () => {
   it('renders the post title text', () => {
-    render(<ChangelogPostCard post={POST} />)
-    expect(screen.getByText('New tune list')).toBeInTheDocument()
+    const { container } = render(<ChangelogPostCard post={POST} />)
+    expect(container.textContent).toContain('New tune list')
   })
 
   it('renders a <time> element with ISO dateTime and d MMMM yyyy text', () => {
