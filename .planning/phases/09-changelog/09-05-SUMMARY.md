@@ -146,3 +146,7 @@ None - no external service configuration required.
 ---
 *Phase: 09-changelog*
 *Completed: 2026-08-03*
+
+## Self-Check: PASSED
+
+All 5 created files verified present on disk (ChangelogPostCard.tsx, SubscribeForm.tsx, ChangelogComposer.tsx, src/app/changelog/page.tsx, src/types/vite-raw.d.ts) and all 5 task/deviation commit hashes (07a06e8, 7e98bfe, 29f1f03, c907ca0, d5826c2) verified present in `git log --oneline --all`.
