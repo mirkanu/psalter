@@ -116,3 +116,15 @@ None — no external service configuration required.
 ---
 *Phase: 09-changelog*
 *Completed: 2026-08-03*
+
+## Self-Check: PASSED
+
+- FOUND: src/lib/changelog-broadcast.ts
+- FOUND: src/lib/changelog-broadcast.test.ts
+- FOUND: src/app/api/changelog/route.ts
+- FOUND: src/app/api/changelog/route.test.ts
+- FOUND: .planning/phases/09-changelog/09-04-SUMMARY.md
+- FOUND commit: 307fb03 (test RED — broadcast)
+- FOUND commit: 871c44a (feat GREEN — broadcast)
+- FOUND commit: c57c92b (test RED — route)
+- FOUND commit: 6f113d5 (feat GREEN — route)
