@@ -27,9 +27,9 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [ ] **CHLG-01**: `/changelog` page lists posts reverse-chronologically (title, date, body)
 - [ ] **CHLG-02**: Logged-in admin can write and publish changelog posts inline from the live site — no separate admin panel
-- [ ] **CHLG-03**: Homepage hero announces the v2.0 release
+- [x] **CHLG-03**: Homepage hero announces the v2.0 release
 - [ ] **CHLG-04**: Visitor can subscribe to updates via email (single field, single opt-in)
-- [ ] **CHLG-05**: Publishing a changelog post emails subscribers, with a working unsubscribe link
+- [x] **CHLG-05**: Publishing a changelog post emails subscribers, with a working unsubscribe link
 
 ### Tune Data Fixes
 
@@ -112,9 +112,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FEED-02 | Phase 8 | Partial — API-level rate limiting fully verified live; UI message display skipped by human decision (see 08-04-LIVE-EVIDENCE.md) |
 | CHLG-01 | Phase 9 | Pending |
 | CHLG-02 | Phase 9 | Pending |
-| CHLG-03 | Phase 9 | Pending |
+| CHLG-03 | Phase 9 | Complete |
 | CHLG-04 | Phase 9 | Pending |
-| CHLG-05 | Phase 9 | Pending |
+| CHLG-05 | Phase 9 | Complete |
 | TUNE-01 | Phase 10 | Pending |
 | TUNE-02 | Phase 10 | Pending |
 | TUNE-03 | Phase 10 | Pending |
