@@ -116,3 +116,16 @@ None — no external service configuration required. Both routes use the existin
 ---
 *Phase: 09-changelog*
 *Completed: 2026-08-03*
+
+## Self-Check: PASSED
+
+- FOUND: src/app/api/subscribe/route.ts
+- FOUND: src/app/api/subscribe/route.test.ts
+- FOUND: src/app/api/unsubscribe/route.ts
+- FOUND: src/app/api/unsubscribe/route.test.ts
+- FOUND: .planning/phases/09-changelog/09-02-SUMMARY.md
+- FOUND commit: 2ee9eb7 (Task 1 RED: subscribe test)
+- FOUND commit: 49ebd6a (Task 1 GREEN: subscribe route)
+- FOUND commit: ba16296 (Task 2 RED: unsubscribe test)
+- FOUND commit: f4f32a8 (Task 2 GREEN: unsubscribe route)
+- FOUND commit: 2d4080a (SUMMARY.md)
