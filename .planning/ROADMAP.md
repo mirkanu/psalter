@@ -134,11 +134,11 @@ Authenticated precentor portal, service set lists, site footer/feedback/analytic
   5. Publishing a new changelog post emails all subscribers, and that email contains a working unsubscribe link that actually removes the subscriber
 **Plans**: 7 plans (3 waves)
 - [x] 09-01-PLAN.md — changelog_posts + changelog_subscribers schema, db:push, fetchPublishedPosts()
-- [ ] 09-02-PLAN.md — Public POST /api/subscribe (rate-limited, enumeration-safe) + POST /api/unsubscribe (token-gated hard delete, no GET)
+- [x] 09-02-PLAN.md — Public POST /api/subscribe (rate-limited, enumeration-safe) + POST /api/unsubscribe (token-gated hard delete, no GET)
 - [x] 09-03-PLAN.md — src/lib/changelog-email.ts: broadcast email construction, per-token unsubscribe URL, maskEmail
-- [ ] 09-04-PLAN.md — Admin-gated POST /api/changelog + sequential, failure-tolerant subscriber broadcast
-- [ ] 09-05-PLAN.md — /changelog page: post list, admin-only inline composer, subscribe form
-- [ ] 09-06-PLAN.md — Read-only unsubscribe landing page + click-to-POST button, homepage v2.0 hero, Changelog nav entry
+- [x] 09-04-PLAN.md — Admin-gated POST /api/changelog + sequential, failure-tolerant subscriber broadcast
+- [x] 09-05-PLAN.md — /changelog page: post list, admin-only inline composer, subscribe form
+- [x] 09-06-PLAN.md — Read-only unsubscribe landing page + click-to-POST button, homepage v2.0 hero, Changelog nav entry
 - [ ] 09-07-PLAN.md — Deploy, live smoke, subscribe/publish/unsubscribe round trip, human inbox confirmation
 **UI hint**: yes
 
