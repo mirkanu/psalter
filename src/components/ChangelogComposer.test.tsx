@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+// eslint-disable-next-line import/no-unresolved
+import composerSource from './ChangelogComposer.tsx?raw'
 
 const { useSessionMock, refreshMock } = vi.hoisted(() => ({
   useSessionMock: vi.fn(() => ({ data: null, isPending: true })),
@@ -122,8 +122,7 @@ describe('ChangelogComposer', () => {
   })
 
   it('the component source contains no branch that renders the composer when role !== admin', () => {
-    const src = readFileSync(join(__dirname, 'ChangelogComposer.tsx'), 'utf-8')
-    expect(/role !== .admin./.test(src)).toBe(true)
-    expect((src.match(/return null/g) ?? []).length).toBe(2)
+    expect(/role !== .admin./.test(composerSource)).toBe(true)
+    expect((composerSource.match(/return null/g) ?? []).length).toBe(2)
   })
 })
