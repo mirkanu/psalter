@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const { insertMock, valuesMock, onConflictMock } = vi.hoisted(() => {
   const onConflictMock = vi.fn(async (_opts: unknown) => undefined)
-  const valuesMock = vi.fn(() => ({ onConflictDoNothing: onConflictMock }))
+  const valuesMock = vi.fn((_v: { email: string; unsubscribeToken: string }) => ({
+    onConflictDoNothing: onConflictMock,
+  }))
   const insertMock = vi.fn(() => ({ values: valuesMock }))
   return { insertMock, valuesMock, onConflictMock }
 })
