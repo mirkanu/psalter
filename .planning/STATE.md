@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
-status: executing
-stopped_at: Phase 9 UI-SPEC approved
-last_updated: "2026-08-02T16:16:32.664Z"
-last_activity: 2026-08-02 -- Phase 09 execution started
+status: verifying
+stopped_at: Phase 9 complete — all 5 CHLG requirements live-verified, human confirmed full pass
+last_updated: "2026-08-07T17:32:04.274Z"
+last_activity: 2026-08-07
 progress:
   total_phases: 10
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 17
-  completed_plans: 10
-  percent: 59
+  completed_plans: 17
+  percent: 100
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone clos
 
 ## Current Position
 
-Phase: 09 (changelog) — EXECUTING
-Plan: 1 of 7
-Status: Executing Phase 09
-Last activity: 2026-08-02 -- Phase 09 execution started
+Phase: 09 (changelog) — COMPLETE
+Plan: 7 of 7 (09-07 live deployment) — all 3 tasks complete (63213c6, checkpoint approved, 9302d28)
+Status: Phase complete — ready for verification
+Last activity: 2026-08-07
 
 ## Performance Metrics
 
@@ -88,6 +88,7 @@ Last activity: 2026-08-02 -- Phase 09 execution started
 | Phase 04.9.15 P05 | 215 min | 3 tasks | 3 files |
 | Phase 07 P03 | 20 min | 3 tasks | 2 files |
 | Phase 08 P04 | 30 min | 3 tasks | 2 files |
+| Phase 09-changelog P07 | 35 min | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -178,6 +179,8 @@ Recent decisions affecting current work:
 - [Phase 07]: EMAIL-02 marked Partial (Gmail confirmed, Primary inbox, spf/dkim/dmarc all pass at mail.gsdlabs.dev); Outlook/Microsoft-family leg explicitly skipped by human decision, recorded as an open gap in 07-03-DELIVERY-EVIDENCE.md, not silently closed
 - [Phase 08-04]: Human confirmed 5/5 smoke-test emails delivered to Primary inbox and a live modal submission arrived with correct subject/Reply-To; explicitly skipped the live-UI rate-limit-message check, judging Task 1's automated live burst test sufficient — FEED-01 marked Complete, FEED-02 marked Partial — Mirrors the Phase 07 EMAIL-02 precedent: record an honest partial verdict with an explicit open gap rather than upgrading to a clean pass
 - [Phase 08-04]: Stashed two pre-existing unrelated uncommitted changes (CLAUDE.md stack section, PsalmListingGrid.tsx scroll fix) before the live production build, restored after the burst test — Ensures the deployed bundle reflects only committed Phase 8 code, not unreviewed in-flight edits, during a live-verification plan
+- [Phase 09-07]: 14 pre-existing test failures (precent-route headers() test-scope mismatch, tune/psalm data-shape assertions, melisma heuristics) found during Task 1's full-suite gate predate Phase 9 entirely (last touched 2026-07-16) and are unrelated to changelog code — Logged to deferred-items.md per scope-boundary rules, not fixed; build proceeded since zero changelog tests failed
+- [Phase 09-changelog]: [Phase 09-07] Human's real published post ('V2 (Beta)', changelog_posts.id=31) left in place as genuine release content rather than deleted as test data, per threat register T-09-62 requiring an explicit decision before deleting any live-visible post
 
 ### Pending Todos
 
@@ -257,9 +260,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-02T11:08:16.209Z
-Stopped at: Phase 9 UI-SPEC approved
-Resume file: .planning/phases/09-changelog/09-UI-SPEC.md
+Last session: 2026-08-07T17:32:04.216Z
+Stopped at: Phase 9 complete — all 5 CHLG requirements live-verified, human confirmed full pass
+Resume file: None
 
 ### Deferred from 04.9.4 polish (separate tickets when needed)
 

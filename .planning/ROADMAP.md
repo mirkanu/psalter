@@ -139,7 +139,7 @@ Authenticated precentor portal, service set lists, site footer/feedback/analytic
 - [x] 09-04-PLAN.md — Admin-gated POST /api/changelog + sequential, failure-tolerant subscriber broadcast
 - [x] 09-05-PLAN.md — /changelog page: post list, admin-only inline composer, subscribe form
 - [x] 09-06-PLAN.md — Read-only unsubscribe landing page + click-to-POST button, homepage v2.0 hero, Changelog nav entry
-- [ ] 09-07-PLAN.md — Deploy, live smoke, subscribe/publish/unsubscribe round trip, human inbox confirmation
+- [x] 09-07-PLAN.md — Deploy, live smoke, subscribe/publish/unsubscribe round trip, human inbox confirmation
 **UI hint**: yes
 
 ### Phase 10: Tune Data Fixes
@@ -237,7 +237,7 @@ Phases 7 and 10 have no dependencies on Phase 6 or each other and may be worked 
 | 6. Security & Data-Safety Prerequisites | 0/TBD | Not started | - |
 | 7. Email Foundation (Resend Provisioning) | 0/TBD | Not started | - |
 | 8. Feedback Email & Rate Limiting | 4/4 | Complete | 2026-08-02 |
-| 9. Changelog | 0/7 | Planned | - |
+| 9. Changelog | 7/7 | Complete   | 2026-08-07 |
 | 10. Tune Data Fixes | 0/TBD | Not started | - |
 | 11. Tune List & Selector Overhaul | 0/TBD | Not started | - |
 | 12. Psalm Selector Polish | 0/TBD | Not started | - |
