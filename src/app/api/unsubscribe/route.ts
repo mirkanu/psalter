@@ -12,10 +12,32 @@ import { NextResponse } from 'next/server'
 import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { changelogSubscribers } from '@/db/schema'
+import { getClientIp, checkRateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
+// Higher budget than /api/subscribe (5/60s): unsubscribe tokens have 122 bits of
+// entropy (brute force infeasible — see 09-02-SUMMARY.md), so this limit exists to
+// stop request-volume abuse, not to protect a guessable secret. A generous cap
+// avoids punishing a real subscriber who double-clicks or re-opens the email link.
+export const UNSUBSCRIBE_RATE_LIMIT = 20
+export const UNSUBSCRIBE_RATE_WINDOW_MS = 60_000
+
 export async function POST(req: Request) {
+  // Rate limit BEFORE body parsing, matching /api/subscribe: a malformed-body
+  // flood must not be a free bypass of the limiter.
+  const ip = getClientIp(req)
+  const limit = checkRateLimit(`unsubscribe:${ip}`, {
+    limit: UNSUBSCRIBE_RATE_LIMIT,
+    windowMs: UNSUBSCRIBE_RATE_WINDOW_MS,
+  })
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: 'too many requests', retryAfterSeconds: limit.retryAfterSeconds },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } },
+    )
+  }
+
   let body: Record<string, unknown>
   try {
     body = await req.json()
