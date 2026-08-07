@@ -21,7 +21,7 @@ Rebuild of psalter.cprc.co.uk from Airtable + Softr to a self-hosted Next.js 15 
 - [ ] **Phase 6: Security & Data-Safety Prerequisites** - Close the unauthenticated `/dev/*` admin surface and back up tune JPGs before anything else touches them
 - [ ] **Phase 7: Email Foundation (Resend Provisioning)** - Provision Resend, verify sending domain, confirm real-inbox delivery
 - [x] **Phase 8: Feedback Email & Rate Limiting** (4/4 plans) — completed 2026-08-02 - Feedback submissions notify the owner by email and can't be spammed
-- [ ] **Phase 9: Changelog** - Public changelog feed, inline admin authoring, homepage hero, email subscribe/broadcast
+- [x] **Phase 9: Changelog** (7/7 plans) — completed 2026-08-07 - Public changelog feed, inline admin authoring, homepage hero, email subscribe/broadcast
 - [ ] **Phase 10: Tune Data Fixes** - Ps 148b duplicate, meter-mismatch banner, Backup/Historical data migration + sort, name-based slugs
 - [ ] **Phase 11: Tune List & Selector Overhaul** - `/tunes` mirrors `/psalms`, mobile-fit sticky table, inline embed player, shared tune-picker component
 - [ ] **Phase 12: Psalm Selector Polish** - Always-collapsed multi-version toggle, meter tags, search bar width fix
