@@ -36,6 +36,8 @@ findings:
   info: 3
   total: 7
 status: issues_found
+critical_resolved: 1
+resolution_note: "CR-01 fixed same-day (commit c228c24) — see note under Critical Issues below."
 ---
 
 # Phase 09: Code Review Report
@@ -56,6 +58,12 @@ The one critical finding is a missing rate limit on `/api/unsubscribe` — a ful
 ## Critical Issues
 
 ### CR-01: `/api/unsubscribe` has no rate limiting on a public, unauthenticated DB-write endpoint
+
+> **RESOLVED 2026-08-07 (commit `c228c24`):** Added `checkRateLimit`/`getClientIp` gating,
+> 20 requests/60s/IP (higher than `/api/subscribe`'s 5/60s since the token's 122 bits of
+> entropy already rules out brute force — this limit exists to stop request-volume abuse,
+> not to protect a guessable secret). Live-verified against the real endpoint: 20×`404`
+> (invalid token, reached the DB) then `429` on the 21st request.
 
 **File:** `src/app/api/unsubscribe/route.ts:18-47`
 **Issue:** Every other public-facing write path in this phase is protected: `/api/subscribe` explicitly rate-limits before validation (`src/app/api/subscribe/route.ts:20-30`, "matching /api/feedback... a malformed-body flood must not be a free bypass of the limiter"), and `/api/changelog` explicitly documents why it has *no* limiter ("the route is admin-gated"). `/api/unsubscribe` has neither an admin gate nor a rate limiter, and carries no comment explaining the omission — unlike its siblings, which both justify their choice in writing. As written, an anonymous caller can issue unlimited `POST /api/unsubscribe` requests, each triggering a JSON parse and a DB `DELETE ... RETURNING` round trip, with zero throttling. `checkRateLimit`/`getClientIp` already exist in `@/lib/rate-limit` and are already imported one file away in `src/app/api/subscribe/route.ts`, so this isn't a case of missing infrastructure — the reusable pieces are sitting right next to this file and simply weren't wired in. Given this VPS is explicitly documented as memory-constrained (3.7GB total, `earlyoom` configured to kill the greediest process — see project CLAUDE.md "Hetzner VPS memory constraints"), an unthrottled endpoint that always reaches the DB is a real availability risk, not a theoretical one.
