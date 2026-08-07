@@ -1,15 +1,17 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { Fragment, useState, useEffect } from 'react'
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Menu, Search, Moon, Sun, MonitorSmartphone } from 'lucide-react'
 import { useTheme } from 'next-themes'
+import { toast } from 'sonner'
 import { Sheet, SheetTrigger, SheetContent, SheetClose } from '@/components/ui/sheet'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { GlobalSearch } from '@/components/GlobalSearch'
 import { FeedbackModal } from '@/components/FeedbackModal'
 import { cn } from '@/lib/utils'
 import { useChromeHidden } from '@/lib/chrome-hidden-store'
+import { authClient } from '@/lib/auth-client'
 
 const navLinks = [
   { href: "/psalms", label: "Psalms" },
@@ -56,12 +58,22 @@ function ThemeToggle() {
 
 export function SiteHeader() {
   const pathname = usePathname()
+  const router = useRouter()
   const [searchOpen, setSearchOpen] = useState(false)
   const [footerOpen, setFooterOpen] = useState<'about' | 'copyright' | 'feedback' | null>(null)
   // Quick task 260712-kd1 (bug b fix): subscribed to the shared chrome-hidden
   // store, which only SingingView ever writes to. Defaults false (visible)
   // everywhere else, so this has zero effect on non-singing pages.
   const chromeHidden = useChromeHidden()
+  // Visibility only, like ChangelogComposer's session gate — not a security boundary.
+  const { data: session, isPending: sessionPending } = authClient.useSession()
+  const showLogout = !sessionPending && !!session
+
+  async function handleLogout() {
+    await authClient.signOut()
+    router.push('/')
+    toast.success('You are now logged out')
+  }
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
@@ -70,6 +82,9 @@ export function SiteHeader() {
     isActive(href)
       ? 'text-foreground bg-muted text-sm font-medium px-3 py-2 rounded-md transition-colors'
       : 'text-muted-foreground hover:text-foreground hover:bg-muted text-sm font-medium px-3 py-2 rounded-md transition-colors'
+
+  const logoutButtonClass =
+    'text-muted-foreground hover:text-foreground hover:bg-muted text-sm font-medium px-3 py-2 rounded-md transition-colors'
 
   return (
     <>
@@ -99,9 +114,16 @@ export function SiteHeader() {
             {/* Desktop nav — hidden on mobile */}
             <nav className="hidden md:flex items-center gap-1" aria-label="Primary">
               {navLinks.map((link) => (
-                <Link key={link.href} href={link.href} className={linkClass(link.href)}>
-                  {link.label}
-                </Link>
+                <Fragment key={link.href}>
+                  <Link href={link.href} className={linkClass(link.href)}>
+                    {link.label}
+                  </Link>
+                  {link.href === '/precent' && showLogout && (
+                    <button type="button" onClick={handleLogout} className={logoutButtonClass}>
+                      Log Out
+                    </button>
+                  )}
+                </Fragment>
               ))}
               <button
                 type="button"
@@ -135,12 +157,20 @@ export function SiteHeader() {
                 <SheetContent side="right" className="w-64 flex flex-col">
                   <nav className="flex flex-col gap-1 pt-6" aria-label="Mobile primary">
                     {navLinks.map((link) => (
-                      <SheetClose
-                        key={link.href}
-                        render={<Link href={link.href} className={linkClass(link.href)} />}
-                      >
-                        {link.label}
-                      </SheetClose>
+                      <Fragment key={link.href}>
+                        <SheetClose
+                          render={<Link href={link.href} className={linkClass(link.href)} />}
+                        >
+                          {link.label}
+                        </SheetClose>
+                        {link.href === '/precent' && showLogout && (
+                          <SheetClose
+                            render={<button type="button" onClick={handleLogout} className={cn(logoutButtonClass, 'text-left')} />}
+                          >
+                            Log Out
+                          </SheetClose>
+                        )}
+                      </Fragment>
                     ))}
                   </nav>
                   <div className="mt-auto pt-4 border-t border-border flex flex-col gap-1">
