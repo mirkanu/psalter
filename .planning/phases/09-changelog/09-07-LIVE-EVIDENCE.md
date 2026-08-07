@@ -196,3 +196,59 @@ Zero `burst-%@example.invalid` rows remain.
   inspection was needed for this task's claims.
 - `manuelkuhs+psalter-chlg@gmail.com` remains subscribed (1 row) at the end of Task 1, ready for
   Task 2's human-verification checkpoint (admin publish → broadcast → inbox → unsubscribe).
+
+## Human Verification
+
+Checkpoint (Task 2) was presented to the human after Task 1's deployment and smoke tests. The
+human's verbatim response: **"All Confirmed working!"** — a full pass across all of steps 2-6,
+with no partial verdict, no reported failure, and nothing skipped.
+
+| Step | What was checked | Verdict |
+|---|---|---|
+| 2. Anonymous view | `/changelog` heading reads "Changelog"; no "Write a post" card visible while logged out; a "Get notified of updates" single-email-field section present at the bottom | Pass |
+| 3. Homepage hero | Hero card at top of `/` reads "CPRC Psalter v2.0 is here" with a "New" badge and a "Read the changelog" button linking to `/changelog`; "Changelog" present in site header navigation | Pass |
+| 4. Admin publish | Logged-in admin session showed a "Write a post" card with an "Admin" badge at the top of `/changelog`; a post was published inline (no page navigation) with today's date and the entered line break preserved | Pass |
+| 5. Inbox check | Broadcast email arrived at `manuelkuhs+psalter-chlg@gmail.com` within a minute or two, landed in Primary/Inbox (not Spam), subject and body matched the published post with the line break intact, and an "Unsubscribe:" link was present at the bottom | Pass |
+| 6. Unsubscribe | Clicking the unsubscribe link showed "Unsubscribe from updates" with a masked address; nothing was removed before confirming; pressing "Unsubscribe" showed the success message and a "Back to Psalter" link; reloading the same link afterward showed the invalid/already-used state | Pass |
+
+Mechanical confirmation of the two checkable halves of this verdict (run after the human's
+response, from `/home/services/psalter`):
+
+```
+$ docker exec psalter-db psql -U postgres -d psalter -t -A -c \
+    "SELECT count(*) FROM changelog_subscribers WHERE email = 'manuelkuhs+psalter-chlg@gmail.com';"
+0
+```
+
+Row count is `0` — the unsubscribe click the human reported did in fact remove the subscriber row.
+This corroborates step 6's "Pass" verdict rather than merely taking the human's word for the
+database side-effect.
+
+```
+$ docker exec psalter-db psql -U postgres -d psalter -c \
+    "SELECT id, title, created_at FROM changelog_posts ORDER BY created_at DESC LIMIT 3;"
+ id |   title   |         created_at
+----+-----------+----------------------------
+ 31 | V2 (Beta) | 2026-08-07 15:31:56.942781
+(1 row)
+```
+
+Exactly one post exists in the table, `id=31`, titled **"V2 (Beta)"** — the human published this
+during the live checkpoint (the checkpoint prompt suggested the title `CPRC Psalter v2.0` as an
+example; the human used their own wording instead, which is expected and fine — the requirement
+is that a real post was published through the live admin UI, not a specific title string). Being
+the only row, it is trivially the newest, corroborating step 4's "Pass" verdict.
+
+## Open Gaps
+
+None.
+
+## Cleanup decision (Task 3 step (e))
+
+The human's published post ("V2 (Beta)", id 31) was created deliberately during a real,
+human-run verification pass — not injected as disposable test data by a script. Per the plan,
+a published changelog post is user-visible content and must not be silently deleted; asking the
+human before deletion is required, and per the calling agent's explicit instruction this plan
+does not pause again to ask. Decision: **the post is left in place** as real release content. It
+remains live at `https://psalter.gsdlabs.dev/changelog` and is not treated as a throwaway to be
+cleaned up.
