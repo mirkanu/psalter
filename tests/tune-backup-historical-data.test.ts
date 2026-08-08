@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { db } from '@/db'
 import { tunes, psalmVersions, psalmVersionTunes, psalmVersionHistoricalTunes } from '@/db/schema'
 import { and, eq, sql } from 'drizzle-orm'
+import { fetchPsalmVersionTuneTiers, fetchTunesByMeter } from '@/db/queries/tunes'
 
 const BACKUP_SAMPLE_PV_AIRTABLE_ID = 'rec0nktaSJL3WGGtk' // links to "Crediton"
 const HISTORICAL_SAMPLE_PV_AIRTABLE_ID = 'recVRb3GpPgq6FEKc' // "148 Second Version" -> "Darwall"
@@ -99,5 +100,40 @@ describe('TUNE-03: per-psalm-version backup and historical links', () => {
       .groupBy(psalmVersionTunes.psalmVersionId)
       .having(sql`count(*) > 1`)
     expect(dupes).toEqual([])
+  })
+})
+
+describe('TUNE-03: fetchPsalmVersionTuneTiers', () => {
+  it('recVRb3GpPgq6FEKc: historicalTuneIds contains Darwall, backupTuneIds is empty', async () => {
+    const [pv] = await db.select({ id: psalmVersions.id }).from(psalmVersions)
+      .where(eq(psalmVersions.airtableId, HISTORICAL_SAMPLE_PV_AIRTABLE_ID))
+    const [darwall] = await db.select({ id: tunes.id }).from(tunes).where(eq(tunes.name, 'Darwall'))
+    const tiers = await fetchPsalmVersionTuneTiers(pv.id)
+    expect(tiers.historicalTuneIds).toContain(darwall.id)
+    expect(tiers.backupTuneIds).toEqual([])
+  })
+
+  it('rec0nktaSJL3WGGtk: backupTuneIds contains Crediton', async () => {
+    const [pv] = await db.select({ id: psalmVersions.id }).from(psalmVersions)
+      .where(eq(psalmVersions.airtableId, BACKUP_SAMPLE_PV_AIRTABLE_ID))
+    const [crediton] = await db.select({ id: tunes.id }).from(tunes).where(eq(tunes.name, 'Crediton'))
+    const tiers = await fetchPsalmVersionTuneTiers(pv.id)
+    expect(tiers.backupTuneIds).toContain(crediton.id)
+  })
+
+  it('non-existent psalm version id returns empty arrays, no throw', async () => {
+    const tiers = await fetchPsalmVersionTuneTiers(999999)
+    expect(tiers.backupTuneIds).toEqual([])
+    expect(tiers.historicalTuneIds).toEqual([])
+  })
+
+  it("fetchTunesByMeter('CM') rows all expose a numeric weightedHistoricalFrequency in [0, 1]", async () => {
+    const rows = await fetchTunesByMeter('CM')
+    expect(rows.length).toBeGreaterThan(0)
+    for (const row of rows) {
+      expect(typeof row.weightedHistoricalFrequency).toBe('number')
+      expect(row.weightedHistoricalFrequency).toBeGreaterThanOrEqual(0)
+      expect(row.weightedHistoricalFrequency).toBeLessThanOrEqual(1)
+    }
   })
 })
