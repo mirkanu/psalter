@@ -41,6 +41,7 @@ import { forceMatchMeterShape } from '@/lib/force-match-meter-shape'
 import { expectedSyllablesByLine } from '@/lib/meter-syllable-shape'
 import { detectRepeatedPitchContinuations } from '@/lib/detect-repeated-pitch-continuations'
 import { computeNotationScale } from '@/lib/notation-scale'
+import { isMeterMismatch } from '@/lib/meter-mismatch'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -1514,6 +1515,23 @@ export function NotationRenderer({
     ['--staff-base-size' as string]: `${baseSize}px`,
   } as CSSProperties
 
+  // TUNE-02: warn when the active tune's meter disagrees with the psalm's stated meter.
+  // Null-safe — no warning when either meter is missing. Shared predicate with the precentor
+  // portal (SetItemRow.tsx) so both surfaces can never drift.
+  const meterMismatch = isMeterMismatch(stanzaMeter, tuneMeter)
+  const meterMismatchBanner = meterMismatch ? (
+    <div
+      data-meter-mismatch-banner
+      role="status"
+      className="rounded-md border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 px-3 py-2 text-sm flex-shrink-0"
+    >
+      <span className="font-semibold text-red-900 dark:text-red-200">Meter mismatch</span>
+      <span className="text-red-800 dark:text-red-300">
+        {` — psalm is ${stanzaMeter}, tune is ${tuneMeter}. Choose a matching tune or proceed as arranged.`}
+      </span>
+    </div>
+  ) : null
+
   // ── Fullscreen branch ─────────────────────────────────────────────────────
   if (isFullscreen && allowFullscreen) {
     const fullscreenTopBar = (
@@ -1552,6 +1570,7 @@ export function NotationRenderer({
         bottomBar={fullscreenBottomBar}
       >
         <div data-notation-renderer style={rootStyle} className="w-full">
+          {meterMismatchBanner}
           {viewArea}
         </div>
       </FullscreenOverlay>
@@ -1579,6 +1598,7 @@ export function NotationRenderer({
           : 'space-y-3'
       }
     >
+      {meterMismatchBanner}
       {!chromeless && controlBar}
       {chromeless ? (
         <div
