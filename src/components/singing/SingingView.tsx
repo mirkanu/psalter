@@ -1014,7 +1014,13 @@ export function SingingView({
             scoreJpgUrl={scoreJpgUrl}
             solfegeJpgUrl={solfegeJpgUrl}
             tuneName={tuneName}
-            tuneMeter={meter}
+            // TUNE-02 fix: `meter` (prop) is the PSALM's stated meter (used for the
+            // meterLabel display and the alternates-by-meter lookup) — not the active
+            // tune's own meter. Using it here made isMeterMismatch(stanzaMeter, tuneMeter)
+            // compare the psalm meter against itself, so the banner could never fire on
+            // this page. activeTune.meter tracks the real active tune, including
+            // client-side tune-switcher overrides.
+            tuneMeter={activeTune?.meter ?? null}
             phraseShapeOverride={activeTune?.phraseShapeOverride ?? null}
             stanzaMeter={stanzaMeter}
             lyricsStructured={lyricsStructured}
