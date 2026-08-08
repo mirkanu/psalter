@@ -1,9 +1,10 @@
 export const dynamic = 'force-dynamic'
-import { notFound } from "next/navigation"
+import { notFound, permanentRedirect } from "next/navigation"
 import type { Metadata } from "next"
-import { fetchTuneDetail, fetchTuneIds } from "@/db/queries/tunes"
+import { fetchTuneDetail, fetchTuneBySlug, fetchTuneSlugs } from "@/db/queries/tunes"
 import { fetchPsalmsByMeter, fetchPsalmListRows } from "@/db/queries/psalms"
 import { deriveVersionSlug, stripStar } from "@/lib/psalm-slugs"
+import { tuneNameToSlug, isNumericTuneSlug } from "@/lib/tune-slug"
 import { Badge } from "@/components/ui/badge"
 import { NotationRendererClient } from "@/components/notation/NotationRendererClient"
 import { TuneDetailClient } from "@/components/TuneDetailClient"
@@ -13,29 +14,42 @@ import { deriveTuneJpgPages } from "@/lib/tune-jpg-urls"
 import { sopranoOnly, pickAbcWithMarkers } from "@/lib/utils"
 
 interface PageProps {
-  params: Promise<{ id: string }>
+  params: Promise<{ slug: string }>
 }
 
 export async function generateStaticParams() {
   try {
-  const ids = await fetchTuneIds()
-  return ids.map((id) => ({ id: String(id) }))
+    const slugs = await fetchTuneSlugs()
+    return slugs.map((slug) => ({ slug }))
   } catch { return [] }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { id } = await params
-  const tune = await fetchTuneDetail(Number(id))
+  const { slug } = await params
+  const tune = isNumericTuneSlug(slug)
+    ? await fetchTuneDetail(Number(slug))
+    : await fetchTuneBySlug(slug)
   return {
-    title: tune?.name ? `${tune.name} | CPRC Psalter Tunes` : `Tune ${id} | CPRC Psalter`,
+    title: tune?.name ? `${tune.name} | CPRC Psalter Tunes` : `Tune | CPRC Psalter`,
   }
 }
 
 export default async function TunePage({ params }: PageProps) {
-  const { id } = await params
-  const tuneId = Number(id)
-  if (!Number.isFinite(tuneId) || tuneId < 1) notFound()
-  const tune = await fetchTuneDetail(tuneId)
+  const { slug } = await params
+
+  // TUNE-05: legacy numeric ids (/tunes/169) permanently redirect to the name-based slug.
+  // The redirect target is derived server-side from the DB-looked-up tune name — never from
+  // the request — so there is no open-redirect surface. isNumericTuneSlug is a strict
+  // /^\d+$/ test, so anything else falls through to the slug lookup.
+  if (isNumericTuneSlug(slug)) {
+    const legacyId = Number(slug)
+    if (!Number.isFinite(legacyId) || legacyId < 1) notFound()
+    const legacyTune = await fetchTuneDetail(legacyId)
+    if (!legacyTune) notFound()
+    permanentRedirect(`/tunes/${tuneNameToSlug(legacyTune.name)}`)
+  }
+
+  const tune = await fetchTuneBySlug(slug)
   if (!tune) notFound()
 
   // Deduplicate by psalmVersion (not psalm) so 55a and 55b appear as separate cards
@@ -209,7 +223,7 @@ export default async function TunePage({ params }: PageProps) {
         otherPsalms={otherPsalms}
         psalmsForMeter={psalmsForMeter}
         allPsalmRows={allPsalmRows}
-        tuneId={tuneId}
+        tuneId={tune.id}
         meter={tune.meter}
       />
     </div>

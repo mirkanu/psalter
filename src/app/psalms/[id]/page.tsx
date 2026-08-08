@@ -13,6 +13,7 @@ import { fetchTunesByMeter, fetchTuneMelismaStatus } from '@/db/queries/tunes'
 import { SingingView } from '@/components/singing/SingingView'
 import { parseSlug, deriveVersionSlug, stripStar, slugToDisplayTitle } from '@/lib/psalm-slugs'
 import { deriveTuneJpgPages } from '@/lib/tune-jpg-urls'
+import { tuneNameToSlug } from '@/lib/tune-slug'
 import { getPsalmNeighbors } from '@/lib/psalm-navigation'
 
 interface PageProps {
@@ -124,6 +125,7 @@ export default async function PsalmPage({ params }: PageProps) {
         return {
           id: primaryTuneRow.id,
           name: primaryTuneRow.name,
+          slug: tuneNameToSlug(primaryTuneRow.name),
           meter: primaryTuneRow.meter ?? null,
           abcNotation: primaryTuneRow.abcNotation ?? null,
           abcSatb: (primaryTuneRow as { abcSatb?: string | null }).abcSatb ?? null,
