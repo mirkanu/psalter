@@ -183,5 +183,7 @@ function buildTuneOption(tune: Record<string, any>): AlternateTune {
     staffPages,
     solfegePages,
     melismaStatus: (tune.melismaStatus ?? null) as MelismaStatus | null,
+    weightedHistoricalFrequency: (tune.weightedHistoricalFrequency ?? 0) as number,
+    historicalUsageCount: (tune.historicalUsageCount ?? 0) as number,
   }
 }

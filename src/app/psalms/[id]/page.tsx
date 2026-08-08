@@ -140,6 +140,8 @@ export default async function PsalmPage({ params }: PageProps) {
           staffPages,
           solfegePages,
           melismaStatus,
+          weightedHistoricalFrequency: primaryTuneRow.weightedHistoricalFrequency ?? 0,
+          historicalUsageCount: primaryTuneRow.historicalUsageCount ?? 0,
         }
       })()
     : null
