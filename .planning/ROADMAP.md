@@ -176,11 +176,16 @@ Plans:
 **Note** (added 2026-08-08, post-Phase-10): as of Phase 10, only the Study tab's `ChangeTuneDialog` has Backup/Historical tiering (`sortTunesByTier`) — it was the one plan 10-05 named explicitly. The Sing view's `TuneSwitcherSheet` (the picker on the page most visitors actually land on) and the precentor's `TunePickerModal` still have zero tiering. Don't treat "consolidate to one component" as satisfied by picking either existing component as the base and calling it done — the unified component must carry the tiering logic to all three call sites, or this phase silently regresses the Study tab's picker while fixing the other two.
 **Plans**: 6 plans in 3 waves
 Plans:
+**Wave 1**
 - [ ] 11-01-PLAN.md — Shared NotationRendererClient prop helper; /tunes/[slug] + PsalmTabs adopt it (wave 1)
 - [ ] 11-02-PLAN.md — Shared TieredTuneRowList unit; ChangeTuneDialog refactored onto it (wave 1)
 - [ ] 11-03-PLAN.md — /tunes mobile columns, sticky header, widened tune query (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 11-04-PLAN.md — Sing view: tier-data plumbing, tiered TuneSwitcherSheet, notation-helper adoption (wave 2)
 - [ ] 11-05-PLAN.md — /tunes inline Recording/Score expand player (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 11-06-PLAN.md — Precentor picker tiering: batch tier fetch + tiered TuneTable rows (wave 3)
 **UI hint**: yes
 
