@@ -3,6 +3,7 @@ import { db } from '@/db'
 import { psalmVersions, tunes } from '@/db/schema'
 import { ilike, or, eq, asc } from 'drizzle-orm'
 import { buildSnippet } from '@/lib/search-utils'
+import { tuneNameToSlug } from '@/lib/tune-slug'
 
 export const runtime = 'nodejs'
 
@@ -111,6 +112,7 @@ export async function GET(request: Request) {
         type: 'tune',
         relevance,
         id: t.id,
+        slug: tuneNameToSlug(t.name ?? ''),
         name: t.name,
         meter: t.meter,
       }

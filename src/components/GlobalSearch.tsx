@@ -70,7 +70,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
     if (result.type === 'psalm') {
       router.push(`/psalms/${result.slug}`)
     } else {
-      router.push(`/tunes/${result.id}`)
+      router.push(`/tunes/${result.slug}`)
     }
     onClose()
   }
