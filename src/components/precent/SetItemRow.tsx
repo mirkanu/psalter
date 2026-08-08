@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { SetItemView } from '@/components/precent/SetItemsSortableList'
 import type { PsalmRow } from '@/components/PsalmListingGrid'
+import { isMeterMismatch } from '@/lib/meter-mismatch'
 
 interface SetItemRowProps {
   item: SetItemView
@@ -63,10 +64,7 @@ export function SetItemRow({
     opacity: isDragging ? 0.5 : 1,
   }
 
-  const isMismatch =
-    psalmMeter != null &&
-    item.tune?.meter != null &&
-    psalmMeter.trim().toUpperCase() !== item.tune.meter.trim().toUpperCase()
+  const isMismatch = isMeterMismatch(psalmMeter, item.tune?.meter)
 
   const mismatchRowClass = isMismatch
     ? 'bg-red-50 dark:bg-red-900/20 border-l-2 border-red-400'
