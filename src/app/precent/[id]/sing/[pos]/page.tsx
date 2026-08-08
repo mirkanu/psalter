@@ -12,6 +12,7 @@ import { fetchTunesByMeter, fetchTuneMelismaStatus, type AlternateTune, type Mel
 import { SingingView } from '@/components/singing/SingingView'
 import { PrecentingBar } from '@/components/precent/PrecentingBar'
 import { deriveTuneJpgPages } from '@/lib/tune-jpg-urls'
+import { tuneNameToSlug } from '@/lib/tune-slug'
 import { deriveVersionSlug, stripStar } from '@/lib/psalm-slugs'
 
 interface PageProps {
@@ -166,6 +167,7 @@ function buildTuneOption(tune: Record<string, any>): AlternateTune {
   return {
     id: tune.id as number,
     name: tune.name as string,
+    slug: tuneNameToSlug(tune.name as string),
     meter: (tune.meter ?? null) as string | null,
     abcNotation: (tune.abcNotation ?? null) as string | null,
     abcSatb: (tune.abcSatb ?? null) as string | null,
