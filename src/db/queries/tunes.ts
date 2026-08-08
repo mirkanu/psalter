@@ -1,7 +1,7 @@
 import { cache } from "react"
 import { db } from "@/db"
 import { eq, asc, and, inArray, isNotNull, desc } from "drizzle-orm"
-import { tunes, tuneMelismaDecisions } from "@/db/schema"
+import { tunes, tuneMelismaDecisions, psalmVersionTunes, psalmVersionHistoricalTunes } from "@/db/schema"
 import { deriveTuneJpgPages } from "@/lib/tune-jpg-urls"
 import { tuneNameToSlug } from "@/lib/tune-slug"
 
@@ -145,6 +145,15 @@ export interface AlternateTune {
    * no decision row exists yet. Gates inline Staff (MOBILE-08).
    */
   melismaStatus: MelismaStatus | null
+  /**
+   * TUNE-04 tie-breaker within the "other matching-meter tunes" tier: Airtable's
+   * "Weighted historical CPRC psalm frequency for CPRC Standard" rollup (0-1 fraction).
+   * NOT the Historical tier signal itself — that is per-psalm-version, see
+   * fetchPsalmVersionTuneTiers.
+   */
+  weightedHistoricalFrequency: number
+  /** Global per-tune count, companion to weightedHistoricalFrequency; not itself a sort key. */
+  historicalUsageCount: number
 }
 
 export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]> {
@@ -164,6 +173,8 @@ export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]>
       solfegeOcrText: true,
       melismaPositions: true,
       phraseShapeOverride: true,
+      weightedHistoricalFrequency: true,
+      historicalUsageCount: true,
     },
     orderBy: (t, { asc }) => [asc(t.name)],
   })
@@ -192,6 +203,40 @@ export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]>
     }
   })
 }
+
+export interface PsalmVersionTuneTiers {
+  /** Tunes flagged as the 2024 CPRC backup for THIS psalm version. */
+  backupTuneIds: number[]
+  /** Tunes historically sung for THIS psalm version (Airtable "Historical CPRC Usage"). */
+  historicalTuneIds: number[]
+}
+
+/**
+ * Per-psalm-version tune tiers for the Change Tune dialog (TUNE-04).
+ *
+ * Deliberately psalm-version-scoped: "Historical" answers "what did we sing for THIS psalm",
+ * not "how popular is this tune overall". The global tunes.weightedHistoricalFrequency stat is
+ * only a tie-breaker inside the third tier.
+ */
+export const fetchPsalmVersionTuneTiers = cache(async function fetchPsalmVersionTuneTiers(
+  psalmVersionId: number,
+): Promise<PsalmVersionTuneTiers> {
+  const [backupRows, historicalRows] = await Promise.all([
+    db.select({ tuneId: psalmVersionTunes.tuneId })
+      .from(psalmVersionTunes)
+      .where(and(
+        eq(psalmVersionTunes.psalmVersionId, psalmVersionId),
+        eq(psalmVersionTunes.isBackup, true),
+      )),
+    db.select({ tuneId: psalmVersionHistoricalTunes.tuneId })
+      .from(psalmVersionHistoricalTunes)
+      .where(eq(psalmVersionHistoricalTunes.psalmVersionId, psalmVersionId)),
+  ])
+  return {
+    backupTuneIds: backupRows.map((r) => r.tuneId),
+    historicalTuneIds: historicalRows.map((r) => r.tuneId),
+  }
+})
 
 /**
  * Slug → tune detail. tunes.name is UNIQUE NOT NULL and tuneNameToSlug is deterministic, but
