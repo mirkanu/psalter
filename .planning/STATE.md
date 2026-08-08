@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
 status: executing
-stopped_at: Completed 10-03-PLAN.md
-last_updated: "2026-08-08T07:57:54.295Z"
+stopped_at: Completed 10-04-PLAN.md
+last_updated: "2026-08-08T09:45:47.007Z"
 last_activity: 2026-08-08
 progress:
   total_phases: 10
   completed_phases: 4
   total_plans: 22
-  completed_plans: 20
-  percent: 91
+  completed_plans: 21
+  percent: 95
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone clos
 ## Current Position
 
 Phase: 10 (tune-data-fixes) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-08-08
 
@@ -93,6 +93,7 @@ Last activity: 2026-08-08
 | Phase 10 P01 | 12min | 3 tasks | 3 files |
 | Phase 10 P02 | 18 min | 2 tasks | 4 files |
 | Phase 10 P03 | 12min | 4 tasks | 12 files |
+| Phase 10 P04 | 20 min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -191,6 +192,10 @@ Recent decisions affecting current work:
 - [Phase 10-02]: Banner uses role=status and a red palette (not amber) to visually distinguish an actionable warning from PsalmTabs.tsx's existing informational amber banner
 - [Phase 10-03]: tuneNameToSlug moved out of tune-jpg-urls.ts (fs-importing) into zero-import src/lib/tune-slug.ts so it is safe to import from 'use client' components; slug travels as a server-computed data field on every tune shape
 - [Phase 10-03]: PsalmTabs.tsx BackupTunesContent numeric tune link left untouched per this plan's scope boundary — Plan 05 deletes the whole component
+- [Phase 10-04]: unquoteRollupName() required for Historical CPRC Usage rollup — 2/91 distinct tune names arrive CSV-quoted; all 393 pairs now resolve, 0 unmatched
+- [Phase 10-04]: psalm_version_tunes.is_backup upserts use onConflictDoUpdate touching only isBackup, never isPrimary — a backup tune is often already linked via CPRC Standard
+- [Phase 10-04]: postgres.js update/insert results expose affected-row count as .count not .rowCount — migrate-double-length.ts's template snippet used the wrong property (silent no-op logging bug), fixed in the new script
+- [Phase 10-04]: Regression-guard baseline corrected from plan's stated is_primary=173 to the actual live value 184 (one primary per psalm_versions row, 0 missing, 0 duplicates) — confirmed via code review this migration never writes isPrimary, so 184 predates this plan and 173 was a stale figure from Plan 02's research
 
 ### Pending Todos
 
@@ -270,8 +275,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-08T07:57:54.260Z
-Stopped at: Completed 10-03-PLAN.md
+Last session: 2026-08-08T09:45:46.961Z
+Stopped at: Completed 10-04-PLAN.md
 Resume file: None
 
 ### Deferred from 04.9.4 polish (separate tickets when needed)

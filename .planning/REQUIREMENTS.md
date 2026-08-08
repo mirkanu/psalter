@@ -35,7 +35,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [x] **TUNE-01**: Ps 148b duplicate row fixed (root cause: two `psalm_version_tunes` rows both flagged `is_primary` for the same version)
 - [x] **TUNE-02**: Meter-mismatch warning banner shown in Staff/Solfège/Sing views when the active tune's meter doesn't match the psalm's stated meter (generalizes the Aurelia/Ps 119 case; reuses the existing precenting-set mismatch check)
-- [ ] **TUNE-03**: Real Backup/Historical tune data migrated from Airtable (`Manuel CPRC backup`, `CPRC historical tune usage` / weighted frequency rollups) into Postgres
+- [x] **TUNE-03**: Real Backup/Historical tune data migrated from Airtable (`Manuel CPRC backup`, `CPRC historical tune usage` / weighted frequency rollups) into Postgres
 - [ ] **TUNE-04**: Change Tune list sorted Backup → Historical → other matching-meter tunes; redundant Meter indicator removed (already filtered); old "Backup Tunes"/"Historical Tunes" tabs removed from the tabbed section once the reorder is live
 - [x] **TUNE-05**: Tune slugs are name-based (`/tunes/beatitudo`) with full redirect coverage for old numeric URLs (`/tunes/169`)
 
@@ -117,7 +117,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CHLG-05 | Phase 9 | Complete |
 | TUNE-01 | Phase 10 | Complete |
 | TUNE-02 | Phase 10 | Complete |
-| TUNE-03 | Phase 10 | Pending |
+| TUNE-03 | Phase 10 | Complete |
 | TUNE-04 | Phase 10 | Pending |
 | TUNE-05 | Phase 10 | Complete |
 | PSEL-01 | Phase 12 | Pending |
