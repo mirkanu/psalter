@@ -11,7 +11,7 @@ import { NotationRendererClient } from '@/components/notation/NotationRendererCl
 import type { ViewMode } from '@/components/notation/NotationRenderer'
 import { ChangeTuneDialog } from '@/components/ChangeTuneDialog'
 import type { PsalmDetail } from '@/db/queries/psalms'
-import type { AlternateTune } from '@/db/queries/tunes'
+import type { AlternateTune, PsalmVersionTuneTiers } from '@/db/queries/tunes'
 import { sopranoOnly, pickAbcWithMarkers } from '@/lib/utils'
 
 type TuneRow = NonNullable<
@@ -30,6 +30,8 @@ interface PsalmTabsProps {
   alternateTunes: AlternateTune[]
   activeVersionId?: number
   recommendedVersionSlug?: string | null
+  /** Per-psalm-version Backup/Historical tune ids for the Change Tune list (TUNE-04). */
+  tuneTiers?: PsalmVersionTuneTiers
 }
 
 // ── Content section components (shared between mobile/desktop) ───────────────
@@ -340,7 +342,7 @@ const DESKTOP_TABS = MOBILE_TABS.filter((t) => t.value !== 'sing')
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, primaryTuneDerivedSolfegeUrl, primaryTuneSlug, alternateTunes, activeVersionId, recommendedVersionSlug }: PsalmTabsProps) {
+export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, primaryTuneDerivedSolfegeUrl, primaryTuneSlug, alternateTunes, activeVersionId, recommendedVersionSlug, tuneTiers }: PsalmTabsProps) {
   const mobileTabsRef = useRef<HTMLDivElement>(null)
   const searchParams = useSearchParams()
   const [noRecDialogOpen, setNoRecDialogOpen] = useState(false)
@@ -467,6 +469,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
             currentTuneId={activeTune.id}
             tunes={alternateTunes}
             meter={primaryVersion?.meter ?? null}
+            tuneTiers={tuneTiers}
             onSelect={(tune) => { setOverrideTune(tune); setChangeTuneOpen(false) }}
           />
         </div>
@@ -502,6 +505,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
             currentTuneId={null}
             tunes={alternateTunes}
             meter={primaryVersion?.meter ?? null}
+            tuneTiers={tuneTiers}
             onSelect={(tune) => { setOverrideTune(tune); setNoRecDialogOpen(false) }}
           />
         </div>
