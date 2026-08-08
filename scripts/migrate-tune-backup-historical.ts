@@ -14,7 +14,7 @@
 import 'dotenv/config'
 import Airtable from 'airtable'
 import { db } from '../src/db'
-import { tunes } from '../src/db/schema'
+import { tunes, psalmVersions, psalmVersionTunes, psalmVersionHistoricalTunes } from '../src/db/schema'
 import { eq } from 'drizzle-orm'
 
 const base = new Airtable({ apiKey: process.env.AIRTABLE_PAT }).base(
@@ -80,8 +80,95 @@ async function migrateTuneStats(): Promise<void> {
   for (const t of top5.slice(0, 5)) console.log(`  • ${t.name}: ${t.historicalUsageCount}`)
 }
 
+/**
+ * The "Historical CPRC Usage" rollup CSV-quotes any tune name containing a comma or quote,
+ * e.g. `"St Agnes, Durham (start high)"` and `"Brian's mystery tune (""Ballymena"")"`.
+ * Unwrap to the literal tunes.name value.
+ */
+function unquoteRollupName(raw: string): string {
+  if (raw.length > 1 && raw.startsWith('"') && raw.endsWith('"')) {
+    return raw.slice(1, -1).replace(/""/g, '"')
+  }
+  return raw
+}
+
+async function migratePsalmVersionBackupAndHistorical(): Promise<void> {
+  console.log('Fetching Scottish Psalter from Airtable...')
+  const pvRecords = await fetchAll('Scottish Psalter')
+  console.log(`  Got ${pvRecords.length} records`)
+
+  const pvRows = await db.select({ id: psalmVersions.id, airtableId: psalmVersions.airtableId }).from(psalmVersions)
+  const pvByAirtableId = new Map(pvRows.map((r) => [r.airtableId, r.id]))
+
+  const tuneRows = await db.select({ id: tunes.id, name: tunes.name, airtableId: tunes.airtableId }).from(tunes)
+  const tuneByAirtableId = new Map(tuneRows.map((r) => [r.airtableId, r.id]))
+  const tuneIdByName = new Map(tuneRows.map((r) => [r.name, r.id]))
+
+  // Idempotence: clear prior state so a re-run reflects Airtable exactly (both writes below
+  // are keyed on composite PKs / upserts, so re-running never duplicates rows).
+  await db.update(psalmVersionTunes).set({ isBackup: false }).where(eq(psalmVersionTunes.isBackup, true))
+  await db.delete(psalmVersionHistoricalTunes)
+
+  let recordsProcessed = 0
+  let backupPairs = 0
+  let historicalPairs = 0
+  let nullNameEntries = 0
+  const unresolvedBackupIds: string[] = []
+  const unmatchedNames = new Set<string>()
+  const skippedVersions: string[] = []
+
+  for (const r of pvRecords) {
+    const pvId = pvByAirtableId.get(r.id)
+    if (pvId == null) { skippedVersions.push(r.id); continue }
+    recordsProcessed++
+
+    // Backup half — "backup 2024" is an array of linked Tunes record ids (5 records link 2).
+    for (const linkedTuneAirtableId of ((r.get('backup 2024') as string[] | undefined) ?? [])) {
+      const tuneId = tuneByAirtableId.get(linkedTuneAirtableId)
+      if (tuneId == null) { unresolvedBackupIds.push(linkedTuneAirtableId); continue }
+      await db.insert(psalmVersionTunes)
+        .values({ psalmVersionId: pvId, tuneId, isPrimary: false, isBackup: true })
+        .onConflictDoUpdate({
+          target: [psalmVersionTunes.psalmVersionId, psalmVersionTunes.tuneId],
+          set: { isBackup: true },
+        })
+      backupPairs++
+    }
+
+    // Historical half — "Historical CPRC Usage" is an array of tune-name strings; skip nulls.
+    for (const raw of ((r.get('Historical CPRC Usage') as (string | null)[] | undefined) ?? [])) {
+      if (raw == null) { nullNameEntries++; continue }
+      const name = unquoteRollupName(String(raw))
+      const tuneId = tuneIdByName.get(name)
+      if (tuneId == null) { unmatchedNames.add(name); continue }
+      await db.insert(psalmVersionHistoricalTunes)
+        .values({ psalmVersionId: pvId, tuneId })
+        .onConflictDoNothing()
+      historicalPairs++
+    }
+  }
+
+  console.log(`Records processed: ${recordsProcessed}`)
+  console.log(`Backup pairs: ${backupPairs}`)
+  console.log(`Historical pairs: ${historicalPairs}`)
+  console.log(`Null historical name entries skipped: ${nullNameEntries}`)
+  if (skippedVersions.length > 0) {
+    console.log(`Psalm versions skipped (no matching Postgres row): ${skippedVersions.length}`)
+    for (const id of skippedVersions.sort()) console.log(`  • ${id}`)
+  }
+  if (unresolvedBackupIds.length > 0) {
+    console.log(`Unresolved backup tune ids: ${unresolvedBackupIds.length}`)
+    for (const id of unresolvedBackupIds.sort()) console.log(`  • ${id}`)
+  }
+  console.log(`Unmatched historical names: ${unmatchedNames.size}`)
+  if (unmatchedNames.size > 0) {
+    for (const n of [...unmatchedNames].sort()) console.log(`  • ${n}`)
+  }
+}
+
 async function main() {
   await migrateTuneStats()
+  await migratePsalmVersionBackupAndHistorical()
   process.exit(0)
 }
 
