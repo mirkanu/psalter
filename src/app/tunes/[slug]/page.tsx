@@ -38,9 +38,13 @@ export default async function TunePage({ params }: PageProps) {
   const { slug } = await params
 
   // TUNE-05: legacy numeric ids (/tunes/169) permanently redirect to the name-based slug.
-  // The redirect target is derived server-side from the DB-looked-up tune name — never from
-  // the request — so there is no open-redirect surface. isNumericTuneSlug is a strict
-  // /^\d+$/ test, so anything else falls through to the slug lookup.
+  // src/middleware.ts is the primary mechanism (issues a real HTTP 308 before any rendering
+  // starts) — this branch only runs as a fallback for the WR-01 edge case where a tune name
+  // itself slugifies to a bare integer, which middleware deliberately leaves unhandled to
+  // avoid redirecting into another numeric-looking path. The redirect target is derived
+  // server-side from the DB-looked-up tune name — never from the request — so there is no
+  // open-redirect surface. isNumericTuneSlug is a strict /^\d+$/ test, so anything else falls
+  // through to the slug lookup.
   if (isNumericTuneSlug(slug)) {
     const legacyId = Number(slug)
     if (!Number.isFinite(legacyId) || legacyId < 1) notFound()

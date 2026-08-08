@@ -23,7 +23,11 @@ export async function fetchTuneIds(): Promise<number[]> {
 }
 
 // Placeholder tune names used in Airtable for admin notes — exclude from public listing
-const PLACEHOLDER_PREFIXES = ['use ', 'do NOT ', 'do not ']
+const PLACEHOLDER_PREFIXES = ['use ', 'do not ']
+function isPlaceholderTuneName(name: string): boolean {
+  const lower = name.toLowerCase()
+  return PLACEHOLDER_PREFIXES.some((p) => lower.startsWith(p))
+}
 
 export async function fetchAllTunes() {
   const rows = await db.query.tunes.findMany({
@@ -48,7 +52,7 @@ export async function fetchAllTunes() {
   })
 
   return rows
-    .filter((t) => !PLACEHOLDER_PREFIXES.some((p) => t.name.toLowerCase().startsWith(p)))
+    .filter((t) => !isPlaceholderTuneName(t.name))
     .map((t) => ({
       id: t.id,
       name: t.name,
@@ -178,8 +182,7 @@ export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]>
     },
     orderBy: (t, { asc }) => [asc(t.name)],
   })
-  const PLACEHOLDER_PREFIXES = ['use ', 'do not ', 'do NOT ']
-  const filtered = rows.filter((t) => !PLACEHOLDER_PREFIXES.some((p) => t.name.toLowerCase().startsWith(p)))
+  const filtered = rows.filter((t) => !isPlaceholderTuneName(t.name))
   const ids = filtered.map((t) => t.id)
   const decisionRows = ids.length
     ? await db
@@ -245,7 +248,7 @@ export const fetchPsalmVersionTuneTiers = cache(async function fetchPsalmVersion
  */
 export const fetchTuneBySlug = cache(async function fetchTuneBySlug(slug: string) {
   const rows = await db.select({ id: tunes.id, name: tunes.name }).from(tunes)
-  const match = rows.find((t) => tuneNameToSlug(t.name) === slug)
+  const match = rows.find((t) => !isPlaceholderTuneName(t.name) && tuneNameToSlug(t.name) === slug)
   if (!match) return undefined
   return fetchTuneDetail(match.id)
 })
@@ -253,5 +256,18 @@ export const fetchTuneBySlug = cache(async function fetchTuneBySlug(slug: string
 /** All tune slugs, for generateStaticParams. */
 export async function fetchTuneSlugs(): Promise<string[]> {
   const rows = await db.select({ name: tunes.name }).from(tunes).orderBy(asc(tunes.name))
-  return rows.map((r) => tuneNameToSlug(r.name)).filter((s) => s.length > 0)
+  return rows
+    .filter((r) => !isPlaceholderTuneName(r.name))
+    .map((r) => tuneNameToSlug(r.name))
+    .filter((s) => s.length > 0)
+}
+
+/**
+ * id -> current slug, for the legacy numeric-id redirect (TUNE-05). Deliberately minimal
+ * (no relational load) since this runs in middleware on every /tunes/<number> request.
+ */
+export async function fetchTuneSlugById(id: number): Promise<string | null> {
+  const rows = await db.select({ name: tunes.name }).from(tunes).where(eq(tunes.id, id)).limit(1)
+  const name = rows[0]?.name
+  return name ? tuneNameToSlug(name) : null
 }
