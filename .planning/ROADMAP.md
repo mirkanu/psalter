@@ -171,7 +171,9 @@ Plans:
   2. On a mobile-width viewport, the tune table's Recording column is visible by default and the table either fits or falls back to horizontal scroll cleanly
   3. Scrolling down a long tune list keeps the table header visible (sticky)
   4. Clicking a tune's URL icon expands an inline embed player (SoundCloud or ABC player) in place without navigating away; CSV export of that tune still contains the raw SoundCloud destination URL
-  5. Both the single-psalm tune picker and the precent-list tune picker use the same shared component (one code change updates both)
+  5. The Sing view's tune switcher, the Study tab's Change Tune dialog, and the precentor's tune picker all use one shared, `/tunes`-like selector component (one code change updates all three) — and that shared component shows the Backup → Historical → Other tiering everywhere, not just in the one picker that has it today
+
+**Note** (added 2026-08-08, post-Phase-10): as of Phase 10, only the Study tab's `ChangeTuneDialog` has Backup/Historical tiering (`sortTunesByTier`) — it was the one plan 10-05 named explicitly. The Sing view's `TuneSwitcherSheet` (the picker on the page most visitors actually land on) and the precentor's `TunePickerModal` still have zero tiering. Don't treat "consolidate to one component" as satisfied by picking either existing component as the base and calling it done — the unified component must carry the tiering logic to all three call sites, or this phase silently regresses the Study tab's picker while fixing the other two.
 **Plans**: TBD
 **UI hint**: yes
 
