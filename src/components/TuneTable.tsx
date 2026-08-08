@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge"
 export interface TuneRow {
   id: number
   name: string | null
+  slug: string
   meter: string | null
   scoreJpgUrl: string | null
   inPrcaPsalter: boolean
@@ -111,7 +112,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
       if (onSelectTune) {
         onSelectTune(filtered[0])
       } else {
-        router.push(`/tunes/${filtered[0].id}`)
+        router.push(`/tunes/${filtered[0].slug}`)
       }
     }
   }
@@ -510,7 +511,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
                           </span>
                         ) : (
                           <Link
-                            href={`/tunes/${tune.id}`}
+                            href={`/tunes/${tune.slug}`}
                             className="hover:text-primary transition-colors group-hover:underline underline-offset-2"
                           >
                             {tune.name ?? `Tune ${tune.id}`}

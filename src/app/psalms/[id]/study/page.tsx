@@ -12,6 +12,7 @@ import { PsalmTabs } from '@/components/PsalmTabs'
 import { PsalmNav } from '@/components/PsalmNav'
 import { parseSlug, deriveVersionSlug, stripStar, slugToDisplayTitle } from '@/lib/psalm-slugs'
 import { deriveTuneJpgPages } from '@/lib/tune-jpg-urls'
+import { tuneNameToSlug } from '@/lib/tune-slug'
 import { getPsalmNeighbors } from '@/lib/psalm-navigation'
 
 interface PageProps {
@@ -158,6 +159,7 @@ export default async function PsalmStudyPage({ params }: PageProps) {
         primaryTune={primaryTune}
         primaryTuneDerivedStaffUrl={primaryTuneDerivedStaffUrl}
         primaryTuneDerivedSolfegeUrl={primaryTuneDerivedSolfegeUrl}
+        primaryTuneSlug={primaryTune ? tuneNameToSlug(primaryTune.name) : null}
         alternateTunes={alternateTunes}
         activeVersionId={activeVersion?.id}
         recommendedVersionSlug={recommendedVersionSlug}
