@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 export interface TuneRow {
   id: number
   name: string | null
+  slug: string
   meter: string | null
   scoreJpgUrl: string | null
   moods: string[]
@@ -168,7 +169,7 @@ export function TuneGrid({ tunes, initialMeter, onSelectTune }: TuneGridProps) {
           ) : (
             <Link
               key={tune.id}
-              href={`/tunes/${tune.id}`}
+              href={`/tunes/${tune.slug}`}
               className={cardClasses}
             >
               {cardContent}

@@ -25,6 +25,8 @@ interface PsalmTabsProps {
   primaryTuneDerivedStaffUrl?: string | null
   /** Filesystem-derived solfège JPEG URL for the primary tune (DB column is NULL) */
   primaryTuneDerivedSolfegeUrl?: string | null
+  /** Server-computed slug for primaryTune (raw DB rows have no slug field). */
+  primaryTuneSlug?: string | null
   alternateTunes: AlternateTune[]
   activeVersionId?: number
   recommendedVersionSlug?: string | null
@@ -338,7 +340,7 @@ const DESKTOP_TABS = MOBILE_TABS.filter((t) => t.value !== 'sing')
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, primaryTuneDerivedSolfegeUrl, alternateTunes, activeVersionId, recommendedVersionSlug }: PsalmTabsProps) {
+export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, primaryTuneDerivedSolfegeUrl, primaryTuneSlug, alternateTunes, activeVersionId, recommendedVersionSlug }: PsalmTabsProps) {
   const mobileTabsRef = useRef<HTMLDivElement>(null)
   const searchParams = useSearchParams()
   const [noRecDialogOpen, setNoRecDialogOpen] = useState(false)
@@ -389,6 +391,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
     ? {
         id: overrideTune.id,
         name: overrideTune.name,
+        slug: overrideTune.slug,
         meter: overrideTune.meter,
         abcNotation: sopranoOnly(overrideTune.abcSatb?.trim() || overrideTune.abcNotation || ''),
         scoreJpgUrl: overrideTune.scoreJpgUrl,
@@ -402,6 +405,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
     : primaryTune
       ? {
           ...primaryTune,
+          slug: primaryTuneSlug ?? String(primaryTune.id),
           scoreJpgUrl: primaryTuneDerivedStaffUrl ?? primaryTune.scoreJpgUrl,
           solfegeJpgUrl: primaryTuneDerivedSolfegeUrl ?? primaryTune.solfegeJpgUrl,
         }
@@ -427,7 +431,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
               Tune{activeTune.meter ? ` (${activeTune.meter})` : ''}:
             </span>
             <Link
-              href={`/tunes/${activeTune.id}`}
+              href={`/tunes/${activeTune.slug}`}
               className="text-sm font-medium text-foreground underline underline-offset-2 hover:no-underline"
             >
               {activeTune.name ?? 'Tune'}
