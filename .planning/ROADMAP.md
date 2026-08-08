@@ -151,7 +151,15 @@ Authenticated precentor portal, service set lists, site footer/feedback/analytic
   2. Viewing a psalm whose active tune's meter doesn't match the psalm's stated meter shows a mismatch warning banner in Staff, Solfège, and Sing views alike (e.g., Aurelia on Ps 119)
   3. Real Backup and Historical tune-usage data from Airtable is present in Postgres, visible where it previously showed placeholder or missing data
   4. Visiting an old numeric tune URL (`/tunes/169`) redirects to the new name-based slug (`/tunes/beatitudo`), and no old link 404s
-**Plans**: TBD
+**Plans**: 5 plans in 3 waves
+
+Plans:
+- [ ] 10-01-PLAN.md — Schema delta + Ps 148b duplicate-primary fix, made structurally unrepeatable (wave 1)
+- [ ] 10-02-PLAN.md — Shared meter-mismatch predicate + warning banner in every notation view (wave 1)
+- [ ] 10-03-PLAN.md — Name-based tune slugs with 308 redirects for old numeric URLs (wave 1)
+- [ ] 10-04-PLAN.md — Airtable Backup/Historical tune data migrated into Postgres (wave 2)
+- [ ] 10-05-PLAN.md — Change Tune list tiered Backup → Historical → other; old tabs removed (wave 3)
+
 **UI hint**: yes
 
 ### Phase 11: Tune List & Selector Overhaul
