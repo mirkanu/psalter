@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
-status: ready_to_plan
-stopped_at: Phase 9 complete — all 5 CHLG requirements live-verified, human confirmed full pass
-last_updated: "2026-08-07T17:32:04.274Z"
-last_activity: 2026-08-07
+status: executing
+stopped_at: Completed 10-01-PLAN.md
+last_updated: "2026-08-08T07:34:20.959Z"
+last_activity: 2026-08-08
 progress:
   total_phases: 10
-  completed_phases: 5
-  total_plans: 17
-  completed_plans: 17
-  percent: 50
+  completed_phases: 4
+  total_plans: 22
+  completed_plans: 18
+  percent: 82
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone close)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 09 — changelog
+**Current focus:** Phase 10 — tune-data-fixes
 
 ## Current Position
 
-Phase: 10
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-08-07
+Phase: 10 (tune-data-fixes) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
+Last activity: 2026-08-08
 
 ## Performance Metrics
 
@@ -90,6 +90,7 @@ Last activity: 2026-08-07
 | Phase 07 P03 | 20 min | 3 tasks | 2 files |
 | Phase 08 P04 | 30 min | 3 tasks | 2 files |
 | Phase 09-changelog P07 | 35 min | 3 tasks | 1 files |
+| Phase 10 P01 | 12min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -182,6 +183,8 @@ Recent decisions affecting current work:
 - [Phase 08-04]: Stashed two pre-existing unrelated uncommitted changes (CLAUDE.md stack section, PsalmListingGrid.tsx scroll fix) before the live production build, restored after the burst test — Ensures the deployed bundle reflects only committed Phase 8 code, not unreviewed in-flight edits, during a live-verification plan
 - [Phase 09-07]: 14 pre-existing test failures (precent-route headers() test-scope mismatch, tune/psalm data-shape assertions, melisma heuristics) found during Task 1's full-suite gate predate Phase 9 entirely (last touched 2026-07-16) and are unrelated to changelog code — Logged to deferred-items.md per scope-boundary rules, not fixed; build proceeded since zero changelog tests failed
 - [Phase 09-changelog]: [Phase 09-07] Human's real published post ('V2 (Beta)', changelog_posts.id=31) left in place as genuine release content rather than deleted as test data, per threat register T-09-62 requiring an explicit decision before deleting any live-visible post
+- [Phase 10-01]: Darwall (id 57) confirmed primary for Ps 148 Second Version via live Airtable CPRC Standard[0] lookup; Clarkeville demoted
+- [Phase 10-01]: psalm_version_historical_tunes is its own junction table, not a third flag on psalm_version_tunes, to avoid corrupting 3 consumers that read every row unconditionally
 
 ### Pending Todos
 
@@ -261,8 +264,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-07T17:32:04.216Z
-Stopped at: Phase 9 complete — all 5 CHLG requirements live-verified, human confirmed full pass
+Last session: 2026-08-08T07:34:20.922Z
+Stopped at: Completed 10-01-PLAN.md
 Resume file: None
 
 ### Deferred from 04.9.4 polish (separate tickets when needed)
