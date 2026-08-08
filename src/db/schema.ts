@@ -9,8 +9,10 @@ import {
   primaryKey,
   jsonb,
   unique,
+  real,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core'
-import { relations } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import type { StructuredLyrics } from '@/lib/lyrics-structured'
 
 // ─── Core Content Tables ─────────────────────────────────────────────────────
@@ -79,6 +81,8 @@ export const tunes = pgTable('tunes', {
   numberIn1979RpPsalter: integer('number_in_1979_rp_psalter'),
   numInPrcaPsalter: integer('num_in_prca_psalter'),
   doubleLength: boolean('double_length').default(false).notNull(),  // DCM marker — manually curated in Airtable, see .planning/research/scottish-psalter-structure.md §2
+  historicalUsageCount: integer('historical_usage_count').default(0).notNull(),          // Airtable Tunes."CPRC historical tune usage" (count rollup) — TUNE-03
+  weightedHistoricalFrequency: real('weighted_historical_frequency').default(0).notNull(), // Airtable Tunes."Weighted historical CPRC psalm frequency for CPRC Standard" (percent rollup, 0-1) — TUNE-03
 })
 
 /**
@@ -224,6 +228,33 @@ export const psalmVersionTunes = pgTable('psalm_version_tunes', {
   psalmVersionId: integer('psalm_version_id').notNull().references(() => psalmVersions.id),
   tuneId: integer('tune_id').notNull().references(() => tunes.id),
   isPrimary: boolean('is_primary').default(false),
+  isBackup: boolean('is_backup').default(false).notNull(),  // Airtable Scottish Psalter."backup 2024" link field — TUNE-03/04
+}, (t) => [
+  primaryKey({ columns: [t.psalmVersionId, t.tuneId] }),
+  // TUNE-01: at most one primary tune per psalm version. App-level validation already existed
+  // implicitly and still produced the Ps 148b duplicate; only a DB constraint survives a
+  // re-run of scripts/migrate-airtable.ts (which uses onConflictDoNothing and never revokes
+  // a stale is_primary flag) or a direct SQL edit.
+  uniqueIndex('uq_psalm_version_tunes_one_primary')
+    .on(t.psalmVersionId)
+    .where(sql`${t.isPrimary} = true`),
+])
+
+/**
+ * psalm_version_historical_tunes — tunes historically sung for a given psalm version.
+ * Source: Airtable "Scottish Psalter"."Historical CPRC Usage" (rollup of tune-name strings,
+ * resolved against tunes.name during scripts/migrate-tune-backup-historical.ts).
+ *
+ * Deliberately its OWN junction table rather than a third flag on psalm_version_tunes: the
+ * rollup resolves to ~393 (psalm_version, tune) pairs, and three existing consumers read EVERY
+ * psalm_version_tunes row regardless of flags — fetchAllTunes().recommendedPsalmIds (drives the
+ * /tunes "Psalms" column and its default sort), the /tunes/[slug] "other psalms" list, and
+ * psalms/[id]'s no-primary fallback (psalmVersionTunes[0].tune). Historical links must not leak
+ * into any of those.
+ */
+export const psalmVersionHistoricalTunes = pgTable('psalm_version_historical_tunes', {
+  psalmVersionId: integer('psalm_version_id').notNull().references(() => psalmVersions.id),
+  tuneId: integer('tune_id').notNull().references(() => tunes.id),
 }, (t) => [primaryKey({ columns: [t.psalmVersionId, t.tuneId] })])
 
 /**
