@@ -302,29 +302,6 @@ function ParallelContent({
   )
 }
 
-function BackupTunesContent({ backupTunes }: { backupTunes: TuneRow[] }) {
-  if (backupTunes.length === 0) {
-    return (
-      <p className="text-muted-foreground italic">No backup tunes recorded for this psalm.</p>
-    )
-  }
-  return (
-    <ul className="space-y-3">
-      {backupTunes.map((tune) => (
-        <li
-          key={tune.id}
-          className="flex items-center justify-between border-b border-border pb-2"
-        >
-          <Link href={`/tunes/${tune.id}`} className="font-medium text-foreground hover:underline underline-offset-2">
-              {tune.name}
-            </Link>
-          {tune.meter && <Badge variant="outline">{tune.meter}</Badge>}
-        </li>
-      ))}
-    </ul>
-  )
-}
-
 // ── Mobile tab labels ────────────────────────────────────────────────────────
 
 const MOBILE_TABS = [
@@ -334,8 +311,6 @@ const MOBILE_TABS = [
   { value: 'study', label: 'Study' },
   { value: 'messianic', label: 'Messianic' },
   { value: 'parallel', label: 'Parallel' },
-  { value: 'backup-tunes', label: 'Backup Tunes' },
-  { value: 'historical-tunes', label: 'Historical Tunes' },
 ]
 
 const DESKTOP_TABS = MOBILE_TABS.filter((t) => t.value !== 'sing')
@@ -371,12 +346,6 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
     ? (psalm.psalmVersions.find((v) => v.id === activeVersionId) ?? sortedVersions[0] ?? null)
     : (sortedVersions[0] ?? null)
   const dailyEntry = psalm.dailyReadings?.[0] ?? null
-  const primaryTuneId = primaryTune?.id ?? null
-  const allPvts = psalm.psalmVersions.flatMap((pv) => pv.psalmVersionTunes)
-  const backupTunes = allPvts
-    .filter((pvt) => !pvt.isPrimary)
-    .map((pvt) => pvt.tune)
-    .filter((t): t is NonNullable<typeof t> => !!t && t.id !== primaryTuneId)
   const messianic = psalm.messianicPsalms[0] ?? null
   const kjvVerses = psalm.verses
     .slice()
@@ -529,12 +498,6 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
       </TabsContent>
       <TabsContent value="parallel" className={pb}>
         <ParallelContent lyrics={lyrics} kjvVerses={kjvVerses} />
-      </TabsContent>
-      <TabsContent value="backup-tunes" className={pb}>
-        <BackupTunesContent backupTunes={backupTunes} />
-      </TabsContent>
-      <TabsContent value="historical-tunes" className={pb}>
-        <p className="text-muted-foreground italic">No historical tunes recorded.</p>
       </TabsContent>
     </>
   )
