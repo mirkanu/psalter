@@ -156,7 +156,7 @@ Authenticated precentor portal, service set lists, site footer/feedback/analytic
 Plans:
 - [x] 10-01-PLAN.md — Schema delta + Ps 148b duplicate-primary fix, made structurally unrepeatable (wave 1)
 - [x] 10-02-PLAN.md — Shared meter-mismatch predicate + warning banner in every notation view (wave 1)
-- [ ] 10-03-PLAN.md — Name-based tune slugs with 308 redirects for old numeric URLs (wave 1)
+- [x] 10-03-PLAN.md — Name-based tune slugs with 308 redirects for old numeric URLs (wave 1)
 - [ ] 10-04-PLAN.md — Airtable Backup/Historical tune data migrated into Postgres (wave 2)
 - [ ] 10-05-PLAN.md — Change Tune list tiered Backup → Historical → other; old tabs removed (wave 3)
 
@@ -246,7 +246,7 @@ Phases 7 and 10 have no dependencies on Phase 6 or each other and may be worked 
 | 7. Email Foundation (Resend Provisioning) | 0/TBD | Not started | - |
 | 8. Feedback Email & Rate Limiting | 4/4 | Complete | 2026-08-02 |
 | 9. Changelog | 7/7 | Complete   | 2026-08-07 |
-| 10. Tune Data Fixes | 2/5 | In Progress|  |
+| 10. Tune Data Fixes | 3/5 | In Progress|  |
 | 11. Tune List & Selector Overhaul | 0/TBD | Not started | - |
 | 12. Psalm Selector Polish | 0/TBD | Not started | - |
 | 13. Tune Image Compression | 0/TBD | Not started | - |

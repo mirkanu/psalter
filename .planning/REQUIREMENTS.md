@@ -37,7 +37,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [x] **TUNE-02**: Meter-mismatch warning banner shown in Staff/Solfège/Sing views when the active tune's meter doesn't match the psalm's stated meter (generalizes the Aurelia/Ps 119 case; reuses the existing precenting-set mismatch check)
 - [ ] **TUNE-03**: Real Backup/Historical tune data migrated from Airtable (`Manuel CPRC backup`, `CPRC historical tune usage` / weighted frequency rollups) into Postgres
 - [ ] **TUNE-04**: Change Tune list sorted Backup → Historical → other matching-meter tunes; redundant Meter indicator removed (already filtered); old "Backup Tunes"/"Historical Tunes" tabs removed from the tabbed section once the reorder is live
-- [ ] **TUNE-05**: Tune slugs are name-based (`/tunes/beatitudo`) with full redirect coverage for old numeric URLs (`/tunes/169`)
+- [x] **TUNE-05**: Tune slugs are name-based (`/tunes/beatitudo`) with full redirect coverage for old numeric URLs (`/tunes/169`)
 
 ### Psalm Selector
 
@@ -119,7 +119,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TUNE-02 | Phase 10 | Complete |
 | TUNE-03 | Phase 10 | Pending |
 | TUNE-04 | Phase 10 | Pending |
-| TUNE-05 | Phase 10 | Pending |
+| TUNE-05 | Phase 10 | Complete |
 | PSEL-01 | Phase 12 | Pending |
 | PSEL-02 | Phase 12 | Pending |
 | PSEL-03 | Phase 12 | Pending |

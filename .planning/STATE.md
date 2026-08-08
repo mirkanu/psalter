@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
 status: executing
-stopped_at: Completed 10-02-PLAN.md
-last_updated: "2026-08-08T07:43:08.853Z"
+stopped_at: Completed 10-03-PLAN.md
+last_updated: "2026-08-08T07:57:54.295Z"
 last_activity: 2026-08-08
 progress:
   total_phases: 10
   completed_phases: 4
   total_plans: 22
-  completed_plans: 19
-  percent: 86
+  completed_plans: 20
+  percent: 91
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone clos
 ## Current Position
 
 Phase: 10 (tune-data-fixes) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-08-08
 
@@ -92,6 +92,7 @@ Last activity: 2026-08-08
 | Phase 09-changelog P07 | 35 min | 3 tasks | 1 files |
 | Phase 10 P01 | 12min | 3 tasks | 3 files |
 | Phase 10 P02 | 18 min | 2 tasks | 4 files |
+| Phase 10 P03 | 12min | 4 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -188,6 +189,8 @@ Recent decisions affecting current work:
 - [Phase 10-01]: psalm_version_historical_tunes is its own junction table, not a third flag on psalm_version_tunes, to avoid corrupting 3 consumers that read every row unconditionally
 - [Phase 10-02]: meterMismatch/meterMismatchBanner derived once right after rootStyle, before the fullscreen-branch conditional, so both NotationRenderer return branches share one JSX value
 - [Phase 10-02]: Banner uses role=status and a red palette (not amber) to visually distinguish an actionable warning from PsalmTabs.tsx's existing informational amber banner
+- [Phase 10-03]: tuneNameToSlug moved out of tune-jpg-urls.ts (fs-importing) into zero-import src/lib/tune-slug.ts so it is safe to import from 'use client' components; slug travels as a server-computed data field on every tune shape
+- [Phase 10-03]: PsalmTabs.tsx BackupTunesContent numeric tune link left untouched per this plan's scope boundary — Plan 05 deletes the whole component
 
 ### Pending Todos
 
@@ -267,8 +270,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-08T07:43:08.804Z
-Stopped at: Completed 10-02-PLAN.md
+Last session: 2026-08-08T07:57:54.260Z
+Stopped at: Completed 10-03-PLAN.md
 Resume file: None
 
 ### Deferred from 04.9.4 polish (separate tickets when needed)
