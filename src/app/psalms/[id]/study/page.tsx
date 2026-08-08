@@ -7,7 +7,7 @@ import { db } from '@/db'
 import { psalms, psalmVersions } from '@/db/schema'
 import { asc, eq } from 'drizzle-orm'
 import { fetchPsalmDetail } from '@/db/queries/psalms'
-import { fetchTunesByMeter } from '@/db/queries/tunes'
+import { fetchTunesByMeter, fetchPsalmVersionTuneTiers } from '@/db/queries/tunes'
 import { PsalmTabs } from '@/components/PsalmTabs'
 import { PsalmNav } from '@/components/PsalmNav'
 import { parseSlug, deriveVersionSlug, stripStar, slugToDisplayTitle } from '@/lib/psalm-slugs'
@@ -126,6 +126,10 @@ export default async function PsalmStudyPage({ params }: PageProps) {
     ? (deriveTuneJpgPages(primaryTune.name).solfegePages[0] ?? null)
     : null
 
+  const tuneTiers = activeVersion
+    ? await fetchPsalmVersionTuneTiers(activeVersion.id)
+    : { backupTuneIds: [], historicalTuneIds: [] }
+
   const displayTitle = slugToDisplayTitle(slug)
   const { prev, next } = await getPsalmNeighbors(slug)
 
@@ -163,6 +167,7 @@ export default async function PsalmStudyPage({ params }: PageProps) {
         alternateTunes={alternateTunes}
         activeVersionId={activeVersion?.id}
         recommendedVersionSlug={recommendedVersionSlug}
+        tuneTiers={tuneTiers}
       />
     </div>
   )
