@@ -3,6 +3,7 @@ import { db } from "@/db"
 import { eq, asc, and, inArray, isNotNull, desc } from "drizzle-orm"
 import { tunes, tuneMelismaDecisions } from "@/db/schema"
 import { deriveTuneJpgPages } from "@/lib/tune-jpg-urls"
+import { tuneNameToSlug } from "@/lib/tune-slug"
 
 export type MelismaStatus = 'approved' | 'not_approved'
 
@@ -51,6 +52,7 @@ export async function fetchAllTunes() {
     .map((t) => ({
       id: t.id,
       name: t.name,
+      slug: tuneNameToSlug(t.name),
       meter: t.meter,
       scoreJpgUrl: t.scoreJpgUrl,
       inPrcaPsalter: t.inPrcaPsalter ?? false,
@@ -98,6 +100,9 @@ export type TuneDetail = NonNullable<Awaited<ReturnType<typeof fetchTuneDetail>>
 export interface AlternateTune {
   id: number
   name: string
+  /** Server-computed URL slug (see src/lib/tune-slug.ts). Client components must read this
+   *  field rather than importing the slug function — tune-jpg-urls.ts pulls in `fs`. */
+  slug: string
   meter: string | null
   abcNotation: string | null
   abcSatb: string | null
@@ -178,6 +183,30 @@ export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]>
   }
   return filtered.map((t) => {
     const { staffPages, solfegePages } = deriveTuneJpgPages(t.name)
-    return { ...t, staffPages, solfegePages, melismaStatus: statusByTune.get(t.id) ?? null }
+    return {
+      ...t,
+      slug: tuneNameToSlug(t.name),
+      staffPages,
+      solfegePages,
+      melismaStatus: statusByTune.get(t.id) ?? null,
+    }
   })
+}
+
+/**
+ * Slug → tune detail. tunes.name is UNIQUE NOT NULL and tuneNameToSlug is deterministic, but
+ * the slug is not a DB column, so match in JS over the (172-row) name list and delegate to the
+ * memoised fetchTuneDetail for the heavy relational load.
+ */
+export const fetchTuneBySlug = cache(async function fetchTuneBySlug(slug: string) {
+  const rows = await db.select({ id: tunes.id, name: tunes.name }).from(tunes)
+  const match = rows.find((t) => tuneNameToSlug(t.name) === slug)
+  if (!match) return undefined
+  return fetchTuneDetail(match.id)
+})
+
+/** All tune slugs, for generateStaticParams. */
+export async function fetchTuneSlugs(): Promise<string[]> {
+  const rows = await db.select({ name: tunes.name }).from(tunes).orderBy(asc(tunes.name))
+  return rows.map((r) => tuneNameToSlug(r.name)).filter((s) => s.length > 0)
 }

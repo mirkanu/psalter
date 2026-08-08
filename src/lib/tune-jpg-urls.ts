@@ -15,14 +15,9 @@
 
 import { existsSync } from 'fs'
 import { join } from 'path'
+import { tuneNameToSlug } from './tune-slug'
 
-export function tuneNameToSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-}
+export { tuneNameToSlug }
 
 /**
  * Return arrays of /tunes/{slug}-staff-{n}.jpg and /tunes/{slug}-solfege-{n}.jpg
