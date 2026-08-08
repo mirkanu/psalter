@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
-status: executing
-stopped_at: Completed 10-04-PLAN.md
-last_updated: "2026-08-08T09:45:47.007Z"
+status: verifying
+stopped_at: Completed 10-05-PLAN.md (Phase 10 complete, all 5 plans executed)
+last_updated: "2026-08-08T09:55:49.995Z"
 last_activity: 2026-08-08
 progress:
   total_phases: 10
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 22
-  completed_plans: 21
-  percent: 95
+  completed_plans: 22
+  percent: 100
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone clos
 
 Phase: 10 (tune-data-fixes) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-08-08
 
 ## Performance Metrics
@@ -94,6 +94,7 @@ Last activity: 2026-08-08
 | Phase 10 P02 | 18 min | 2 tasks | 4 files |
 | Phase 10 P03 | 12min | 4 tasks | 12 files |
 | Phase 10 P04 | 20 min | 3 tasks | 5 files |
+| Phase 10 P05 | 15 min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -196,6 +197,8 @@ Recent decisions affecting current work:
 - [Phase 10-04]: psalm_version_tunes.is_backup upserts use onConflictDoUpdate touching only isBackup, never isPrimary — a backup tune is often already linked via CPRC Standard
 - [Phase 10-04]: postgres.js update/insert results expose affected-row count as .count not .rowCount — migrate-double-length.ts's template snippet used the wrong property (silent no-op logging bug), fixed in the new script
 - [Phase 10-04]: Regression-guard baseline corrected from plan's stated is_primary=173 to the actual live value 184 (one primary per psalm_versions row, 0 missing, 0 duplicates) — confirmed via code review this migration never writes isPrimary, so 184 predates this plan and 173 was a stale figure from Plan 02's research
+- [Phase 10-05]: A tune present in both backupTuneIds and historicalTuneIds classifies as backup (backup outranks historical) — verified live: Ellacomb (psalm 71, CM) is both, renders once under Backup
+- [Phase 10-05]: TuneSwitcherSheet.tsx (singing view's tune picker) left untiered pending Phase 11 TSEL-01 picker consolidation, per plan's explicit out-of-scope boundary
 
 ### Pending Todos
 
@@ -275,8 +278,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-08T09:45:46.961Z
-Stopped at: Completed 10-04-PLAN.md
+Last session: 2026-08-08T09:55:49.935Z
+Stopped at: Completed 10-05-PLAN.md (Phase 10 complete, all 5 plans executed)
 Resume file: None
 
 ### Deferred from 04.9.4 polish (separate tickets when needed)
