@@ -325,30 +325,25 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
   // sticky, so the header pins at the container's own top edge.
   const theadTop = onSelectTune ? 0 : siteHeaderHeight + filterBarHeight
 
-  // TLIST-03 / iOS Safari: sticky positioning on table cells (both <thead>-level and per-<th>) is subject
-  // to a still-unresolved class of WebKit bugs on real iOS devices — confirmed via three independent fix
-  // attempts (border-collapse -> border-separate, useEffect -> useLayoutEffect timing, sticky on <thead>
-  // -> sticky on <th>), none of which resolved it on a real iPhone despite each being a documented,
-  // legitimate fix for a DIFFERENT known Safari sticky-table bug. Rather than keep guessing blind (no real
-  // iOS device available to test against), the sticky header is disabled entirely on iOS: the header just
-  // scrolls away normally there, which is a straightforward, reliable degradation. All other platforms
-  // (desktop, Android, iPadOS-as-desktop-Safari where UA sniffing may miss it) keep the sticky-on-<th>
-  // behavior, which is correct and bug-free everywhere it's been verified (Chromium).
-  //
-  // Future improvement, if iOS sticky support is ever wanted: replace native <thead>/<th> sticky entirely
-  // with a synthetic, non-table `position: sticky` <div> header bar (column widths mirrored from the real
-  // header) that's shown/hidden via scroll position or an IntersectionObserver watching the real header's
-  // position. Sticky divs are reliable in Safari — the bug is specific to sticky on table sections — but
-  // this is a meaningfully bigger change (a second header implementation to keep in sync) and was
-  // deliberately deferred rather than built speculatively.
+  // TLIST-03 / iOS Safari: the real root cause behind a whole cascade of iOS-only bugs here (sticky offset,
+  // the overflow-x-auto toggle, mobile column-narrowing, and a table-width regression) turned out to be
+  // table-layout: fixed's column-width computation getting cached once and never correctly recomputed
+  // after a later change on WebKit — NOT sticky positioning itself. iOS now uses table-layout: auto (see
+  // below), which has no such cache to go stale. With that root cause removed, sticky-on-<th> (not
+  // <thead> — confirmed unreliable in Safari by independent WebKit bug reports) + border-separate (the
+  // documented fix for the OTHER real Safari bug: sticky + border-collapse mispainting borders/position,
+  // w3c/csswg-drafts#3136) is being tried again, this time without table-layout:fixed's caching bug
+  // fighting it. If this still doesn't hold up on a real device, the fallback documented in git history
+  // (a synthetic non-table sticky <div> header bar, immune to sticky-on-table-section bugs entirely) is
+  // the next step — but that's a meaningfully bigger change, deliberately not built speculatively.
   const [isIOSDetected, setIsIOSDetected] = useState(isIOSProp ?? false)
   useLayoutEffect(() => {
     if (isIOSProp !== undefined) return // server already told us — skip client re-detection entirely
     setIsIOSDetected(/iPad|iPhone|iPod/.test(navigator.userAgent))
   }, [isIOSProp])
   const isIOS = isIOSProp ?? isIOSDetected
-  const stickyTh = isIOS ? '' : 'sticky z-10'
-  const stickyThStyle = isIOS ? undefined : { top: theadTop }
+  const stickyTh = 'sticky z-10'
+  const stickyThStyle = { top: theadTop }
 
   // TLIST-03: only create a horizontal scroll container when the table genuinely overflows. An
   // `overflow-x: auto` ancestor is a scroll container on both axes, which would make `position: sticky`
@@ -776,30 +771,29 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
       ) : (
         <div
           ref={tableWrapRef}
-          // On iOS: overflow-x-auto is applied unconditionally (a static class, never toggled at runtime)
-          // rather than via the JS-computed needsHScroll below. `overflow: auto` is natively "scroll only
-          // if content actually overflows" — this needs zero JavaScript, so it sidesteps the same iOS
-          // Safari stale-paint bug that affected the sticky header (a class applied/removed by React after
-          // mount not being reflected until an unrelated forced repaint). This is only safe because sticky
-          // is already unconditionally disabled on iOS above — an always-on scroll-container ancestor would
-          // otherwise make position: sticky inert (see the comment on the original needsHScroll effect).
-          className={`rounded-lg border border-border${(isIOS || needsHScroll) ? ' overflow-x-auto' : ''}`}
+          // Back to the JS-computed needsHScroll toggle on all platforms, including iOS. An earlier fix
+          // forced overflow-x-auto unconditionally on iOS to sidestep a stale-paint bug — but an always-on
+          // scroll-container ancestor makes position: sticky inert (sticky resolves against the nearest
+          // scrolling ancestor, and that ancestor never scrolls vertically), which broke the sticky header
+          // this same effort is trying to re-enable. The stale-paint bug this was working around turned out
+          // to be table-layout:fixed's cached column-width computation (now dropped on iOS, see below), not
+          // something specific to this toggle — so needsHScroll (already useLayoutEffect-based) should be
+          // safe to rely on again.
+          className={`rounded-lg border border-border${needsHScroll ? ' overflow-x-auto' : ''}`}
         >
-          {/* border-separate + border-spacing-0 (overriding Tailwind preflight's default border-collapse:
-              collapse) was introduced purely to fix Safari's sticky-<thead>/<th> painting bug
-              (w3c/csswg-drafts#3136) — but sticky is now unconditionally OFF on iOS (see isIOS above), so
-              iOS has no reason to pay for border-separate any more.
-              table-layout: fixed is ALSO dropped on iOS. Across four separate reported iOS regressions
-              (sticky offset, the overflow-x-auto toggle, the mobile column-narrowing, and now this),
-              the common thread is table-layout:fixed's column widths being computed ONCE and then not
-              correctly recomputed after ANY later change (DOM mutation, class toggle, or — per the
-              "confined for a split second, then spills" report — possibly even a web-font swap reflow)
-              until an unrelated external repaint (switching tabs) forces WebKit to redo it. table-layout:
-              auto has no such cached computation to go stale — it continuously sizes from current content
-              — so it doesn't hit this bug class, at the cost of the column widths being hints rather than
-              a hard guarantee. overflow-x-auto (already unconditional on iOS) is the safety net if a
-              particular tune name is long enough to still overflow under auto layout. */}
-          <table ref={tableRef} className={`w-full text-sm${isIOS ? '' : ' table-fixed border-separate border-spacing-0'}`}>
+          {/* table-layout: fixed is dropped on iOS only. Across several reported iOS regressions (sticky
+              offset, the overflow-x-auto toggle, mobile column-narrowing), the common thread was
+              table-layout:fixed's column widths being computed ONCE and not correctly recomputed after a
+              later change (DOM mutation, class toggle, possibly a next/font web-font swap reflow) until an
+              unrelated external repaint (switching tabs) forced WebKit to redo it. table-layout: auto has
+              no such cached computation to go stale, at the cost of column widths being hints rather than
+              a hard guarantee — overflow-x-auto (unconditional on iOS) is the safety net.
+              border-separate + border-spacing-0 (overriding Tailwind preflight's default border-collapse)
+              stays unconditional on ALL platforms including iOS: it's the documented cross-browser fix for
+              Safari's sticky-<th> + border-collapse painting/position bug (w3c/csswg-drafts#3136), and
+              — now that it's paired with table-layout:auto instead of :fixed — should no longer trigger
+              the separate width-containment regression border-separate caused under :fixed. */}
+          <table ref={tableRef} className={`w-full text-sm border-separate border-spacing-0${isIOS ? '' : ' table-fixed'}`}>
             <thead>
               <tr className="border-b border-border bg-muted/50 text-xs [&>th]:bg-muted [&>th]:border-r [&>th]:border-border/60 [&>th:last-child]:border-r-0">
                 {/* No explicit width: table-fixed gives this column whatever space remains after the
