@@ -1,5 +1,5 @@
 'use client'
-import { useMemo, useState, useRef, useEffect } from "react"
+import { Fragment, useMemo, useState, useRef, useEffect } from "react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useRouter } from "next/navigation"
 import { useLocalStorage } from "@/hooks/useLocalStorage"
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
+import { TuneRowInlinePlayer, hasAnyTuneMedia } from "@/components/tunes/TuneRowInlinePlayer"
 
 export interface TuneRow {
   id: number
@@ -146,6 +147,10 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
+
+  // TLIST-04 accordion: at most one expanded row at a time. This bounds live abcjs instances to one per page,
+  // consistent with this project's single-synth-instance discipline (STATE.md AbcPlayer/AbcAudioControls notes).
+  const [expandedTuneId, setExpandedTuneId] = useState<number | null>(null)
 
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -285,6 +290,12 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
     setAdvancedOpen(false)
     // Column visibility is intentionally NOT reset here — it's a separate preference
   }
+
+  const visibleColumnCount =
+    1 +
+    (colMeter ? 1 : 0) + (colPsalms ? 1 : 0) + (colMood ? 1 : 0) + (colRp ? 1 : 0) +
+    (colPrca ? 1 : 0) + (colHymn ? 1 : 0) + (colInPrca ? 1 : 0) +
+    (colRecording && !onSelectTune ? 1 : 0)
 
   return (
     <div className="space-y-4">
@@ -576,8 +587,8 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
                   isNarrow ? PSALM_IDS_LIMIT_MOBILE : PSALM_IDS_LIMIT_DESKTOP,
                 )
                 return (
+                  <Fragment key={tune.id}>
                   <tr
-                    key={tune.id}
                     className={`hover:bg-muted/30 transition-colors group${onSelectTune ? ' cursor-pointer hover:bg-muted/50' : ''}`}
                     onClick={onSelectTune ? () => onSelectTune(tune) : undefined}
                   >
@@ -655,20 +666,40 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
                     )}
                     {colRecording && !onSelectTune && (
                       <td className="px-3 py-2.5 text-center">
-                        {tune.soundcloudUrl ? (
-                          <a
-                            href={tune.soundcloudUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title="Listen on SoundCloud"
-                            onClick={(e) => e.stopPropagation()}
+                        {hasAnyTuneMedia(tune) ? (
+                          <button
+                            type="button"
+                            aria-expanded={expandedTuneId === tune.id}
+                            aria-controls={`tune-player-${tune.id}`}
+                            aria-label={
+                              expandedTuneId === tune.id
+                                ? `Hide recording and score for ${tune.name ?? `Tune ${tune.id}`}`
+                                : `Play recording or view score for ${tune.name ?? `Tune ${tune.id}`}`
+                            }
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setExpandedTuneId((cur) => (cur === tune.id ? null : tune.id))
+                            }}
+                            className={`inline-flex items-center justify-center h-11 w-11 md:h-8 md:w-8 rounded-md transition-colors ${
+                              expandedTuneId === tune.id
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-primary hover:bg-muted'
+                            }`}
                           >
-                            <Music className="h-4 w-4 text-primary mx-auto" />
-                          </a>
+                            <Music className="h-4 w-4" />
+                          </button>
                         ) : null}
                       </td>
                     )}
                   </tr>
+                  {expandedTuneId === tune.id && (
+                    <tr id={`tune-player-${tune.id}`} className="bg-muted/50">
+                      <td colSpan={visibleColumnCount} className="px-4 py-3 animate-in fade-in slide-in-from-top-1">
+                        <TuneRowInlinePlayer tune={tune} />
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 )
               })}
             </tbody>
