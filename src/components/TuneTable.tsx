@@ -337,22 +337,28 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
   // TLIST-03 / iOS Safari: the real root cause behind a whole cascade of iOS-only bugs here (sticky offset,
   // the overflow-x-auto toggle, mobile column-narrowing, and a table-width regression) turned out to be
   // table-layout: fixed's column-width computation getting cached once and never correctly recomputed
-  // after a later change on WebKit — NOT sticky positioning itself. iOS now uses table-layout: auto (see
-  // below), which has no such cache to go stale. With that root cause removed, sticky-on-<th> (not
-  // <thead> — confirmed unreliable in Safari by independent WebKit bug reports) + border-separate (the
-  // documented fix for the OTHER real Safari bug: sticky + border-collapse mispainting borders/position,
-  // w3c/csswg-drafts#3136) is being tried again, this time without table-layout:fixed's caching bug
-  // fighting it. If this still doesn't hold up on a real device, the fallback documented in git history
-  // (a synthetic non-table sticky <div> header bar, immune to sticky-on-table-section bugs entirely) is
-  // the next step — but that's a meaningfully bigger change, deliberately not built speculatively.
+  // after a later change on WebKit. iOS now uses table-layout: auto (see below), which has no such cache
+  // to go stale, and sticky-on-<th> + border-separate works reliably there — CONFIRMED on a real iPhone —
+  // as long as the table's column STRUCTURE never changes after mount. Toggling a column on/off via
+  // "Advanced Filters & Columns" (a perfectly normal, synchronously-batched React update — there is no
+  // extra async gap left to fix here) still visibly breaks the stuck position on a real device: the header
+  // renders correctly for a moment, then drops down into the table body. This points to a genuine,
+  // narrower WebKit limitation — sticky-on-<th> specifically mishandling a column-COUNT change on an
+  // already-stuck header — that no amount of effect-timing tuning can route around, since the underlying
+  // React update is already synchronous. Rather than keep chasing this, sticky is scoped to the DEFAULT
+  // (unmodified) column set on iOS, which is confirmed solid: it turns off the moment the user enables any
+  // column beyond TLIST-02's Meter/Psalms/Recording defaults, at which point the header just scrolls away
+  // normally — the same graceful degradation already used for the horizontal-scroll fallback in that case.
   const [isIOSDetected, setIsIOSDetected] = useState(isIOSProp ?? false)
   useLayoutEffect(() => {
     if (isIOSProp !== undefined) return // server already told us — skip client re-detection entirely
     setIsIOSDetected(/iPad|iPhone|iPod/.test(navigator.userAgent))
   }, [isIOSProp])
   const isIOS = isIOSProp ?? isIOSDetected
-  const stickyTh = 'sticky z-10'
-  const stickyThStyle = { top: theadTop }
+  const hasNonDefaultColumns = colMood || colRp || colPrca || colHymn || colInPrca
+  const iosStickyBroken = isIOS && hasNonDefaultColumns
+  const stickyTh = iosStickyBroken ? '' : 'sticky z-10'
+  const stickyThStyle = iosStickyBroken ? undefined : { top: theadTop }
 
   // TLIST-03: only create a horizontal scroll container when the table genuinely overflows. An
   // `overflow-x: auto` ancestor is a scroll container on both axes, which would make `position: sticky`
