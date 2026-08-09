@@ -15,6 +15,7 @@ import type { TuneOption } from './types'
 import type { PsalmDetail } from '@/db/queries/psalms'
 import type { PsalmRow } from '@/components/PsalmListingGrid'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
+import { buildNotationRendererProps } from '@/lib/notation-renderer-props'
 import { setChromeHidden } from '@/lib/chrome-hidden-store'
 import { resolveStaffInlineApproved, shouldFallbackToSplit } from '@/lib/inline-staff-gating'
 import { isIOSDevice, isStandaloneDisplayMode, isPhoneDevice } from '@/lib/device'
@@ -1008,27 +1009,33 @@ export function SingingView({
            and GearPopover's tune-selection-request flow). */}
         <div ref={notationAnimRef} className="flex-1 min-h-0 flex flex-col">
           <NotationRendererClient
+            {...buildNotationRendererProps(
+              activeTune
+                ? {
+                    abcNotation: activeTune.abcNotation ?? null,
+                    abcSatb: activeTune.abcSatb ?? null,
+                    name: activeTune.name ?? null,
+                    // TUNE-02 fix (commit 9a23059): this is the ACTIVE TUNE's meter, never the psalm's `meter`
+                    // prop — otherwise isMeterMismatch() compares the psalm meter against itself and the
+                    // mismatch banner can never fire. The shared helper is what stops this fix from drifting
+                    // out of the other call sites again.
+                    meter: activeTune.meter ?? null,
+                    phraseShapeOverride: activeTune.phraseShapeOverride ?? null,
+                    doubleLength: activeTune.doubleLength ?? false,
+                    solfegeOcrText: activeTune.solfegeOcrText ?? null,
+                    scoreJpgUrl: scoreJpgUrl,
+                    solfegeJpgUrl: solfegeJpgUrl,
+                  }
+                : null,
+              { lyrics, stanzaMeter, lyricsStructured },
+              { showLyrics, onViewModeChange: setViewMode, fallbackTuneName: '' },
+            )}
+            // SingingView deliberately renders the RAW abcNotation rather than the helper's
+            // pickAbcWithMarkers/sopranoOnly pick. Changing that is a notation-behaviour change and is out of
+            // Phase 11's locked scope (D-02/D-03 cover prop plumbing only), so the override is explicit here.
             abc={abc}
-            lyrics={lyrics}
-            scoreJpgUrl={scoreJpgUrl}
-            solfegeJpgUrl={solfegeJpgUrl}
-            tuneName={tuneName}
-            // TUNE-02 fix: `meter` (prop) is the PSALM's stated meter (used for the
-            // meterLabel display and the alternates-by-meter lookup) — not the active
-            // tune's own meter. Using it here made isMeterMismatch(stanzaMeter, tuneMeter)
-            // compare the psalm meter against itself, so the banner could never fire on
-            // this page. activeTune.meter tracks the real active tune, including
-            // client-side tune-switcher overrides.
-            tuneMeter={activeTune?.meter ?? null}
-            phraseShapeOverride={activeTune?.phraseShapeOverride ?? null}
-            stanzaMeter={stanzaMeter}
-            lyricsStructured={lyricsStructured}
-            doubleLength={activeTune?.doubleLength ?? false}
-            solfegeOcrText={activeTune?.solfegeOcrText ?? null}
             melismaPositions={activeTune?.melismaPositions ?? null}
-            showLyrics={showLyrics}
             viewMode={viewMode}
-            onViewModeChange={setViewMode}
             baseSize={activeBaseSize}
             onBaseSizeChange={handleBaseSizeChange}
             notationBaseSize={notationBaseSize}
