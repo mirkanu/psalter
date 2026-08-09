@@ -7,7 +7,7 @@ import { db } from '@/db'
 import { precentingSets, setItems } from '@/db/schema'
 import { eq, asc } from 'drizzle-orm'
 import { fetchPsalmListRows } from '@/db/queries/psalms'
-import { fetchAllTunes } from '@/db/queries/tunes'
+import { fetchAllTunes, fetchPsalmVersionTuneTiers, type PsalmVersionTuneTiers } from '@/db/queries/tunes'
 import { SetDetail } from '@/components/precent/SetDetail'
 import type { PsalmRow } from '@/components/PsalmListingGrid'
 import type { TuneRow } from '@/components/TuneTable'
@@ -44,6 +44,17 @@ export default async function PrecentSetPage({
 
   const psalmListRows: PsalmRow[] = await fetchPsalmListRows()
   const allTunes: TuneRow[] = (await fetchAllTunes()) as TuneRow[]
+
+  // TSEL-01/D-13: Backup/Historical tune ids for every distinct psalm version in this set, fetched once
+  // server-side. SetDetail is a client component and cannot call the DB; batching here mirrors how allTunes
+  // is already loaded above rather than adding a client-callable API route.
+  const uniqueVersionIds = [...new Set(
+    set.setItems.map((i) => i.psalmVersionId).filter((v): v is number => v != null)
+  )]
+  const tierEntries = await Promise.all(
+    uniqueVersionIds.map(async (vid) => [vid, await fetchPsalmVersionTuneTiers(vid)] as const)
+  )
+  const tuneTiersByVersionId: Record<number, PsalmVersionTuneTiers> = Object.fromEntries(tierEntries)
 
   // Build psalm meter map: psalmId → first meter found in psalmListRows
   const psalmMeterById: Record<number, string | null> = {}
@@ -86,6 +97,7 @@ export default async function PrecentSetPage({
       psalmListRows={psalmListRows}
       allTunes={allTunes}
       psalmMeterById={psalmMeterById}
+      tuneTiersByVersionId={tuneTiersByVersionId}
     />
   )
 }

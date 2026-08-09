@@ -59,6 +59,8 @@ interface SetDetailProps {
   psalmListRows: PsalmRow[]
   allTunes: TuneRow[]
   psalmMeterById: Record<number, string | null>
+  /** TSEL-01/D-13: per-psalm-version tune tiers, batch-fetched by /precent/[id]/page.tsx. */
+  tuneTiersByVersionId?: Record<number, import('@/db/queries/tunes').PsalmVersionTuneTiers>
 }
 
 function formatDate(dateStr: string): string {
@@ -91,7 +93,7 @@ function formatDateTime(isoStr: string): string {
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
-export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetDetailProps) {
+export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById, tuneTiersByVersionId = {} }: SetDetailProps) {
   const router = useRouter()
 
   // Build psalm → recommended tune name map for display fallback
@@ -109,6 +111,7 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
   const [tunePickerItemId, setTunePickerItemId] = useState<number | null>(null)
   const [tunePickerPsalmMeter, setTunePickerPsalmMeter] = useState<string | null>(null)
   const [tunePickerPsalmId, setTunePickerPsalmId] = useState<number | null>(null)
+  const [tunePickerVersionId, setTunePickerVersionId] = useState<number | null>(null)
 
   // Inline note edit state
   const [editing, setEditing] = useState(false)
@@ -170,6 +173,7 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
     const meter = rawMeter?.replace(/\s+D$/i, '') ?? null
     setTunePickerPsalmMeter(meter)
     setTunePickerPsalmId(item.psalmId)
+    setTunePickerVersionId(item.psalmVersionId ?? null)
     setTunePickerOpen(true)
   }
 
@@ -331,6 +335,7 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById }: SetD
         tunes={allTunes}
         psalmMeter={tunePickerPsalmMeter}
         psalmId={tunePickerPsalmId}
+        tuneTiers={tunePickerVersionId != null ? tuneTiersByVersionId[tunePickerVersionId] ?? null : null}
         onSelect={handleSelectTune}
       />
 
