@@ -89,6 +89,7 @@ export function SiteHeader() {
   return (
     <>
       <header
+        data-site-header
         data-scroll-hidden={chromeHidden ? '' : undefined}
         className={cn(
           'sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border pt-[env(safe-area-inset-top)]',
