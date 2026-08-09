@@ -11,7 +11,7 @@ import { OnboardingTour } from './OnboardingTour'
 import { StanzaDotIndicator } from './StanzaDotIndicator'
 import { PsalmPickerModal } from '@/components/PsalmPickerModal'
 import { TuneSwitcherSheet } from './TuneSwitcherSheet'
-import type { TuneOption, TuneSwitcherSections } from './types'
+import type { TuneOption } from './types'
 import type { PsalmDetail } from '@/db/queries/psalms'
 import type { PsalmRow } from '@/components/PsalmListingGrid'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
@@ -665,24 +665,15 @@ export function SingingView({
     }
   }, [miniBarMounted])
 
-  // Compute TuneSwitcherSections
-  const tuneSections = useMemo<TuneSwitcherSections>(() => {
-    const editorialSet = new Set(editoriallyLinkedTuneIds)
-    const recommended: TuneOption[] = []
-    const other: TuneOption[] = []
-    for (const t of alternateTunes) {
-      if (activeTune && t.id === activeTune.id) continue
-      if (editorialSet.has(t.id)) recommended.push(t)
-      else other.push(t)
-    }
-    recommended.sort((a, b) => a.name.localeCompare(b.name))
-    other.sort((a, b) => a.name.localeCompare(b.name))
-    return {
-      current: activeTune,
-      recommended,
-      other,
-    }
-  }, [activeTune, alternateTunes, editoriallyLinkedTuneIds])
+  // TSEL-01/D-13: one flat, tier-sorted list. The active tune is included so it can sort into its real tier
+  // (Backup/Historical/Other) with an isCurrent highlight, instead of being hoisted into its own section.
+  const switcherTunes = useMemo<TuneOption[]>(() => {
+    const list = [...alternateTunes]
+    // A precenting override can assign a tune outside the psalm's meter, so it may be absent from the
+    // meter-filtered alternates. Make sure the active tune is always selectable.
+    if (activeTune && !list.some((t) => t.id === activeTune.id)) list.push(activeTune)
+    return list
+  }, [activeTune, alternateTunes])
 
   // ABC sources
   const abc = activeTune?.abcNotation ?? ''
@@ -1072,7 +1063,9 @@ export function SingingView({
       <TuneSwitcherSheet
         open={tuneSwitcherOpen}
         onOpenChange={handleTuneSwitcherOpenChange}
-        sections={tuneSections}
+        tunes={switcherTunes}
+        currentTuneId={activeTune?.id ?? null}
+        tuneTiers={tuneTiers}
         meterLabel={meter}
       />
 
