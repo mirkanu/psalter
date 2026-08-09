@@ -788,13 +788,18 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
           {/* border-separate + border-spacing-0 (overriding Tailwind preflight's default border-collapse:
               collapse) was introduced purely to fix Safari's sticky-<thead>/<th> painting bug
               (w3c/csswg-drafts#3136) — but sticky is now unconditionally OFF on iOS (see isIOS above), so
-              iOS has no reason to pay for border-separate any more. Restricting it to non-iOS matters
-              because border-separate is the suspected cause of a SEPARATE iOS bug: with table-layout:fixed,
-              the table stopped respecting its overflow-x-auto wrapper's width bound on a real iPhone (the
-              wrapper visibly grew past the viewport with no scrollbar, screenshot-confirmed) — i.e.
-              border-collapse (the default, used everywhere before this whole bug hunt) is the properly
-              width-constrained mode on iOS; border-separate is only needed for the sticky fix elsewhere. */}
-          <table ref={tableRef} className={`w-full text-sm table-fixed${isIOS ? '' : ' border-separate border-spacing-0'}`}>
+              iOS has no reason to pay for border-separate any more.
+              table-layout: fixed is ALSO dropped on iOS. Across four separate reported iOS regressions
+              (sticky offset, the overflow-x-auto toggle, the mobile column-narrowing, and now this),
+              the common thread is table-layout:fixed's column widths being computed ONCE and then not
+              correctly recomputed after ANY later change (DOM mutation, class toggle, or — per the
+              "confined for a split second, then spills" report — possibly even a web-font swap reflow)
+              until an unrelated external repaint (switching tabs) forces WebKit to redo it. table-layout:
+              auto has no such cached computation to go stale — it continuously sizes from current content
+              — so it doesn't hit this bug class, at the cost of the column widths being hints rather than
+              a hard guarantee. overflow-x-auto (already unconditional on iOS) is the safety net if a
+              particular tune name is long enough to still overflow under auto layout. */}
+          <table ref={tableRef} className={`w-full text-sm${isIOS ? '' : ' table-fixed border-separate border-spacing-0'}`}>
             <thead>
               <tr className="border-b border-border bg-muted/50 text-xs [&>th]:bg-muted [&>th]:border-r [&>th]:border-border/60 [&>th:last-child]:border-r-0">
                 {/* No explicit width: table-fixed gives this column whatever space remains after the
