@@ -303,12 +303,29 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
   // (TunePickerModal) the DialogContent body is itself the scroll container and the filter bar is not
   // sticky, so the header pins at the container's own top edge.
   const theadTop = onSelectTune ? 0 : siteHeaderHeight + filterBarHeight
-  // TLIST-03 / Safari fix: sticky positioning is applied to each <th> individually rather than to
-  // <thead> (or the header <tr>) — multiple independent WebKit bug reports confirm sticky works
-  // reliably on <th> in Safari but not on <thead>, which is exactly the class of bug matching the
-  // "wrong position on load, corrects after switching tabs/apps" symptom reported on a real iPhone.
-  const stickyTh = 'sticky z-10'
-  const stickyThStyle = { top: theadTop }
+
+  // TLIST-03 / iOS Safari: sticky positioning on table cells (both <thead>-level and per-<th>) is subject
+  // to a still-unresolved class of WebKit bugs on real iOS devices — confirmed via three independent fix
+  // attempts (border-collapse -> border-separate, useEffect -> useLayoutEffect timing, sticky on <thead>
+  // -> sticky on <th>), none of which resolved it on a real iPhone despite each being a documented,
+  // legitimate fix for a DIFFERENT known Safari sticky-table bug. Rather than keep guessing blind (no real
+  // iOS device available to test against), the sticky header is disabled entirely on iOS: the header just
+  // scrolls away normally there, which is a straightforward, reliable degradation. All other platforms
+  // (desktop, Android, iPadOS-as-desktop-Safari where UA sniffing may miss it) keep the sticky-on-<th>
+  // behavior, which is correct and bug-free everywhere it's been verified (Chromium).
+  //
+  // Future improvement, if iOS sticky support is ever wanted: replace native <thead>/<th> sticky entirely
+  // with a synthetic, non-table `position: sticky` <div> header bar (column widths mirrored from the real
+  // header) that's shown/hidden via scroll position or an IntersectionObserver watching the real header's
+  // position. Sticky divs are reliable in Safari — the bug is specific to sticky on table sections — but
+  // this is a meaningfully bigger change (a second header implementation to keep in sync) and was
+  // deliberately deferred rather than built speculatively.
+  const [isIOS, setIsIOS] = useState(false)
+  useLayoutEffect(() => {
+    setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent))
+  }, [])
+  const stickyTh = isIOS ? '' : 'sticky z-10'
+  const stickyThStyle = isIOS ? undefined : { top: theadTop }
 
   // TLIST-03: only create a horizontal scroll container when the table genuinely overflows. An
   // `overflow-x: auto` ancestor is a scroll container on both axes, which would make `position: sticky`
