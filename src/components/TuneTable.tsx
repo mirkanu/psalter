@@ -376,7 +376,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
           </span>
         </td>
         {colMeter && (
-          <td className="px-3 py-2.5 text-muted-foreground w-12 overflow-hidden">
+          <td className="px-3 py-2.5 text-muted-foreground w-14 overflow-hidden">
             {tune.meter ? (
               <Popover>
                 <PopoverTrigger asChild>
@@ -429,7 +429,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
           </td>
         )}
         {colRecording && !onSelectTune && (
-          <td className="px-2 py-2.5 text-center overflow-hidden">
+          <td className="px-2 py-2.5 text-center overflow-hidden w-20">
             {hasAnyTuneMedia(tune) ? (
               <button
                 type="button"
@@ -730,28 +730,28 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
                     inside the viewport without horizontal scroll (TLIST-02). */}
                 <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Tune Name</th>
                 {colMeter && (
-                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap w-12">Meter</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground w-14">Meter</th>
                 )}
                 {colPsalms && (
-                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap w-[27%]">Recommended Psalms</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground w-[27%]">Recommended Psalms</th>
                 )}
                 {colMood && (
-                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap w-24">Mood</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground w-24">Mood</th>
                 )}
                 {colRp && (
-                  <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap w-[4.5rem]"># 1979 RP</th>
+                  <th className="text-right px-3 py-2.5 font-medium text-muted-foreground w-[4.5rem]"># 1979 RP</th>
                 )}
                 {colPrca && (
-                  <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap w-[4.5rem]"># 1912 PRCA</th>
+                  <th className="text-right px-3 py-2.5 font-medium text-muted-foreground w-[4.5rem]"># 1912 PRCA</th>
                 )}
                 {colHymn && (
-                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap w-36">Famous Hymn</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground w-36">Famous Hymn</th>
                 )}
                 {colInPrca && (
-                  <th className="text-center px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap w-16">In PRCA</th>
+                  <th className="text-center px-3 py-2.5 font-medium text-muted-foreground w-16">In PRCA</th>
                 )}
                 {colRecording && !onSelectTune && (
-                  <th className="text-center px-2 py-2.5 font-medium text-muted-foreground whitespace-nowrap w-[4.5rem]">Recording</th>
+                  <th className="text-center px-2 py-2.5 font-medium text-muted-foreground w-20">Recording</th>
                 )}
               </tr>
             </thead>
