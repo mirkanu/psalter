@@ -1,5 +1,5 @@
 'use client'
-import { Fragment, useMemo, useState, useRef, useEffect } from "react"
+import { Fragment, useMemo, useState, useRef, useEffect, useLayoutEffect } from "react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useRouter } from "next/navigation"
 import { useLocalStorage } from "@/hooks/useLocalStorage"
@@ -152,9 +152,14 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
   const isNarrow = useMediaQuery('(max-width: 767px)')
 
   // TLIST-03: measure the sticky search+filter bar's live height so the <thead> can pin directly below it.
+  // useLayoutEffect (not useEffect): iOS Safari has a known bug where a `position: sticky` element whose
+  // offset is corrected via a LATER state update (i.e. painted once with a wrong default, then re-painted
+  // with the measured value) can get stuck at the stale first-paint offset indefinitely — it only
+  // recomputes on an unrelated forced repaint (e.g. switching tabs and back). useLayoutEffect measures and
+  // corrects the offset synchronously before the browser's first paint, so the wrong value is never shown.
   const filterBarRef = useRef<HTMLDivElement>(null)
   const [filterBarHeight, setFilterBarHeight] = useState(0)
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = filterBarRef.current
     if (!el) return
     const report = () => setFilterBarHeight(el.offsetHeight)
@@ -168,8 +173,9 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
   // `pt-[env(safe-area-inset-top)]` on top of its own h-14 (56px) content, so on a notched/Dynamic-Island
   // iPhone its real height is 56px + the device's safe-area inset — a hardcoded 56 undershoots there,
   // which was pushing the sticky <thead> too high (visually overlapping/misplacing it relative to rows).
+  // useLayoutEffect for the same reason as filterBarHeight above (avoids the Safari stuck-sticky bug).
   const [siteHeaderHeight, setSiteHeaderHeight] = useState(56)
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = document.querySelector<HTMLElement>('[data-site-header]')
     if (!el) return
     const report = () => setSiteHeaderHeight(el.offsetHeight)
@@ -722,7 +728,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
         >
           <table ref={tableRef} className="w-full text-sm table-fixed">
             <thead className="sticky z-10" style={{ top: theadTop }}>
-              <tr className="border-b border-border bg-muted/50 [&>th]:bg-muted">
+              <tr className="border-b border-border bg-muted/50 text-xs [&>th]:bg-muted [&>th]:border-r [&>th]:border-border/60 [&>th:last-child]:border-r-0">
                 {/* No explicit width: table-fixed gives this column whatever space remains after the
                     other (explicitly-sized) columns — max-width on a <td> is NOT reliably honoured by
                     the browser's auto table layout algorithm, so an explicit width budget on every other
@@ -733,7 +739,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
                   <th className="text-left px-3 py-2.5 font-medium text-muted-foreground w-14">Meter</th>
                 )}
                 {colPsalms && (
-                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground w-[27%]">Recommended Psalms</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground w-[27%]">Psalms</th>
                 )}
                 {colMood && (
                   <th className="text-left px-3 py-2.5 font-medium text-muted-foreground w-24">Mood</th>
