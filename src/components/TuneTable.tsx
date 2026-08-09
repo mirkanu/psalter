@@ -3,6 +3,7 @@ import { useMemo, useState, useRef, useEffect } from "react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useRouter } from "next/navigation"
 import { useLocalStorage } from "@/hooks/useLocalStorage"
+import { useMediaQuery } from "@/hooks/useMediaQuery"
 import Link from "next/link"
 import { Search, X, ChevronDown, ChevronUp, Download, Music, Star } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -25,6 +26,18 @@ export interface TuneRow {
   moods: string[]
   recommendedPsalmIds: number[]
   soundcloudUrl: string | null
+  solfegeJpgUrl: string | null
+  youtubeUrl: string | null
+  abcNotation: string | null
+  abcSatb: string | null
+  phraseShapeOverride: number[] | null
+  doubleLength: boolean
+  solfegeOcrText: string | null
+  /** Global tie-breaker inside the 'other' tier (src/lib/tune-tiers.ts TierableTune). */
+  weightedHistoricalFrequency: number
+  /** Filesystem-derived score images (src/lib/tune-jpg-urls.ts). DB columns are NULL for all tunes. */
+  staffPages: string[]
+  solfegePages: string[]
 }
 
 interface TuneTableProps {
@@ -38,7 +51,7 @@ interface TuneTableProps {
 
 type SortBy = 'psalms' | 'name' | 'meter' | 'rp' | 'prca' | 'recording'
 
-function exportCsv(allTunes: TuneRow[]) {
+export function buildTuneCsv(allTunes: TuneRow[]): string {
   const headers = ['Tune Name', 'Meter', 'Recommended Psalms', 'Psalm Count', 'Mood', '# 1979 RP Psalter', '# 1912 PRCA Psalter', 'Famous Hymn', 'In PRCA Psalter', 'SoundCloud']
   const rows = allTunes.map((t) => [
     t.name ?? '',
@@ -50,12 +63,17 @@ function exportCsv(allTunes: TuneRow[]) {
     t.numInPrcaPsalter != null ? String(t.numInPrcaPsalter) : '',
     t.famousHymn ?? '',
     t.inPrcaPsalter ? 'Yes' : 'No',
+    // D-11: the RAW SoundCloud destination URL. The TLIST-04 inline player derives its embed URL at
+    // render time and never writes back to this field.
     t.soundcloudUrl ?? '',
   ])
-  const csv = [headers, ...rows]
+  return [headers, ...rows]
     .map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(','))
     .join('\n')
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+}
+
+function exportCsv(allTunes: TuneRow[]) {
+  const blob = new Blob([buildTuneCsv(allTunes)], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -63,6 +81,21 @@ function exportCsv(allTunes: TuneRow[]) {
   a.click()
   URL.revokeObjectURL(url)
 }
+
+/**
+ * TLIST-02 / D-09: the default mobile column set is Tune Name, Meter, Recommended Psalms, Recording.
+ * Everything else is opt-in via "Advanced Filters & Columns". Recording is deliberately ABSENT from this
+ * list — before Phase 11 the mobile-init effect hid it, which was the exact opposite of TLIST-02.
+ */
+export const MOBILE_HIDDEN_COLUMN_KEYS = ['mood', 'rp', 'prca', 'hymn', 'inPrca'] as const
+
+/** TLIST-02: fewer psalm numbers before truncating on narrow viewports (UI-SPEC Patterns 2). */
+export function truncatePsalmIds(ids: number[], limit: number): string {
+  if (ids.length <= limit) return ids.join(', ')
+  return ids.slice(0, limit).join(', ') + ` +${ids.length - limit}`
+}
+export const PSALM_IDS_LIMIT_DESKTOP = 8
+export const PSALM_IDS_LIMIT_MOBILE = 3
 
 export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideMeterFilter, psalmId }: TuneTableProps) {
   const router = useRouter()
@@ -95,8 +128,24 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
   const [colHymn, setColHymn] = useLocalStorage('tunes.col.hymn', true)
   const [colInPrca, setColInPrca] = useLocalStorage('tunes.col.inPrca', true)
   const [colRecording, setColRecording] = useLocalStorage('tunes.col.recording', true)
-  // Track whether mobile defaults have been applied
-  const [mobileInitDone, setMobileInitDone] = useLocalStorage('tunes.col.mobileInit', false)
+  // Track whether mobile defaults have been applied.
+  // v2: bumped in Phase 11 so the corrected TLIST-02 defaults (Recording ON) re-apply once for users whose
+  // browser already ran the v1 effect, which hid Recording.
+  const [mobileInitDone, setMobileInitDone] = useLocalStorage('tunes.col.mobileInit.v2', false)
+  const isNarrow = useMediaQuery('(max-width: 767px)')
+
+  // TLIST-03: measure the sticky search+filter bar's live height so the <thead> can pin directly below it.
+  const filterBarRef = useRef<HTMLDivElement>(null)
+  const [filterBarHeight, setFilterBarHeight] = useState(0)
+  useEffect(() => {
+    const el = filterBarRef.current
+    if (!el) return
+    const report = () => setFilterBarHeight(el.offsetHeight)
+    report()
+    const ro = new ResizeObserver(report)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -117,15 +166,18 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
     }
   }
 
-  // On first visit on mobile, hide non-default columns
+  // On first visit on mobile, apply the corrected TLIST-02 defaults
   useEffect(() => {
     if (!mobileInitDone && window.innerWidth < 768) {
+      // Default mobile column set (D-09): Tune Name (always on), Meter, Recommended Psalms, Recording.
+      setColMeter(true)
+      setColPsalms(true)
+      setColRecording(true)
       setColMood(false)
       setColRp(false)
       setColPrca(false)
       setColHymn(false)
       setColInPrca(false)
-      setColRecording(false)
       setMobileInitDone(true)
     } else if (!mobileInitDone) {
       setMobileInitDone(true)
@@ -192,6 +244,31 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
     return sorted
   }, [tunes, query, selectedMeter, selectedMood, onlyPrca, onlyFamous, sortBy, psalmId])
 
+  // TLIST-03: sticky <thead> offset — 56px is the site header's height, matching the filter bar's own
+  // `sticky top-14`. In modal mode (TunePickerModal) the DialogContent body is itself the scroll container
+  // and the filter bar is not sticky, so the header pins at the container's own top edge.
+  const SITE_HEADER_PX = 56
+  const theadTop = onSelectTune ? 0 : SITE_HEADER_PX + filterBarHeight
+
+  // TLIST-03: only create a horizontal scroll container when the table genuinely overflows. An
+  // `overflow-x: auto` ancestor is a scroll container on both axes, which would make `position: sticky`
+  // resolve against a scrollport that never scrolls vertically — inert. So the wrapper only becomes
+  // scrollable when the user opts extra columns back on and the table no longer fits.
+  const tableWrapRef = useRef<HTMLDivElement>(null)
+  const tableRef = useRef<HTMLTableElement>(null)
+  const [needsHScroll, setNeedsHScroll] = useState(false)
+  useEffect(() => {
+    const wrap = tableWrapRef.current
+    const table = tableRef.current
+    if (!wrap || !table) return
+    const measure = () => setNeedsHScroll(table.scrollWidth > wrap.clientWidth + 1)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(wrap)
+    ro.observe(table)
+    return () => ro.disconnect()
+  }, [colMeter, colPsalms, colMood, colRp, colPrca, colHymn, colInPrca, colRecording, filtered.length])
+
   const hasFilter = query || selectedMeter !== 'all' || selectedMood !== 'all' || onlyPrca || onlyFamous
   const hasAdvancedFilter = selectedMeter !== 'all' || selectedMood !== 'all' || onlyPrca || onlyFamous
 
@@ -230,7 +307,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
       )}
 
       {/* Search + filters — sticky in page context, plain in modal */}
-      <div className={onSelectTune ? "space-y-2" : "sticky top-14 z-20 bg-background py-2 -mx-4 px-4 space-y-2"}>
+      <div ref={filterBarRef} className={onSelectTune ? "space-y-2" : "sticky top-14 z-20 bg-background py-2 -mx-4 px-4 space-y-2"}>
       {/* Search bar */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -458,11 +535,14 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
           <p className="text-sm mt-1">Try different search terms or filters.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/50">
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Tune Name</th>
+        <div
+          ref={tableWrapRef}
+          className={`rounded-lg border border-border${needsHScroll ? ' overflow-x-auto' : ''}`}
+        >
+          <table ref={tableRef} className="w-full text-sm">
+            <thead className="sticky z-10" style={{ top: theadTop }}>
+              <tr className="border-b border-border bg-muted/50 [&>th]:bg-muted">
+                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Tune Name</th>
                 {colMeter && (
                   <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap w-12 max-w-[3rem]">Meter</th>
                 )}
@@ -491,9 +571,10 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
             </thead>
             <tbody className="divide-y divide-border">
               {filtered.map((tune) => {
-                const psalmDisplay = tune.recommendedPsalmIds.length > 8
-                  ? tune.recommendedPsalmIds.slice(0, 8).join(', ') + ` +${tune.recommendedPsalmIds.length - 8}`
-                  : tune.recommendedPsalmIds.join(', ')
+                const psalmDisplay = truncatePsalmIds(
+                  tune.recommendedPsalmIds,
+                  isNarrow ? PSALM_IDS_LIMIT_MOBILE : PSALM_IDS_LIMIT_DESKTOP,
+                )
                 return (
                   <tr
                     key={tune.id}
@@ -506,13 +587,13 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
                           <Star className="h-3.5 w-3.5 text-amber-500 shrink-0" aria-label="Recommended for this psalm" />
                         )}
                         {onSelectTune ? (
-                          <span className="group-hover:underline underline-offset-2">
+                          <span className="group-hover:underline underline-offset-2 line-clamp-2">
                             {tune.name ?? `Tune ${tune.id}`}
                           </span>
                         ) : (
                           <Link
                             href={`/tunes/${tune.slug}`}
-                            className="hover:text-primary transition-colors group-hover:underline underline-offset-2"
+                            className="hover:text-primary transition-colors group-hover:underline underline-offset-2 line-clamp-2"
                           >
                             {tune.name ?? `Tune ${tune.id}`}
                           </Link>
