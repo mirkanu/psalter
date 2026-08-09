@@ -776,13 +776,15 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
           className={`rounded-lg border border-border${(isIOS || needsHScroll) ? ' overflow-x-auto' : ''}`}
         >
           {/* border-separate + border-spacing-0 (overriding Tailwind preflight's default border-collapse:
-              collapse): Safari has a long-standing, still-unresolved WebKit bug where position: sticky on
-              <thead>/<th> combined with border-collapse: collapse causes the sticky header to paint/position
-              incorrectly — cell backgrounds paint over the collapsed borders' stacking context, and the
-              sticky offset can render at the wrong place until an unrelated repaint (matches the exact
-              "wrong on load, fixes after switching tabs" symptom reported). border-separate is the standard
-              cross-browser workaround (w3c/csswg-drafts#3136). */}
-          <table ref={tableRef} className="w-full text-sm table-fixed border-separate border-spacing-0">
+              collapse) was introduced purely to fix Safari's sticky-<thead>/<th> painting bug
+              (w3c/csswg-drafts#3136) — but sticky is now unconditionally OFF on iOS (see isIOS above), so
+              iOS has no reason to pay for border-separate any more. Restricting it to non-iOS matters
+              because border-separate is the suspected cause of a SEPARATE iOS bug: with table-layout:fixed,
+              the table stopped respecting its overflow-x-auto wrapper's width bound on a real iPhone (the
+              wrapper visibly grew past the viewport with no scrollbar, screenshot-confirmed) — i.e.
+              border-collapse (the default, used everywhere before this whole bug hunt) is the properly
+              width-constrained mode on iOS; border-separate is only needed for the sticky fix elsewhere. */}
+          <table ref={tableRef} className={`w-full text-sm table-fixed${isIOS ? '' : ' border-separate border-spacing-0'}`}>
             <thead>
               <tr className="border-b border-border bg-muted/50 text-xs [&>th]:bg-muted [&>th]:border-r [&>th]:border-border/60 [&>th:last-child]:border-r-0">
                 {/* No explicit width: table-fixed gives this column whatever space remains after the
