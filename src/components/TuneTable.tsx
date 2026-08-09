@@ -726,7 +726,14 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
           ref={tableWrapRef}
           className={`rounded-lg border border-border${needsHScroll ? ' overflow-x-auto' : ''}`}
         >
-          <table ref={tableRef} className="w-full text-sm table-fixed">
+          {/* border-separate + border-spacing-0 (overriding Tailwind preflight's default border-collapse:
+              collapse): Safari has a long-standing, still-unresolved WebKit bug where position: sticky on
+              <thead>/<th> combined with border-collapse: collapse causes the sticky header to paint/position
+              incorrectly — cell backgrounds paint over the collapsed borders' stacking context, and the
+              sticky offset can render at the wrong place until an unrelated repaint (matches the exact
+              "wrong on load, fixes after switching tabs" symptom reported). border-separate is the standard
+              cross-browser workaround (w3c/csswg-drafts#3136). */}
+          <table ref={tableRef} className="w-full text-sm table-fixed border-separate border-spacing-0">
             <thead className="sticky z-10" style={{ top: theadTop }}>
               <tr className="border-b border-border bg-muted/50 text-xs [&>th]:bg-muted [&>th]:border-r [&>th]:border-border/60 [&>th:last-child]:border-r-0">
                 {/* No explicit width: table-fixed gives this column whatever space remains after the
