@@ -41,7 +41,14 @@ interface Props {
   nextSlug: string | null
   primaryTune: TuneOption | null
   alternateTunes: TuneOption[]
+  /** @deprecated superseded by tuneTiers in Phase 11; retained for the route call sites */
   editoriallyLinkedTuneIds: number[]
+  /**
+   * TSEL-01/D-13: per-psalm-version Backup/Historical tune ids, fetched by the route via
+   * fetchPsalmVersionTuneTiers. Undefined when there is no active psalm version — the tune switcher then
+   * renders every tune in the 'other' tier.
+   */
+  tuneTiers?: import('@/db/queries/tunes').PsalmVersionTuneTiers
   meter: string | null
   stanzaMeter: string | null
   lyrics: string
@@ -100,6 +107,7 @@ export function SingingView({
   primaryTune,
   alternateTunes,
   editoriallyLinkedTuneIds,
+  tuneTiers,
   meter,
   stanzaMeter,
   lyrics,

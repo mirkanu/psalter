@@ -8,7 +8,7 @@ import {
   getEditoriallyLinkedTuneIdsForPsalm,
   fetchPsalmListRows,
 } from '@/db/queries/psalms'
-import { fetchTunesByMeter, fetchTuneMelismaStatus, type AlternateTune, type MelismaStatus } from '@/db/queries/tunes'
+import { fetchTunesByMeter, fetchTuneMelismaStatus, fetchPsalmVersionTuneTiers, type AlternateTune, type MelismaStatus } from '@/db/queries/tunes'
 import { SingingView } from '@/components/singing/SingingView'
 import { PrecentingBar } from '@/components/precent/PrecentingBar'
 import { deriveTuneJpgPages } from '@/lib/tune-jpg-urls'
@@ -67,6 +67,9 @@ export default async function PrecentSingPage({ params }: PageProps) {
     scoreJpgUrl: t.staffPages[0] ?? t.scoreJpgUrl,
     solfegeJpgUrl: t.solfegePages[0] ?? t.solfegeJpgUrl,
   }))
+  // TSEL-01/D-13: per-psalm-version Backup/Historical tune ids for the tune-switcher sheet.
+  // Mirrors src/app/psalms/[id]/study/page.tsx, which already does this for the Study tab.
+  const tuneTiers = activeVersion ? await fetchPsalmVersionTuneTiers(activeVersion.id) : undefined
 
   // Tune override: if item.tuneId is set, prefer the assigned tune as primaryTune
   let primaryTune: AlternateTune | null = null
@@ -144,6 +147,7 @@ export default async function PrecentSingPage({ params }: PageProps) {
         primaryTune={primaryTune}
         alternateTunes={alternateTunes}
         editoriallyLinkedTuneIds={Array.from(editorialSet)}
+        tuneTiers={tuneTiers}
         meter={primaryMeter}
         stanzaMeter={stanzaMeter}
         lyrics={lyrics}
