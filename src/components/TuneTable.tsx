@@ -226,7 +226,17 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
   // closures, so `mobileInitDone` here can still read as the stale `false` default even when the
   // real persisted flag is `true` — incorrectly re-treating a returning mobile visitor as first-time
   // and re-narrowing columns (or, depending on batching order, leaving them un-narrowed) on every load.
-  useEffect(() => {
+  //
+  // useLayoutEffect (not useEffect): confirmed live on a real iPhone 13 Pro (390px — matches this app's
+  // own tested viewport width, ruling out a genuine width-budget shortfall) that the default 4-column set
+  // only fits correctly AFTER switching tabs and back — the exact same forced-repaint signature as the
+  // sticky-header bug, just triggered here by table-layout:fixed's column widths being computed once
+  // against the FIRST-PAINT column set (all 9, since narrowing to 4 previously happened in a post-paint
+  // useEffect) and not properly recomputing when 5 columns are later removed from the DOM. Narrowing
+  // BEFORE the browser's first paint means the table is laid out against the correct 4-column set from
+  // the very first frame — there is no later column-count DOM mutation for table-layout:fixed to (fail to)
+  // react to.
+  useLayoutEffect(() => {
     let alreadyInitialized = false
     try {
       alreadyInitialized = localStorage.getItem('tunes.col.mobileInit.v2') === 'true'
