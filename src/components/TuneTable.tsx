@@ -168,6 +168,15 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
   // with the measured value) can get stuck at the stale first-paint offset indefinitely — it only
   // recomputes on an unrelated forced repaint (e.g. switching tabs and back). useLayoutEffect measures and
   // corrects the offset synchronously before the browser's first paint, so the wrong value is never shown.
+  //
+  // The ResizeObserver alone isn't enough on iOS: it's an async browser callback, and expanding "Advanced
+  // Filters & Columns" (which grows the filter bar and needs the thead offset to grow with it) reproduced
+  // the exact same stale-offset symptom on a real iPhone — the header rendered stuck at the OLD (shorter)
+  // offset, overlapping into the table body, and the observer's callback never visibly corrected it. Unlike
+  // an external resize, THIS particular trigger is a React state change we already own (`advancedOpen`), so
+  // it's added to the dependency array to force a synchronous re-measure — before the next paint — on the
+  // one trigger most likely to change this height. The observer stays as a supplementary safety net for
+  // other causes (viewport rotation, font-load reflow, etc).
   const filterBarRef = useRef<HTMLDivElement>(null)
   const [filterBarHeight, setFilterBarHeight] = useState(0)
   useLayoutEffect(() => {
@@ -178,7 +187,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
     const ro = new ResizeObserver(report)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [])
+  }, [advancedOpen])
 
   // TLIST-03: measure SiteHeader's live rendered height rather than hardcoding it. SiteHeader adds
   // `pt-[env(safe-area-inset-top)]` on top of its own h-14 (56px) content, so on a notched/Dynamic-Island
