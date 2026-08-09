@@ -47,14 +47,14 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Tune Selector
 
-- [ ] **TSEL-01**: Single-psalm view and precent-list view share one tune-picker component (mirrors the existing psalm-picker consolidation)
+- [x] **TSEL-01**: Single-psalm view and precent-list view share one tune-picker component (mirrors the existing psalm-picker consolidation)
 
 ### Tune List Display
 
-- [ ] **TLIST-01**: `/tunes` display mirrors `/psalms` (staff + solfège split-leaf views, without lyrics)
-- [ ] **TLIST-02**: Recording column visible by default; default table fits mobile viewport with horizontal scroll fallback
-- [ ] **TLIST-03**: `/tunes` table header is sticky
-- [ ] **TLIST-04**: Tune URL icon opens an inline embed player (SoundCloud and/or abc tune player if digitised); CSV export still exports the raw SoundCloud destination URL
+- [x] **TLIST-01**: `/tunes` display mirrors `/psalms` (staff + solfège split-leaf views, without lyrics)
+- [x] **TLIST-02**: Recording column visible by default; default table fits mobile viewport with horizontal scroll fallback
+- [x] **TLIST-03**: `/tunes` table header is sticky
+- [x] **TLIST-04**: Tune URL icon opens an inline embed player (SoundCloud and/or abc tune player if digitised); CSV export still exports the raw SoundCloud destination URL
 
 ### Assets
 
@@ -123,11 +123,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PSEL-01 | Phase 12 | Pending |
 | PSEL-02 | Phase 12 | Pending |
 | PSEL-03 | Phase 12 | Pending |
-| TSEL-01 | Phase 11 | Pending |
-| TLIST-01 | Phase 11 | Pending |
-| TLIST-02 | Phase 11 | Pending |
-| TLIST-03 | Phase 11 | Pending |
-| TLIST-04 | Phase 11 | Pending |
+| TSEL-01 | Phase 11 | Complete |
+| TLIST-01 | Phase 11 | Complete |
+| TLIST-02 | Phase 11 | Complete |
+| TLIST-03 | Phase 11 | Complete |
+| TLIST-04 | Phase 11 | Complete |
 | ASSET-01 | Phase 13 | Pending |
 | POLISH-01 | Phase 14 | Pending |
 | POLISH-02 | Phase 14 | Pending |
