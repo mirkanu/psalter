@@ -35,6 +35,14 @@ export async function fetchAllTunes() {
       id: true, name: true, meter: true, scoreJpgUrl: true,
       inPrcaPsalter: true, hasFamousHymn: true, famousHymn: true,
       numberIn1979RpPsalter: true, numInPrcaPsalter: true, soundcloudUrl: true,
+      abcNotation: true,
+      abcSatb: true,
+      phraseShapeOverride: true,
+      doubleLength: true,
+      solfegeOcrText: true,
+      weightedHistoricalFrequency: true,
+      solfegeJpgUrl: true,
+      youtubeUrl: true,
     },
     with: {
       tuneMoods: {
@@ -65,6 +73,16 @@ export async function fetchAllTunes() {
       numberIn1979RpPsalter: t.numberIn1979RpPsalter,
       numInPrcaPsalter: t.numInPrcaPsalter,
       soundcloudUrl: t.soundcloudUrl ?? null,
+      solfegeJpgUrl: t.solfegeJpgUrl ?? null,
+      youtubeUrl: t.youtubeUrl ?? null,
+      abcNotation: t.abcNotation ?? null,
+      abcSatb: t.abcSatb ?? null,
+      phraseShapeOverride: t.phraseShapeOverride ?? null,
+      doubleLength: t.doubleLength ?? false,
+      solfegeOcrText: t.solfegeOcrText ?? null,
+      // TierableTune requires a number; sortTunesByTier treats it as a tie-breaker inside the 'other' tier only.
+      weightedHistoricalFrequency: t.weightedHistoricalFrequency ?? 0,
+      ...deriveTuneJpgPages(t.name),   // -> staffPages: string[], solfegePages: string[]
       moods: t.tuneMoods.map((tm) => tm.mood.name).filter(Boolean) as string[],
       recommendedPsalmIds: [
         ...new Set(

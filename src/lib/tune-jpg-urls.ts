@@ -20,6 +20,13 @@ import { tuneNameToSlug } from './tune-slug'
 export { tuneNameToSlug }
 
 /**
+ * Process-lifetime memo. public/tunes/*.jpg only changes on deploy (which restarts the process), so
+ * caching is safe. Without it, fetchAllTunes()'s per-row derivation costs ~2,750 sync existsSync calls
+ * on every /tunes request (force-dynamic, ~172 tunes x 16 probes).
+ */
+const jpgPageCache = new Map<string, { staffPages: string[]; solfegePages: string[] }>()
+
+/**
  * Return arrays of /tunes/{slug}-staff-{n}.jpg and /tunes/{slug}-solfege-{n}.jpg
  * paths (relative to Next.js public/) that actually exist on disk.
  *
@@ -30,6 +37,10 @@ export function deriveTuneJpgPages(
   tuneName: string,
   maxPages = 8
 ): { staffPages: string[]; solfegePages: string[] } {
+  const cacheKey = `${tuneName}::${maxPages}`
+  const cached = jpgPageCache.get(cacheKey)
+  if (cached) return cached
+
   const slug = tuneNameToSlug(tuneName)
   const staffPages: string[] = []
   const solfegePages: string[] = []
@@ -45,5 +56,7 @@ export function deriveTuneJpgPages(
     }
   }
 
-  return { staffPages, solfegePages }
+  const result = { staffPages, solfegePages }
+  jpgPageCache.set(cacheKey, result)
+  return result
 }

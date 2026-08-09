@@ -25,6 +25,18 @@ export interface TuneRow {
   moods: string[]
   recommendedPsalmIds: number[]
   soundcloudUrl: string | null
+  solfegeJpgUrl: string | null
+  youtubeUrl: string | null
+  abcNotation: string | null
+  abcSatb: string | null
+  phraseShapeOverride: number[] | null
+  doubleLength: boolean
+  solfegeOcrText: string | null
+  /** Global tie-breaker inside the 'other' tier (src/lib/tune-tiers.ts TierableTune). */
+  weightedHistoricalFrequency: number
+  /** Filesystem-derived score images (src/lib/tune-jpg-urls.ts). DB columns are NULL for all tunes. */
+  staffPages: string[]
+  solfegePages: string[]
 }
 
 interface TuneTableProps {
