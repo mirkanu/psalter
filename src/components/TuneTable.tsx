@@ -303,6 +303,12 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
   // (TunePickerModal) the DialogContent body is itself the scroll container and the filter bar is not
   // sticky, so the header pins at the container's own top edge.
   const theadTop = onSelectTune ? 0 : siteHeaderHeight + filterBarHeight
+  // TLIST-03 / Safari fix: sticky positioning is applied to each <th> individually rather than to
+  // <thead> (or the header <tr>) — multiple independent WebKit bug reports confirm sticky works
+  // reliably on <th> in Safari but not on <thead>, which is exactly the class of bug matching the
+  // "wrong position on load, corrects after switching tabs/apps" symptom reported on a real iPhone.
+  const stickyTh = 'sticky z-10'
+  const stickyThStyle = { top: theadTop }
 
   // TLIST-03: only create a horizontal scroll container when the table genuinely overflows. An
   // `overflow-x: auto` ancestor is a scroll container on both axes, which would make `position: sticky`
@@ -734,37 +740,37 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
               "wrong on load, fixes after switching tabs" symptom reported). border-separate is the standard
               cross-browser workaround (w3c/csswg-drafts#3136). */}
           <table ref={tableRef} className="w-full text-sm table-fixed border-separate border-spacing-0">
-            <thead className="sticky z-10" style={{ top: theadTop }}>
+            <thead>
               <tr className="border-b border-border bg-muted/50 text-xs [&>th]:bg-muted [&>th]:border-r [&>th]:border-border/60 [&>th:last-child]:border-r-0">
                 {/* No explicit width: table-fixed gives this column whatever space remains after the
                     other (explicitly-sized) columns — max-width on a <td> is NOT reliably honoured by
                     the browser's auto table layout algorithm, so an explicit width budget on every other
                     column is what actually keeps the default mobile set (Name/Meter/Psalms/Recording)
                     inside the viewport without horizontal scroll (TLIST-02). */}
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Tune Name</th>
+                <th className={`text-left px-3 py-2.5 font-medium text-muted-foreground ${stickyTh}`} style={stickyThStyle}>Tune Name</th>
                 {colMeter && (
-                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground w-14">Meter</th>
+                  <th className={`text-left px-3 py-2.5 font-medium text-muted-foreground w-14 ${stickyTh}`} style={stickyThStyle}>Meter</th>
                 )}
                 {colPsalms && (
-                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground w-[27%]">Psalms</th>
+                  <th className={`text-left px-3 py-2.5 font-medium text-muted-foreground w-[27%] ${stickyTh}`} style={stickyThStyle}>Psalms</th>
                 )}
                 {colMood && (
-                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground w-24">Mood</th>
+                  <th className={`text-left px-3 py-2.5 font-medium text-muted-foreground w-24 ${stickyTh}`} style={stickyThStyle}>Mood</th>
                 )}
                 {colRp && (
-                  <th className="text-right px-3 py-2.5 font-medium text-muted-foreground w-[4.5rem]"># 1979 RP</th>
+                  <th className={`text-right px-3 py-2.5 font-medium text-muted-foreground w-[4.5rem] ${stickyTh}`} style={stickyThStyle}># 1979 RP</th>
                 )}
                 {colPrca && (
-                  <th className="text-right px-3 py-2.5 font-medium text-muted-foreground w-[4.5rem]"># 1912 PRCA</th>
+                  <th className={`text-right px-3 py-2.5 font-medium text-muted-foreground w-[4.5rem] ${stickyTh}`} style={stickyThStyle}># 1912 PRCA</th>
                 )}
                 {colHymn && (
-                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground w-36">Famous Hymn</th>
+                  <th className={`text-left px-3 py-2.5 font-medium text-muted-foreground w-36 ${stickyTh}`} style={stickyThStyle}>Famous Hymn</th>
                 )}
                 {colInPrca && (
-                  <th className="text-center px-3 py-2.5 font-medium text-muted-foreground w-16">In PRCA</th>
+                  <th className={`text-center px-3 py-2.5 font-medium text-muted-foreground w-16 ${stickyTh}`} style={stickyThStyle}>In PRCA</th>
                 )}
                 {colRecording && !onSelectTune && (
-                  <th className="text-center px-2 py-2.5 font-medium text-muted-foreground w-20">Recording</th>
+                  <th className={`text-center px-2 py-2.5 font-medium text-muted-foreground w-20 ${stickyTh}`} style={stickyThStyle}>Recording</th>
                 )}
               </tr>
             </thead>
