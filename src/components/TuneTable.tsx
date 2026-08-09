@@ -134,6 +134,19 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
   const [mobileInitDone, setMobileInitDone] = useLocalStorage('tunes.col.mobileInit.v2', false)
   const isNarrow = useMediaQuery('(max-width: 767px)')
 
+  // TLIST-03: measure the sticky search+filter bar's live height so the <thead> can pin directly below it.
+  const filterBarRef = useRef<HTMLDivElement>(null)
+  const [filterBarHeight, setFilterBarHeight] = useState(0)
+  useEffect(() => {
+    const el = filterBarRef.current
+    if (!el) return
+    const report = () => setFilterBarHeight(el.offsetHeight)
+    report()
+    const ro = new ResizeObserver(report)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Only auto-focus on desktop — avoids keyboard popup on mobile when modal opens
@@ -231,6 +244,31 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
     return sorted
   }, [tunes, query, selectedMeter, selectedMood, onlyPrca, onlyFamous, sortBy, psalmId])
 
+  // TLIST-03: sticky <thead> offset — 56px is the site header's height, matching the filter bar's own
+  // `sticky top-14`. In modal mode (TunePickerModal) the DialogContent body is itself the scroll container
+  // and the filter bar is not sticky, so the header pins at the container's own top edge.
+  const SITE_HEADER_PX = 56
+  const theadTop = onSelectTune ? 0 : SITE_HEADER_PX + filterBarHeight
+
+  // TLIST-03: only create a horizontal scroll container when the table genuinely overflows. An
+  // `overflow-x: auto` ancestor is a scroll container on both axes, which would make `position: sticky`
+  // resolve against a scrollport that never scrolls vertically — inert. So the wrapper only becomes
+  // scrollable when the user opts extra columns back on and the table no longer fits.
+  const tableWrapRef = useRef<HTMLDivElement>(null)
+  const tableRef = useRef<HTMLTableElement>(null)
+  const [needsHScroll, setNeedsHScroll] = useState(false)
+  useEffect(() => {
+    const wrap = tableWrapRef.current
+    const table = tableRef.current
+    if (!wrap || !table) return
+    const measure = () => setNeedsHScroll(table.scrollWidth > wrap.clientWidth + 1)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(wrap)
+    ro.observe(table)
+    return () => ro.disconnect()
+  }, [colMeter, colPsalms, colMood, colRp, colPrca, colHymn, colInPrca, colRecording, filtered.length])
+
   const hasFilter = query || selectedMeter !== 'all' || selectedMood !== 'all' || onlyPrca || onlyFamous
   const hasAdvancedFilter = selectedMeter !== 'all' || selectedMood !== 'all' || onlyPrca || onlyFamous
 
@@ -269,7 +307,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
       )}
 
       {/* Search + filters — sticky in page context, plain in modal */}
-      <div className={onSelectTune ? "space-y-2" : "sticky top-14 z-20 bg-background py-2 -mx-4 px-4 space-y-2"}>
+      <div ref={filterBarRef} className={onSelectTune ? "space-y-2" : "sticky top-14 z-20 bg-background py-2 -mx-4 px-4 space-y-2"}>
       {/* Search bar */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -497,10 +535,13 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
           <p className="text-sm mt-1">Try different search terms or filters.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/50">
+        <div
+          ref={tableWrapRef}
+          className={`rounded-lg border border-border${needsHScroll ? ' overflow-x-auto' : ''}`}
+        >
+          <table ref={tableRef} className="w-full text-sm">
+            <thead className="sticky z-10" style={{ top: theadTop }}>
+              <tr className="border-b border-border bg-muted/50 [&>th]:bg-muted">
                 <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Tune Name</th>
                 {colMeter && (
                   <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap w-12 max-w-[3rem]">Meter</th>
