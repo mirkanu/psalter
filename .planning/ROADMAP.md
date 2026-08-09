@@ -197,7 +197,11 @@ Plans:
   1. Reloading or revisiting a multi-version psalm page always shows the version toggle collapsed, regardless of prior expand state from a past visit
   2. A non-CM multi-version toggle box shows its meter abbreviation (e.g. "LM") next to the version label
   3. The search/filter bar's width matches the psalm listing grid and no longer overlaps the bookmark nav tabs on the right
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 12-01-PLAN.md — Session-only multi-version expand state + Book-tab gutter on the sticky search header (PSEL-01, PSEL-03)
+- [ ] 12-02-PLAN.md — Meter abbreviation module + meter tag on the collapsed multi-version toggle (PSEL-02)
+- [ ] 12-03-PLAN.md — Live Playwright measurement sweep + human sign-off (PSEL-01, PSEL-02, PSEL-03)
 **UI hint**: yes
 
 ### Phase 13: Tune Image Compression
