@@ -6,12 +6,13 @@ import { fetchPsalmsByMeter, fetchPsalmListRows } from "@/db/queries/psalms"
 import { deriveVersionSlug, stripStar } from "@/lib/psalm-slugs"
 import { tuneNameToSlug, isNumericTuneSlug } from "@/lib/tune-slug"
 import { Badge } from "@/components/ui/badge"
-import { NotationRendererClient } from "@/components/notation/NotationRendererClient"
 import { TuneDetailClient } from "@/components/TuneDetailClient"
 import { PsalmsByTuneSection } from "@/components/PsalmsByTuneSection"
 import { TuneMiniBarSection } from "@/components/TuneMiniBarSection"
+import { TuneScoreSection } from "@/components/TuneScoreSection"
 import { deriveTuneJpgPages } from "@/lib/tune-jpg-urls"
 import { sopranoOnly, pickAbcWithMarkers } from "@/lib/utils"
+import { buildNotationRendererProps } from "@/lib/notation-renderer-props"
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -168,18 +169,32 @@ export default async function TunePage({ params }: PageProps) {
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
               Score
             </h2>
-            <NotationRendererClient
-              abc={bestAbc!}
-              lyrics={tunesLyrics}
-              scoreJpgUrl={staffPages[0] ?? null}
-              solfegeJpgUrl={solfegePages[0] ?? null}
-              tuneName={tune.name ?? `Tune ${tune.id}`}
-              tuneMeter={tune.meter ?? null}
-              phraseShapeOverride={tune.phraseShapeOverride ?? null}
-              stanzaMeter={firstLinkedPsalmVersion?.meter ?? null}
-              lyricsStructured={(firstLinkedPsalmVersion?.lyricsStructured ?? null) as import('@/lib/lyrics-structured').StructuredLyrics | null}
-              doubleLength={tune.doubleLength ?? false}
-              showLyrics={false}
+            <TuneScoreSection
+              notationProps={buildNotationRendererProps(
+                {
+                  abcNotation: tune.abcNotation ?? null,
+                  abcSatb: tune.abcSatb ?? null,
+                  name: tune.name ?? null,
+                  meter: tune.meter ?? null,
+                  phraseShapeOverride: tune.phraseShapeOverride ?? null,
+                  doubleLength: tune.doubleLength ?? false,
+                  // D-02: solfegeOcrText was MISSING at this call site before Phase 11.
+                  solfegeOcrText: tune.solfegeOcrText ?? null,
+                  // Note: JPG urls come from the filesystem-derived page arrays, not the
+                  // (always-NULL) DB columns — see src/lib/tune-jpg-urls.ts.
+                  scoreJpgUrl: staffPages[0] ?? null,
+                  solfegeJpgUrl: solfegePages[0] ?? null,
+                },
+                {
+                  lyrics: tunesLyrics,
+                  stanzaMeter: firstLinkedPsalmVersion?.meter ?? null,
+                  lyricsStructured: (firstLinkedPsalmVersion?.lyricsStructured ?? null) as import('@/lib/lyrics-structured').StructuredLyrics | null,
+                },
+                // showLyrics stays false: /tunes/[slug] is a tune-only page and never shows lyrics (D-02, UI-SPEC §Patterns 4).
+                // onViewModeChange is deliberately NOT passed here — an RSC cannot serialise a function across the
+                // client boundary; TuneScoreSection attaches it, which is where D-02's second prop is satisfied.
+                { showLyrics: false, fallbackTuneName: `Tune ${tune.id}` },
+              )}
               staffPages={staffPages}
               solfegePages={solfegePages}
             />
