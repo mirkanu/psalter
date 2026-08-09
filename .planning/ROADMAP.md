@@ -186,7 +186,7 @@ Plans:
 - [x] 11-05-PLAN.md — /tunes inline Recording/Score expand player (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 11-06-PLAN.md — Precentor picker tiering: batch tier fetch + tiered TuneTable rows (wave 3)
+- [x] 11-06-PLAN.md — Precentor picker tiering: batch tier fetch + tiered TuneTable rows (wave 3)
 **UI hint**: yes
 
 ### Phase 12: Psalm Selector Polish
@@ -261,7 +261,7 @@ Phases 7 and 10 have no dependencies on Phase 6 or each other and may be worked 
 | 8. Feedback Email & Rate Limiting | 4/4 | Complete | 2026-08-02 |
 | 9. Changelog | 7/7 | Complete   | 2026-08-07 |
 | 10. Tune Data Fixes | 5/5 | Complete    | 2026-08-08 |
-| 11. Tune List & Selector Overhaul | 5/6 | In Progress|  |
+| 11. Tune List & Selector Overhaul | 6/6 | Complete   | 2026-08-09 |
 | 12. Psalm Selector Polish | 0/TBD | Not started | - |
 | 13. Tune Image Compression | 0/TBD | Not started | - |
 | 14. Launch Polish | 0/TBD | Not started | - |
