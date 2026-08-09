@@ -58,8 +58,8 @@ describe('initialPlayerTab', () => {
     expect(initialPlayerTab({ soundcloudUrl: 'https://soundcloud.com/manuel-kuhs/dundee' })).toBe('recording')
   })
 
-  it("falls back to 'score' when there is no recording", () => {
-    expect(initialPlayerTab({ soundcloudUrl: null })).toBe('score')
+  it("falls back to 'abc' when there is no recording", () => {
+    expect(initialPlayerTab({ soundcloudUrl: null })).toBe('abc')
   })
 })
 

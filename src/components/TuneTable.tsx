@@ -146,7 +146,9 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
   // Track whether mobile defaults have been applied.
   // v2: bumped in Phase 11 so the corrected TLIST-02 defaults (Recording ON) re-apply once for users whose
   // browser already ran the v1 effect, which hid Recording.
-  const [mobileInitDone, setMobileInitDone] = useLocalStorage('tunes.col.mobileInit.v2', false)
+  // Value intentionally unused — see the mobileInit effect below for why the persisted flag is
+  // read directly from localStorage instead of trusting this hook's (possibly stale-on-mount) state.
+  const [, setMobileInitDone] = useLocalStorage('tunes.col.mobileInit.v2', false)
   const isNarrow = useMediaQuery('(max-width: 767px)')
 
   // TLIST-03: measure the sticky search+filter bar's live height so the <thead> can pin directly below it.
@@ -156,6 +158,21 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
     const el = filterBarRef.current
     if (!el) return
     const report = () => setFilterBarHeight(el.offsetHeight)
+    report()
+    const ro = new ResizeObserver(report)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  // TLIST-03: measure SiteHeader's live rendered height rather than hardcoding it. SiteHeader adds
+  // `pt-[env(safe-area-inset-top)]` on top of its own h-14 (56px) content, so on a notched/Dynamic-Island
+  // iPhone its real height is 56px + the device's safe-area inset — a hardcoded 56 undershoots there,
+  // which was pushing the sticky <thead> too high (visually overlapping/misplacing it relative to rows).
+  const [siteHeaderHeight, setSiteHeaderHeight] = useState(56)
+  useEffect(() => {
+    const el = document.querySelector<HTMLElement>('[data-site-header]')
+    if (!el) return
+    const report = () => setSiteHeaderHeight(el.offsetHeight)
     report()
     const ro = new ResizeObserver(report)
     ro.observe(el)
@@ -185,9 +202,19 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
     }
   }
 
-  // On first visit on mobile, apply the corrected TLIST-02 defaults
+  // On first visit on mobile, apply the corrected TLIST-02 defaults.
+  // Reads the persisted flag directly from localStorage rather than trusting the `mobileInitDone`
+  // React state value: useLocalStorage initializes state to its default and only resolves the
+  // persisted value in its OWN effect after mount. That effect and this one share the SAME render's
+  // closures, so `mobileInitDone` here can still read as the stale `false` default even when the
+  // real persisted flag is `true` — incorrectly re-treating a returning mobile visitor as first-time
+  // and re-narrowing columns (or, depending on batching order, leaving them un-narrowed) on every load.
   useEffect(() => {
-    if (!mobileInitDone && window.innerWidth < 768) {
+    let alreadyInitialized = false
+    try {
+      alreadyInitialized = localStorage.getItem('tunes.col.mobileInit.v2') === 'true'
+    } catch { /* ignore */ }
+    if (!alreadyInitialized && window.innerWidth < 768) {
       // Default mobile column set (D-09): Tune Name (always on), Meter, Recommended Psalms, Recording.
       setColMeter(true)
       setColPsalms(true)
@@ -198,7 +225,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
       setColHymn(false)
       setColInPrca(false)
       setMobileInitDone(true)
-    } else if (!mobileInitDone) {
+    } else if (!alreadyInitialized) {
       setMobileInitDone(true)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -265,11 +292,11 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
     return sorted
   }, [tunes, query, selectedMeter, selectedMood, onlyPrca, onlyFamous, sortBy, psalmId, tiered])
 
-  // TLIST-03: sticky <thead> offset — 56px is the site header's height, matching the filter bar's own
-  // `sticky top-14`. In modal mode (TunePickerModal) the DialogContent body is itself the scroll container
-  // and the filter bar is not sticky, so the header pins at the container's own top edge.
-  const SITE_HEADER_PX = 56
-  const theadTop = onSelectTune ? 0 : SITE_HEADER_PX + filterBarHeight
+  // TLIST-03: sticky <thead> offset — siteHeaderHeight is SiteHeader's live measured height (56px on
+  // desktop/no-notch; 56px + env(safe-area-inset-top) on a notched/Dynamic-Island phone). In modal mode
+  // (TunePickerModal) the DialogContent body is itself the scroll container and the filter bar is not
+  // sticky, so the header pins at the container's own top edge.
+  const theadTop = onSelectTune ? 0 : siteHeaderHeight + filterBarHeight
 
   // TLIST-03: only create a horizontal scroll container when the table genuinely overflows. An
   // `overflow-x: auto` ancestor is a scroll container on both axes, which would make `position: sticky`
@@ -282,7 +309,12 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
     const wrap = tableWrapRef.current
     const table = tableRef.current
     if (!wrap || !table) return
-    const measure = () => setNeedsHScroll(table.scrollWidth > wrap.clientWidth + 1)
+    // Tolerance wider than a plain rounding guard: table-layout:fixed + border-collapse:collapse tables
+    // can report a few px of scrollWidth "phantom" overflow (sub-pixel/border accumulation across many
+    // rows) even when every individual cell's own scrollWidth matches its clientWidth exactly — i.e. no
+    // visible content actually overflows. Without this, the default 4-column mobile set could spuriously
+    // trip the horizontal-scroll fallback (TLIST-02) despite fitting.
+    const measure = () => setNeedsHScroll(table.scrollWidth > wrap.clientWidth + 8)
     measure()
     const ro = new ResizeObserver(measure)
     ro.observe(wrap)
@@ -324,19 +356,19 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
         className={`hover:bg-muted/30 transition-colors group${onSelectTune ? ' cursor-pointer hover:bg-muted/50' : ''}`}
         onClick={onSelectTune ? () => onSelectTune(tune) : undefined}
       >
-        <td className="px-3 py-2.5 font-medium">
-          <span className="inline-flex items-center gap-1.5">
+        <td className="px-3 py-2.5 font-medium overflow-hidden">
+          <span className="inline-flex items-center gap-1.5 min-w-0">
             {psalmId != null && tune.recommendedPsalmIds.includes(psalmId) && (
               <Star className="h-3.5 w-3.5 text-amber-500 shrink-0" aria-label="Recommended for this psalm" />
             )}
             {onSelectTune ? (
-              <span className="group-hover:underline underline-offset-2 line-clamp-2">
+              <span className="group-hover:underline underline-offset-2 line-clamp-2 min-w-0">
                 {tune.name ?? `Tune ${tune.id}`}
               </span>
             ) : (
               <Link
                 href={`/tunes/${tune.slug}`}
-                className="hover:text-primary transition-colors group-hover:underline underline-offset-2 line-clamp-2"
+                className="hover:text-primary transition-colors group-hover:underline underline-offset-2 line-clamp-2 min-w-0"
               >
                 {tune.name ?? `Tune ${tune.id}`}
               </Link>
@@ -344,7 +376,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
           </span>
         </td>
         {colMeter && (
-          <td className="px-3 py-2.5 text-muted-foreground w-12 max-w-[3rem] overflow-hidden">
+          <td className="px-3 py-2.5 text-muted-foreground w-12 overflow-hidden">
             {tune.meter ? (
               <Popover>
                 <PopoverTrigger asChild>
@@ -360,9 +392,9 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
           </td>
         )}
         {colPsalms && (
-          <td className="px-3 py-2.5">
+          <td className="px-3 py-2.5 w-[27%] overflow-hidden">
             {tune.recommendedPsalmIds.length > 0 ? (
-              <span className="text-muted-foreground font-mono text-xs">
+              <span className="text-muted-foreground font-mono text-xs break-words">
                 <span className="text-foreground font-semibold mr-1.5">{tune.recommendedPsalmIds.length}</span>
                 {psalmDisplay}
               </span>
@@ -397,7 +429,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
           </td>
         )}
         {colRecording && !onSelectTune && (
-          <td className="px-3 py-2.5 text-center">
+          <td className="px-2 py-2.5 text-center overflow-hidden">
             {hasAnyTuneMedia(tune) ? (
               <button
                 type="button"
@@ -405,8 +437,8 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
                 aria-controls={`tune-player-${tune.id}`}
                 aria-label={
                   expandedTuneId === tune.id
-                    ? `Hide recording and score for ${tune.name ?? `Tune ${tune.id}`}`
-                    : `Play recording or view score for ${tune.name ?? `Tune ${tune.id}`}`
+                    ? `Hide recording and ABC player for ${tune.name ?? `Tune ${tune.id}`}`
+                    : `Play recording or ABC audio for ${tune.name ?? `Tune ${tune.id}`}`
                 }
                 onClick={(e) => {
                   e.stopPropagation()
@@ -688,33 +720,38 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
           ref={tableWrapRef}
           className={`rounded-lg border border-border${needsHScroll ? ' overflow-x-auto' : ''}`}
         >
-          <table ref={tableRef} className="w-full text-sm">
+          <table ref={tableRef} className="w-full text-sm table-fixed">
             <thead className="sticky z-10" style={{ top: theadTop }}>
               <tr className="border-b border-border bg-muted/50 [&>th]:bg-muted">
+                {/* No explicit width: table-fixed gives this column whatever space remains after the
+                    other (explicitly-sized) columns — max-width on a <td> is NOT reliably honoured by
+                    the browser's auto table layout algorithm, so an explicit width budget on every other
+                    column is what actually keeps the default mobile set (Name/Meter/Psalms/Recording)
+                    inside the viewport without horizontal scroll (TLIST-02). */}
                 <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Tune Name</th>
                 {colMeter && (
-                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap w-12 max-w-[3rem]">Meter</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap w-12">Meter</th>
                 )}
                 {colPsalms && (
-                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Recommended Psalms</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap w-[27%]">Recommended Psalms</th>
                 )}
                 {colMood && (
-                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Mood</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap w-24">Mood</th>
                 )}
                 {colRp && (
-                  <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap"># 1979 RP</th>
+                  <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap w-[4.5rem]"># 1979 RP</th>
                 )}
                 {colPrca && (
-                  <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap"># 1912 PRCA</th>
+                  <th className="text-right px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap w-[4.5rem]"># 1912 PRCA</th>
                 )}
                 {colHymn && (
-                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Famous Hymn</th>
+                  <th className="text-left px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap w-36">Famous Hymn</th>
                 )}
                 {colInPrca && (
-                  <th className="text-center px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">In PRCA</th>
+                  <th className="text-center px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap w-16">In PRCA</th>
                 )}
                 {colRecording && !onSelectTune && (
-                  <th className="text-center px-3 py-2.5 font-medium text-muted-foreground whitespace-nowrap">Recording</th>
+                  <th className="text-center px-2 py-2.5 font-medium text-muted-foreground whitespace-nowrap w-[4.5rem]">Recording</th>
                 )}
               </tr>
             </thead>
