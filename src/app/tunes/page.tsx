@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { Suspense } from "react"
+import { headers } from "next/headers"
 import type { Metadata } from "next"
 import { fetchAllTunes } from "@/db/queries/tunes"
 import { TuneTable } from "@/components/TuneTable"
@@ -11,6 +12,10 @@ export const metadata: Metadata = {
 
 export default async function TunesPage() {
   const allTunes = await fetchAllTunes()
+  // TLIST-03 / iOS Safari: detected server-side from the request's own User-Agent header so TuneTable
+  // never needs a client-side detection toggle on this page — see the isIOS prop doc comment on TuneTable.
+  const userAgent = (await headers()).get('user-agent') ?? ''
+  const isIOS = /iPad|iPhone|iPod/.test(userAgent)
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
@@ -23,7 +28,7 @@ export default async function TunesPage() {
         </p>
       </div>
       <Suspense fallback={<div className="h-64 bg-muted animate-pulse rounded" />}>
-        <TuneTable tunes={allTunes} />
+        <TuneTable tunes={allTunes} isIOS={isIOS} />
       </Suspense>
     </div>
   )
