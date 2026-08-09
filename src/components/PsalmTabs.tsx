@@ -12,7 +12,8 @@ import type { ViewMode } from '@/components/notation/NotationRenderer'
 import { ChangeTuneDialog } from '@/components/ChangeTuneDialog'
 import type { PsalmDetail } from '@/db/queries/psalms'
 import type { AlternateTune, PsalmVersionTuneTiers } from '@/db/queries/tunes'
-import { sopranoOnly, pickAbcWithMarkers } from '@/lib/utils'
+import { sopranoOnly } from '@/lib/utils'
+import { buildNotationRendererProps } from '@/lib/notation-renderer-props'
 
 type TuneRow = NonNullable<
   PsalmDetail['psalmVersions'][number]['psalmVersionTunes'][number]['tune']
@@ -419,18 +420,25 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
             )}
           </div>
           <NotationRendererClient
-            abc={(() => { const r = pickAbcWithMarkers((activeTune as { abcSatb?: string | null }).abcSatb, activeTune.abcNotation); return r ? sopranoOnly(r) : '' })()}
-            lyrics={lyrics ?? ''}
-            scoreJpgUrl={activeTune.scoreJpgUrl ?? null}
-            solfegeJpgUrl={activeTune.solfegeJpgUrl ?? null}
-            tuneName={activeTune.name ?? 'Tune'}
-            tuneMeter={activeTune.meter ?? null}
-            phraseShapeOverride={(activeTune as { phraseShapeOverride?: number[] | null }).phraseShapeOverride ?? null}
-            stanzaMeter={primaryVersion?.meter ?? null}
-            lyricsStructured={primaryVersion?.lyricsStructured ?? null}
-            doubleLength={activeTune.doubleLength ?? false}
-            solfegeOcrText={(activeTune as { solfegeOcrText?: string | null }).solfegeOcrText ?? null}
-            onViewModeChange={setNotationViewMode}
+            {...buildNotationRendererProps(
+              {
+                abcNotation: activeTune.abcNotation ?? null,
+                abcSatb: (activeTune as { abcSatb?: string | null }).abcSatb ?? null,
+                name: activeTune.name ?? null,
+                meter: activeTune.meter ?? null,
+                phraseShapeOverride: (activeTune as { phraseShapeOverride?: number[] | null }).phraseShapeOverride ?? null,
+                doubleLength: activeTune.doubleLength ?? false,
+                solfegeOcrText: (activeTune as { solfegeOcrText?: string | null }).solfegeOcrText ?? null,
+                scoreJpgUrl: activeTune.scoreJpgUrl ?? null,
+                solfegeJpgUrl: activeTune.solfegeJpgUrl ?? null,
+              },
+              {
+                lyrics: lyrics ?? '',
+                stanzaMeter: primaryVersion?.meter ?? null,
+                lyricsStructured: primaryVersion?.lyricsStructured ?? null,
+              },
+              { onViewModeChange: setNotationViewMode },
+            )}
           />
           <ChangeTuneDialog
             open={changeTuneOpen}
