@@ -4,8 +4,8 @@ milestone: v2.0
 milestone_name: Public Beta
 status: executing
 stopped_at: Phase 11 UI-SPEC approved
-last_updated: "2026-08-08T18:09:38.034Z"
-last_activity: 2026-08-08 -- Phase 11 planning complete
+last_updated: "2026-08-08T18:13:20.021Z"
+last_activity: 2026-08-08 -- Phase 11 execution started
 progress:
   total_phases: 10
   completed_phases: 5
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone close)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 10 — tune-data-fixes
+**Current focus:** Phase 11 — tune-list-selector-overhaul
 
 ## Current Position
 
-Phase: 11
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-08-08 -- Phase 11 planning complete
+Phase: 11 (tune-list-selector-overhaul) — EXECUTING
+Plan: 1 of 6
+Status: Executing Phase 11
+Last activity: 2026-08-08 -- Phase 11 execution started
 
 ## Performance Metrics
 
