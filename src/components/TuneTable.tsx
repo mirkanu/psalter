@@ -55,6 +55,17 @@ interface TuneTableProps {
    * the shared TieredTuneRowList. Absent on the standalone /tunes page, which stays untiered (D-07).
    */
   tuneTiers?: PsalmVersionTuneTiers | null
+  /**
+   * TLIST-03 / iOS Safari: server-detected (from the request's User-Agent header) rather than client-
+   * detected. Client-side detection (navigator.userAgent read in an effect) still starts `false` on the
+   * very first render even with useLayoutEffect, which is itself a JS-driven post-mount class toggle —
+   * exactly the pattern that's proven unreliable on iOS Safari for this bug (sticky offset, then the
+   * overflow-x-auto toggle, both got stuck at their wrong first-paint value until an unrelated forced
+   * repaint). Passing this down as a prop bakes the correct value into the FIRST server-rendered HTML, so
+   * there is no client-side toggle for iOS detection itself. Falls back to client-side detection when
+   * omitted (e.g. modal contexts nested under client components with no request-header access).
+   */
+  isIOS?: boolean
 }
 
 /** Tiering only makes sense when there is at least one backup or historical tune to separate out. */
@@ -111,7 +122,7 @@ export function truncatePsalmIds(ids: number[], limit: number): string {
 export const PSALM_IDS_LIMIT_DESKTOP = 8
 export const PSALM_IDS_LIMIT_MOBILE = 3
 
-export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideMeterFilter, psalmId, tuneTiers }: TuneTableProps) {
+export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideMeterFilter, psalmId, tuneTiers, isIOS: isIOSProp }: TuneTableProps) {
   const tiered = shouldTierRows(tuneTiers)
   const router = useRouter()
   const [query, setQuery] = useState('')
@@ -320,10 +331,12 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
   // position. Sticky divs are reliable in Safari — the bug is specific to sticky on table sections — but
   // this is a meaningfully bigger change (a second header implementation to keep in sync) and was
   // deliberately deferred rather than built speculatively.
-  const [isIOS, setIsIOS] = useState(false)
+  const [isIOSDetected, setIsIOSDetected] = useState(isIOSProp ?? false)
   useLayoutEffect(() => {
-    setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent))
-  }, [])
+    if (isIOSProp !== undefined) return // server already told us — skip client re-detection entirely
+    setIsIOSDetected(/iPad|iPhone|iPod/.test(navigator.userAgent))
+  }, [isIOSProp])
+  const isIOS = isIOSProp ?? isIOSDetected
   const stickyTh = isIOS ? '' : 'sticky z-10'
   const stickyThStyle = isIOS ? undefined : { top: theadTop }
 
@@ -331,10 +344,16 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
   // `overflow-x: auto` ancestor is a scroll container on both axes, which would make `position: sticky`
   // resolve against a scrollport that never scrolls vertically — inert. So the wrapper only becomes
   // scrollable when the user opts extra columns back on and the table no longer fits.
+  // useLayoutEffect (not useEffect): same reasoning as the filterBarHeight/siteHeaderHeight measurements
+  // above — iOS Safari can paint the first (wrong, needsHScroll=false) frame and then fail to properly
+  // repaint after the corrected class is applied, leaving columns visibly spilling horizontally until an
+  // unrelated forced repaint (switching tabs and back) — reported live on a real iPhone even after the
+  // sticky-header fix removed the <thead>/<th> sticky positioning entirely, confirming this is the same
+  // underlying "stale paint, not stale layout" WebKit bug class, not specific to position: sticky itself.
   const tableWrapRef = useRef<HTMLDivElement>(null)
   const tableRef = useRef<HTMLTableElement>(null)
   const [needsHScroll, setNeedsHScroll] = useState(false)
-  useEffect(() => {
+  useLayoutEffect(() => {
     const wrap = tableWrapRef.current
     const table = tableRef.current
     if (!wrap || !table) return
@@ -747,7 +766,14 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
       ) : (
         <div
           ref={tableWrapRef}
-          className={`rounded-lg border border-border${needsHScroll ? ' overflow-x-auto' : ''}`}
+          // On iOS: overflow-x-auto is applied unconditionally (a static class, never toggled at runtime)
+          // rather than via the JS-computed needsHScroll below. `overflow: auto` is natively "scroll only
+          // if content actually overflows" — this needs zero JavaScript, so it sidesteps the same iOS
+          // Safari stale-paint bug that affected the sticky header (a class applied/removed by React after
+          // mount not being reflected until an unrelated forced repaint). This is only safe because sticky
+          // is already unconditionally disabled on iOS above — an always-on scroll-container ancestor would
+          // otherwise make position: sticky inert (see the comment on the original needsHScroll effect).
+          className={`rounded-lg border border-border${(isIOS || needsHScroll) ? ' overflow-x-auto' : ''}`}
         >
           {/* border-separate + border-spacing-0 (overriding Tailwind preflight's default border-collapse:
               collapse): Safari has a long-standing, still-unresolved WebKit bug where position: sticky on
