@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/u
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { TuneRowInlinePlayer, hasAnyTuneMedia } from "@/components/tunes/TuneRowInlinePlayer"
+import { TieredTuneRowList } from "@/components/tune-picker/TieredTuneRowList"
+import type { PsalmVersionTuneTiers } from "@/db/queries/tunes"
 
 export interface TuneRow {
   id: number
@@ -48,6 +50,17 @@ interface TuneTableProps {
   initialMeter?: string | null  // pre-filter to psalm's meter in modal mode
   hideMeterFilter?: boolean     // hide the meter filter select (modal mode with locked meter)
   psalmId?: number              // highlight recommended tunes for this psalm
+  /**
+   * TSEL-01/D-13: when supplied (precentor picker only), rows are grouped Backup → Historical → Other via
+   * the shared TieredTuneRowList. Absent on the standalone /tunes page, which stays untiered (D-07).
+   */
+  tuneTiers?: PsalmVersionTuneTiers | null
+}
+
+/** Tiering only makes sense when there is at least one backup or historical tune to separate out. */
+export function shouldTierRows(tuneTiers?: PsalmVersionTuneTiers | null): boolean {
+  if (!tuneTiers) return false
+  return tuneTiers.backupTuneIds.length + tuneTiers.historicalTuneIds.length > 0
 }
 
 type SortBy = 'psalms' | 'name' | 'meter' | 'rp' | 'prca' | 'recording'
@@ -98,7 +111,8 @@ export function truncatePsalmIds(ids: number[], limit: number): string {
 export const PSALM_IDS_LIMIT_DESKTOP = 8
 export const PSALM_IDS_LIMIT_MOBILE = 3
 
-export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideMeterFilter, psalmId }: TuneTableProps) {
+export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideMeterFilter, psalmId, tuneTiers }: TuneTableProps) {
+  const tiered = shouldTierRows(tuneTiers)
   const router = useRouter()
   const [query, setQuery] = useState('')
   // In modal mode, always start collapsed and don't persist to localStorage
@@ -238,8 +252,10 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
           return b.recommendedPsalmIds.length - a.recommendedPsalmIds.length || (a.name ?? '').localeCompare(b.name ?? '')
       }
     })
-    // In modal mode: float recommended tunes for this psalm to the top
-    if (psalmId != null) {
+    // In modal mode: float recommended tunes for this psalm to the top.
+    // When tier data is available the Backup → Historical → Other order takes precedence (D-13); the Star
+    // icon still marks recommended tunes, it just no longer reorders them.
+    if (psalmId != null && !tiered) {
       sorted.sort((a, b) => {
         const aRec = a.recommendedPsalmIds.includes(psalmId) ? 0 : 1
         const bRec = b.recommendedPsalmIds.includes(psalmId) ? 0 : 1
@@ -247,7 +263,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
       })
     }
     return sorted
-  }, [tunes, query, selectedMeter, selectedMood, onlyPrca, onlyFamous, sortBy, psalmId])
+  }, [tunes, query, selectedMeter, selectedMood, onlyPrca, onlyFamous, sortBy, psalmId, tiered])
 
   // TLIST-03: sticky <thead> offset — 56px is the site header's height, matching the filter bar's own
   // `sticky top-14`. In modal mode (TunePickerModal) the DialogContent body is itself the scroll container
@@ -296,6 +312,128 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
     (colMeter ? 1 : 0) + (colPsalms ? 1 : 0) + (colMood ? 1 : 0) + (colRp ? 1 : 0) +
     (colPrca ? 1 : 0) + (colHymn ? 1 : 0) + (colInPrca ? 1 : 0) +
     (colRecording && !onSelectTune ? 1 : 0)
+
+  function renderTuneRow(tune: TuneRow) {
+    const psalmDisplay = truncatePsalmIds(
+      tune.recommendedPsalmIds,
+      isNarrow ? PSALM_IDS_LIMIT_MOBILE : PSALM_IDS_LIMIT_DESKTOP,
+    )
+    return (
+      <Fragment key={tune.id}>
+      <tr
+        className={`hover:bg-muted/30 transition-colors group${onSelectTune ? ' cursor-pointer hover:bg-muted/50' : ''}`}
+        onClick={onSelectTune ? () => onSelectTune(tune) : undefined}
+      >
+        <td className="px-3 py-2.5 font-medium">
+          <span className="inline-flex items-center gap-1.5">
+            {psalmId != null && tune.recommendedPsalmIds.includes(psalmId) && (
+              <Star className="h-3.5 w-3.5 text-amber-500 shrink-0" aria-label="Recommended for this psalm" />
+            )}
+            {onSelectTune ? (
+              <span className="group-hover:underline underline-offset-2 line-clamp-2">
+                {tune.name ?? `Tune ${tune.id}`}
+              </span>
+            ) : (
+              <Link
+                href={`/tunes/${tune.slug}`}
+                className="hover:text-primary transition-colors group-hover:underline underline-offset-2 line-clamp-2"
+              >
+                {tune.name ?? `Tune ${tune.id}`}
+              </Link>
+            )}
+          </span>
+        </td>
+        {colMeter && (
+          <td className="px-3 py-2.5 text-muted-foreground w-12 max-w-[3rem] overflow-hidden">
+            {tune.meter ? (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <span className="cursor-pointer text-xs underline decoration-dotted whitespace-nowrap">
+                    {tune.meter.split(' ')[0]}
+                  </span>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-2 text-xs" side="top">
+                  {tune.meter}
+                </PopoverContent>
+              </Popover>
+            ) : '—'}
+          </td>
+        )}
+        {colPsalms && (
+          <td className="px-3 py-2.5">
+            {tune.recommendedPsalmIds.length > 0 ? (
+              <span className="text-muted-foreground font-mono text-xs">
+                <span className="text-foreground font-semibold mr-1.5">{tune.recommendedPsalmIds.length}</span>
+                {psalmDisplay}
+              </span>
+            ) : <span className="text-muted-foreground">—</span>}
+          </td>
+        )}
+        {colMood && (
+          <td className="px-3 py-2.5">
+            {tune.moods.length > 0 ? (
+              <span className="text-muted-foreground text-xs">{tune.moods.join(', ')}</span>
+            ) : <span className="text-muted-foreground">—</span>}
+          </td>
+        )}
+        {colRp && (
+          <td className="px-3 py-2.5 text-right font-mono text-xs text-muted-foreground">
+            {tune.numberIn1979RpPsalter ?? '—'}
+          </td>
+        )}
+        {colPrca && (
+          <td className="px-3 py-2.5 text-right font-mono text-xs text-muted-foreground">
+            {tune.numInPrcaPsalter ?? '—'}
+          </td>
+        )}
+        {colHymn && (
+          <td className="px-3 py-2.5 text-muted-foreground text-xs">
+            {tune.famousHymn ?? '—'}
+          </td>
+        )}
+        {colInPrca && (
+          <td className="px-3 py-2.5 text-center text-xs text-muted-foreground">
+            {tune.inPrcaPsalter ? 'Yes' : '—'}
+          </td>
+        )}
+        {colRecording && !onSelectTune && (
+          <td className="px-3 py-2.5 text-center">
+            {hasAnyTuneMedia(tune) ? (
+              <button
+                type="button"
+                aria-expanded={expandedTuneId === tune.id}
+                aria-controls={`tune-player-${tune.id}`}
+                aria-label={
+                  expandedTuneId === tune.id
+                    ? `Hide recording and score for ${tune.name ?? `Tune ${tune.id}`}`
+                    : `Play recording or view score for ${tune.name ?? `Tune ${tune.id}`}`
+                }
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setExpandedTuneId((cur) => (cur === tune.id ? null : tune.id))
+                }}
+                className={`inline-flex items-center justify-center h-11 w-11 md:h-8 md:w-8 rounded-md transition-colors ${
+                  expandedTuneId === tune.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-primary hover:bg-muted'
+                }`}
+              >
+                <Music className="h-4 w-4" />
+              </button>
+            ) : null}
+          </td>
+        )}
+      </tr>
+      {expandedTuneId === tune.id && (
+        <tr id={`tune-player-${tune.id}`} className="bg-muted/50">
+          <td colSpan={visibleColumnCount} className="px-4 py-3 animate-in fade-in slide-in-from-top-1">
+            <TuneRowInlinePlayer tune={tune} />
+          </td>
+        </tr>
+      )}
+      </Fragment>
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -581,127 +719,27 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filtered.map((tune) => {
-                const psalmDisplay = truncatePsalmIds(
-                  tune.recommendedPsalmIds,
-                  isNarrow ? PSALM_IDS_LIMIT_MOBILE : PSALM_IDS_LIMIT_DESKTOP,
-                )
-                return (
-                  <Fragment key={tune.id}>
-                  <tr
-                    className={`hover:bg-muted/30 transition-colors group${onSelectTune ? ' cursor-pointer hover:bg-muted/50' : ''}`}
-                    onClick={onSelectTune ? () => onSelectTune(tune) : undefined}
-                  >
-                    <td className="px-3 py-2.5 font-medium">
-                      <span className="inline-flex items-center gap-1.5">
-                        {psalmId != null && tune.recommendedPsalmIds.includes(psalmId) && (
-                          <Star className="h-3.5 w-3.5 text-amber-500 shrink-0" aria-label="Recommended for this psalm" />
-                        )}
-                        {onSelectTune ? (
-                          <span className="group-hover:underline underline-offset-2 line-clamp-2">
-                            {tune.name ?? `Tune ${tune.id}`}
-                          </span>
-                        ) : (
-                          <Link
-                            href={`/tunes/${tune.slug}`}
-                            className="hover:text-primary transition-colors group-hover:underline underline-offset-2 line-clamp-2"
-                          >
-                            {tune.name ?? `Tune ${tune.id}`}
-                          </Link>
-                        )}
-                      </span>
-                    </td>
-                    {colMeter && (
-                      <td className="px-3 py-2.5 text-muted-foreground w-12 max-w-[3rem] overflow-hidden">
-                        {tune.meter ? (
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <span className="cursor-pointer text-xs underline decoration-dotted whitespace-nowrap">
-                                {tune.meter.split(' ')[0]}
-                              </span>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-2 text-xs" side="top">
-                              {tune.meter}
-                            </PopoverContent>
-                          </Popover>
-                        ) : '—'}
-                      </td>
-                    )}
-                    {colPsalms && (
-                      <td className="px-3 py-2.5">
-                        {tune.recommendedPsalmIds.length > 0 ? (
-                          <span className="text-muted-foreground font-mono text-xs">
-                            <span className="text-foreground font-semibold mr-1.5">{tune.recommendedPsalmIds.length}</span>
-                            {psalmDisplay}
-                          </span>
-                        ) : <span className="text-muted-foreground">—</span>}
-                      </td>
-                    )}
-                    {colMood && (
-                      <td className="px-3 py-2.5">
-                        {tune.moods.length > 0 ? (
-                          <span className="text-muted-foreground text-xs">{tune.moods.join(', ')}</span>
-                        ) : <span className="text-muted-foreground">—</span>}
-                      </td>
-                    )}
-                    {colRp && (
-                      <td className="px-3 py-2.5 text-right font-mono text-xs text-muted-foreground">
-                        {tune.numberIn1979RpPsalter ?? '—'}
-                      </td>
-                    )}
-                    {colPrca && (
-                      <td className="px-3 py-2.5 text-right font-mono text-xs text-muted-foreground">
-                        {tune.numInPrcaPsalter ?? '—'}
-                      </td>
-                    )}
-                    {colHymn && (
-                      <td className="px-3 py-2.5 text-muted-foreground text-xs">
-                        {tune.famousHymn ?? '—'}
-                      </td>
-                    )}
-                    {colInPrca && (
-                      <td className="px-3 py-2.5 text-center text-xs text-muted-foreground">
-                        {tune.inPrcaPsalter ? 'Yes' : '—'}
-                      </td>
-                    )}
-                    {colRecording && !onSelectTune && (
-                      <td className="px-3 py-2.5 text-center">
-                        {hasAnyTuneMedia(tune) ? (
-                          <button
-                            type="button"
-                            aria-expanded={expandedTuneId === tune.id}
-                            aria-controls={`tune-player-${tune.id}`}
-                            aria-label={
-                              expandedTuneId === tune.id
-                                ? `Hide recording and score for ${tune.name ?? `Tune ${tune.id}`}`
-                                : `Play recording or view score for ${tune.name ?? `Tune ${tune.id}`}`
-                            }
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setExpandedTuneId((cur) => (cur === tune.id ? null : tune.id))
-                            }}
-                            className={`inline-flex items-center justify-center h-11 w-11 md:h-8 md:w-8 rounded-md transition-colors ${
-                              expandedTuneId === tune.id
-                                ? 'bg-primary text-primary-foreground'
-                                : 'text-primary hover:bg-muted'
-                            }`}
-                          >
-                            <Music className="h-4 w-4" />
-                          </button>
-                        ) : null}
-                      </td>
-                    )}
-                  </tr>
-                  {expandedTuneId === tune.id && (
-                    <tr id={`tune-player-${tune.id}`} className="bg-muted/50">
-                      <td colSpan={visibleColumnCount} className="px-4 py-3 animate-in fade-in slide-in-from-top-1">
-                        <TuneRowInlinePlayer tune={tune} />
+              {tiered ? (
+                <TieredTuneRowList
+                  tunes={filtered}
+                  tuneTiers={tuneTiers}
+                  itemWrapper="fragment"
+                  renderHeading={({ tier, label }) => (
+                    <tr className="bg-muted/30">
+                      <td
+                        colSpan={visibleColumnCount}
+                        data-tune-tier-heading={tier}
+                        className="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                      >
+                        {label}
                       </td>
                     </tr>
                   )}
-                  </Fragment>
-                )
-              })}
+                  renderRow={({ tune }) => renderTuneRow(tune)}
+                />
+              ) : (
+                filtered.map((tune) => renderTuneRow(tune))
+              )}
             </tbody>
           </table>
         </div>

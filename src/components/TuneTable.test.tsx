@@ -3,6 +3,7 @@ import {
   MOBILE_HIDDEN_COLUMN_KEYS,
   truncatePsalmIds,
   buildTuneCsv,
+  shouldTierRows,
   type TuneRow,
 } from './TuneTable'
 
@@ -81,5 +82,27 @@ describe('buildTuneCsv', () => {
     const row = makeTuneRow({ name: 'He said "Hi"' })
     const csv = buildTuneCsv([row])
     expect(csv).toContain('"He said ""Hi"""')
+  })
+})
+
+describe('shouldTierRows', () => {
+  it('is false when tuneTiers is undefined', () => {
+    expect(shouldTierRows(undefined)).toBe(false)
+  })
+
+  it('is false when tuneTiers is null', () => {
+    expect(shouldTierRows(null)).toBe(false)
+  })
+
+  it('is false when both tier arrays are empty', () => {
+    expect(shouldTierRows({ backupTuneIds: [], historicalTuneIds: [] })).toBe(false)
+  })
+
+  it('is true when a backup tune exists', () => {
+    expect(shouldTierRows({ backupTuneIds: [7], historicalTuneIds: [] })).toBe(true)
+  })
+
+  it('is true when only historical tunes exist', () => {
+    expect(shouldTierRows({ backupTuneIds: [], historicalTuneIds: [3] })).toBe(true)
   })
 })
