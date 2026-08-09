@@ -55,7 +55,7 @@ describe('TieredTuneRowList', () => {
 
   it("renderRow receives the caller's original object, not a copy", () => {
     const markedTunes = tunes.map((t) => ({ ...t, marker: 'keep-me' }))
-    const renderRow = vi.fn(renderRowButton)
+    const renderRow = vi.fn(renderRowButton<(typeof markedTunes)[number]>)
     render(<TieredTuneRowList tunes={markedTunes} tuneTiers={tuneTiers} renderRow={renderRow} />)
     for (const [row] of renderRow.mock.calls) {
       expect(row.tune.marker).toBe('keep-me')
