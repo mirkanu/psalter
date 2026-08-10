@@ -87,7 +87,9 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
   const [showMeter, setShowMeter] = useLocalStorage('psalms.showMeter', false)
   const [showRecommendedTune, setShowRecommendedTune] = useLocalStorage('psalms.showRecommendedTune', false)
   const [meterFilter, setMeterFilter] = useLocalStorage('psalms.meterFilter', 'all')
-  const [expandedIds, setExpandedIds] = useLocalStorage<Record<number, boolean>>('psalms.expandedIds', {})
+  // PSEL-01: session-only, deliberately NOT useLocalStorage — every fresh mount (reload, re-navigation,
+  // or a freshly opened PsalmPickerModal) must start with all multi-version groups collapsed.
+  const [expandedIds, setExpandedIds] = useState<Record<number, boolean>>({})
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
@@ -237,6 +239,7 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
         items.push(
           <button
             key={`toggle-${id}`}
+            data-version-toggle={id}
             onClick={toggle}
             className={[
               "rounded-lg hover:border-primary transition-colors duration-200 active:scale-[0.97]",
