@@ -195,13 +195,15 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
   // Show book sections only when there's no active search or filter
   const isGrouped = !trimmedQuery && meterFilter === 'all'
 
-  // PSEL-03: the fixed Book I–V tabs (w-6, fixed right-0, md:hidden) only exist in the grouped view, where
-  // the results bar and grid wrapper both reserve the same 40px mobile-only gutter. The sticky header must
-  // land on the same content-right edge. The full-page branch already bleeds with `-mx-4 pl-4`, so it needs
-  // 16px + 40px = pr-14, reverting to pr-4 (its original padding) at md:, where the tabs are hidden.
+  // PSEL-03: the fixed Book I–V tabs (w-6, fixed right-0, tabs-off:hidden) only exist in the grouped view,
+  // where the results bar and grid wrapper both reserve the same 40px gutter whenever the tabs are shown.
+  // The sticky header must land on the same content-right edge. The full-page branch already bleeds with
+  // `-mx-4 pl-4`, so it needs 16px + 40px = pr-14, reverting to pr-4 (its original padding) at `tabs-off:`
+  // — i.e. once the viewport is both wide (>=768px) AND tall (>=600px) and the tabs are hidden (Gap 2,
+  // D-GAP2 option-a: a landscape phone is wide but short, so it keeps its tabs and its gutter).
   const stickyRightPad = hideExport
-    ? (isGrouped ? 'pr-10 md:pr-0' : '')
-    : (isGrouped ? 'pr-14 md:pr-4' : 'pr-4')
+    ? (isGrouped ? 'pr-10 tabs-off:pr-0' : '')
+    : (isGrouped ? 'pr-14 tabs-off:pr-4' : 'pr-4')
 
   function renderGrid(rows: typeof filteredPsalms) {
     return (
@@ -436,7 +438,7 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
       </div>
 
       {/* Results bar with download */}
-      <div className={`flex items-center justify-between gap-2 ${isGrouped ? 'pr-10 md:pr-0' : ''}`}>
+      <div className={`flex items-center justify-between gap-2 ${isGrouped ? 'pr-10 tabs-off:pr-0' : ''}`}>
         <p className="text-sm text-muted-foreground">
           {filteredPsalms.length} {filteredPsalms.length === 1 ? 'versification' : 'versifications'}
         </p>
@@ -460,9 +462,10 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
           <p className="text-sm mt-1">Try a different keyword or clear the search.</p>
         </div>
       ) : isGrouped ? (
-        <div className="relative pr-10 md:pr-0">
-          {/* Vertical book tabs — mobile only, fixed right side (of the page, or of the enclosing modal) */}
-          <div className="fixed right-0 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-px md:hidden">
+        <div className="relative pr-10 tabs-off:pr-0">
+          {/* Vertical book tabs — fixed right side (of the page, or of the enclosing modal); hidden only
+              once the viewport is both wide and tall (see `tabs-off` custom-variant in globals.css). */}
+          <div className="fixed right-0 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-px tabs-off:hidden">
             {BOOKS.map((book) => (
               <button
                 key={book.sectionId}
