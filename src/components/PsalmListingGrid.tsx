@@ -87,7 +87,9 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
   const [showMeter, setShowMeter] = useLocalStorage('psalms.showMeter', false)
   const [showRecommendedTune, setShowRecommendedTune] = useLocalStorage('psalms.showRecommendedTune', false)
   const [meterFilter, setMeterFilter] = useLocalStorage('psalms.meterFilter', 'all')
-  const [expandedIds, setExpandedIds] = useLocalStorage<Record<number, boolean>>('psalms.expandedIds', {})
+  // PSEL-01: session-only, deliberately NOT useLocalStorage — every fresh mount (reload, re-navigation,
+  // or a freshly opened PsalmPickerModal) must start with all multi-version groups collapsed.
+  const [expandedIds, setExpandedIds] = useState<Record<number, boolean>>({})
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
@@ -182,6 +184,14 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
   // Show book sections only when there's no active search or filter
   const isGrouped = !trimmedQuery && meterFilter === 'all'
 
+  // PSEL-03: the fixed Book I–V tabs (w-6, fixed right-0, md:hidden) only exist in the grouped view, where
+  // the results bar and grid wrapper both reserve the same 40px mobile-only gutter. The sticky header must
+  // land on the same content-right edge. The full-page branch already bleeds with `-mx-4 pl-4`, so it needs
+  // 16px + 40px = pr-14, reverting to pr-4 (its original padding) at md:, where the tabs are hidden.
+  const stickyRightPad = hideExport
+    ? (isGrouped ? 'pr-10 md:pr-0' : '')
+    : (isGrouped ? 'pr-14 md:pr-4' : 'pr-4')
+
   function renderGrid(rows: typeof filteredPsalms) {
     return (
       <div className={`grid ${gridCols} gap-2`}>
@@ -237,6 +247,7 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
         items.push(
           <button
             key={`toggle-${id}`}
+            data-version-toggle={id}
             onClick={toggle}
             className={[
               "rounded-lg hover:border-primary transition-colors duration-200 active:scale-[0.97]",
@@ -292,11 +303,12 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
     <div className="space-y-4">
       <div
         id="psalms-sticky-header"
-        className={
+        className={[
           hideExport
             ? "sticky top-0 z-20 bg-background pb-2 space-y-2"
-            : "sticky top-14 z-20 bg-background py-2 -mx-4 px-4 space-y-2"
-        }
+            : "sticky top-14 z-20 bg-background py-2 -mx-4 pl-4 space-y-2",
+          stickyRightPad,
+        ].filter(Boolean).join(' ')}
       >
         {/* Search bar */}
         <div className="relative">
