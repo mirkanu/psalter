@@ -41,7 +41,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Psalm Selector
 
-- [ ] **PSEL-01**: Multi-version psalms always collapse on page load (no persisted expand state across visits)
+- [x] **PSEL-01**: Multi-version psalms always collapse on page load (no persisted expand state across visits)
 - [x] **PSEL-02**: Non-CM multi-version toggle boxes show a short meter tag (e.g. "LM")
 - [x] **PSEL-03**: Search/filter bar width matches the psalm listing grid (no overlap with the bookmark nav tabs on the right)
 
@@ -120,7 +120,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TUNE-03 | Phase 10 | Complete |
 | TUNE-04 | Phase 10 | Complete |
 | TUNE-05 | Phase 10 | Complete |
-| PSEL-01 | Phase 12 | Pending |
+| PSEL-01 | Phase 12 | Complete |
 | PSEL-02 | Phase 12 | Complete |
 | PSEL-03 | Phase 12 | Complete |
 | TSEL-01 | Phase 11 | Complete |

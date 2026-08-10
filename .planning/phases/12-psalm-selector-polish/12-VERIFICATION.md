@@ -1,12 +1,14 @@
 ---
 phase: 12-psalm-selector-polish
 verified: 2026-08-10T10:20:00Z
-status: gaps_found
+status: resolved
+resolved: 2026-08-10T12:57:00Z
+resolution: "All 4 gaps closed by plans 12-04 through 12-08 (gap_closure: true). Developer re-verified all four items live on production (psalter.gsdlabs.dev) on real devices and gave verdict \"all approved\" — recorded verbatim in 12-08-SUMMARY.md. See 12-DECISIONS.md for the D-GAP2/D-GAP3 developer decisions that resolved the two ambiguous specs."
 score: 1/3 must-haves fully verified (PSEL-01 clean; PSEL-02 and PSEL-03 each have open, human-identified gaps)
 overrides_applied: 0
 gaps:
   - truth: "The search/filter bar's width matches the psalm listing grid and no longer overlaps the bookmark nav tabs on the right (PSEL-03)"
-    status: partial
+    status: resolved
     reason: "Pixel-level alignment (search bar right edge == grid right edge, clear of tabs) is measured and confirmed correct at 390px and 1280px. But the human found the search placeholder text is cut off on mobile — the search bar does not 'fit the layout' in the sense the phase goal requires — and a related pre-existing breakpoint bug (Book I-V tabs vanish on iPhone landscape, ~844px wide) was flagged as unacceptable during this phase's UAT."
     artifacts:
       - path: "src/components/PsalmListingGrid.tsx"
@@ -17,7 +19,7 @@ gaps:
       - "Design decision + implementation for the mobile search placeholder (shrink font, shorten copy, or wrap) so it is never visually cut off."
       - "Confirmed heuristic (human's proposed starting point: base tab visibility on whether ~75% of the page content fits on screen, not a fixed 768px breakpoint) + implementation so Book I-V tabs remain visible on wide-but-short mobile viewports like iPhone landscape."
   - truth: "A non-CM multi-version toggle box shows its meter abbreviation (e.g. \"LM\") next to the version label (PSEL-02)"
-    status: partial
+    status: resolved
     reason: "The abbreviation logic itself is 100% correct — all 14 live multi-version psalms produce the exact expected tag, confirmed both by unit tests and a live Playwright sweep against real DB data. But the human corrected the visibility spec after seeing it live: with 'Show meter' unchecked, NO tag should appear on a collapsed toggle box at all; a tag should only appear once a multi-version group is expanded, and only against the specific expanded row, not the collapsed box. The shipped behavior (tag always visible on the collapsed box, independent of the checkbox) was Plan 02's deliberate, spec-following design at the time, but the human has since superseded that spec. Separately, the human also found a related sizing/overlay bug: with 'Show meter' checked, result boxes become oversized with excess whitespace, and expanded multi-version boxes don't grow enough to fit meter text, causing it to overlay the psalm number."
     artifacts:
       - path: "src/components/PsalmListingGrid.tsx"
@@ -36,8 +38,12 @@ human_verification: []
 
 **Phase Goal:** The psalm selector on multi-version psalms behaves predictably and its search bar fits the layout
 **Verified:** 2026-08-10T10:20:00Z
-**Status:** gaps_found
+**Status:** resolved (was gaps_found — see Resolution below)
 **Re-verification:** No — initial verification
+
+## Resolution
+
+All four gaps below were closed by gap-closure plans 12-04 (developer decisions D-GAP2/D-GAP3), 12-05 (Gap 1 + Gap 2), 12-06 (Gap 3), and 12-07 (Gap 4), then deployed to production and re-verified live by the developer in 12-08. Developer's verbatim verdict on all five `12-08-PLAN.md` checkpoint items: **"all approved"**. Full detail in `.planning/phases/12-psalm-selector-polish/12-04-SUMMARY.md` through `12-08-SUMMARY.md`.
 
 ## Goal Achievement
 
