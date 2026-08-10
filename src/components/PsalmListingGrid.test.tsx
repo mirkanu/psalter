@@ -114,7 +114,7 @@ describe('PsalmListingGrid — Gap 1 search placeholder', () => {
     stubMatchMedia(true)
     const { container } = render(<PsalmListingGrid psalms={psalms} />)
     const input = container.querySelector('input[aria-label="Search psalms"]') as HTMLInputElement
-    expect(input.placeholder).toBe('Psalm number or keyword…')
+    expect(input.placeholder).toBe('Number or keyword…')
   })
 
   it('applies the responsive placeholder font classes', () => {
