@@ -180,3 +180,38 @@ describe('PsalmListingGrid — PSEL-02 meter tag on the multi-version toggle', (
     expect(panel?.textContent).toContain('LM')
   })
 })
+
+describe('PsalmListingGrid — Gap 4 column sizing', () => {
+  function gridClass(container: HTMLElement) {
+    // Grouped book view — the outer grid rendered by renderBookGrid for Book I.
+    return (container.querySelector('#book-1 .grid') as HTMLElement).className
+  }
+
+  it('uses the middle column width when only Show meter is on', () => {
+    localStorage.setItem('psalms.showMeter', 'true')
+    const { container } = render(<PsalmListingGrid psalms={psalms} />)
+    const cls = gridClass(container)
+    expect(cls).toContain('minmax(5.5rem')
+    expect(cls).not.toContain('minmax(7rem')
+  })
+
+  it('still uses the wide column set when a first line is shown', () => {
+    localStorage.setItem('psalms.showFirstLine', 'true')
+    const { container } = render(<PsalmListingGrid psalms={psalms} />)
+    const cls = gridClass(container)
+    expect(cls).toContain('minmax(7rem')
+  })
+
+  it('uses the narrow column set when no advanced option is on', () => {
+    const { container } = render(<PsalmListingGrid psalms={psalms} />)
+    const cls = gridClass(container)
+    expect(cls).toContain('minmax(3.5rem')
+  })
+
+  it('expanded panel grid uses the meter column width', () => {
+    const { container } = render(<PsalmListingGrid psalms={psalms} />)
+    fireEvent.click(container.querySelector('[data-version-toggle="6"]') as HTMLElement)
+    const panelGrid = container.querySelector('[data-expanded-panel="6"] .grid') as HTMLElement
+    expect(panelGrid.className).toContain('minmax(5.5rem')
+  })
+})
