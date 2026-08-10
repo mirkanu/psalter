@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
 status: executing
-stopped_at: Phase 12 UI-SPEC approved
-last_updated: "2026-08-10T10:55:34.448Z"
-last_activity: 2026-08-10 -- Phase 12 planning complete
+stopped_at: Completed 12-04-PLAN.md
+last_updated: "2026-08-10T11:50:47.455Z"
+last_activity: 2026-08-10
 progress:
   total_phases: 10
   completed_phases: 6
   total_plans: 36
-  completed_plans: 31
-  percent: 86
+  completed_plans: 32
+  percent: 89
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone clos
 ## Current Position
 
 Phase: 12 (psalm-selector-polish) — EXECUTING
-Plan: 1 of 3
+Plan: 2 of 8
 Status: Ready to execute
-Last activity: 2026-08-10 -- Phase 12 planning complete
+Last activity: 2026-08-10
 
 ## Performance Metrics
 
@@ -97,6 +97,7 @@ Last activity: 2026-08-10 -- Phase 12 planning complete
 | Phase 10 P03 | 12min | 4 tasks | 12 files |
 | Phase 10 P04 | 20 min | 3 tasks | 5 files |
 | Phase 10 P05 | 15 min | 3 tasks | 5 files |
+| Phase 12 P04 | 10min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -201,6 +202,8 @@ Recent decisions affecting current work:
 - [Phase 10-04]: Regression-guard baseline corrected from plan's stated is_primary=173 to the actual live value 184 (one primary per psalm_versions row, 0 missing, 0 duplicates) — confirmed via code review this migration never writes isPrimary, so 184 predates this plan and 173 was a stale figure from Plan 02's research
 - [Phase 10-05]: A tune present in both backupTuneIds and historicalTuneIds classifies as backup (backup outranks historical) — verified live: Ellacomb (psalm 71, CM) is both, renders once under Backup
 - [Phase 10-05]: TuneSwitcherSheet.tsx (singing view's tune picker) left untiered pending Phase 11 TSEL-01 picker consolidation, per plan's explicit out-of-scope boundary
+- [Phase 12-04]: D-GAP2 = option-a — Book I-V jump tabs shown whenever the viewport is narrow OR short (fixes iPhone-landscape disappearance, no desktop change)
+- [Phase 12-04]: D-GAP3 = stays-hidden — collapsed multi-version toggle boxes never show a meter tag regardless of 'Show meter' checkbox state; meter only appears once a group is expanded
 
 ### Pending Todos
 
@@ -280,9 +283,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-09T23:17:49.754Z
-Stopped at: Phase 12 UI-SPEC approved
-Resume file: .planning/phases/12-psalm-selector-polish/12-UI-SPEC.md
+Last session: 2026-08-10T11:50:47.404Z
+Stopped at: Completed 12-04-PLAN.md
+Resume file: None
 
 ### Deferred from 04.9.4 polish (separate tickets when needed)
 

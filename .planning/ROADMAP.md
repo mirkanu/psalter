@@ -201,7 +201,7 @@ Plans:
 Plans:
 **Wave 1**
 - [x] 12-01-PLAN.md — Session-only multi-version expand state + Book-tab gutter on the sticky search header (PSEL-01, PSEL-03)
-- [ ] 12-04-PLAN.md — Gap closure: decide the Book-tab visibility rule (Gap 2) and the "Show meter" collapsed-box rule (Gap 3)
+- [x] 12-04-PLAN.md — Gap closure: decide the Book-tab visibility rule (Gap 2) and the "Show meter" collapsed-box rule (Gap 3)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [x] 12-02-PLAN.md — Meter abbreviation module + meter tag on the collapsed multi-version toggle (PSEL-02)
@@ -280,6 +280,6 @@ Phases 7 and 10 have no dependencies on Phase 6 or each other and may be worked 
 | 9. Changelog | 7/7 | Complete   | 2026-08-07 |
 | 10. Tune Data Fixes | 5/5 | Complete    | 2026-08-08 |
 | 11. Tune List & Selector Overhaul | 6/6 | Complete    | 2026-08-09 |
-| 12. Psalm Selector Polish | 3/3 | Complete   | 2026-08-10 |
+| 12. Psalm Selector Polish | 4/8 | In Progress|  |
 | 13. Tune Image Compression | 0/TBD | Not started | - |
 | 14. Launch Polish | 0/TBD | Not started | - |
