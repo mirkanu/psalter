@@ -101,3 +101,13 @@ No REFACTOR commits were needed — both GREEN implementations were already mini
 | 51c3570 | fix | Stop persisting multi-version expand state across visits (GREEN) |
 | 245f0ad | test | Add failing regression tests for PSEL-03 sticky header gutter (RED) |
 | 31174ab | fix | Reserve the Book-tab gutter on #psalms-sticky-header (GREEN) |
+
+## Self-Check: PASSED
+
+- FOUND: src/components/PsalmListingGrid.tsx
+- FOUND: src/components/PsalmListingGrid.test.tsx
+- FOUND: .planning/phases/12-psalm-selector-polish/12-01-SUMMARY.md
+- FOUND: commit 2752560
+- FOUND: commit 51c3570
+- FOUND: commit 245f0ad
+- FOUND: commit 31174ab
