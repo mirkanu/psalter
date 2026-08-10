@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { renderSnippet } from "@/lib/search-utils"
+import { abbreviateMeter } from "@/lib/meter-abbrev"
 
 interface PsalmNumberBoxProps {
   psalm: {
@@ -33,7 +34,11 @@ function labelSizeClass(label: string): string {
 }
 
 export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, showRecommendedTune, snippet, query, className, onClick }: PsalmNumberBoxProps) {
-  const hasContent = showFirstLine || showRecommendedTune || !!snippet
+  const meterLabel = showMeter ? abbreviateMeter(psalm.meter) : null
+  // Gap 4b: a displayed meter must occupy real layout space. The old compact branch painted it in an
+  // absolutely positioned span, which contributes zero height, so the box could never grow and the text
+  // landed on top of the psalm number. Any box that shows a meter now uses the flow-layout branch.
+  const hasContent = showFirstLine || showRecommendedTune || !!snippet || !!meterLabel
   const isHighlighted = isTopResult && query.length > 0
   const label = formatLabel(psalm.displayLabel)
   const sizeClass = labelSizeClass(label)
@@ -53,12 +58,12 @@ export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, s
   const inner = hasContent ? (
     <>
       <div className="flex items-start justify-between w-full">
-        <span className={`${sizeClass} font-semibold font-mono tabular-nums text-foreground leading-none`}>
+        <span className={`${sizeClass} font-semibold font-mono tabular-nums text-foreground leading-none shrink-0`}>
           {label}
         </span>
-        {showMeter && psalm.meter && (
-          <span className="text-[10px] text-muted-foreground leading-none pt-0.5 pr-1 pl-1 shrink-0">
-            {psalm.meter}
+        {meterLabel && (
+          <span data-meter className="text-[10px] text-muted-foreground leading-tight pt-0.5 pl-1 text-right min-w-0 break-words">
+            {meterLabel}
           </span>
         )}
       </div>
@@ -82,11 +87,6 @@ export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, s
       <span className={`${sizeClass} font-semibold font-mono tabular-nums text-foreground text-center leading-tight`}>
         {label}
       </span>
-      {showMeter && psalm.meter && (
-        <span className="absolute top-1 right-1.5 text-[10px] text-muted-foreground leading-none">
-          {psalm.meter}
-        </span>
-      )}
     </>
   )
 
