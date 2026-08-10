@@ -77,3 +77,38 @@ describe('PsalmListingGrid — PSEL-03 sticky header gutter', () => {
     expect(cls).not.toContain('pr-14')
   })
 })
+
+describe('PsalmListingGrid — PSEL-02 meter tag on the multi-version toggle', () => {
+  function toggle(container: HTMLElement, id: number) {
+    return container.querySelector(`[data-version-toggle="${id}"]`) as HTMLElement
+  }
+
+  it('tags a {CM, LM} group with LM', () => {
+    const { container } = render(<PsalmListingGrid psalms={psalms} />)
+    expect(toggle(container, 6).querySelector('[data-meter-tag]')?.textContent).toBe('LM')
+  })
+
+  it('shows no tag for a CM-only group or a group with two different non-CM meters', () => {
+    const { container } = render(<PsalmListingGrid psalms={psalms} />)
+    expect(toggle(container, 119).querySelector('[data-meter-tag]')).toBeNull()
+    expect(toggle(container, 136).querySelector('[data-meter-tag]')).toBeNull()
+  })
+
+  it('names the meter in the accessible title only when a tag is shown', () => {
+    const { container } = render(<PsalmListingGrid psalms={psalms} />)
+    expect(toggle(container, 6).getAttribute('title')).toBe('Psalm 6 (LM available) – tap to expand')
+    expect(toggle(container, 119).getAttribute('title')).toBe('Psalm 119 – tap to expand')
+  })
+
+  it('shows the tag even when the Show meter preference is off', () => {
+    localStorage.setItem('psalms.showMeter', 'false')
+    const { container } = render(<PsalmListingGrid psalms={psalms} />)
+    expect(toggle(container, 6).querySelector('[data-meter-tag]')).not.toBeNull()
+  })
+
+  it('places the tag in the corner opposite the chevron', () => {
+    const { container } = render(<PsalmListingGrid psalms={psalms} />)
+    const tag = toggle(container, 6).querySelector('[data-meter-tag]') as HTMLElement
+    expect(tag.className).toBe('absolute top-1 right-1.5 text-[10px] text-muted-foreground leading-none')
+  })
+})
