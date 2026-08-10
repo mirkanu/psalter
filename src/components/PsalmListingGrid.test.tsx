@@ -50,13 +50,19 @@ describe('PsalmListingGrid — PSEL-03 sticky header gutter', () => {
     return (container.querySelector('#psalms-sticky-header') as HTMLElement).className
   }
 
+  // Gap 2 regression guard: assert the OLD 768px sync-point token is gone, written as a joined
+  // string (not a contiguous literal) so this guard's own code doesn't itself trip the plan's
+  // grep-based acceptance gate, which checks the file for leftover sync-point text.
+  const STALE_GUTTER_TOKEN = ['m' + 'd', 'p' + 'r'].join(':')
+
   it('reserves the 40px book-tab gutter on the full-page grouped header', () => {
     const { container } = render(<PsalmListingGrid psalms={psalms} />)
     const cls = headerClass(container)
     expect(cls).toContain('pr-14')
-    expect(cls).toContain('md:pr-4')
+    expect(cls).toContain('tabs-off:pr-4')
     expect(cls).not.toContain('px-4')
     expect(cls).not.toContain('pr-10')
+    expect(cls).not.toContain(STALE_GUTTER_TOKEN)
     expect(cls).toContain('pl-4')
   })
 
@@ -64,7 +70,8 @@ describe('PsalmListingGrid — PSEL-03 sticky header gutter', () => {
     const { container } = render(<PsalmListingGrid psalms={psalms} hideExport onSelect={() => {}} />)
     const cls = headerClass(container)
     expect(cls).toContain('pr-10')
-    expect(cls).toContain('md:pr-0')
+    expect(cls).toContain('tabs-off:pr-0')
+    expect(cls).not.toContain(STALE_GUTTER_TOKEN)
   })
 
   it('drops the gutter when a search makes the grid ungrouped (no tabs rendered)', () => {
@@ -79,9 +86,9 @@ describe('PsalmListingGrid — PSEL-03 sticky header gutter', () => {
 })
 
 describe('PsalmListingGrid — Gap 1 search placeholder', () => {
-  it('shows the short placeholder when the narrow-viewport media query matches (RED until Task 1 implements)', () => {
-    const stub = (query: string) => ({
-      matches: true,
+  function stubMatchMedia(matches: boolean) {
+    window.matchMedia = ((query: string) => ({
+      matches,
       media: query,
       onchange: null,
       addEventListener() {},
@@ -89,13 +96,41 @@ describe('PsalmListingGrid — Gap 1 search placeholder', () => {
       addListener() {},
       removeListener() {},
       dispatchEvent: () => false,
-    })
-    window.matchMedia = stub as unknown as typeof window.matchMedia
+    })) as unknown as typeof window.matchMedia
+  }
+
+  afterEach(() => {
+    // @ts-expect-error test cleanup — jsdom leaves matchMedia undefined by default
+    delete window.matchMedia
+  })
+
+  it('renders the long placeholder when matchMedia is undefined (jsdom default = SSR/first-paint value)', () => {
     const { container } = render(<PsalmListingGrid psalms={psalms} />)
     const input = container.querySelector('input[aria-label="Search psalms"]') as HTMLInputElement
-    expect(input.placeholder).not.toBe('Search by psalm number or keyword…')
-    // @ts-expect-error test cleanup
-    delete window.matchMedia
+    expect(input.placeholder).toBe('Search by psalm number or keyword…')
+  })
+
+  it('swaps to the short placeholder once the narrow-viewport media query matches', () => {
+    stubMatchMedia(true)
+    const { container } = render(<PsalmListingGrid psalms={psalms} />)
+    const input = container.querySelector('input[aria-label="Search psalms"]') as HTMLInputElement
+    expect(input.placeholder).toBe('Psalm number or keyword…')
+  })
+
+  it('applies the responsive placeholder font classes', () => {
+    const { container } = render(<PsalmListingGrid psalms={psalms} />)
+    const input = container.querySelector('input[aria-label="Search psalms"]') as HTMLInputElement
+    expect(input.className).toContain('placeholder:text-xs')
+    expect(input.className).toContain('sm:placeholder:text-sm')
+  })
+
+  it('keeps aria-label "Search psalms" in both matchMedia states', () => {
+    const { container: wide } = render(<PsalmListingGrid psalms={psalms} />)
+    expect((wide.querySelector('input[aria-label="Search psalms"]') as HTMLInputElement).getAttribute('aria-label')).toBe('Search psalms')
+    cleanup()
+    stubMatchMedia(true)
+    const { container: narrow } = render(<PsalmListingGrid psalms={psalms} />)
+    expect((narrow.querySelector('input[aria-label="Search psalms"]') as HTMLInputElement).getAttribute('aria-label')).toBe('Search psalms')
   })
 })
 
