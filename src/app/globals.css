@@ -4,6 +4,13 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Book I–V jump tabs (PSEL-03 / 12-VERIFICATION.md Gap 2): hidden only when the viewport is BOTH wide
+   AND tall enough for the psalm grid to be scannable without them. A landscape phone (844x390) is wide
+   but short, so it keeps its tabs; a normal desktop window (1280x800) does not. Pure CSS — no runtime
+   measurement, no flash. The three right-gutter paddings in PsalmListingGrid.tsx use the same variant
+   so the reserved gutter and the tabs always appear and disappear together. */
+@custom-variant tabs-off (@media (min-width: 768px) and (min-height: 600px));
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
