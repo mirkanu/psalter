@@ -92,4 +92,14 @@ No REFACTOR commits were needed — both GREEN implementations matched the plan'
 | ca71648 | test | Add failing tests for meter tag on multi-version toggle (RED) |
 | ae41756 | feat | Render meter tag on collapsed multi-version toggle (GREEN) |
 
-## Self-Check: PENDING
+## Self-Check: PASSED
+
+- FOUND: src/lib/meter-abbrev.ts
+- FOUND: src/lib/meter-abbrev.test.ts
+- FOUND: src/components/PsalmListingGrid.tsx
+- FOUND: src/components/PsalmListingGrid.test.tsx
+- FOUND: .planning/phases/12-psalm-selector-polish/12-02-SUMMARY.md
+- FOUND: commit 56716ea
+- FOUND: commit 7f1c981
+- FOUND: commit ca71648
+- FOUND: commit ae41756
