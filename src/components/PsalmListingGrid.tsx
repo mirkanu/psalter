@@ -1,6 +1,7 @@
 'use client'
 import React, { useMemo, useState, useRef, useEffect } from "react"
 import { useLocalStorage } from "@/hooks/useLocalStorage"
+import { useMediaQuery } from "@/hooks/useMediaQuery"
 import { useRouter } from "next/navigation"
 import { Search, X, ChevronDown, ChevronUp, Download } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -94,6 +95,15 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
+
+  // Gap 1 (12-VERIFICATION.md): a single-line input cannot wrap its placeholder, and the full hint is
+  // wider than the usable text area on a narrow phone (~176px at a 320px viewport), so use shorter copy
+  // below `sm`. useMediaQuery returns false during SSR and first paint, so the server always renders the
+  // long string — no hydration mismatch, the short string swaps in on mount.
+  const isNarrowViewport = useMediaQuery('(max-width: 639px)')
+  const searchPlaceholder = isNarrowViewport
+    ? 'Psalm number or keyword…'
+    : 'Search by psalm number or keyword…'
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.innerWidth >= 768) {
@@ -331,9 +341,9 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Search by psalm number or keyword…"
+            placeholder={searchPlaceholder}
             aria-label="Search psalms"
-            className="pl-9 pr-9 w-full"
+            className="pl-9 pr-9 w-full placeholder:text-xs sm:placeholder:text-sm"
           />
           {query && (
             <button
