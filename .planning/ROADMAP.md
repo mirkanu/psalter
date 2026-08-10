@@ -199,13 +199,22 @@ Plans:
   3. The search/filter bar's width matches the psalm listing grid and no longer overlaps the bookmark nav tabs on the right
 **Plans**: 8 plans (3 original + 5 gap-closure from 12-VERIFICATION.md)
 Plans:
+**Wave 1**
 - [x] 12-01-PLAN.md — Session-only multi-version expand state + Book-tab gutter on the sticky search header (PSEL-01, PSEL-03)
-- [x] 12-02-PLAN.md — Meter abbreviation module + meter tag on the collapsed multi-version toggle (PSEL-02)
-- [x] 12-03-PLAN.md — Live Playwright measurement sweep + human sign-off (PSEL-01, PSEL-02, PSEL-03)
 - [ ] 12-04-PLAN.md — Gap closure: decide the Book-tab visibility rule (Gap 2) and the "Show meter" collapsed-box rule (Gap 3)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 12-02-PLAN.md — Meter abbreviation module + meter tag on the collapsed multi-version toggle (PSEL-02)
 - [ ] 12-05-PLAN.md — Gap closure: mobile search placeholder fit (Gap 1) + Book I–V tabs on landscape phones (Gap 2) (PSEL-03)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 12-03-PLAN.md — Live Playwright measurement sweep + human sign-off (PSEL-01, PSEL-02, PSEL-03)
 - [ ] 12-06-PLAN.md — Gap closure: meter-tag visibility respec — gated on Show meter / expand state (Gap 3) (PSEL-02)
+
+**Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 12-07-PLAN.md — Gap closure: diagnose and fix oversized boxes and meter/number overlay (Gap 4) (PSEL-02)
+
+**Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 12-08-PLAN.md — Gap closure: production deploy + developer re-verification of all four gaps
 **UI hint**: yes
 

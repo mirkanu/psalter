@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
-status: gaps_found
-stopped_at: Phase 12 verification — 4 open UAT gaps, awaiting gap-closure plan
-last_updated: "2026-08-10T10:25:00.000Z"
-last_activity: 2026-08-10 -- Phase 12 human UAT surfaced 4 gaps (PSEL-02/PSEL-03); deployed to production, not yet closed
+status: executing
+stopped_at: Phase 12 UI-SPEC approved
+last_updated: "2026-08-10T10:55:34.448Z"
+last_activity: 2026-08-10 -- Phase 12 planning complete
 progress:
   total_phases: 10
   completed_phases: 6
-  total_plans: 31
+  total_plans: 36
   completed_plans: 31
-  percent: 100
+  percent: 86
 ---
 
 # Project State
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone clos
 
 Phase: 12 (psalm-selector-polish) — EXECUTING
 Plan: 1 of 3
-Status: Executing Phase 12
-Last activity: 2026-08-10 -- Phase 12 execution started
+Status: Ready to execute
+Last activity: 2026-08-10 -- Phase 12 planning complete
 
 ## Performance Metrics
 
