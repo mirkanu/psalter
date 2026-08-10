@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
 status: executing
-stopped_at: Completed 12-05-PLAN.md
-last_updated: "2026-08-10T12:17:43.694Z"
+stopped_at: Completed 12-07-PLAN.md
+last_updated: "2026-08-10T12:37:04.036Z"
 last_activity: 2026-08-10
 progress:
   total_phases: 10
   completed_phases: 6
   total_plans: 36
-  completed_plans: 34
-  percent: 94
+  completed_plans: 35
+  percent: 97
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone clos
 ## Current Position
 
 Phase: 12 (psalm-selector-polish) — EXECUTING
-Plan: 4 of 8
+Plan: 8 of 8
 Status: Ready to execute
 Last activity: 2026-08-10
 
@@ -100,6 +100,7 @@ Last activity: 2026-08-10
 | Phase 12 P04 | 10min | 1 tasks | 1 files |
 | Phase 12 P05 | 14min | 3 tasks | 3 files |
 | Phase 12 P06 | 10min | 2 tasks | 2 files |
+| Phase 12 P07 | 17min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -209,6 +210,8 @@ Recent decisions affecting current work:
 - [Phase 12-05]: D-GAP2 = option-a implemented — tabs-off Tailwind custom-variant (min-width:768px and min-height:600px), all 5 sync points switched from md: to tabs-off:
 - [Phase 12-05]: Search placeholder fallback string 'Number or keyword…' shipped (not the plan's first-choice 'Psalm number or keyword…') after live-browser measurement showed the first choice still didn't fit at 320px
 - [Phase 12]: [Phase 12-06]: D-GAP3 stays-hidden implemented — collapsed multi-version toggle boxes never render a meter tag under any Show meter checkbox state; expanded panel forces showMeter=true on every version row regardless of the checkbox
+- [Phase 12-07]: METER_COL = 5.5rem chosen from live-measured text widths (21px max label + 33px second-widest abbreviation + 20px margin = 74px, fits 5.5rem/88px not 4.5rem/72px); the one outlier numeric pattern (10 10 10 10 10, 62px) is excluded and allowed to wrap
+- [Phase 12-07]: Gap 4 (oversized meter boxes + meter/number overlay) confirmed pre-existing via measurement, not a Phase 12 regression — traced to commits 1583e3af (2026-06-15) and f2e85d39 (2026-07-19); absolute meter span deleted outright, meter now renders only in normal flow
 
 ### Pending Todos
 
@@ -288,8 +291,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-10T12:15:59.778Z
-Stopped at: Completed 12-05-PLAN.md
+Last session: 2026-08-10T12:37:03.982Z
+Stopped at: Completed 12-07-PLAN.md
 Resume file: None
 
 ### Deferred from 04.9.4 polish (separate tickets when needed)
