@@ -4,14 +4,14 @@ milestone: v2.0
 milestone_name: Public Beta
 status: executing
 stopped_at: Completed 12-05-PLAN.md
-last_updated: "2026-08-10T12:10:28.955Z"
+last_updated: "2026-08-10T12:17:43.694Z"
 last_activity: 2026-08-10
 progress:
   total_phases: 10
   completed_phases: 6
   total_plans: 36
-  completed_plans: 33
-  percent: 92
+  completed_plans: 34
+  percent: 94
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone clos
 ## Current Position
 
 Phase: 12 (psalm-selector-polish) — EXECUTING
-Plan: 3 of 8
+Plan: 4 of 8
 Status: Ready to execute
 Last activity: 2026-08-10
 
@@ -99,6 +99,7 @@ Last activity: 2026-08-10
 | Phase 10 P05 | 15 min | 3 tasks | 5 files |
 | Phase 12 P04 | 10min | 1 tasks | 1 files |
 | Phase 12 P05 | 14min | 3 tasks | 3 files |
+| Phase 12 P06 | 10min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -207,6 +208,7 @@ Recent decisions affecting current work:
 - [Phase 12-04]: D-GAP3 = stays-hidden — collapsed multi-version toggle boxes never show a meter tag regardless of 'Show meter' checkbox state; meter only appears once a group is expanded
 - [Phase 12-05]: D-GAP2 = option-a implemented — tabs-off Tailwind custom-variant (min-width:768px and min-height:600px), all 5 sync points switched from md: to tabs-off:
 - [Phase 12-05]: Search placeholder fallback string 'Number or keyword…' shipped (not the plan's first-choice 'Psalm number or keyword…') after live-browser measurement showed the first choice still didn't fit at 320px
+- [Phase 12]: [Phase 12-06]: D-GAP3 stays-hidden implemented — collapsed multi-version toggle boxes never render a meter tag under any Show meter checkbox state; expanded panel forces showMeter=true on every version row regardless of the checkbox
 
 ### Pending Todos
 
@@ -286,7 +288,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-10T12:10:28.918Z
+Last session: 2026-08-10T12:15:59.778Z
 Stopped at: Completed 12-05-PLAN.md
 Resume file: None
 

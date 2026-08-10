@@ -209,7 +209,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [x] 12-03-PLAN.md — Live Playwright measurement sweep + human sign-off (PSEL-01, PSEL-02, PSEL-03)
-- [ ] 12-06-PLAN.md — Gap closure: meter-tag visibility respec — gated on Show meter / expand state (Gap 3) (PSEL-02)
+- [x] 12-06-PLAN.md — Gap closure: meter-tag visibility respec — gated on Show meter / expand state (Gap 3) (PSEL-02)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 12-07-PLAN.md — Gap closure: diagnose and fix oversized boxes and meter/number overlay (Gap 4) (PSEL-02)
@@ -280,6 +280,6 @@ Phases 7 and 10 have no dependencies on Phase 6 or each other and may be worked 
 | 9. Changelog | 7/7 | Complete   | 2026-08-07 |
 | 10. Tune Data Fixes | 5/5 | Complete    | 2026-08-08 |
 | 11. Tune List & Selector Overhaul | 6/6 | Complete    | 2026-08-09 |
-| 12. Psalm Selector Polish | 5/8 | In Progress|  |
+| 12. Psalm Selector Polish | 6/8 | In Progress|  |
 | 13. Tune Image Compression | 0/TBD | Not started | - |
 | 14. Launch Polish | 0/TBD | Not started | - |
