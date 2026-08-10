@@ -102,7 +102,7 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
   // long string — no hydration mismatch, the short string swaps in on mount.
   const isNarrowViewport = useMediaQuery('(max-width: 639px)')
   const searchPlaceholder = isNarrowViewport
-    ? 'Psalm number or keyword…'
+    ? 'Number or keyword…'
     : 'Search by psalm number or keyword…'
 
   useEffect(() => {
