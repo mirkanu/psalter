@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/u
 import { Checkbox } from "@/components/ui/checkbox"
 import { PsalmNumberBox } from "./PsalmNumberBox"
 import { buildSnippet } from "@/lib/search-utils"
-import { groupMeterTag } from "@/lib/meter-abbrev"
 
 export interface PsalmRow {
   id: number
@@ -257,9 +256,6 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
       } else {
         const isExpanded = !!expandedIds[id]
         const toggle = () => setExpandedIds(isExpanded ? { [id]: false } : { [id]: true })
-        // PSEL-02: shown whenever the group has exactly one distinct non-CM meter; independent of the
-        // "Show meter" checkbox by design (12-UI-SPEC.md §1 "Visibility").
-        const meterTag = groupMeterTag(entries.map((e) => e.meter))
         items.push(
           <button
             key={`toggle-${id}`}
@@ -271,19 +267,11 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
               isExpanded ? "bg-primary/5 border-primary border-2" : "bg-card border border-border",
             ].join(' ')}
             aria-expanded={isExpanded}
-            title={meterTag ? `Psalm ${id} (${meterTag} available) – tap to expand` : `Psalm ${id} – tap to expand`}
+            title={`Psalm ${id} – tap to expand`}
           >
             <span className="text-xs font-semibold font-mono tabular-nums text-foreground leading-tight text-center">
               {id}
             </span>
-            {meterTag && (
-              <span
-                data-meter-tag
-                className="absolute top-1 right-1.5 text-[10px] text-muted-foreground leading-none"
-              >
-                {meterTag}
-              </span>
-            )}
             {isExpanded
               ? <ChevronUp className="absolute bottom-1 right-1 h-2.5 w-2.5 text-muted-foreground" />
               : <ChevronDown className="absolute bottom-1 right-1 h-2.5 w-2.5 text-muted-foreground" />}
@@ -292,7 +280,7 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
         if (isExpanded) {
           const is119 = id === 119
           items.push(
-            <div key={`panel-${id}`} className="col-span-full mt-1 mb-1 rounded-xl border border-border bg-muted/40 px-3 pt-2.5 pb-3">
+            <div key={`panel-${id}`} data-expanded-panel={id} className="col-span-full mt-1 mb-1 rounded-xl border border-border bg-muted/40 px-3 pt-2.5 pb-3">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
                 {is119 ? 'Psalm 119, verses:' : `Psalm ${id}`}
               </p>
@@ -303,7 +291,9 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
                     psalm={{ ...psalm, displayLabel: is119 ? psalm.displayLabel.replace(/^119:/, '') : psalm.displayLabel }}
                     isTopResult={false}
                     showFirstLine={showFirstLine}
-                    showMeter={showMeter}
+                    // Gap 3: an expanded group always shows each version's meter — that is the whole point of
+                    // opening it — regardless of the Advanced Filters "Show meter" preference.
+                    showMeter={true}
                     showRecommendedTune={showRecommendedTune}
                     snippet={psalm.snippet ?? null}
                     query={trimmedQuery}
