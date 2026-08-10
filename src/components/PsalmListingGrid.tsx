@@ -186,10 +186,15 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
     setAdvancedOpen(false)
   }
 
-  const hasExpanded = showFirstLine || showMeter || showRecommendedTune || (trimmedQuery.length > 0 && !isNumeric)
+  const hasExpanded = showFirstLine || showRecommendedTune || (trimmedQuery.length > 0 && !isNumeric)
+  // Gap 4a: "Show meter" alone used to jump straight to the 7rem column set, which on a 390px phone left
+  // only 2 columns of ~155px each holding one small number. A meter-only box needs a middle size, not the
+  // full first-line/snippet width. All three classes are written out in full so Tailwind JIT emits them.
   const gridCols = hasExpanded
     ? "grid-cols-[repeat(auto-fill,minmax(7rem,1fr))]"
-    : "grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))]"
+    : showMeter
+      ? "grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))]"
+      : "grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))]"
 
   // Show book sections only when there's no active search or filter
   const isGrouped = !trimmedQuery && meterFilter === 'all'
@@ -284,7 +289,7 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
                 {is119 ? 'Psalm 119, verses:' : `Psalm ${id}`}
               </p>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))] gap-2">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-2">
                 {entries.map((psalm) => (
                   <PsalmNumberBox
                     key={psalm.slug}
