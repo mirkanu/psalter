@@ -44,3 +44,36 @@ describe('PsalmListingGrid — PSEL-01 collapse on load', () => {
     expect(localStorage.getItem('psalms.expandedIds')).toBeNull()
   })
 })
+
+describe('PsalmListingGrid — PSEL-03 sticky header gutter', () => {
+  function headerClass(container: HTMLElement) {
+    return (container.querySelector('#psalms-sticky-header') as HTMLElement).className
+  }
+
+  it('reserves the 40px book-tab gutter on the full-page grouped header', () => {
+    const { container } = render(<PsalmListingGrid psalms={psalms} />)
+    const cls = headerClass(container)
+    expect(cls).toContain('pr-14')
+    expect(cls).toContain('md:pr-4')
+    expect(cls).not.toContain('px-4')
+    expect(cls).not.toContain('pr-10')
+    expect(cls).toContain('pl-4')
+  })
+
+  it('reserves the same gutter inside the picker modal branch', () => {
+    const { container } = render(<PsalmListingGrid psalms={psalms} hideExport onSelect={() => {}} />)
+    const cls = headerClass(container)
+    expect(cls).toContain('pr-10')
+    expect(cls).toContain('md:pr-0')
+  })
+
+  it('drops the gutter when a search makes the grid ungrouped (no tabs rendered)', () => {
+    const { container } = render(<PsalmListingGrid psalms={psalms} />)
+    fireEvent.change(container.querySelector('input[aria-label="Search psalms"]') as HTMLInputElement, {
+      target: { value: 'shepherd' },
+    })
+    const cls = headerClass(container)
+    expect(cls).toContain('pr-4')
+    expect(cls).not.toContain('pr-14')
+  })
+})
