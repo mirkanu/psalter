@@ -78,6 +78,27 @@ describe('PsalmListingGrid — PSEL-03 sticky header gutter', () => {
   })
 })
 
+describe('PsalmListingGrid — Gap 1 search placeholder', () => {
+  it('shows the short placeholder when the narrow-viewport media query matches (RED until Task 1 implements)', () => {
+    const stub = (query: string) => ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+      dispatchEvent: () => false,
+    })
+    window.matchMedia = stub as unknown as typeof window.matchMedia
+    const { container } = render(<PsalmListingGrid psalms={psalms} />)
+    const input = container.querySelector('input[aria-label="Search psalms"]') as HTMLInputElement
+    expect(input.placeholder).not.toBe('Search by psalm number or keyword…')
+    // @ts-expect-error test cleanup
+    delete window.matchMedia
+  })
+})
+
 describe('PsalmListingGrid — PSEL-02 meter tag on the multi-version toggle', () => {
   function toggle(container: HTMLElement, id: number) {
     return container.querySelector(`[data-version-toggle="${id}"]`) as HTMLElement
