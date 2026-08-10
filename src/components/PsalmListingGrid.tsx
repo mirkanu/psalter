@@ -29,6 +29,31 @@ const BOOKS = [
   { num: 'V',   range: '107–150',start: 107, end: 150, sectionId: 'book-5' },
 ] as const
 
+// Scrolls to a book section whether the grid is rendered on the full /psalms
+// page (window scrolls) or inside a modal's own overflow-y-auto container
+// (the window doesn't scroll there — the modal's inner div does).
+function scrollToSection(sectionId: string) {
+  const el = document.getElementById(sectionId)
+  if (!el) return
+  const header = document.getElementById('psalms-sticky-header')
+  const headerH = header ? header.offsetHeight : 80
+
+  let scrollParent: HTMLElement | null = el.parentElement
+  while (scrollParent) {
+    const overflowY = window.getComputedStyle(scrollParent).overflowY
+    if (overflowY === 'auto' || overflowY === 'scroll') break
+    scrollParent = scrollParent.parentElement
+  }
+
+  if (scrollParent) {
+    const top = scrollParent.scrollTop + el.getBoundingClientRect().top - scrollParent.getBoundingClientRect().top - headerH - 8
+    scrollParent.scrollTo({ top, behavior: 'smooth' })
+  } else {
+    const top = window.scrollY + el.getBoundingClientRect().top - 56 - headerH - 8
+    window.scrollTo({ top, behavior: 'smooth' })
+  }
+}
+
 function exportCsv(psalms: PsalmRow[]) {
   const headers = ['Psalm #', 'First Line', 'Meter', 'Recommended Tune']
   const rows = psalms.map((p) => [
@@ -402,27 +427,18 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
         </div>
       ) : isGrouped ? (
         <div className="relative pr-10 md:pr-0">
-          {/* Vertical book tabs — mobile only, fixed right side */}
-          {!hideExport && (
-            <div className="fixed right-0 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-px md:hidden">
-              {BOOKS.map((book) => (
-                <button
-                  key={book.sectionId}
-                  onClick={() => {
-                    const el = document.getElementById(book.sectionId)
-                    if (!el) return
-                    const header = document.getElementById('psalms-sticky-header')
-                    const headerH = header ? header.offsetHeight : 80
-                    const top = window.scrollY + el.getBoundingClientRect().top - 56 - headerH - 8
-                    window.scrollTo({ top, behavior: 'smooth' })
-                  }}
-                  className="bg-background/95 border border-r-0 border-border rounded-l-md text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center overflow-hidden w-6 h-14"
-                >
-                  <span className="text-[9px] font-mono whitespace-nowrap rotate-90 block">{book.range}</span>
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Vertical book tabs — mobile only, fixed right side (of the page, or of the enclosing modal) */}
+          <div className="fixed right-0 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-px md:hidden">
+            {BOOKS.map((book) => (
+              <button
+                key={book.sectionId}
+                onClick={() => scrollToSection(book.sectionId)}
+                className="bg-background/95 border border-r-0 border-border rounded-l-md text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center overflow-hidden w-6 h-14"
+              >
+                <span className="text-[9px] font-mono whitespace-nowrap rotate-90 block">{book.range}</span>
+              </button>
+            ))}
+          </div>
 
           {/* Book sections */}
           {BOOKS.map((book) => {

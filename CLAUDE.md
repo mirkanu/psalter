@@ -79,3 +79,17 @@ See `.env` for:
 - `AIRTABLE_PAT` — Airtable Personal Access Token
 - `DATABASE_URL` — PostgreSQL connection string
 - Cloudflare R2 credentials (inherit from `/data/home/.env`: `CLOUDFLARE_API_KEY`, `CLOUDFLARE_EMAIL`)
+
+<!-- Stack (auto-managed by GSD Dashboard — do not edit manually) -->
+## Stack (auto-managed)
+
+| Service | Key / Reference | Purpose |
+|---------|-----------------|---------|
+| Umami | `PSALTER_UMAMI_WEBSITE_ID` | Analytics (umami.gsdlabs.dev) |
+| BetterStack | monitor: `gsd-psalter` | Uptime monitoring |
+| Cloudflare R2 | bucket: `gsd-psalter` | Storage |
+| Sentry | `PSALTER_SENTRY_DSN` | Error tracking (sentry.io) |
+| Telegram | `POST http://localhost:4820/api/services/telegram/send-file` | File push to owner's Telegram |
+
+*Last updated: 2026-07-25T09:16:34.330Z — updated automatically on each stage transition.*
+<!-- /Stack -->
