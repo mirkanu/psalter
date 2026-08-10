@@ -215,7 +215,7 @@ Plans:
 - [x] 12-07-PLAN.md — Gap closure: diagnose and fix oversized boxes and meter/number overlay (Gap 4) (PSEL-02)
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 12-08-PLAN.md — Gap closure: production deploy + developer re-verification of all four gaps
+- [x] 12-08-PLAN.md — Gap closure: production deploy + developer re-verification of all four gaps
 **UI hint**: yes
 
 ### Phase 13: Tune Image Compression
@@ -280,6 +280,6 @@ Phases 7 and 10 have no dependencies on Phase 6 or each other and may be worked 
 | 9. Changelog | 7/7 | Complete   | 2026-08-07 |
 | 10. Tune Data Fixes | 5/5 | Complete    | 2026-08-08 |
 | 11. Tune List & Selector Overhaul | 6/6 | Complete    | 2026-08-09 |
-| 12. Psalm Selector Polish | 7/8 | In Progress|  |
+| 12. Psalm Selector Polish | 8/8 | Complete   | 2026-08-10 |
 | 13. Tune Image Compression | 0/TBD | Not started | - |
 | 14. Launch Polish | 0/TBD | Not started | - |

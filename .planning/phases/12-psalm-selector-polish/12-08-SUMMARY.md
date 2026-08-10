@@ -48,10 +48,11 @@ completed: 2026-08-10
 
 ## Performance
 
-- **Duration:** ~25 min
+- **Duration:** ~25 min (Task 1 automated) + developer real-device re-check (Task 2, async)
 - **Started:** 2026-08-10T12:39:48Z
-- **Completed:** 2026-08-10T12:52:50Z
-- **Tasks:** 1/2 (Task 2 is a blocking human-verify checkpoint — awaiting developer's verdict)
+- **Task 1 completed:** 2026-08-10T12:52:50Z
+- **Task 2 completed:** developer verdict "all approved" (async, real-device checkpoint)
+- **Tasks:** 2/2 complete
 
 ## Accomplishments — Task 1
 
@@ -155,13 +156,31 @@ Screenshots were visually inspected before sending (Read tool) and independently
 - FOUND: `pm2 describe psalter` status `online`, uptime `9m` at final check — postdates build by design (restart at 12:43:08Z, 3s after build finish)
 - No git commit hashes to verify for Task 1 (no source files changed — deploy/measurement only, per plan's `files_modified: []`)
 
-## Task 2 Status — AWAITING DEVELOPER VERDICT
+## Task 2 — Developer Real-Device Re-Check: ALL APPROVED
 
-Task 2 (`checkpoint:human-verify`, `gate="blocking"`) has **not** been executed. Per this plan's own instructions and the executor's checkpoint protocol, the developer's real-device re-check cannot be automated or fabricated. See the companion checkpoint message returned alongside this plan for the full `<what-built>` / `<how-to-verify>` text (with the D-GAP3 placeholder in step 3 resolved to `stays-hidden`'s concrete wording: "the closed box still shows no tag").
+The developer re-checked all five `<how-to-verify>` items against the live production deployment (https://psalter.gsdlabs.dev/psalms) on their own phone and desktop, per this plan's checkpoint. Their verdict, recorded **verbatim**:
 
-This SUMMARY will be appended with the developer's verbatim per-item verdict once received; if any item is not approved, it will be recorded under a `## Remaining Gaps` heading with their exact wording, per this plan's acceptance criteria and the 12-03/Phase-08-Plan-04 precedent.
+> "all approved"
+
+The developer's response did not break the verdict out item-by-item — it was given as a single unqualified "all approved" covering the full set. Per this plan's `<resume-signal>` (`"... or 'all approved'"`), this is a valid, complete, unconditional approval of every item in `<how-to-verify>`:
+
+1. **Search hint (Gap 1)** — approved
+2. **Book tabs sideways (Gap 2)** — approved
+3. **Meter tags on closed boxes (Gap 3, D-GAP3 = stays-hidden)** — approved
+4. **Box sizing and overlap (Gap 4)** — approved
+5. **Nothing else broke** — approved
+
+No item was reported as still wrong, and no new complaint was raised. Per the plan's acceptance criteria ("If any item is not approved, the SUMMARY records it as a still-open gap ... never upgraded to a clean pass") — the inverse also applies here: an unqualified "all approved" is not downgraded into a manufactured partial. There are no remaining gaps; a `## Remaining Gaps` section is intentionally omitted.
+
+### Requirement status
+
+- **PSEL-02 (meter tags on multi-version toggles):** Complete. Gap 3 (collapsed-box tag visibility, D-GAP3 stays-hidden) and Gap 4b (meter/number overlay in expanded panels) both confirmed fixed by the developer on their own device, on top of the automated production sweep's PASS results.
+- **PSEL-03 (search/filter width fix):** Complete. Gap 1 (placeholder truncation) and Gap 2 (Book I-V tab visibility) both confirmed fixed by the developer, on top of the automated production sweep's PASS results.
+
+Phase 12's four gap-closure items (12-VERIFICATION.md Gaps 1-4) are now closed: automated production sweep (Task 1) plus human real-device sign-off (Task 2) both confirm all four fixed with no open items.
 
 ---
 *Phase: 12-psalm-selector-polish*
 *Task 1 completed: 2026-08-10T12:52:50Z*
-*Task 2: pending — blocking checkpoint*
+*Task 2 completed: developer verdict "all approved" — no remaining gaps*
+*Plan 12-08 complete*
