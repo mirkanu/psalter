@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
-status: planning
+status: executing
 stopped_at: Phase 12 UI-SPEC approved
-last_updated: "2026-08-09T23:17:49.812Z"
-last_activity: 2026-08-09
+last_updated: "2026-08-10T08:16:37.296Z"
+last_activity: 2026-08-10 -- Phase 12 execution started
 progress:
   total_phases: 10
   completed_phases: 6
-  total_plans: 28
+  total_plans: 31
   completed_plans: 28
-  percent: 100
+  percent: 90
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone close)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 11 — tune-list-selector-overhaul
+**Current focus:** Phase 12 — psalm-selector-polish
 
 ## Current Position
 
-Phase: 12
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-08-09
+Phase: 12 (psalm-selector-polish) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 12
+Last activity: 2026-08-10 -- Phase 12 execution started
 
 ## Performance Metrics
 
