@@ -201,7 +201,7 @@ Plans:
 Plans:
 - [x] 12-01-PLAN.md — Session-only multi-version expand state + Book-tab gutter on the sticky search header (PSEL-01, PSEL-03)
 - [x] 12-02-PLAN.md — Meter abbreviation module + meter tag on the collapsed multi-version toggle (PSEL-02)
-- [ ] 12-03-PLAN.md — Live Playwright measurement sweep + human sign-off (PSEL-01, PSEL-02, PSEL-03)
+- [x] 12-03-PLAN.md — Live Playwright measurement sweep + human sign-off (PSEL-01, PSEL-02, PSEL-03)
 **UI hint**: yes
 
 ### Phase 13: Tune Image Compression
@@ -266,6 +266,6 @@ Phases 7 and 10 have no dependencies on Phase 6 or each other and may be worked 
 | 9. Changelog | 7/7 | Complete   | 2026-08-07 |
 | 10. Tune Data Fixes | 5/5 | Complete    | 2026-08-08 |
 | 11. Tune List & Selector Overhaul | 6/6 | Complete    | 2026-08-09 |
-| 12. Psalm Selector Polish | 2/3 | In Progress|  |
+| 12. Psalm Selector Polish | 3/3 | Complete   | 2026-08-10 |
 | 13. Tune Image Compression | 0/TBD | Not started | - |
 | 14. Launch Polish | 0/TBD | Not started | - |
