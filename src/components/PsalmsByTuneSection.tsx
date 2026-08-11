@@ -30,7 +30,7 @@ function PsalmCard({ psalm }: { psalm: PsalmEntry }) {
   return (
     <Link
       href={href}
-      className="flex flex-col py-2 px-2 min-h-[44px] rounded-lg border border-border bg-card hover:border-primary transition-colors duration-200 active:scale-[0.97]"
+      className="flex flex-col py-2 px-2 min-h-[44px] rounded-lg border border-border bg-card hover:border-primary transition-colors duration-200 active:bg-muted active:scale-[0.98] transition-transform duration-75"
       aria-label={`Psalm ${label}`}
     >
       <span className="text-xs font-semibold font-mono tabular-nums text-foreground leading-none">
