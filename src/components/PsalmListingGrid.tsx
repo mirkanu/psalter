@@ -267,7 +267,7 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
             data-version-toggle={id}
             onClick={toggle}
             className={[
-              "rounded-lg hover:border-primary transition-colors duration-200 active:scale-[0.97]",
+              "rounded-lg hover:border-primary transition-colors duration-200 active:bg-muted active:scale-[0.98] transition-transform duration-75",
               "flex items-center justify-center relative min-w-[44px] h-12 md:h-14",
               isExpanded ? "bg-primary/5 border-primary border-2" : "bg-card border border-border",
             ].join(' ')}
