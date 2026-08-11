@@ -144,3 +144,8 @@ No new trust-boundary surfaces introduced into the running app — `public/tunes
 
 - `f8321da` — docs(13-03): record compression swap evidence (pre/post sizes + sweep)
 - `2d08065` — feat(13-03): add archive-only backup verifier + post-swap evidence
+- `6a2c04c` — docs(13-03): complete plan summary (Tasks 1 and 2; Task 3 awaits human)
+
+## Self-Check: PASSED
+
+All required files exist (`scripts/verify-backup-archive.sh`, `SWAP-EVIDENCE.md`, `BACKUP-POSTSWAP-EVIDENCE.md`, `13-03-SUMMARY.md`, `BACKUP-MANIFEST.md`); all three commits present in `git log --oneline`; `git log origin/master..master` is empty (everything pushed); only untracked item is `.planning/todos/` which is out of scope for this plan.
