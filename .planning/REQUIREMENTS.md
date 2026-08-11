@@ -58,7 +58,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Assets
 
-- [ ] **ASSET-01**: All tune JPEGs compressed for faster display, originals backed up (depends on SEC-03)
+- [x] **ASSET-01**: All tune JPEGs compressed for faster display, originals backed up (depends on SEC-03) — completed 2026-08-11 (Phase 13)
 
 ### Polish (folded in from Backlog Phase 999.2)
 
@@ -128,7 +128,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TLIST-02 | Phase 11 | Complete |
 | TLIST-03 | Phase 11 | Complete |
 | TLIST-04 | Phase 11 | Complete |
-| ASSET-01 | Phase 13 | Pending |
+| ASSET-01 | Phase 13 | Complete |
 | POLISH-01 | Phase 14 | Pending |
 | POLISH-02 | Phase 14 | Pending |
 | POLISH-03 | Phase 14 | Pending |

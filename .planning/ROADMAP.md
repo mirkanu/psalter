@@ -25,8 +25,8 @@ Rebuild of psalter.cprc.co.uk from Airtable + Softr to a self-hosted Next.js 15 
 - [ ] **Phase 10: Tune Data Fixes** - Ps 148b duplicate, meter-mismatch banner, Backup/Historical data migration + sort, name-based slugs
 - [ ] **Phase 11: Tune List & Selector Overhaul** - `/tunes` mirrors `/psalms`, mobile-fit sticky table, inline embed player, shared tune-picker component
 - [ ] **Phase 12: Psalm Selector Polish** - Always-collapsed multi-version toggle, meter tags, search bar width fix
-- [ ] **Phase 13: Tune Image Compression** - Compress tune JPEGs for faster load, originals verified safe
-- [ ] **Phase 14: Launch Polish** - OG images, favicon/404, Lighthouse 90+, remaining skeletons, click-feedback states
+- [x] **Phase 13: Tune Image Compression** (3/3 plans) — completed 2026-08-11 - All 320 tune JPEGs compressed at w2000-q82 (91.2% reduction; 1.4 GiB → 126 MiB), archive-only verifier in place, human sign-off on live melisma-approved scores
+- [ ] **Phase 14: Launch Polish** - OG images, favicon/404, Lighthouse 90+, remaining skeletons, click-feedback states (margin-crop follow-up from Phase 13 captured as pending todo at `.planning/todos/pending/follow-up-tune-image-margin-crop.md`, not yet inserted into the roadmap)
 
 <details>
 <summary>✅ v1.0 Public Psalter (Phases 1–4.12) — SHIPPED 2026-07-29</summary>
@@ -228,11 +228,11 @@ Plans:
 **Plans**: 3 plans in 3 waves
 Plans:
 **Wave 1**
-- [ ] 13-01-PLAN.md — Build guarded compression script, query approved-tune images, render four-variant sample comparison page; human picks the setting (wave 1)
+- [x] 13-01-PLAN.md — Build guarded compression script, query approved-tune images, render four-variant sample comparison page; human picks the setting (wave 1) — completed 2026-08-11
 **Wave 2** *(blocked on Wave 1)*
-- [ ] 13-02-PLAN.md — Pre-swap backup restorability proof, full verifier for all 326 files, full batch compression into staging dir (wave 2)
+- [x] 13-02-PLAN.md — Pre-swap backup restorability proof, full verifier for all 326 files, full batch compression into staging dir (wave 2) — completed 2026-08-11
 **Wave 3** *(blocked on Wave 2)*
-- [ ] 13-03-PLAN.md — Atomic swap into public/tunes/, archive-only verifier, live-URL sweep, human legibility sign-off and cleanup (wave 3)
+- [x] 13-03-PLAN.md — Atomic swap into public/tunes/, archive-only verifier, live-URL sweep, human legibility sign-off and cleanup (wave 3) — completed 2026-08-11
 
 ### Phase 14: Launch Polish
 **Goal**: The site looks and performs like a finished public product before beta testers arrive — social previews, a real 404, fast Lighthouse scores, and consistent loading/click feedback everywhere
