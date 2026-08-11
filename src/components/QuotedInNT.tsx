@@ -107,7 +107,7 @@ export function QuotedInNT({ entries }: { entries: NTEntry[] }) {
                 <div key={psalmId} className="mb-2">
                   <Link
                     href={`/psalms/${psalmId}`}
-                    className="text-sm font-semibold hover:text-primary block"
+                    className="text-sm font-semibold hover:text-primary block active:bg-muted active:translate-y-px transition-all duration-75"
                   >
                     Psalm {psalmId}
                   </Link>

@@ -52,7 +52,7 @@ function TopicGrid({ topics }: { topics: TopicItem[] }) {
         <Link
           key={t.id}
           href={`/explore/topics/${t.slug}`}
-          className="block px-3 py-2 rounded-md border border-border text-sm hover:bg-muted hover:border-primary/30 transition-colors"
+          className="block px-3 py-2 rounded-md border border-border text-sm hover:bg-muted hover:border-primary/30 transition-colors active:bg-muted active:translate-y-px transition-all duration-75"
         >
           <Badge variant="secondary" className="float-right ml-2 mt-0.5 text-xs shrink-0">{t.count} psalms</Badge>
           <span className="leading-snug">{t.name}</span>
@@ -164,7 +164,7 @@ function ExploreTabInner(props: ExploreTabShellProps) {
           <Separator />
           <Link
             href="/explore/messianic"
-            className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted hover:border-primary/30 transition-colors"
+            className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted hover:border-primary/30 transition-colors active:bg-muted active:translate-y-px transition-all duration-75"
           >
             <span className="text-base font-medium">All Messianic Psalms</span>
             <Badge variant="secondary" className="ml-2 text-xs shrink-0">{messianicPsalmsCount} psalms</Badge>
