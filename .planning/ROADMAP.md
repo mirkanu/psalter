@@ -225,7 +225,14 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. All compressed tune JPEGs are smaller in file size than their originals while remaining legible on a melisma-approved tune spot-check
   2. The pre-compression backup from Phase 6 is confirmed intact and untouched after the compression run
-**Plans**: TBD
+**Plans**: 3 plans in 3 waves
+Plans:
+**Wave 1**
+- [ ] 13-01-PLAN.md — Build guarded compression script, query approved-tune images, render four-variant sample comparison page; human picks the setting (wave 1)
+**Wave 2** *(blocked on Wave 1)*
+- [ ] 13-02-PLAN.md — Pre-swap backup restorability proof, full verifier for all 326 files, full batch compression into staging dir (wave 2)
+**Wave 3** *(blocked on Wave 2)*
+- [ ] 13-03-PLAN.md — Atomic swap into public/tunes/, archive-only verifier, live-URL sweep, human legibility sign-off and cleanup (wave 3)
 
 ### Phase 14: Launch Polish
 **Goal**: The site looks and performs like a finished public product before beta testers arrive — social previews, a real 404, fast Lighthouse scores, and consistent loading/click feedback everywhere
