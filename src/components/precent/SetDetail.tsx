@@ -282,14 +282,14 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById, tuneTi
           <Button
             variant="outline"
             onClick={() => { setPsalmPickerMode('add'); setPsalmPickerItemId(null); setPsalmPickerOpen(true) }}
-            className="active:scale-[0.97] transition-transform duration-75"
+            className="active:bg-muted active:scale-[0.98] transition-transform duration-75"
           >
             Add Psalm
           </Button>
           <Button
             variant="ghost"
             onClick={() => setPasteOpen(true)}
-            className="active:scale-[0.97] transition-transform duration-75 text-muted-foreground"
+            className="active:bg-muted active:scale-[0.98] transition-transform duration-75 text-muted-foreground"
           >
             Paste List
           </Button>
@@ -297,7 +297,7 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById, tuneTi
         <Button
           disabled={set.setItems.length === 0}
           onClick={() => router.push(`/precent/${set.id}/sing/1`)}
-          className="bg-green-100 text-green-900 hover:bg-green-200 border border-green-300 active:scale-[0.97] transition-transform duration-75 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-green-100 text-green-900 hover:bg-green-200 border border-green-300 active:bg-muted active:scale-[0.98] transition-transform duration-75 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Start Precenting
         </Button>
