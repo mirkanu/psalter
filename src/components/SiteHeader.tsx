@@ -43,7 +43,7 @@ function ThemeToggle() {
       onClick={() => setTheme(next)}
       aria-label={`${label} — click for ${next}`}
       title={label}
-      className="p-2 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+      className="p-2 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground active:bg-muted active:translate-y-px transition-all duration-75"
     >
       {current === 'system' ? (
         <MonitorSmartphone className="size-4" />
@@ -80,11 +80,11 @@ export function SiteHeader() {
 
   const linkClass = (href: string) =>
     isActive(href)
-      ? 'text-foreground bg-muted text-sm font-medium px-3 py-2 rounded-md transition-colors'
-      : 'text-muted-foreground hover:text-foreground hover:bg-muted text-sm font-medium px-3 py-2 rounded-md transition-colors'
+      ? 'text-foreground bg-muted text-sm font-medium px-3 py-2 rounded-md transition-colors active:bg-muted active:translate-y-px transition-all duration-75'
+      : 'text-muted-foreground hover:text-foreground hover:bg-muted text-sm font-medium px-3 py-2 rounded-md transition-colors active:bg-muted active:translate-y-px transition-all duration-75'
 
   const logoutButtonClass =
-    'text-muted-foreground hover:text-foreground hover:bg-muted text-sm font-medium px-3 py-2 rounded-md transition-colors'
+    'text-muted-foreground hover:text-foreground hover:bg-muted text-sm font-medium px-3 py-2 rounded-md transition-colors active:bg-muted active:translate-y-px transition-all duration-75'
 
   return (
     <>
@@ -100,7 +100,7 @@ export function SiteHeader() {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
-            <Link href="/" className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
+            <Link href="/" className="flex items-center gap-1.5 hover:opacity-80 transition-opacity active:bg-muted active:translate-y-px transition-all duration-75">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="https://assets.softr-files.com/applications/408bc320-dc3f-4d12-8434-de0ccf926f90/assets/71a94206-c1da-47f1-af98-00f758d2f3a6.png"
@@ -130,7 +130,7 @@ export function SiteHeader() {
                 type="button"
                 onClick={() => setSearchOpen(true)}
                 aria-label="Search"
-                className="p-2 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                className="p-2 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground active:bg-muted active:translate-y-px transition-all duration-75"
               >
                 <Search className="size-4" />
               </button>
@@ -143,7 +143,7 @@ export function SiteHeader() {
                 type="button"
                 onClick={() => setSearchOpen(true)}
                 aria-label="Search"
-                className="p-2 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                className="p-2 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground active:bg-muted active:translate-y-px transition-all duration-75"
               >
                 <Search className="size-4" />
               </button>

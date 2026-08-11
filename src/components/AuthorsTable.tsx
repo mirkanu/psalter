@@ -58,8 +58,8 @@ export function AuthorsTable({ psalms }: { psalms: PsalmWithAuthorData[] }) {
             key={author}
             onClick={() => setSelectedAuthor(selectedAuthor === author ? null : author)}
             className={selectedAuthor === author
-              ? "bg-primary text-primary-foreground rounded-full px-3 py-1 text-sm whitespace-nowrap shrink-0"
-              : "border border-border rounded-full px-3 py-1 text-sm bg-background hover:bg-muted whitespace-nowrap shrink-0"
+              ? "bg-primary text-primary-foreground rounded-full px-3 py-1 text-sm whitespace-nowrap shrink-0 active:bg-primary/90 active:translate-y-px transition-all duration-75"
+              : "border border-border rounded-full px-3 py-1 text-sm bg-background hover:bg-muted whitespace-nowrap shrink-0 active:bg-muted active:translate-y-px transition-all duration-75"
             }
           >
             {author}
