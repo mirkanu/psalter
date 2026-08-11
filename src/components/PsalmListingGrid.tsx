@@ -362,7 +362,7 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
             onClick={() => setAdvancedOpen(!advancedOpen)}
             aria-expanded={advancedOpen}
             aria-controls="advanced-panel"
-            className="text-sm font-normal active:scale-[0.98] px-0 hover:bg-transparent"
+            className="text-sm font-normal px-0 hover:bg-transparent"
           >
             Advanced Filters
             {advancedOpen

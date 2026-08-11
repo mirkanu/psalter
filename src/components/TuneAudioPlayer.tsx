@@ -23,7 +23,7 @@ export function TuneAudioPlayer({ soundcloudUrl, youtubeUrl, tuneName }: TuneAud
       <button
         type="button"
         onClick={() => setExpanded(true)}
-        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors active:scale-[0.98]"
+        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:scale-[0.98] duration-75"
       >
         <Play className="h-4 w-4 fill-current" />
         <span>Play recording <span className="text-xs">(lyrics may not match)</span></span>
