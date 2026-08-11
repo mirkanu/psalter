@@ -1,0 +1,564 @@
+
+ RUN  v2.1.9 /home/services/psalter
+
+ ✓ scripts/annotate-phrase-breaks.test.ts (39 tests) 24ms
+ ✓ src/lib/lyrics.test.ts (66 tests) 43ms
+ ✓ src/lib/stanza-cycles.test.ts (27 tests) 64ms
+ ✓ src/lib/build-embedded-wline.test.ts (6 tests) 30ms
+stderr | src/lib/feedback-email.test.ts > sendFeedbackNotification > returns ok:false and does not throw when sendEmail resolves ok:false
+[feedback] notification email failed: Domain not verified
+
+stderr | src/lib/feedback-email.test.ts > sendFeedbackNotification > returns ok:false and does not throw when sendEmail rejects
+[feedback] notification email failed: ECONNREFUSED
+
+stderr | src/lib/feedback-email.test.ts > sendFeedbackNotification > resolves (never rejects) when sendEmail rejects
+[feedback] notification email failed: ECONNREFUSED
+
+ ✓ src/lib/feedback-email.test.ts (33 tests) 77ms
+ ❯ src/lib/abc-melisma.test.ts (11 tests | 2 failed) 51ms
+   × buildWLineFromSolfa > returns empty string for soprano with no events in requested phrase 11ms
+     → Invalid array length
+   × buildWLineFromSolfa > phrase 4 boundary survives passing notes in earlier phrases 12ms
+     → expected 14 to be 8 // Object.is equality
+ ✓ scripts/ocr-melisma-batch.test.ts (12 tests) 28ms
+stderr | src/lib/email.test.ts > sendEmail > resolves ok:false without throwing on an in-band SDK error
+[email] send failed: Domain not verified
+
+stderr | src/lib/email.test.ts > sendEmail > resolves ok:false without throwing when the SDK rejects
+[email] send failed: ECONNREFUSED
+
+stderr | src/lib/email.test.ts > sendEmail > never leaks the API key in the error string
+[email] send failed: Some SDK failure
+
+ ✓ src/lib/email.test.ts (17 tests) 46ms
+stderr | src/app/api/feedback/route.test.ts > POST /api/feedback > returns 500 and does not notify when the DB insert fails
+[feedback] DB insert failed: Error: db down
+    at Object.<anonymous> (/home/services/psalter/src/app/api/feedback/route.test.ts:87:13)
+    at Object.mockCall (file:///home/services/psalter/node_modules/@vitest/spy/dist/index.js:61:17)
+    at Object.spy [as values] (file:///home/services/psalter/node_modules/tinyspy/dist/index.js:45:80)
+    at Module.POST (/home/services/psalter/src/app/api/feedback/route.ts:57:42)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at /home/services/psalter/src/app/api/feedback/route.test.ts:89:17
+    at file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+stderr | src/app/api/feedback/route.test.ts > POST /api/feedback > still returns 200 and saves the row when the notification rejects
+[feedback] notification email threw: Error: boom
+    at Proxy.<anonymous> (/home/services/psalter/src/app/api/feedback/route.test.ts:107:13)
+    at Proxy.mockCall (file:///home/services/psalter/node_modules/@vitest/spy/dist/index.js:61:17)
+    at Proxy.spy (file:///home/services/psalter/node_modules/tinyspy/dist/index.js:45:80)
+    at Module.POST (/home/services/psalter/src/app/api/feedback/route.ts:63:8)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at /home/services/psalter/src/app/api/feedback/route.test.ts:109:17
+    at file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+ ✓ src/app/api/feedback/route.test.ts (14 tests) 71ms
+stderr | src/lib/rate-limit.test.ts > checkRateLimit > bounds the store to MAX_TRACKED_KEYS
+[rate-limit] key store full, cleared
+
+ ✓ src/lib/rate-limit.test.ts (23 tests) 52ms
+ ✓ tests/tune-backup-historical-data.test.ts (13 tests) 917ms
+   ✓ TUNE-03: per-tune historical stats > SUM(historical_usage_count) > 0 463ms
+stderr | src/lib/changelog-email.test.ts > sendChangelogBroadcastEmail > returns the result and does not throw when sendEmail resolves ok:false
+[changelog] broadcast email failed: Domain not verified
+
+stderr | src/lib/changelog-email.test.ts > sendChangelogBroadcastEmail > resolves ok:false and does not throw when sendEmail throws
+[changelog] broadcast email failed: boom
+
+ ✓ src/lib/changelog-email.test.ts (20 tests) 18ms
+ ✓ src/lib/lyrics-structured.test.ts (14 tests) 16ms
+stderr | src/app/api/changelog/route.test.ts > POST /api/changelog > returns 500 and never fires the broadcast when the insert throws
+[changelog] DB insert failed: Error: db down
+    at Object.<anonymous> (/home/services/psalter/src/app/api/changelog/route.test.ts:120:13)
+    at Object.mockCall (file:///home/services/psalter/node_modules/@vitest/spy/dist/index.js:61:17)
+    at Object.spy [as values] (file:///home/services/psalter/node_modules/tinyspy/dist/index.js:45:80)
+    at Module.POST (/home/services/psalter/src/app/api/changelog/route.ts:41:37)
+    at /home/services/psalter/src/app/api/changelog/route.test.ts:122:17
+    at file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1262:5)
+
+stderr | src/app/api/changelog/route.test.ts > POST /api/changelog > still returns 200 { ok: true } when broadcastToSubscribers rejects
+[changelog] broadcast threw: Error: mail down
+    at Proxy.<anonymous> (/home/services/psalter/src/app/api/changelog/route.test.ts:132:13)
+    at Proxy.mockCall (file:///home/services/psalter/node_modules/@vitest/spy/dist/index.js:61:17)
+    at Proxy.spy (file:///home/services/psalter/node_modules/tinyspy/dist/index.js:45:80)
+    at Module.POST (/home/services/psalter/src/app/api/changelog/route.ts:50:8)
+    at /home/services/psalter/src/app/api/changelog/route.test.ts:134:17
+    at file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1262:5)
+
+ ✓ src/app/api/changelog/route.test.ts (13 tests) 57ms
+ ✓ scripts/audit-phrase-breaks.test.ts (14 tests) 11ms
+ ✓ src/lib/abc-phrases.test.ts (18 tests) 15ms
+stderr | src/app/api/subscribe/route.test.ts > POST /api/subscribe > Test 11: a DB failure returns 500 with { error: "internal error" }
+[subscribe] DB insert failed: Error: db down
+    at Object.<anonymous> (/home/services/psalter/src/app/api/subscribe/route.test.ts:119:13)
+    at Object.mockCall (file:///home/services/psalter/node_modules/@vitest/spy/dist/index.js:61:17)
+    at Object.spy [as onConflictDoNothing] (file:///home/services/psalter/node_modules/tinyspy/dist/index.js:45:80)
+    at Module.POST (/home/services/psalter/src/app/api/subscribe/route.ts:49:8)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at /home/services/psalter/src/app/api/subscribe/route.test.ts:121:17
+    at file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+ ✓ src/app/api/subscribe/route.test.ts (11 tests) 55ms
+stderr | src/app/api/unsubscribe/route.test.ts > POST /api/unsubscribe > Test 9: a DB failure returns 500 with { error: "internal error" }
+[unsubscribe] DB delete failed: Error: db down
+    at Object.<anonymous> (/home/services/psalter/src/app/api/unsubscribe/route.test.ts:87:13)
+    at Object.mockCall (file:///home/services/psalter/node_modules/@vitest/spy/dist/index.js:61:17)
+    at Object.spy [as returning] (file:///home/services/psalter/node_modules/tinyspy/dist/index.js:45:80)
+    at Module.POST (/home/services/psalter/src/app/api/unsubscribe/route.ts:58:8)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at /home/services/psalter/src/app/api/unsubscribe/route.test.ts:89:17
+    at file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+ ✓ src/app/api/unsubscribe/route.test.ts (12 tests) 71ms
+stdout | src/lib/changelog-broadcast.test.ts > broadcastToSubscribers > calls sendChangelogBroadcastEmail exactly three times for three subscribers
+[changelog] broadcast complete: 3 sent, 0 failed
+
+stdout | src/lib/changelog-broadcast.test.ts > broadcastToSubscribers > sends each call with that subscriber own to and unsubscribeToken, no cross-contamination
+[changelog] broadcast complete: 3 sent, 0 failed
+
+stdout | src/lib/changelog-broadcast.test.ts > broadcastToSubscribers > sends each call with the post title and body unchanged
+[changelog] broadcast complete: 3 sent, 0 failed
+
+ ✓ src/lib/changelog-broadcast.test.ts (9 tests) 45ms
+stdout | src/lib/changelog-broadcast.test.ts > broadcastToSubscribers > sends strictly sequentially — no overlap between sends
+[changelog] broadcast complete: 3 sent, 0 failed
+
+stdout | src/lib/changelog-broadcast.test.ts > broadcastToSubscribers > continues to the third subscriber when the second send resolves ok:false, and reports sent/failed
+[changelog] broadcast complete: 2 sent, 1 failed
+
+stdout | src/lib/changelog-broadcast.test.ts > broadcastToSubscribers > continues to the third subscriber when the second send throws, and reports sent/failed
+[changelog] broadcast complete: 2 sent, 1 failed
+
+stderr | src/lib/changelog-broadcast.test.ts > broadcastToSubscribers > continues to the third subscriber when the second send throws, and reports sent/failed
+[changelog] broadcast send threw: network error
+
+stdout | src/lib/changelog-broadcast.test.ts > broadcastToSubscribers > with zero subscribers, attempts no send and returns sent:0 failed:0
+[changelog] broadcast complete: 0 sent, 0 failed
+
+stderr | src/lib/changelog-broadcast.test.ts > broadcastToSubscribers > resolves sent:0 failed:0 and does not throw when the subscriber SELECT throws
+[changelog] could not load subscribers: Error: db down
+    at Object.<anonymous> (/home/services/psalter/src/lib/changelog-broadcast.test.ts:99:13)
+    at Object.mockCall (file:///home/services/psalter/node_modules/@vitest/spy/dist/index.js:61:17)
+    at Object.spy [as from] (file:///home/services/psalter/node_modules/tinyspy/dist/index.js:45:80)
+    at Module.broadcastToSubscribers (/home/services/psalter/src/lib/changelog-broadcast.ts:39:8)
+    at /home/services/psalter/src/lib/changelog-broadcast.test.ts:101:27
+    at file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at runSuite (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+stdout | src/lib/changelog-broadcast.test.ts > broadcastToSubscribers > recipients come only from the DB — a to-like field on the post argument has no effect
+[changelog] broadcast complete: 3 sent, 0 failed
+
+ ❯ tests/psalm-23-crimond-regression.test.ts (7 tests | 1 failed) 25ms
+   × Psalm 23 + Crimond regression (D-16, RENDER-06) > Phase 4.9.7 Plan 03 — per-line inner-array shape AND cross-stanza alignment (RENDER-07b) 10ms
+     → expected '2He makes me down to lie' to match /^He makes/i
+ ✓ tests/explore.test.ts (9 tests) 2829ms
+   ✓ fetchNavesTopicsWithCounts > returns topics each with a psalm_count field 1884ms
+ ✓ src/lib/notation-renderer-props.test.ts (10 tests) 10ms
+ ✓ src/lib/abc-note-to-solfege.test.ts (96 tests) 32ms
+ ❯ tests/lib-utilities.test.ts (22 tests | 1 failed) 27ms
+   × lyrics helpers (TUNE-03) > syllabifyForAbc: single-syllable words are returned as-is 11ms
+     → expected 'Praise ye the Lord' to be 'prai- se ye the Lord' // Object.is equality
+ ✓ tests/tune-slug-routing.test.ts (20 tests) 218ms
+stderr | src/app/api/changelog/[id]/route.test.ts > PATCH /api/changelog/[id] > returns 500 when updateChangelogPost throws
+[changelog] DB update failed: Error: db down
+    at Proxy.<anonymous> (/home/services/psalter/src/app/api/changelog/[id]/route.test.ts:99:13)
+    at Proxy.mockCall (file:///home/services/psalter/node_modules/@vitest/spy/dist/index.js:61:17)
+    at Proxy.spy (file:///home/services/psalter/node_modules/tinyspy/dist/index.js:45:80)
+    at Module.PATCH (/home/services/psalter/src/app/api/changelog/[id]/route.ts:43:21)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at /home/services/psalter/src/app/api/changelog/[id]/route.test.ts:101:17
+    at file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:533:5
+    at runTest (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1056:11)
+    at runSuite (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///home/services/psalter/node_modules/@vitest/runner/dist/index.js:1205:15)
+
+ ✓ src/app/api/changelog/[id]/route.test.ts (10 tests) 35ms
+stderr | tests/tune-quality-phrase-count.test.ts > Tune-quality phrase-count (B5 / Open-Question-3 RESOLVED — option (b)) > every double_length=true tune has exactly 4 phrase breaks (or matches the documented offender baseline)
+Tune-quality phrase-count baseline drift:
+  NEW offenders (regression): 149, 163
+  FIXED offenders (update baseline + parse-failures.md): 38, 57, 136
+
+
+ ❯ tests/tune-quality-phrase-count.test.ts (3 tests | 2 failed) 97ms
+   × Tune-quality phrase-count (B5 / Open-Question-3 RESOLVED — option (b)) > every double_length=true tune has exactly 4 phrase breaks (or matches the documented offender baseline) 88ms
+     → expected { newOffenders: [ 149, 163 ], …(1) } to deeply equal { Object (newOffenders, fixedOffenders) }
+   × Tune-quality phrase-count (B5 / Open-Question-3 RESOLVED — option (b)) > every offender ID corresponds to a real double_length=true tune in the DB 6ms
+     → expected [ 38, 57, 136 ] to deeply equal []
+ ✓ src/lib/abc-edit-ops.test.ts (7 tests) 18ms
+ ✓ src/components/TuneTable.test.tsx (14 tests) 9ms
+ ✓ tests/change-tune-sort.test.ts (11 tests) 31ms
+ ✓ tests/psalm-version-tunes-primary.test.ts (4 tests) 155ms
+ ✓ src/lib/abc-phrase-meter-map.test.ts (26 tests) 15ms
+ ✓ src/components/tunes/TuneRowInlinePlayer.test.tsx (11 tests) 10ms
+ ❯ tests/tune-detail.test.ts (7 tests | 1 failed) 318ms
+   × Tune detail data shape (TUNE-01) > at least one tune has a score_jpg_url 34ms
+     → expected 0 to be greater than 0
+ ✓ tests/dcm-pairing.test.ts (5 tests) 15ms
+ ✓ src/lib/abc-soprano-tokens.test.ts (9 tests) 19ms
+ ✓ src/lib/notation-scale.test.ts (9 tests) 10ms
+ ✓ src/lib/inline-staff-gating.test.ts (13 tests) 8ms
+ ✓ scripts/parse-lyrics-structured.test.ts (1 test) 36ms
+ ✓ src/components/notation/__tests__/splitMusicIntoSubLines.test.ts (6 tests) 8ms
+ ✓ src/lib/ocr-melisma-v3.test.ts (5 tests) 21ms
+ ✓ src/lib/tune-jpg-urls.test.ts (5 tests) 17ms
+ ✓ src/lib/meter-abbrev.test.ts (22 tests) 13ms
+ ✓ src/lib/split-music-into-sublines.test.ts (8 tests) 9ms
+ ✓ src/lib/meter-syllable-shape.test.ts (12 tests) 17ms
+ ✓ tests/meter-mismatch.test.ts (9 tests) 134ms
+ ✓ src/db/queries/changelog.test.ts (4 tests) 119ms
+ ✓ src/lib/admin-auth.test.ts (4 tests) 15ms
+ ✓ src/lib/force-match-meter-shape.test.ts (7 tests) 11ms
+ ❯ tests/psalm-detail.test.ts (5 tests | 1 failed) 343ms
+   × Psalm detail data shape (PSALM-02..05) > PSALM-05: psalm 23 has at least one psalmVersion with lyrics and tune linkage 35ms
+     → expected { id: 35, …(9) } to have property "lyrics"
+ ✓ tests/daily-plan.test.ts (8 tests) 352ms
+ ✓ tests/amen-skip.test.ts (3 tests) 38ms
+ ✓ src/lib/detect-repeated-pitch-continuations.test.ts (7 tests) 7ms
+ ✓ src/lib/inject-phrase-breaks-at-counts.test.ts (6 tests) 7ms
+ ✓ src/lib/solfege-parser.test.ts (5 tests) 12ms
+ ✓ tests/db-queries.test.ts (5 tests) 267ms
+ ✓ src/lib/abc-embedded-w-branch.test.ts (5 tests) 9ms
+ ✓ tests/alternate-meter-alignment.test.ts (3 tests) 21ms
+ ✓ tests/solfege-parser-dotted-comma.test.ts (2 tests) 9ms
+ ✓ tests/search.test.ts (4 tests) 1761ms
+   ✓ fetchSearchResults > returns empty array for blank query without hitting DB 1140ms
+   ✓ fetchSearchResults > returns results containing Psalm 23 for query "shepherd" 441ms
+ ✓ src/lib/abc-embedded-lyrics.test.ts (7 tests) 7ms
+ ✓ tests/daily-calendar.test.ts (8 tests) 7ms
+ ✓ tests/tune-grid.test.ts (4 tests) 18ms
+ ✓ src/components/notation/__tests__/splitWLineByNoteCounts.test.ts (5 tests) 6ms
+ ✓ tests/auth/ownership.test.ts (5 tests) 7ms
+ ❯ src/app/api/precent/route.test.ts (3 tests | 3 failed) 137ms
+   × POST /api/precent > rejects missing date with 400 113ms
+     → `headers` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+   × POST /api/precent > rejects invalid type with 400 4ms
+     → `headers` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+   × POST /api/precent > accepts a valid set and returns an id 5ms
+     → `headers` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+ ❯ src/app/api/precent/[id]/reorder/route.test.ts (2 tests | 2 failed) 21ms
+   × POST /api/precent/[id]/reorder > rejects a non-array ids body with 400 18ms
+     → `headers` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+   × POST /api/precent/[id]/reorder > rejects ids containing non-numbers with 400 2ms
+     → `headers` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+ ❯ src/app/api/precent/[id]/items/route.test.ts (2 tests | 1 failed) 45ms
+   × POST /api/precent/[id]/items > rejects missing psalmId with 400 26ms
+     → `headers` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+ ✓ tests/auth/login.test.ts (4 tests | 3 skipped) 3ms
+ ✓ tests/auth/no-signup.test.ts (2 tests | 1 skipped) 5ms
+ ✓ src/components/PsalmListingGrid.test.tsx (19 tests) 1031ms
+stderr | src/components/ChangelogPostCard.test.tsx > ChangelogPostCard > editing > on a non-ok response shows "Couldn't save — please try again." and stays in edit mode
+[ChangelogPostCard] save failed: Error: server error
+    at handleSave (/home/services/psalter/src/components/ChangelogPostCard.tsx:55:26)
+
+ ✓ src/components/ChangelogPostCard.test.tsx (13 tests) 639ms
+stderr | src/components/ChangelogComposer.test.tsx > ChangelogComposer > on a non-ok response shows "Couldn't publish — please try again." and does not call router.refresh()
+[ChangelogComposer] publish failed: Error: server error
+    at handleSubmit (/home/services/psalter/src/components/ChangelogComposer.tsx:42:26)
+
+ ✓ src/components/ChangelogComposer.test.tsx (9 tests) 593ms
+   ✓ ChangelogComposer > renders a title input, a textarea, and a Publish post button for role 'admin' 308ms
+stderr | src/components/tune-picker/TieredTuneRowList.test.tsx > TieredTuneRowList > itemWrapper="fragment" emits no wrapper div
+In HTML, <p> cannot be a child of <tbody>.
+This will cause a hydration error.
+
+  <table>
+>   <tbody>
+      <TieredTuneRowList tunes={[...]} tuneTiers={{...}} itemWrapper="fragment" renderRow={function renderRow}>
+>       <p
+>         data-tune-tier-heading="backup"
+>         className="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+>       >
+        ...
+        ...
+
+<tbody> cannot contain a nested <p>.
+See this log for the ancestor stack trace.
+
+ ✓ src/components/tune-picker/TieredTuneRowList.test.tsx (10 tests) 205ms
+stderr | src/components/SubscribeForm.test.tsx > SubscribeForm > on a 429 the form stays and shows a wait-and-retry message; on any other non-ok status it shows the generic error
+[SubscribeForm] subscribe failed: Error: server error
+    at handleSubmit (/home/services/psalter/src/components/SubscribeForm.tsx:24:26)
+
+ ✓ src/components/SubscribeForm.test.tsx (6 tests) 519ms
+   ✓ SubscribeForm > renders an input[type=email][required] and a Subscribe to Updates button 335ms
+ ✓ src/components/singing/TuneSwitcherSheet.test.tsx (7 tests) 906ms
+   ✓ TuneSwitcherSheet > renders three tier headings in Backup → Historical → Other order 364ms
+stderr | src/components/UnsubscribeButton.test.tsx > UnsubscribeButton > on a 500 shows the retry copy and the button REMAINS
+[UnsubscribeButton] unsubscribe failed: Error: server error
+    at handleClick (/home/services/psalter/src/components/UnsubscribeButton.tsx:27:26)
+
+ ✓ src/components/UnsubscribeButton.test.tsx (7 tests) 650ms
+   ✓ UnsubscribeButton > renders a button labelled Unsubscribe and the masked email passed in 372ms
+ ✓ src/components/PsalmNumberBox.test.tsx (5 tests) 296ms
+ ✓ src/hooks/useSwipeGesture.test.ts (5 tests) 45ms
+ ✓ src/components/notation/StanzaList.test.tsx (5 tests) 472ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 14 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/lib-utilities.test.ts > lyrics helpers (TUNE-03) > syllabifyForAbc: single-syllable words are returned as-is
+AssertionError: expected 'Praise ye the Lord' to be 'prai- se ye the Lord' // Object.is equality
+
+Expected: "prai- se ye the Lord"
+Received: "Praise ye the Lord"
+
+ ❯ tests/lib-utilities.test.ts:85:51
+     83|     // Note: "Praise" is 2 syllables per nlp-syllables (["prai","se"]),
+     84|     // so the full phrase produces hyphens for Praise only
+     85|     expect(syllabifyForAbc('Praise ye the Lord')).toBe('prai- se ye th…
+       |                                                   ^
+     86|   })
+     87| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/14]⎯
+
+ FAIL  tests/psalm-23-crimond-regression.test.ts > Psalm 23 + Crimond regression (D-16, RENDER-06) > Phase 4.9.7 Plan 03 — per-line inner-array shape AND cross-stanza alignment (RENDER-07b)
+AssertionError: expected '2He makes me down to lie' to match /^He makes/i
+
+- Expected: 
+/^He makes/i
+
++ Received: 
+"2He makes me down to lie"
+
+ ❯ tests/psalm-23-crimond-regression.test.ts:86:25
+     84|     // (not bleeding into the next line which lives at grid[0][1]).
+     85|     expect(grid[0]![0]).toMatch(/want\.?$/i)
+     86|     expect(grid[0]![1]).toMatch(/^He makes/i)
+       |                         ^
+     87|     // grid[1] is the second phrase: lines 2-3 of the stanza ("In past…
+     88|     expect(grid[1]![0]).toMatch(/^In pas/i)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/14]⎯
+
+ FAIL  tests/psalm-detail.test.ts > Psalm detail data shape (PSALM-02..05) > PSALM-05: psalm 23 has at least one psalmVersion with lyrics and tune linkage
+AssertionError: expected { id: 35, …(9) } to have property "lyrics"
+ ❯ tests/psalm-detail.test.ts:18:15
+     16|     expect(psalm!.psalmVersions.length).toBeGreaterThanOrEqual(1)
+     17|     const v = psalm!.psalmVersions[0]
+     18|     expect(v).toHaveProperty('lyrics')
+       |               ^
+     19|     expect(v).toHaveProperty('psalmVersionTunes')
+     20|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/14]⎯
+
+ FAIL  tests/tune-detail.test.ts > Tune detail data shape (TUNE-01) > at least one tune has a score_jpg_url
+AssertionError: expected 0 to be greater than 0
+ ❯ tests/tune-detail.test.ts:30:30
+     28|     const tunes = await fetchAllTunes()
+     29|     const withScore = tunes.filter((t) => t.scoreJpgUrl)
+     30|     expect(withScore.length).toBeGreaterThan(0)
+       |                              ^
+     31|   })
+     32| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/14]⎯
+
+ FAIL  tests/tune-quality-phrase-count.test.ts > Tune-quality phrase-count (B5 / Open-Question-3 RESOLVED — option (b)) > every double_length=true tune has exactly 4 phrase breaks (or matches the documented offender baseline)
+AssertionError: expected { newOffenders: [ 149, 163 ], …(1) } to deeply equal { Object (newOffenders, fixedOffenders) }
+
+- Expected
++ Received
+
+  Object {
+-   "fixedOffenders": Array [],
+-   "newOffenders": Array [],
++   "fixedOffenders": Array [
++     38,
++     57,
++     136,
++   ],
++   "newOffenders": Array [
++     149,
++     163,
++   ],
+  }
+
+ ❯ tests/tune-quality-phrase-count.test.ts:63:46
+     61|     }
+     62| 
+     63|     expect({ newOffenders, fixedOffenders }).toEqual({ newOffenders: […
+       |                                              ^
+     64|   })
+     65| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/14]⎯
+
+ FAIL  tests/tune-quality-phrase-count.test.ts > Tune-quality phrase-count (B5 / Open-Question-3 RESOLVED — option (b)) > every offender ID corresponds to a real double_length=true tune in the DB
+AssertionError: expected [ 38, 57, 136 ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   38,
++   57,
++   136,
++ ]
+
+ ❯ tests/tune-quality-phrase-count.test.ts:78:21
+     76|     const liveDcmIds = new Set(rows.map((r) => r.id))
+     77|     const missing = [...EXPECTED_OFFENDER_IDS].filter((id) => !liveDcm…
+     78|     expect(missing).toEqual([])
+       |                     ^
+     79|   })
+     80| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/14]⎯
+
+ FAIL  src/lib/abc-melisma.test.ts > buildWLineFromSolfa > returns empty string for soprano with no events in requested phrase
+RangeError: Invalid array length
+ ❯ Module.buildWLineFromSolfa src/lib/abc-melisma.ts:197:26
+    195|   // Step 4: Duration heuristic — if syllabicCount > sylTokens.length,…
+    196|   // shortest notes as passing until counts balance
+    197|   let adjustedPassings = new Array(noteCount).fill(false) as boolean[]
+       |                          ^
+    198|   if (syllabicCount > sylTokens.length) {
+    199|     let surplus = syllabicCount - sylTokens.length
+ ❯ src/lib/abc-melisma.test.ts:119:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/14]⎯
+
+ FAIL  src/lib/abc-melisma.test.ts > buildWLineFromSolfa > phrase 4 boundary survives passing notes in earlier phrases
+AssertionError: expected 14 to be 8 // Object.is equality
+
+- Expected
++ Received
+
+- 8
++ 14
+
+ ❯ src/lib/abc-melisma.test.ts:138:27
+    136|     const tokens = result.split(/\s+/).filter(Boolean)
+    137|     // New code: phrase 3 = 8 notes exactly (8 syllabic, 0 passing)
+    138|     expect(tokens.length).toBe(8)
+       |                           ^
+    139|   })
+    140| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/14]⎯
+
+ FAIL  src/app/api/precent/route.test.ts > POST /api/precent > rejects missing date with 400
+Error: `headers` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+ ❯ throwForMissingRequestStore node_modules/next/src/server/app-render/work-unit-async-storage.external.ts:415:9
+ ❯ Proxy.headers node_modules/next/src/server/request/headers.ts:168:30
+ ❯ Module.getSessionOr401 src/lib/precent-auth.ts:22:63
+     20|   { session: Session; res: null } | { session: null; res: NextResponse…
+     21| > {
+     22|   const session = (await auth.api.getSession({ headers: await headers(…
+       |                                                               ^
+     23|   if (!session) {
+     24|     return { session: null, res: NextResponse.json({ error: 'Unauthori…
+ ❯ Module.POST src/app/api/precent/route.ts:25:34
+ ❯ src/app/api/precent/route.test.ts:15:23
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/14]⎯
+
+ FAIL  src/app/api/precent/route.test.ts > POST /api/precent > rejects invalid type with 400
+Error: `headers` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+ ❯ throwForMissingRequestStore node_modules/next/src/server/app-render/work-unit-async-storage.external.ts:415:9
+ ❯ Proxy.headers node_modules/next/src/server/request/headers.ts:168:30
+ ❯ Module.getSessionOr401 src/lib/precent-auth.ts:22:63
+     20|   { session: Session; res: null } | { session: null; res: NextResponse…
+     21| > {
+     22|   const session = (await auth.api.getSession({ headers: await headers(…
+       |                                                               ^
+     23|   if (!session) {
+     24|     return { session: null, res: NextResponse.json({ error: 'Unauthori…
+ ❯ Module.POST src/app/api/precent/route.ts:25:34
+ ❯ src/app/api/precent/route.test.ts:19:23
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/14]⎯
+
+ FAIL  src/app/api/precent/route.test.ts > POST /api/precent > accepts a valid set and returns an id
+Error: `headers` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+ ❯ throwForMissingRequestStore node_modules/next/src/server/app-render/work-unit-async-storage.external.ts:415:9
+ ❯ Proxy.headers node_modules/next/src/server/request/headers.ts:168:30
+ ❯ Module.getSessionOr401 src/lib/precent-auth.ts:22:63
+     20|   { session: Session; res: null } | { session: null; res: NextResponse…
+     21| > {
+     22|   const session = (await auth.api.getSession({ headers: await headers(…
+       |                                                               ^
+     23|   if (!session) {
+     24|     return { session: null, res: NextResponse.json({ error: 'Unauthori…
+ ❯ Module.POST src/app/api/precent/route.ts:25:34
+ ❯ src/app/api/precent/route.test.ts:23:23
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/14]⎯
+
+ FAIL  src/app/api/precent/[id]/items/route.test.ts > POST /api/precent/[id]/items > rejects missing psalmId with 400
+Error: `headers` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+ ❯ throwForMissingRequestStore node_modules/next/src/server/app-render/work-unit-async-storage.external.ts:415:9
+ ❯ Proxy.headers node_modules/next/src/server/request/headers.ts:168:30
+ ❯ Module.getSessionOr401 src/lib/precent-auth.ts:22:63
+     20|   { session: Session; res: null } | { session: null; res: NextResponse…
+     21| > {
+     22|   const session = (await auth.api.getSession({ headers: await headers(…
+       |                                                               ^
+     23|   if (!session) {
+     24|     return { session: null, res: NextResponse.json({ error: 'Unauthori…
+ ❯ Module.POST src/app/api/precent/[id]/items/route.ts:19:43
+ ❯ src/app/api/precent/[id]/items/route.test.ts:15:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/14]⎯
+
+ FAIL  src/app/api/precent/[id]/reorder/route.test.ts > POST /api/precent/[id]/reorder > rejects a non-array ids body with 400
+Error: `headers` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+ ❯ throwForMissingRequestStore node_modules/next/src/server/app-render/work-unit-async-storage.external.ts:415:9
+ ❯ Proxy.headers node_modules/next/src/server/request/headers.ts:168:30
+ ❯ Module.getSessionOr401 src/lib/precent-auth.ts:22:63
+     20|   { session: Session; res: null } | { session: null; res: NextResponse…
+     21| > {
+     22|   const session = (await auth.api.getSession({ headers: await headers(…
+       |                                                               ^
+     23|   if (!session) {
+     24|     return { session: null, res: NextResponse.json({ error: 'Unauthori…
+ ❯ Module.POST src/app/api/precent/[id]/reorder/route.ts:19:43
+ ❯ src/app/api/precent/[id]/reorder/route.test.ts:15:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/14]⎯
+
+ FAIL  src/app/api/precent/[id]/reorder/route.test.ts > POST /api/precent/[id]/reorder > rejects ids containing non-numbers with 400
+Error: `headers` was called outside a request scope. Read more: https://nextjs.org/docs/messages/next-dynamic-api-wrong-context
+ ❯ throwForMissingRequestStore node_modules/next/src/server/app-render/work-unit-async-storage.external.ts:415:9
+ ❯ Proxy.headers node_modules/next/src/server/request/headers.ts:168:30
+ ❯ Module.getSessionOr401 src/lib/precent-auth.ts:22:63
+     20|   { session: Session; res: null } | { session: null; res: NextResponse…
+     21| > {
+     22|   const session = (await auth.api.getSession({ headers: await headers(…
+       |                                                               ^
+     23|   if (!session) {
+     24|     return { session: null, res: NextResponse.json({ error: 'Unauthori…
+ ❯ Module.POST src/app/api/precent/[id]/reorder/route.ts:19:43
+ ❯ src/app/api/precent/[id]/reorder/route.test.ts:19:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/14]⎯
+
+ Test Files  9 failed | 71 passed (80)
+      Tests  14 failed | 911 passed | 4 todo (929)
+   Start at  08:51:51
+   Duration  124.31s (transform 3.91s, setup 0ms, collect 54.43s, tests 14.41s, environment 20.92s, prepare 10.92s)
+

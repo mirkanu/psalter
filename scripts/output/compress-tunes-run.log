@@ -1,0 +1,26 @@
+Backup pre-flight OK: 28a83a7d0497db7353d7919293004b07533144a26f62a7a3fb899482e5b714a9
+[25/328] rss=323MB
+[50/328] rss=324MB
+[75/328] rss=310MB
+[100/328] rss=313MB
+[125/328] rss=282MB
+[150/328] rss=284MB
+[175/328] rss=284MB
+[200/328] rss=284MB
+[225/328] rss=284MB
+[250/328] rss=284MB
+[275/328] rss=283MB
+[300/328] rss=275MB
+[325/328] rss=258MB
+Source dir:        /home/services/psalter/public/tunes
+Out dir:           /home/services/psalter/public/tunes-compressed
+Quality:           82
+Width:             2000
+Files processed:   328
+JPEGs re-encoded:  320
+Files copied:      8
+Total bytes before:1489381619
+Total bytes after: 131097725
+Reduction:         91.2%
+Did not shrink:    0
+COMPRESSION_COMPLETE

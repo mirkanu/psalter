@@ -1,0 +1,1649 @@
+=== Tune Image Compression Verification ===
+Original dir:  /home/services/psalter/public/tunes
+Compressed dir: /home/services/psalter/public/tunes-compressed
+Width bound:    2000
+
+-- A. Set-level checks --
+  + entry count: original=328, compressed=328
+  + no entries missing from compressed set
+  + no unexpected entries in compressed set
+
+-- B. Per-file checks --
+  + .gitignore: copied byte-identical (size 184)
+  + .gitignore: copied byte-identical (sha256)
+  + .gitkeep: copied byte-identical (size 0)
+  + .gitkeep: copied byte-identical (sha256)
+  + abbeyville-solfege-0.jpg: 1248259 -> 277512 bytes (smaller)
+  + abbeyville-solfege-0.jpg: format=jpeg
+  + abbeyville-solfege-0.jpg: decodes (2000x1500)
+  + abbeyville-solfege-0.jpg: width 2000 <= 2000
+  + abbeyville-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + abbeyville-staff-0.jpg: 6811320 -> 611899 bytes (smaller)
+  + abbeyville-staff-0.jpg: format=jpeg
+  + abbeyville-staff-0.jpg: decodes (2000x1500)
+  + abbeyville-staff-0.jpg: width 2000 <= 2000
+  + abbeyville-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + agawam-solfege-0.jpg: 4337812 -> 262563 bytes (smaller)
+  + agawam-solfege-0.jpg: format=jpeg
+  + agawam-solfege-0.jpg: decodes (2000x1500)
+  + agawam-solfege-0.jpg: width 2000 <= 2000
+  + agawam-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + agawam-staff-0.jpg: 7266448 -> 676565 bytes (smaller)
+  + agawam-staff-0.jpg: format=jpeg
+  + agawam-staff-0.jpg: decodes (2000x1500)
+  + agawam-staff-0.jpg: width 2000 <= 2000
+  + agawam-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + alexander-written-by-brian-crossett-staff-0.jpg: 174585 -> 54873 bytes (smaller)
+  + alexander-written-by-brian-crossett-staff-0.jpg: format=jpeg
+  + alexander-written-by-brian-crossett-staff-0.jpg: decodes (1170x930)
+  + alexander-written-by-brian-crossett-staff-0.jpg: width 1170 <= 2000
+  + alexander-written-by-brian-crossett-staff-0.jpg: aspect ratio preserved (orig 1170x930, comp 1170x930)
+  + argyle-solfege-0.jpg: 4589228 -> 304070 bytes (smaller)
+  + argyle-solfege-0.jpg: format=jpeg
+  + argyle-solfege-0.jpg: decodes (2000x1500)
+  + argyle-solfege-0.jpg: width 2000 <= 2000
+  + argyle-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + argyle-staff-0.jpg: 6966514 -> 631431 bytes (smaller)
+  + argyle-staff-0.jpg: format=jpeg
+  + argyle-staff-0.jpg: decodes (2000x1500)
+  + argyle-staff-0.jpg: width 2000 <= 2000
+  + argyle-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + arnold-solfege-0.jpg: 1528094 -> 370323 bytes (smaller)
+  + arnold-solfege-0.jpg: format=jpeg
+  + arnold-solfege-0.jpg: decodes (2000x1500)
+  + arnold-solfege-0.jpg: width 2000 <= 2000
+  + arnold-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + arnold-staff-0.jpg: 6147084 -> 509293 bytes (smaller)
+  + arnold-staff-0.jpg: format=jpeg
+  + arnold-staff-0.jpg: decodes (2000x1500)
+  + arnold-staff-0.jpg: width 2000 <= 2000
+  + arnold-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + artaxerxes-epc-tune-solfege-0.jpg: 4472523 -> 280646 bytes (smaller)
+  + artaxerxes-epc-tune-solfege-0.jpg: format=jpeg
+  + artaxerxes-epc-tune-solfege-0.jpg: decodes (2000x1500)
+  + artaxerxes-epc-tune-solfege-0.jpg: width 2000 <= 2000
+  + artaxerxes-epc-tune-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + artaxerxes-epc-tune-staff-0.jpg: 7168213 -> 658964 bytes (smaller)
+  + artaxerxes-epc-tune-staff-0.jpg: format=jpeg
+  + artaxerxes-epc-tune-staff-0.jpg: decodes (2000x1500)
+  + artaxerxes-epc-tune-staff-0.jpg: width 2000 <= 2000
+  + artaxerxes-epc-tune-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + aspurg-solfege-0.jpg: 4464310 -> 283968 bytes (smaller)
+  + aspurg-solfege-0.jpg: format=jpeg
+  + aspurg-solfege-0.jpg: decodes (2000x1500)
+  + aspurg-solfege-0.jpg: width 2000 <= 2000
+  + aspurg-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + aspurg-staff-0.jpg: 6207197 -> 534422 bytes (smaller)
+  + aspurg-staff-0.jpg: format=jpeg
+  + aspurg-staff-0.jpg: decodes (2000x1500)
+  + aspurg-staff-0.jpg: width 2000 <= 2000
+  + aspurg-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + aurelia-solfege-0.jpg: 1258117 -> 292435 bytes (smaller)
+  + aurelia-solfege-0.jpg: format=jpeg
+  + aurelia-solfege-0.jpg: decodes (2000x1500)
+  + aurelia-solfege-0.jpg: width 2000 <= 2000
+  + aurelia-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + aurelia-solfege-1.jpg: 1518182 -> 385748 bytes (smaller)
+  + aurelia-solfege-1.jpg: format=jpeg
+  + aurelia-solfege-1.jpg: decodes (2000x1500)
+  + aurelia-solfege-1.jpg: width 2000 <= 2000
+  + aurelia-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + aurelia-staff-0.jpg: 5870024 -> 495912 bytes (smaller)
+  + aurelia-staff-0.jpg: format=jpeg
+  + aurelia-staff-0.jpg: decodes (2000x1500)
+  + aurelia-staff-0.jpg: width 2000 <= 2000
+  + aurelia-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + aurelia-staff-1.jpg: 6208200 -> 521171 bytes (smaller)
+  + aurelia-staff-1.jpg: format=jpeg
+  + aurelia-staff-1.jpg: decodes (2000x1500)
+  + aurelia-staff-1.jpg: width 2000 <= 2000
+  + aurelia-staff-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + azmon-denfield-solfege-0.jpg: 4936447 -> 336166 bytes (smaller)
+  + azmon-denfield-solfege-0.jpg: format=jpeg
+  + azmon-denfield-solfege-0.jpg: decodes (2000x1500)
+  + azmon-denfield-solfege-0.jpg: width 2000 <= 2000
+  + azmon-denfield-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + azmon-denfield-staff-0.jpg: 6798993 -> 598034 bytes (smaller)
+  + azmon-denfield-staff-0.jpg: format=jpeg
+  + azmon-denfield-staff-0.jpg: decodes (2000x1500)
+  + azmon-denfield-staff-0.jpg: width 2000 <= 2000
+  + azmon-denfield-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + ballerma-start-high-solfege-0.jpg: 536611 -> 193649 bytes (smaller)
+  + ballerma-start-high-solfege-0.jpg: format=jpeg
+  + ballerma-start-high-solfege-0.jpg: decodes (2000x1136)
+  + ballerma-start-high-solfege-0.jpg: width 2000 <= 2000
+  + ballerma-start-high-solfege-0.jpg: aspect ratio preserved (orig 3188x1810, comp 2000x1136)
+  + ballerma-start-high-staff-0.jpg: 6614646 -> 562986 bytes (smaller)
+  + ballerma-start-high-staff-0.jpg: format=jpeg
+  + ballerma-start-high-staff-0.jpg: decodes (2000x1500)
+  + ballerma-start-high-staff-0.jpg: width 2000 <= 2000
+  + ballerma-start-high-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + bangor-solfege-0.jpg: 4552328 -> 299044 bytes (smaller)
+  + bangor-solfege-0.jpg: format=jpeg
+  + bangor-solfege-0.jpg: decodes (2000x1500)
+  + bangor-solfege-0.jpg: width 2000 <= 2000
+  + bangor-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + bangor-staff-0.jpg: 6006245 -> 501076 bytes (smaller)
+  + bangor-staff-0.jpg: format=jpeg
+  + bangor-staff-0.jpg: decodes (2000x1500)
+  + bangor-staff-0.jpg: width 2000 <= 2000
+  + bangor-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + bays-of-harris-solfege-0.jpg: 5391764 -> 368214 bytes (smaller)
+  + bays-of-harris-solfege-0.jpg: format=jpeg
+  + bays-of-harris-solfege-0.jpg: decodes (2000x1500)
+  + bays-of-harris-solfege-0.jpg: width 2000 <= 2000
+  + bays-of-harris-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + bays-of-harris-staff-0.jpg: 5707200 -> 423428 bytes (smaller)
+  + bays-of-harris-staff-0.jpg: format=jpeg
+  + bays-of-harris-staff-0.jpg: decodes (2000x1500)
+  + bays-of-harris-staff-0.jpg: width 2000 <= 2000
+  + bays-of-harris-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + beatitudo-solfege-0.jpg: 4412690 -> 283076 bytes (smaller)
+  + beatitudo-solfege-0.jpg: format=jpeg
+  + beatitudo-solfege-0.jpg: decodes (2000x1500)
+  + beatitudo-solfege-0.jpg: width 2000 <= 2000
+  + beatitudo-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + beatitudo-staff-0.jpg: 7525326 -> 709085 bytes (smaller)
+  + beatitudo-staff-0.jpg: format=jpeg
+  + beatitudo-staff-0.jpg: decodes (2000x1500)
+  + beatitudo-staff-0.jpg: width 2000 <= 2000
+  + beatitudo-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + belgrave-solfege-0.jpg: 4437043 -> 295470 bytes (smaller)
+  + belgrave-solfege-0.jpg: format=jpeg
+  + belgrave-solfege-0.jpg: decodes (2000x1500)
+  + belgrave-solfege-0.jpg: width 2000 <= 2000
+  + belgrave-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + belmont-solfege-0.jpg: 1758532 -> 446183 bytes (smaller)
+  + belmont-solfege-0.jpg: format=jpeg
+  + belmont-solfege-0.jpg: decodes (2000x1500)
+  + belmont-solfege-0.jpg: width 2000 <= 2000
+  + belmont-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + belmont-staff-0.jpg: 6075748 -> 516556 bytes (smaller)
+  + belmont-staff-0.jpg: format=jpeg
+  + belmont-staff-0.jpg: decodes (2000x1500)
+  + belmont-staff-0.jpg: width 2000 <= 2000
+  + belmont-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + bishopthorpe-solfege-0.jpg: 4676349 -> 320572 bytes (smaller)
+  + bishopthorpe-solfege-0.jpg: format=jpeg
+  + bishopthorpe-solfege-0.jpg: decodes (2000x1500)
+  + bishopthorpe-solfege-0.jpg: width 2000 <= 2000
+  + bishopthorpe-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + bishopthorpe-staff-0.jpg: 6516515 -> 555329 bytes (smaller)
+  + bishopthorpe-staff-0.jpg: format=jpeg
+  + bishopthorpe-staff-0.jpg: decodes (2000x1500)
+  + bishopthorpe-staff-0.jpg: width 2000 <= 2000
+  + bishopthorpe-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + boston-solfege-0.jpg: 4520258 -> 293743 bytes (smaller)
+  + boston-solfege-0.jpg: format=jpeg
+  + boston-solfege-0.jpg: decodes (2000x1500)
+  + boston-solfege-0.jpg: width 2000 <= 2000
+  + boston-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + boston-staff-0.jpg: 6580933 -> 582179 bytes (smaller)
+  + boston-staff-0.jpg: format=jpeg
+  + boston-staff-0.jpg: decodes (2000x1500)
+  + boston-staff-0.jpg: width 2000 <= 2000
+  + boston-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + boswell-solfege-0.jpg: 5413187 -> 355226 bytes (smaller)
+  + boswell-solfege-0.jpg: format=jpeg
+  + boswell-solfege-0.jpg: decodes (2000x1500)
+  + boswell-solfege-0.jpg: width 2000 <= 2000
+  + boswell-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + boswell-staff-0.jpg: 7431915 -> 695770 bytes (smaller)
+  + boswell-staff-0.jpg: format=jpeg
+  + boswell-staff-0.jpg: decodes (2000x1500)
+  + boswell-staff-0.jpg: width 2000 <= 2000
+  + boswell-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + carlisle-solfege-0.jpg: 4487140 -> 279884 bytes (smaller)
+  + carlisle-solfege-0.jpg: format=jpeg
+  + carlisle-solfege-0.jpg: decodes (2000x1500)
+  + carlisle-solfege-0.jpg: width 2000 <= 2000
+  + carlisle-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + carlisle-staff-0.jpg: 6729994 -> 589406 bytes (smaller)
+  + carlisle-staff-0.jpg: format=jpeg
+  + carlisle-staff-0.jpg: decodes (2000x1500)
+  + carlisle-staff-0.jpg: width 2000 <= 2000
+  + carlisle-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + cheshire-lrf-solfege-0.jpg: 4600902 -> 305776 bytes (smaller)
+  + cheshire-lrf-solfege-0.jpg: format=jpeg
+  + cheshire-lrf-solfege-0.jpg: decodes (2000x1500)
+  + cheshire-lrf-solfege-0.jpg: width 2000 <= 2000
+  + cheshire-lrf-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + cheshire-lrf-staff-0.jpg: 6106517 -> 512782 bytes (smaller)
+  + cheshire-lrf-staff-0.jpg: format=jpeg
+  + cheshire-lrf-staff-0.jpg: decodes (2000x1500)
+  + cheshire-lrf-staff-0.jpg: width 2000 <= 2000
+  + cheshire-lrf-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + clarkeville-solfege-0.jpg: 4382089 -> 259826 bytes (smaller)
+  + clarkeville-solfege-0.jpg: format=jpeg
+  + clarkeville-solfege-0.jpg: decodes (2000x1500)
+  + clarkeville-solfege-0.jpg: width 2000 <= 2000
+  + clarkeville-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + clarkeville-solfege-1.jpg: 4400791 -> 257575 bytes (smaller)
+  + clarkeville-solfege-1.jpg: format=jpeg
+  + clarkeville-solfege-1.jpg: decodes (2000x1500)
+  + clarkeville-solfege-1.jpg: width 2000 <= 2000
+  + clarkeville-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + clarkeville-staff-0.jpg: 5884378 -> 467629 bytes (smaller)
+  + clarkeville-staff-0.jpg: format=jpeg
+  + clarkeville-staff-0.jpg: decodes (2000x1500)
+  + clarkeville-staff-0.jpg: width 2000 <= 2000
+  + clarkeville-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + clarkeville-staff-1.jpg: 5496614 -> 405227 bytes (smaller)
+  + clarkeville-staff-1.jpg: format=jpeg
+  + clarkeville-staff-1.jpg: decodes (2000x1500)
+  + clarkeville-staff-1.jpg: width 2000 <= 2000
+  + clarkeville-staff-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + cleansing-fountain-staff-0.jpg: 418116 -> 130735 bytes (smaller)
+  + cleansing-fountain-staff-0.jpg: format=jpeg
+  + cleansing-fountain-staff-0.jpg: decodes (1170x1644)
+  + cleansing-fountain-staff-0.jpg: width 1170 <= 2000
+  + cleansing-fountain-staff-0.jpg: aspect ratio preserved (orig 1170x1644, comp 1170x1644)
+  + coleshill-solfege-0.jpg: 4773202 -> 304532 bytes (smaller)
+  + coleshill-solfege-0.jpg: format=jpeg
+  + coleshill-solfege-0.jpg: decodes (2000x1500)
+  + coleshill-solfege-0.jpg: width 2000 <= 2000
+  + coleshill-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + comfort-solfege-0.jpg: 4693708 -> 315037 bytes (smaller)
+  + comfort-solfege-0.jpg: format=jpeg
+  + comfort-solfege-0.jpg: decodes (2000x1500)
+  + comfort-solfege-0.jpg: width 2000 <= 2000
+  + comfort-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + communion-solfege-0.jpg: 3873156 -> 217724 bytes (smaller)
+  + communion-solfege-0.jpg: format=jpeg
+  + communion-solfege-0.jpg: decodes (2000x1500)
+  + communion-solfege-0.jpg: width 2000 <= 2000
+  + communion-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  [progress 50/328 (from original)] rss=88MB
+  + communion-solfege-1.jpg: 3941479 -> 229749 bytes (smaller)
+  + communion-solfege-1.jpg: format=jpeg
+  + communion-solfege-1.jpg: decodes (2000x1500)
+  + communion-solfege-1.jpg: width 2000 <= 2000
+  + communion-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + communion-staff-0.jpg: 6384224 -> 538107 bytes (smaller)
+  + communion-staff-0.jpg: format=jpeg
+  + communion-staff-0.jpg: decodes (2000x1500)
+  + communion-staff-0.jpg: width 2000 <= 2000
+  + communion-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + communion-staff-1.jpg: 7108841 -> 645731 bytes (smaller)
+  + communion-staff-1.jpg: format=jpeg
+  + communion-staff-1.jpg: decodes (2000x1500)
+  + communion-staff-1.jpg: width 2000 <= 2000
+  + communion-staff-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + consolation-solfege-0.jpg: 4553774 -> 304793 bytes (smaller)
+  + consolation-solfege-0.jpg: format=jpeg
+  + consolation-solfege-0.jpg: decodes (2000x1500)
+  + consolation-solfege-0.jpg: width 2000 <= 2000
+  + consolation-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + consolation-staff-0.jpg: 6030708 -> 527962 bytes (smaller)
+  + consolation-staff-0.jpg: format=jpeg
+  + consolation-staff-0.jpg: decodes (2000x1500)
+  + consolation-staff-0.jpg: width 2000 <= 2000
+  + consolation-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + contemplation-solfege-0.jpg: 1484639 -> 337600 bytes (smaller)
+  + contemplation-solfege-0.jpg: format=jpeg
+  + contemplation-solfege-0.jpg: decodes (2000x1500)
+  + contemplation-solfege-0.jpg: width 2000 <= 2000
+  + contemplation-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + contemplation-staff-0.jpg: 6817657 -> 611730 bytes (smaller)
+  + contemplation-staff-0.jpg: format=jpeg
+  + contemplation-staff-0.jpg: decodes (2000x1500)
+  + contemplation-staff-0.jpg: width 2000 <= 2000
+  + contemplation-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + corona-solfege-0.jpg: 4250679 -> 267988 bytes (smaller)
+  + corona-solfege-0.jpg: format=jpeg
+  + corona-solfege-0.jpg: decodes (2000x1500)
+  + corona-solfege-0.jpg: width 2000 <= 2000
+  + corona-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + crediton-solfege-0.jpg: 1152052 -> 258267 bytes (smaller)
+  + crediton-solfege-0.jpg: format=jpeg
+  + crediton-solfege-0.jpg: decodes (2000x1500)
+  + crediton-solfege-0.jpg: width 2000 <= 2000
+  + crediton-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + crediton-staff-0.jpg: 6299810 -> 507925 bytes (smaller)
+  + crediton-staff-0.jpg: format=jpeg
+  + crediton-staff-0.jpg: decodes (2000x1500)
+  + crediton-staff-0.jpg: width 2000 <= 2000
+  + crediton-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + crimond-solfege-0.jpg: 1393906 -> 312876 bytes (smaller)
+  + crimond-solfege-0.jpg: format=jpeg
+  + crimond-solfege-0.jpg: decodes (2000x1500)
+  + crimond-solfege-0.jpg: width 2000 <= 2000
+  + crimond-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + crimond-staff-0.jpg: 6448595 -> 548671 bytes (smaller)
+  + crimond-staff-0.jpg: format=jpeg
+  + crimond-staff-0.jpg: decodes (2000x1500)
+  + crimond-staff-0.jpg: width 2000 <= 2000
+  + crimond-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + culross-solfege-0.jpg: 1272599 -> 278229 bytes (smaller)
+  + culross-solfege-0.jpg: format=jpeg
+  + culross-solfege-0.jpg: decodes (2000x1500)
+  + culross-solfege-0.jpg: width 2000 <= 2000
+  + culross-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + culross-staff-0.jpg: 6612530 -> 572662 bytes (smaller)
+  + culross-staff-0.jpg: format=jpeg
+  + culross-staff-0.jpg: decodes (2000x1500)
+  + culross-staff-0.jpg: width 2000 <= 2000
+  + culross-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + darwall-solfege-0.jpg: 5196797 -> 316644 bytes (smaller)
+  + darwall-solfege-0.jpg: format=jpeg
+  + darwall-solfege-0.jpg: decodes (2000x1500)
+  + darwall-solfege-0.jpg: width 2000 <= 2000
+  + darwall-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + darwall-solfege-1.jpg: 4858945 -> 297842 bytes (smaller)
+  + darwall-solfege-1.jpg: format=jpeg
+  + darwall-solfege-1.jpg: decodes (2000x1500)
+  + darwall-solfege-1.jpg: width 2000 <= 2000
+  + darwall-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + darwall-staff-0.jpg: 5224430 -> 367392 bytes (smaller)
+  + darwall-staff-0.jpg: format=jpeg
+  + darwall-staff-0.jpg: decodes (2000x1500)
+  + darwall-staff-0.jpg: width 2000 <= 2000
+  + darwall-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + darwall-staff-1.jpg: 5132958 -> 345425 bytes (smaller)
+  + darwall-staff-1.jpg: format=jpeg
+  + darwall-staff-1.jpg: decodes (2000x1500)
+  + darwall-staff-1.jpg: width 2000 <= 2000
+  + darwall-staff-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + dennis-solfege-0.jpg: 4505046 -> 294653 bytes (smaller)
+  + dennis-solfege-0.jpg: format=jpeg
+  + dennis-solfege-0.jpg: decodes (2000x1500)
+  + dennis-solfege-0.jpg: width 2000 <= 2000
+  + dennis-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + dennis-staff-0.jpg: 6391740 -> 543506 bytes (smaller)
+  + dennis-staff-0.jpg: format=jpeg
+  + dennis-staff-0.jpg: decodes (2000x1500)
+  + dennis-staff-0.jpg: width 2000 <= 2000
+  + dennis-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + desert-dont-sing-solfege-0.jpg: 4454002 -> 281260 bytes (smaller)
+  + desert-dont-sing-solfege-0.jpg: format=jpeg
+  + desert-dont-sing-solfege-0.jpg: decodes (2000x1500)
+  + desert-dont-sing-solfege-0.jpg: width 2000 <= 2000
+  + desert-dont-sing-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + desert-dont-sing-solfege-1.jpg: 4477778 -> 277908 bytes (smaller)
+  + desert-dont-sing-solfege-1.jpg: format=jpeg
+  + desert-dont-sing-solfege-1.jpg: decodes (2000x1500)
+  + desert-dont-sing-solfege-1.jpg: width 2000 <= 2000
+  + desert-dont-sing-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + desert-dont-sing-staff-0.jpg: 6255255 -> 515554 bytes (smaller)
+  + desert-dont-sing-staff-0.jpg: format=jpeg
+  + desert-dont-sing-staff-0.jpg: decodes (2000x1500)
+  + desert-dont-sing-staff-0.jpg: width 2000 <= 2000
+  + desert-dont-sing-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + desert-dont-sing-staff-1.jpg: 5910164 -> 483400 bytes (smaller)
+  + desert-dont-sing-staff-1.jpg: format=jpeg
+  + desert-dont-sing-staff-1.jpg: decodes (2000x1500)
+  + desert-dont-sing-staff-1.jpg: width 2000 <= 2000
+  + desert-dont-sing-staff-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + diademata-staff-0.png: copied byte-identical (size 12307)
+  + diademata-staff-0.png: copied byte-identical (sha256)
+  + duke-street-solfege-0.jpg: 1208302 -> 258047 bytes (smaller)
+  + duke-street-solfege-0.jpg: format=jpeg
+  + duke-street-solfege-0.jpg: decodes (2000x1500)
+  + duke-street-solfege-0.jpg: width 2000 <= 2000
+  + duke-street-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + duke-street-staff-0.jpg: 6849540 -> 636311 bytes (smaller)
+  + duke-street-staff-0.jpg: format=jpeg
+  + duke-street-staff-0.jpg: decodes (2000x1500)
+  + duke-street-staff-0.jpg: width 2000 <= 2000
+  + duke-street-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + dundee-solfege-0.jpg: 1549962 -> 345921 bytes (smaller)
+  + dundee-solfege-0.jpg: format=jpeg
+  + dundee-solfege-0.jpg: decodes (2000x1500)
+  + dundee-solfege-0.jpg: width 2000 <= 2000
+  + dundee-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + dundee-staff-0.jpg: 5851467 -> 484185 bytes (smaller)
+  + dundee-staff-0.jpg: format=jpeg
+  + dundee-staff-0.jpg: decodes (2000x1500)
+  + dundee-staff-0.jpg: width 2000 <= 2000
+  + dundee-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + dunfermline-solfege-0.jpg: 1691271 -> 402852 bytes (smaller)
+  + dunfermline-solfege-0.jpg: format=jpeg
+  + dunfermline-solfege-0.jpg: decodes (2000x1500)
+  + dunfermline-solfege-0.jpg: width 2000 <= 2000
+  + dunfermline-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + dunfermline-staff-0.jpg: 6527047 -> 554294 bytes (smaller)
+  + dunfermline-staff-0.jpg: format=jpeg
+  + dunfermline-staff-0.jpg: decodes (2000x1500)
+  + dunfermline-staff-0.jpg: width 2000 <= 2000
+  + dunfermline-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + dunlapscreek-solfege-0.jpg: 1152989 -> 237573 bytes (smaller)
+  + dunlapscreek-solfege-0.jpg: format=jpeg
+  + dunlapscreek-solfege-0.jpg: decodes (2000x1500)
+  + dunlapscreek-solfege-0.jpg: width 2000 <= 2000
+  + dunlapscreek-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + dunlapscreek-staff-0.jpg: 6548660 -> 567404 bytes (smaller)
+  + dunlapscreek-staff-0.jpg: format=jpeg
+  + dunlapscreek-staff-0.jpg: decodes (2000x1500)
+  + dunlapscreek-staff-0.jpg: width 2000 <= 2000
+  + dunlapscreek-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + eastgate-last-line-repeat-for-ps-133-solfege-0.jpg: 4324892 -> 243135 bytes (smaller)
+  + eastgate-last-line-repeat-for-ps-133-solfege-0.jpg: format=jpeg
+  + eastgate-last-line-repeat-for-ps-133-solfege-0.jpg: decodes (2000x1500)
+  + eastgate-last-line-repeat-for-ps-133-solfege-0.jpg: width 2000 <= 2000
+  + eastgate-last-line-repeat-for-ps-133-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + eastgate-last-line-repeat-for-ps-133-solfege-1.jpg: 4400802 -> 267529 bytes (smaller)
+  + eastgate-last-line-repeat-for-ps-133-solfege-1.jpg: format=jpeg
+  + eastgate-last-line-repeat-for-ps-133-solfege-1.jpg: decodes (2000x1500)
+  + eastgate-last-line-repeat-for-ps-133-solfege-1.jpg: width 2000 <= 2000
+  + eastgate-last-line-repeat-for-ps-133-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + eastgate-last-line-repeat-for-ps-133-staff-0.jpg: 6819195 -> 597360 bytes (smaller)
+  + eastgate-last-line-repeat-for-ps-133-staff-0.jpg: format=jpeg
+  + eastgate-last-line-repeat-for-ps-133-staff-0.jpg: decodes (2000x1500)
+  + eastgate-last-line-repeat-for-ps-133-staff-0.jpg: width 2000 <= 2000
+  + eastgate-last-line-repeat-for-ps-133-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + eastgate-last-line-repeat-for-ps-133-staff-1.jpg: 6705933 -> 591015 bytes (smaller)
+  + eastgate-last-line-repeat-for-ps-133-staff-1.jpg: format=jpeg
+  + eastgate-last-line-repeat-for-ps-133-staff-1.jpg: decodes (2000x1500)
+  + eastgate-last-line-repeat-for-ps-133-staff-1.jpg: width 2000 <= 2000
+  + eastgate-last-line-repeat-for-ps-133-staff-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + eden-nb-1st-note-2nd-line-solfege-0.jpg: 1098125 -> 231050 bytes (smaller)
+  + eden-nb-1st-note-2nd-line-solfege-0.jpg: format=jpeg
+  + eden-nb-1st-note-2nd-line-solfege-0.jpg: decodes (2000x1500)
+  + eden-nb-1st-note-2nd-line-solfege-0.jpg: width 2000 <= 2000
+  + eden-nb-1st-note-2nd-line-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + eden-nb-1st-note-2nd-line-staff-0.jpg: 6490681 -> 561442 bytes (smaller)
+  + eden-nb-1st-note-2nd-line-staff-0.jpg: format=jpeg
+  + eden-nb-1st-note-2nd-line-staff-0.jpg: decodes (2000x1500)
+  + eden-nb-1st-note-2nd-line-staff-0.jpg: width 2000 <= 2000
+  + eden-nb-1st-note-2nd-line-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + edinburgh-solfege-0.jpg: 1484331 -> 366240 bytes (smaller)
+  + edinburgh-solfege-0.jpg: format=jpeg
+  + edinburgh-solfege-0.jpg: decodes (2000x1500)
+  + edinburgh-solfege-0.jpg: width 2000 <= 2000
+  + edinburgh-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + edinburgh-staff-0.jpg: 5964731 -> 506170 bytes (smaller)
+  + edinburgh-staff-0.jpg: format=jpeg
+  + edinburgh-staff-0.jpg: decodes (2000x1500)
+  + edinburgh-staff-0.jpg: width 2000 <= 2000
+  + edinburgh-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + effingham-solfege-0.jpg: 1385106 -> 340596 bytes (smaller)
+  + effingham-solfege-0.jpg: format=jpeg
+  + effingham-solfege-0.jpg: decodes (2000x1500)
+  + effingham-solfege-0.jpg: width 2000 <= 2000
+  + effingham-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + effingham-staff-0.jpg: 6226091 -> 530866 bytes (smaller)
+  + effingham-staff-0.jpg: format=jpeg
+  + effingham-staff-0.jpg: decodes (2000x1500)
+  + effingham-staff-0.jpg: width 2000 <= 2000
+  + effingham-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + elgin-solfege-0.jpg: 4169127 -> 270078 bytes (smaller)
+  + elgin-solfege-0.jpg: format=jpeg
+  + elgin-solfege-0.jpg: decodes (2000x1500)
+  + elgin-solfege-0.jpg: width 2000 <= 2000
+  + elgin-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + elijah-solfege-0.jpg: 4596769 -> 311662 bytes (smaller)
+  + elijah-solfege-0.jpg: format=jpeg
+  + elijah-solfege-0.jpg: decodes (2000x1500)
+  + elijah-solfege-0.jpg: width 2000 <= 2000
+  + elijah-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + elijah-staff-0.jpg: 6990808 -> 627192 bytes (smaller)
+  + elijah-staff-0.jpg: format=jpeg
+  + elijah-staff-0.jpg: decodes (2000x1500)
+  + elijah-staff-0.jpg: width 2000 <= 2000
+  + elijah-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + ericstane-solfege-0.jpg: 4587484 -> 336085 bytes (smaller)
+  + ericstane-solfege-0.jpg: format=jpeg
+  + ericstane-solfege-0.jpg: decodes (2000x1500)
+  + ericstane-solfege-0.jpg: width 2000 <= 2000
+  + ericstane-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + erin-solfege-0.jpg: 1299587 -> 289974 bytes (smaller)
+  + erin-solfege-0.jpg: format=jpeg
+  + erin-solfege-0.jpg: decodes (2000x1500)
+  + erin-solfege-0.jpg: width 2000 <= 2000
+  + erin-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + erin-staff-0.jpg: 6378217 -> 554168 bytes (smaller)
+  + erin-staff-0.jpg: format=jpeg
+  + erin-staff-0.jpg: decodes (2000x1500)
+  + erin-staff-0.jpg: width 2000 <= 2000
+  + erin-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + evan-solfege-0.jpg: 1292692 -> 280323 bytes (smaller)
+  + evan-solfege-0.jpg: format=jpeg
+  + evan-solfege-0.jpg: decodes (2000x1500)
+  + evan-solfege-0.jpg: width 2000 <= 2000
+  + evan-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  [progress 100/328 (from original)] rss=89MB
+  + evan-staff-0.jpg: 6730416 -> 582059 bytes (smaller)
+  + evan-staff-0.jpg: format=jpeg
+  + evan-staff-0.jpg: decodes (2000x1500)
+  + evan-staff-0.jpg: width 2000 <= 2000
+  + evan-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + evangel-solfege-0.jpg: 4547522 -> 296107 bytes (smaller)
+  + evangel-solfege-0.jpg: format=jpeg
+  + evangel-solfege-0.jpg: decodes (2000x1500)
+  + evangel-solfege-0.jpg: width 2000 <= 2000
+  + evangel-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + evangel-solfege-1.jpg: 4527855 -> 296685 bytes (smaller)
+  + evangel-solfege-1.jpg: format=jpeg
+  + evangel-solfege-1.jpg: decodes (2000x1500)
+  + evangel-solfege-1.jpg: width 2000 <= 2000
+  + evangel-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + evangel-staff-0.jpg: 6162306 -> 526871 bytes (smaller)
+  + evangel-staff-0.jpg: format=jpeg
+  + evangel-staff-0.jpg: decodes (2000x1500)
+  + evangel-staff-0.jpg: width 2000 <= 2000
+  + evangel-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + farrant-solfege-0.jpg: 1186357 -> 264917 bytes (smaller)
+  + farrant-solfege-0.jpg: format=jpeg
+  + farrant-solfege-0.jpg: decodes (2000x1500)
+  + farrant-solfege-0.jpg: width 2000 <= 2000
+  + farrant-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + farrant-staff-0.jpg: 6737117 -> 590130 bytes (smaller)
+  + farrant-staff-0.jpg: format=jpeg
+  + farrant-staff-0.jpg: decodes (2000x1500)
+  + farrant-staff-0.jpg: width 2000 <= 2000
+  + farrant-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + forest-green-solfege-0.jpg: 1507791 -> 559556 bytes (smaller)
+  + forest-green-solfege-0.jpg: format=jpeg
+  + forest-green-solfege-0.jpg: decodes (2000x2667)
+  + forest-green-solfege-0.jpg: width 2000 <= 2000
+  + forest-green-solfege-0.jpg: aspect ratio preserved (orig 3024x4032, comp 2000x2667)
+  + franconia-solfege-0.jpg: 4478032 -> 284465 bytes (smaller)
+  + franconia-solfege-0.jpg: format=jpeg
+  + franconia-solfege-0.jpg: decodes (2000x1500)
+  + franconia-solfege-0.jpg: width 2000 <= 2000
+  + franconia-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + franconia-staff-0.jpg: 6601988 -> 577067 bytes (smaller)
+  + franconia-staff-0.jpg: format=jpeg
+  + franconia-staff-0.jpg: decodes (2000x1500)
+  + franconia-staff-0.jpg: width 2000 <= 2000
+  + franconia-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + french-solfege-0.jpg: 1622489 -> 376847 bytes (smaller)
+  + french-solfege-0.jpg: format=jpeg
+  + french-solfege-0.jpg: decodes (2000x1500)
+  + french-solfege-0.jpg: width 2000 <= 2000
+  + french-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + french-staff-0.jpg: 6652486 -> 572150 bytes (smaller)
+  + french-staff-0.jpg: format=jpeg
+  + french-staff-0.jpg: decodes (2000x1500)
+  + french-staff-0.jpg: width 2000 <= 2000
+  + french-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + gabriel-solfege-0.jpg: 4494980 -> 285818 bytes (smaller)
+  + gabriel-solfege-0.jpg: format=jpeg
+  + gabriel-solfege-0.jpg: decodes (2000x1500)
+  + gabriel-solfege-0.jpg: width 2000 <= 2000
+  + gabriel-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + gabriel-staff-0.jpg: 6485917 -> 556902 bytes (smaller)
+  + gabriel-staff-0.jpg: format=jpeg
+  + gabriel-staff-0.jpg: decodes (2000x1500)
+  + gabriel-staff-0.jpg: width 2000 <= 2000
+  + gabriel-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + gainsborough-solfege-0.jpg: 1248951 -> 269415 bytes (smaller)
+  + gainsborough-solfege-0.jpg: format=jpeg
+  + gainsborough-solfege-0.jpg: decodes (2000x1500)
+  + gainsborough-solfege-0.jpg: width 2000 <= 2000
+  + gainsborough-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + gainsborough-staff-0.jpg: 6764719 -> 595743 bytes (smaller)
+  + gainsborough-staff-0.jpg: format=jpeg
+  + gainsborough-staff-0.jpg: decodes (2000x1500)
+  + gainsborough-staff-0.jpg: width 2000 <= 2000
+  + gainsborough-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + glasgow-solfege-0.jpg: 5326236 -> 371000 bytes (smaller)
+  + glasgow-solfege-0.jpg: format=jpeg
+  + glasgow-solfege-0.jpg: decodes (2000x1500)
+  + glasgow-solfege-0.jpg: width 2000 <= 2000
+  + glasgow-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + glasgow-staff-0.jpg: 6402513 -> 572194 bytes (smaller)
+  + glasgow-staff-0.jpg: format=jpeg
+  + glasgow-staff-0.jpg: decodes (2000x1500)
+  + glasgow-staff-0.jpg: width 2000 <= 2000
+  + glasgow-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + gr-fenberg-solfege-0.jpg: 1379008 -> 329323 bytes (smaller)
+  + gr-fenberg-solfege-0.jpg: format=jpeg
+  + gr-fenberg-solfege-0.jpg: decodes (2000x1500)
+  + gr-fenberg-solfege-0.jpg: width 2000 <= 2000
+  + gr-fenberg-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + gr-fenberg-staff-0.jpg: 6473497 -> 550886 bytes (smaller)
+  + gr-fenberg-staff-0.jpg: format=jpeg
+  + gr-fenberg-staff-0.jpg: decodes (2000x1500)
+  + gr-fenberg-staff-0.jpg: width 2000 <= 2000
+  + gr-fenberg-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + harington-solfege-0.jpg: 4850453 -> 340158 bytes (smaller)
+  + harington-solfege-0.jpg: format=jpeg
+  + harington-solfege-0.jpg: decodes (2000x1500)
+  + harington-solfege-0.jpg: width 2000 <= 2000
+  + harington-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + harington-staff-0.jpg: 6286480 -> 555018 bytes (smaller)
+  + harington-staff-0.jpg: format=jpeg
+  + harington-staff-0.jpg: decodes (2000x1500)
+  + harington-staff-0.jpg: width 2000 <= 2000
+  + harington-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + howard-solfege-0.jpg: 5224908 -> 356645 bytes (smaller)
+  + howard-solfege-0.jpg: format=jpeg
+  + howard-solfege-0.jpg: decodes (2000x1500)
+  + howard-solfege-0.jpg: width 2000 <= 2000
+  + howard-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + howard-staff-0.jpg: 3491160 -> 362368 bytes (smaller)
+  + howard-staff-0.jpg: format=jpeg
+  + howard-staff-0.jpg: decodes (2000x1323)
+  + howard-staff-0.jpg: width 2000 <= 2000
+  + howard-staff-0.jpg: aspect ratio preserved (orig 3475x2299, comp 2000x1323)
+  + huddersfield-solfege-0.jpg: 1863872 -> 478496 bytes (smaller)
+  + huddersfield-solfege-0.jpg: format=jpeg
+  + huddersfield-solfege-0.jpg: decodes (2000x1500)
+  + huddersfield-solfege-0.jpg: width 2000 <= 2000
+  + huddersfield-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + huddersfield-staff-0.jpg: 6551026 -> 562600 bytes (smaller)
+  + huddersfield-staff-0.jpg: format=jpeg
+  + huddersfield-staff-0.jpg: decodes (2000x1500)
+  + huddersfield-staff-0.jpg: width 2000 <= 2000
+  + huddersfield-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + humility-solfege-0.jpg: 1547194 -> 376266 bytes (smaller)
+  + humility-solfege-0.jpg: format=jpeg
+  + humility-solfege-0.jpg: decodes (2000x1500)
+  + humility-solfege-0.jpg: width 2000 <= 2000
+  + humility-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + humility-staff-0.jpg: 6599323 -> 568899 bytes (smaller)
+  + humility-staff-0.jpg: format=jpeg
+  + humility-staff-0.jpg: decodes (2000x1500)
+  + humility-staff-0.jpg: width 2000 <= 2000
+  + humility-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + i-need-thee-solfege-0.jpg: 4419003 -> 260790 bytes (smaller)
+  + i-need-thee-solfege-0.jpg: format=jpeg
+  + i-need-thee-solfege-0.jpg: decodes (2000x1500)
+  + i-need-thee-solfege-0.jpg: width 2000 <= 2000
+  + i-need-thee-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + i-need-thee-solfege-1.jpg: 3884582 -> 246433 bytes (smaller)
+  + i-need-thee-solfege-1.jpg: format=jpeg
+  + i-need-thee-solfege-1.jpg: decodes (2000x1500)
+  + i-need-thee-solfege-1.jpg: width 2000 <= 2000
+  + i-need-thee-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + irish-solfege-0.jpg: 1549310 -> 382137 bytes (smaller)
+  + irish-solfege-0.jpg: format=jpeg
+  + irish-solfege-0.jpg: decodes (2000x1500)
+  + irish-solfege-0.jpg: width 2000 <= 2000
+  + irish-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + irish-staff-0.jpg: 6474802 -> 552875 bytes (smaller)
+  + irish-staff-0.jpg: format=jpeg
+  + irish-staff-0.jpg: decodes (2000x1500)
+  + irish-staff-0.jpg: width 2000 <= 2000
+  + irish-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + israel-staff-0.png: copied byte-identical (size 154753)
+  + israel-staff-0.png: copied byte-identical (sha256)
+  + jackson-solfege-0.jpg: 4555435 -> 299524 bytes (smaller)
+  + jackson-solfege-0.jpg: format=jpeg
+  + jackson-solfege-0.jpg: decodes (2000x1500)
+  + jackson-solfege-0.jpg: width 2000 <= 2000
+  + jackson-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + jackson-staff-0.jpg: 6209877 -> 541032 bytes (smaller)
+  + jackson-staff-0.jpg: format=jpeg
+  + jackson-staff-0.jpg: decodes (2000x1500)
+  + jackson-staff-0.jpg: width 2000 <= 2000
+  + jackson-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + kathrine-solfege-0.jpg: 4452364 -> 269502 bytes (smaller)
+  + kathrine-solfege-0.jpg: format=jpeg
+  + kathrine-solfege-0.jpg: decodes (2000x1500)
+  + kathrine-solfege-0.jpg: width 2000 <= 2000
+  + kathrine-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + kathrine-staff-0.jpg: 6650563 -> 576047 bytes (smaller)
+  + kathrine-staff-0.jpg: format=jpeg
+  + kathrine-staff-0.jpg: decodes (2000x1500)
+  + kathrine-staff-0.jpg: width 2000 <= 2000
+  + kathrine-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + kilmarnock-solfege-0.jpg: 1502091 -> 377629 bytes (smaller)
+  + kilmarnock-solfege-0.jpg: format=jpeg
+  + kilmarnock-solfege-0.jpg: decodes (2000x1500)
+  + kilmarnock-solfege-0.jpg: width 2000 <= 2000
+  + kilmarnock-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + kilmarnock-staff-0.jpg: 6496264 -> 560686 bytes (smaller)
+  + kilmarnock-staff-0.jpg: format=jpeg
+  + kilmarnock-staff-0.jpg: decodes (2000x1500)
+  + kilmarnock-staff-0.jpg: width 2000 <= 2000
+  + kilmarnock-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + kingsfold-solfege-0.jpg: 1661698 -> 384105 bytes (smaller)
+  + kingsfold-solfege-0.jpg: format=jpeg
+  + kingsfold-solfege-0.jpg: decodes (2000x1603)
+  + kingsfold-solfege-0.jpg: width 2000 <= 2000
+  + kingsfold-solfege-0.jpg: aspect ratio preserved (orig 3543x2839, comp 2000x1603)
+  + kredron-epc-chant-solfege-0.jpg: 4515893 -> 284600 bytes (smaller)
+  + kredron-epc-chant-solfege-0.jpg: format=jpeg
+  + kredron-epc-chant-solfege-0.jpg: decodes (2000x1500)
+  + kredron-epc-chant-solfege-0.jpg: width 2000 <= 2000
+  + kredron-epc-chant-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + kredron-epc-chant-staff-0.jpg: 6619239 -> 564611 bytes (smaller)
+  + kredron-epc-chant-staff-0.jpg: format=jpeg
+  + kredron-epc-chant-staff-0.jpg: decodes (2000x1500)
+  + kredron-epc-chant-staff-0.jpg: width 2000 <= 2000
+  + kredron-epc-chant-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + lancaster-solfege-0.jpg: 1262900 -> 316511 bytes (smaller)
+  + lancaster-solfege-0.jpg: format=jpeg
+  + lancaster-solfege-0.jpg: decodes (2000x1500)
+  + lancaster-solfege-0.jpg: width 2000 <= 2000
+  + lancaster-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + lancaster-staff-0.jpg: 6127306 -> 513356 bytes (smaller)
+  + lancaster-staff-0.jpg: format=jpeg
+  + lancaster-staff-0.jpg: decodes (2000x1500)
+  + lancaster-staff-0.jpg: width 2000 <= 2000
+  + lancaster-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + lennox-solfege-0.jpg: 4960054 -> 312856 bytes (smaller)
+  + lennox-solfege-0.jpg: format=jpeg
+  + lennox-solfege-0.jpg: decodes (2000x1500)
+  + lennox-solfege-0.jpg: width 2000 <= 2000
+  + lennox-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + lennox-solfege-1.jpg: 4824185 -> 306324 bytes (smaller)
+  + lennox-solfege-1.jpg: format=jpeg
+  + lennox-solfege-1.jpg: decodes (2000x1500)
+  + lennox-solfege-1.jpg: width 2000 <= 2000
+  + lennox-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + leominster-staff-0.png: copied byte-identical (size 114322)
+  + leominster-staff-0.png: copied byte-identical (sha256)
+  + leominster-staff-1.png: copied byte-identical (size 193745)
+  + leominster-staff-1.png: copied byte-identical (sha256)
+  + leuchars-solfege-0.jpg: 4454890 -> 281183 bytes (smaller)
+  + leuchars-solfege-0.jpg: format=jpeg
+  + leuchars-solfege-0.jpg: decodes (2000x1500)
+  + leuchars-solfege-0.jpg: width 2000 <= 2000
+  + leuchars-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + leuchars-staff-0.jpg: 5916757 -> 482513 bytes (smaller)
+  + leuchars-staff-0.jpg: format=jpeg
+  + leuchars-staff-0.jpg: decodes (2000x1500)
+  + leuchars-staff-0.jpg: width 2000 <= 2000
+  + leuchars-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + lloyd-solfege-0.jpg: 4519131 -> 282650 bytes (smaller)
+  + lloyd-solfege-0.jpg: format=jpeg
+  + lloyd-solfege-0.jpg: decodes (2000x1500)
+  + lloyd-solfege-0.jpg: width 2000 <= 2000
+  + lloyd-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  [progress 150/328 (from original)] rss=90MB
+  + lloyd-staff-0.jpg: 5885994 -> 497294 bytes (smaller)
+  + lloyd-staff-0.jpg: format=jpeg
+  + lloyd-staff-0.jpg: decodes (2000x1500)
+  + lloyd-staff-0.jpg: width 2000 <= 2000
+  + lloyd-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + london-new-solfege-0.jpg: 4557990 -> 299618 bytes (smaller)
+  + london-new-solfege-0.jpg: format=jpeg
+  + london-new-solfege-0.jpg: decodes (2000x1500)
+  + london-new-solfege-0.jpg: width 2000 <= 2000
+  + london-new-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + london-new-staff-0.jpg: 6229315 -> 532488 bytes (smaller)
+  + london-new-staff-0.jpg: format=jpeg
+  + london-new-staff-0.jpg: decodes (2000x1500)
+  + london-new-staff-0.jpg: width 2000 <= 2000
+  + london-new-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + lynton-solfege-0.jpg: 4508713 -> 286594 bytes (smaller)
+  + lynton-solfege-0.jpg: format=jpeg
+  + lynton-solfege-0.jpg: decodes (2000x1500)
+  + lynton-solfege-0.jpg: width 2000 <= 2000
+  + lynton-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + lynton-staff-0.jpg: 6496239 -> 560822 bytes (smaller)
+  + lynton-staff-0.jpg: format=jpeg
+  + lynton-staff-0.jpg: decodes (2000x1500)
+  + lynton-staff-0.jpg: width 2000 <= 2000
+  + lynton-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + main-solfege-0.jpg: 1318049 -> 302105 bytes (smaller)
+  + main-solfege-0.jpg: format=jpeg
+  + main-solfege-0.jpg: decodes (2000x1500)
+  + main-solfege-0.jpg: width 2000 <= 2000
+  + main-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + main-staff-0.jpg: 6430343 -> 548483 bytes (smaller)
+  + main-staff-0.jpg: format=jpeg
+  + main-staff-0.jpg: decodes (2000x1500)
+  + main-staff-0.jpg: width 2000 <= 2000
+  + main-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + martyrdom-solfege-0.jpg: 1405356 -> 323093 bytes (smaller)
+  + martyrdom-solfege-0.jpg: format=jpeg
+  + martyrdom-solfege-0.jpg: decodes (2000x1500)
+  + martyrdom-solfege-0.jpg: width 2000 <= 2000
+  + martyrdom-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + martyrdom-staff-0.jpg: 6236675 -> 512166 bytes (smaller)
+  + martyrdom-staff-0.jpg: format=jpeg
+  + martyrdom-staff-0.jpg: decodes (2000x1500)
+  + martyrdom-staff-0.jpg: width 2000 <= 2000
+  + martyrdom-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + martyrs-solfege-0.jpg: 1475773 -> 368526 bytes (smaller)
+  + martyrs-solfege-0.jpg: format=jpeg
+  + martyrs-solfege-0.jpg: decodes (2000x1500)
+  + martyrs-solfege-0.jpg: width 2000 <= 2000
+  + martyrs-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + martyrs-staff-0.jpg: 6493223 -> 549250 bytes (smaller)
+  + martyrs-staff-0.jpg: format=jpeg
+  + martyrs-staff-0.jpg: decodes (2000x1500)
+  + martyrs-staff-0.jpg: width 2000 <= 2000
+  + martyrs-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + moravia-solfege-0.jpg: 1180812 -> 258826 bytes (smaller)
+  + moravia-solfege-0.jpg: format=jpeg
+  + moravia-solfege-0.jpg: decodes (2000x1500)
+  + moravia-solfege-0.jpg: width 2000 <= 2000
+  + moravia-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + moravia-staff-0.jpg: 6617926 -> 571001 bytes (smaller)
+  + moravia-staff-0.jpg: format=jpeg
+  + moravia-staff-0.jpg: decodes (2000x1500)
+  + moravia-staff-0.jpg: width 2000 <= 2000
+  + moravia-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + naomi-solfege-0.jpg: 1520002 -> 311546 bytes (smaller)
+  + naomi-solfege-0.jpg: format=jpeg
+  + naomi-solfege-0.jpg: decodes (2000x1500)
+  + naomi-solfege-0.jpg: width 2000 <= 2000
+  + naomi-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + naomi-staff-0.jpg: 6272003 -> 536339 bytes (smaller)
+  + naomi-staff-0.jpg: format=jpeg
+  + naomi-staff-0.jpg: decodes (2000x1500)
+  + naomi-staff-0.jpg: width 2000 <= 2000
+  + naomi-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + new-136th-solfege-0.jpg: 1150728 -> 258676 bytes (smaller)
+  + new-136th-solfege-0.jpg: format=jpeg
+  + new-136th-solfege-0.jpg: decodes (2000x1500)
+  + new-136th-solfege-0.jpg: width 2000 <= 2000
+  + new-136th-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + new-136th-solfege-1.jpg: 1108353 -> 248325 bytes (smaller)
+  + new-136th-solfege-1.jpg: format=jpeg
+  + new-136th-solfege-1.jpg: decodes (2000x1500)
+  + new-136th-solfege-1.jpg: width 2000 <= 2000
+  + new-136th-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + new-136th-staff-0.jpg: 6123604 -> 515362 bytes (smaller)
+  + new-136th-staff-0.jpg: format=jpeg
+  + new-136th-staff-0.jpg: decodes (2000x1500)
+  + new-136th-staff-0.jpg: width 2000 <= 2000
+  + new-136th-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + new-136th-staff-1.jpg: 5898154 -> 505706 bytes (smaller)
+  + new-136th-staff-1.jpg: format=jpeg
+  + new-136th-staff-1.jpg: decodes (2000x1500)
+  + new-136th-staff-1.jpg: width 2000 <= 2000
+  + new-136th-staff-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + new-britain-solfege-0.jpg: 4569689 -> 300993 bytes (smaller)
+  + new-britain-solfege-0.jpg: format=jpeg
+  + new-britain-solfege-0.jpg: decodes (2000x1500)
+  + new-britain-solfege-0.jpg: width 2000 <= 2000
+  + new-britain-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + new-britain-staff-0.jpg: 5952609 -> 514663 bytes (smaller)
+  + new-britain-staff-0.jpg: format=jpeg
+  + new-britain-staff-0.jpg: decodes (2000x1500)
+  + new-britain-staff-0.jpg: width 2000 <= 2000
+  + new-britain-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + new-lydia-solfege-0.jpg: 4714872 -> 270564 bytes (smaller)
+  + new-lydia-solfege-0.jpg: format=jpeg
+  + new-lydia-solfege-0.jpg: decodes (2000x1500)
+  + new-lydia-solfege-0.jpg: width 2000 <= 2000
+  + new-lydia-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + new-lydia-solfege-1.jpg: 4866975 -> 320346 bytes (smaller)
+  + new-lydia-solfege-1.jpg: format=jpeg
+  + new-lydia-solfege-1.jpg: decodes (2000x1500)
+  + new-lydia-solfege-1.jpg: width 2000 <= 2000
+  + new-lydia-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + newington-solfege-0.jpg: 4550724 -> 300084 bytes (smaller)
+  + newington-solfege-0.jpg: format=jpeg
+  + newington-solfege-0.jpg: decodes (2000x1500)
+  + newington-solfege-0.jpg: width 2000 <= 2000
+  + newington-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + newington-staff-0.jpg: 6551910 -> 560131 bytes (smaller)
+  + newington-staff-0.jpg: format=jpeg
+  + newington-staff-0.jpg: decodes (2000x1500)
+  + newington-staff-0.jpg: width 2000 <= 2000
+  + newington-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + norwich-solfege-0.jpg: 4298703 -> 276186 bytes (smaller)
+  + norwich-solfege-0.jpg: format=jpeg
+  + norwich-solfege-0.jpg: decodes (2000x1500)
+  + norwich-solfege-0.jpg: width 2000 <= 2000
+  + norwich-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + old-100th-solfege-0.jpg: 1491643 -> 410076 bytes (smaller)
+  + old-100th-solfege-0.jpg: format=jpeg
+  + old-100th-solfege-0.jpg: decodes (2000x1500)
+  + old-100th-solfege-0.jpg: width 2000 <= 2000
+  + old-100th-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + old-100th-staff-0.jpg: 5259708 -> 380293 bytes (smaller)
+  + old-100th-staff-0.jpg: format=jpeg
+  + old-100th-staff-0.jpg: decodes (2000x1500)
+  + old-100th-staff-0.jpg: width 2000 <= 2000
+  + old-100th-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + old-100th-staff-1.jpg: 5105200 -> 350638 bytes (smaller)
+  + old-100th-staff-1.jpg: format=jpeg
+  + old-100th-staff-1.jpg: decodes (2000x1500)
+  + old-100th-staff-1.jpg: width 2000 <= 2000
+  + old-100th-staff-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + old-124th-solfege-0.jpg: 1145468 -> 246266 bytes (smaller)
+  + old-124th-solfege-0.jpg: format=jpeg
+  + old-124th-solfege-0.jpg: decodes (2000x1500)
+  + old-124th-solfege-0.jpg: width 2000 <= 2000
+  + old-124th-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + old-124th-solfege-1.jpg: 1137513 -> 244171 bytes (smaller)
+  + old-124th-solfege-1.jpg: format=jpeg
+  + old-124th-solfege-1.jpg: decodes (2000x1500)
+  + old-124th-solfege-1.jpg: width 2000 <= 2000
+  + old-124th-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + old-124th-staff-0.jpg: 6108494 -> 495254 bytes (smaller)
+  + old-124th-staff-0.jpg: format=jpeg
+  + old-124th-staff-0.jpg: decodes (2000x1500)
+  + old-124th-staff-0.jpg: width 2000 <= 2000
+  + old-124th-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + old-124th-staff-1.jpg: 5799235 -> 488522 bytes (smaller)
+  + old-124th-staff-1.jpg: format=jpeg
+  + old-124th-staff-1.jpg: decodes (2000x1500)
+  + old-124th-staff-1.jpg: width 2000 <= 2000
+  + old-124th-staff-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + old-134th-solfege-0.jpg: 4521714 -> 291246 bytes (smaller)
+  + old-134th-solfege-0.jpg: format=jpeg
+  + old-134th-solfege-0.jpg: decodes (2000x1500)
+  + old-134th-solfege-0.jpg: width 2000 <= 2000
+  + old-134th-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + old-134th-staff-0.jpg: 6821592 -> 610849 bytes (smaller)
+  + old-134th-staff-0.jpg: format=jpeg
+  + old-134th-staff-0.jpg: decodes (2000x1500)
+  + old-134th-staff-0.jpg: width 2000 <= 2000
+  + old-134th-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + old-29th-solfege-0.jpg: 4544095 -> 288567 bytes (smaller)
+  + old-29th-solfege-0.jpg: format=jpeg
+  + old-29th-solfege-0.jpg: decodes (2000x1500)
+  + old-29th-solfege-0.jpg: width 2000 <= 2000
+  + old-29th-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + old-44th-solfege-0.jpg: 1122834 -> 232707 bytes (smaller)
+  + old-44th-solfege-0.jpg: format=jpeg
+  + old-44th-solfege-0.jpg: decodes (2000x1500)
+  + old-44th-solfege-0.jpg: width 2000 <= 2000
+  + old-44th-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + old-44th-solfege-1.jpg: 1123714 -> 233794 bytes (smaller)
+  + old-44th-solfege-1.jpg: format=jpeg
+  + old-44th-solfege-1.jpg: decodes (2000x1500)
+  + old-44th-solfege-1.jpg: width 2000 <= 2000
+  + old-44th-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + old-44th-staff-0.jpg: 6071012 -> 501870 bytes (smaller)
+  + old-44th-staff-0.jpg: format=jpeg
+  + old-44th-staff-0.jpg: decodes (2000x1500)
+  + old-44th-staff-0.jpg: width 2000 <= 2000
+  + old-44th-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + old-44th-staff-1.jpg: 6373078 -> 534257 bytes (smaller)
+  + old-44th-staff-1.jpg: format=jpeg
+  + old-44th-staff-1.jpg: decodes (2000x1500)
+  + old-44th-staff-1.jpg: width 2000 <= 2000
+  + old-44th-staff-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + orlington-solfege-0.jpg: 4350326 -> 262477 bytes (smaller)
+  + orlington-solfege-0.jpg: format=jpeg
+  + orlington-solfege-0.jpg: decodes (2000x1500)
+  + orlington-solfege-0.jpg: width 2000 <= 2000
+  + orlington-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + orlington-solfege-1.jpg: 4423508 -> 261109 bytes (smaller)
+  + orlington-solfege-1.jpg: format=jpeg
+  + orlington-solfege-1.jpg: decodes (2000x1500)
+  + orlington-solfege-1.jpg: width 2000 <= 2000
+  + orlington-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + orlington-staff-0.jpg: 6265502 -> 563361 bytes (smaller)
+  + orlington-staff-0.jpg: format=jpeg
+  + orlington-staff-0.jpg: decodes (2000x1500)
+  + orlington-staff-0.jpg: width 2000 <= 2000
+  + orlington-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + orlington-staff-1.jpg: 6612172 -> 582434 bytes (smaller)
+  + orlington-staff-1.jpg: format=jpeg
+  + orlington-staff-1.jpg: decodes (2000x1500)
+  + orlington-staff-1.jpg: width 2000 <= 2000
+  + orlington-staff-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + orton-solfege-0.jpg: 4558767 -> 302403 bytes (smaller)
+  + orton-solfege-0.jpg: format=jpeg
+  + orton-solfege-0.jpg: decodes (2000x1500)
+  + orton-solfege-0.jpg: width 2000 <= 2000
+  + orton-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + orton-staff-0.jpg: 6627056 -> 585627 bytes (smaller)
+  + orton-staff-0.jpg: format=jpeg
+  + orton-staff-0.jpg: decodes (2000x1500)
+  + orton-staff-0.jpg: width 2000 <= 2000
+  + orton-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + ostend-solfege-0.jpg: 1109986 -> 221108 bytes (smaller)
+  + ostend-solfege-0.jpg: format=jpeg
+  + ostend-solfege-0.jpg: decodes (2000x1500)
+  + ostend-solfege-0.jpg: width 2000 <= 2000
+  + ostend-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + ostend-solfege-1.jpg: 1279286 -> 279854 bytes (smaller)
+  + ostend-solfege-1.jpg: format=jpeg
+  + ostend-solfege-1.jpg: decodes (2000x1500)
+  + ostend-solfege-1.jpg: width 2000 <= 2000
+  + ostend-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + ostend-staff-0.jpg: 5801928 -> 471080 bytes (smaller)
+  + ostend-staff-0.jpg: format=jpeg
+  + ostend-staff-0.jpg: decodes (2000x1500)
+  + ostend-staff-0.jpg: width 2000 <= 2000
+  + ostend-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + ostend-staff-1.jpg: 5663132 -> 464473 bytes (smaller)
+  + ostend-staff-1.jpg: format=jpeg
+  + ostend-staff-1.jpg: decodes (2000x1500)
+  + ostend-staff-1.jpg: width 2000 <= 2000
+  + ostend-staff-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  [progress 200/328 (from original)] rss=91MB
+  + palestrina-mr-calendar-tune-solfege-0.jpg: 4665493 -> 321835 bytes (smaller)
+  + palestrina-mr-calendar-tune-solfege-0.jpg: format=jpeg
+  + palestrina-mr-calendar-tune-solfege-0.jpg: decodes (2000x1500)
+  + palestrina-mr-calendar-tune-solfege-0.jpg: width 2000 <= 2000
+  + palestrina-mr-calendar-tune-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + palestrina-mr-calendar-tune-staff-0.jpg: 6658847 -> 590049 bytes (smaller)
+  + palestrina-mr-calendar-tune-staff-0.jpg: format=jpeg
+  + palestrina-mr-calendar-tune-staff-0.jpg: decodes (2000x1500)
+  + palestrina-mr-calendar-tune-staff-0.jpg: width 2000 <= 2000
+  + palestrina-mr-calendar-tune-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + pembroke-solfege-0.jpg: 4396428 -> 263705 bytes (smaller)
+  + pembroke-solfege-0.jpg: format=jpeg
+  + pembroke-solfege-0.jpg: decodes (2000x1500)
+  + pembroke-solfege-0.jpg: width 2000 <= 2000
+  + pembroke-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + pembroke-solfege-1.jpg: 4350691 -> 248898 bytes (smaller)
+  + pembroke-solfege-1.jpg: format=jpeg
+  + pembroke-solfege-1.jpg: decodes (2000x1500)
+  + pembroke-solfege-1.jpg: width 2000 <= 2000
+  + pembroke-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + pembroke-staff-0.jpg: 6802293 -> 590302 bytes (smaller)
+  + pembroke-staff-0.jpg: format=jpeg
+  + pembroke-staff-0.jpg: decodes (2000x1500)
+  + pembroke-staff-0.jpg: width 2000 <= 2000
+  + pembroke-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + pembroke-staff-1.jpg: 6314207 -> 532917 bytes (smaller)
+  + pembroke-staff-1.jpg: format=jpeg
+  + pembroke-staff-1.jpg: decodes (2000x1500)
+  + pembroke-staff-1.jpg: width 2000 <= 2000
+  + pembroke-staff-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + perfect-way-solfege-0.jpg: 4358681 -> 262892 bytes (smaller)
+  + perfect-way-solfege-0.jpg: format=jpeg
+  + perfect-way-solfege-0.jpg: decodes (2000x1500)
+  + perfect-way-solfege-0.jpg: width 2000 <= 2000
+  + perfect-way-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + perfect-way-solfege-1.jpg: 4457595 -> 273748 bytes (smaller)
+  + perfect-way-solfege-1.jpg: format=jpeg
+  + perfect-way-solfege-1.jpg: decodes (2000x1500)
+  + perfect-way-solfege-1.jpg: width 2000 <= 2000
+  + perfect-way-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + perfect-way-staff-0.jpg: 5900624 -> 480298 bytes (smaller)
+  + perfect-way-staff-0.jpg: format=jpeg
+  + perfect-way-staff-0.jpg: decodes (2000x1500)
+  + perfect-way-staff-0.jpg: width 2000 <= 2000
+  + perfect-way-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + perfect-way-staff-1.jpg: 5631932 -> 477331 bytes (smaller)
+  + perfect-way-staff-1.jpg: format=jpeg
+  + perfect-way-staff-1.jpg: decodes (2000x1500)
+  + perfect-way-staff-1.jpg: width 2000 <= 2000
+  + perfect-way-staff-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + peterborough-solfege-0.jpg: 4459146 -> 291423 bytes (smaller)
+  + peterborough-solfege-0.jpg: format=jpeg
+  + peterborough-solfege-0.jpg: decodes (2000x1500)
+  + peterborough-solfege-0.jpg: width 2000 <= 2000
+  + peterborough-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + petersham-cmd-epc-tune-solfege-0.jpg: 4538580 -> 292988 bytes (smaller)
+  + petersham-cmd-epc-tune-solfege-0.jpg: format=jpeg
+  + petersham-cmd-epc-tune-solfege-0.jpg: decodes (2000x1500)
+  + petersham-cmd-epc-tune-solfege-0.jpg: width 2000 <= 2000
+  + petersham-cmd-epc-tune-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + petersham-cmd-epc-tune-solfege-1.jpg: 4413897 -> 285915 bytes (smaller)
+  + petersham-cmd-epc-tune-solfege-1.jpg: format=jpeg
+  + petersham-cmd-epc-tune-solfege-1.jpg: decodes (2000x1500)
+  + petersham-cmd-epc-tune-solfege-1.jpg: width 2000 <= 2000
+  + petersham-cmd-epc-tune-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + petersham-cmd-epc-tune-staff-0.jpg: 6391679 -> 549445 bytes (smaller)
+  + petersham-cmd-epc-tune-staff-0.jpg: format=jpeg
+  + petersham-cmd-epc-tune-staff-0.jpg: decodes (2000x1500)
+  + petersham-cmd-epc-tune-staff-0.jpg: width 2000 <= 2000
+  + petersham-cmd-epc-tune-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + praetorius-solfege-0.jpg: 1141015 -> 255914 bytes (smaller)
+  + praetorius-solfege-0.jpg: format=jpeg
+  + praetorius-solfege-0.jpg: decodes (2000x1500)
+  + praetorius-solfege-0.jpg: width 2000 <= 2000
+  + praetorius-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + praetorius-staff-0.jpg: 6078100 -> 524056 bytes (smaller)
+  + praetorius-staff-0.jpg: format=jpeg
+  + praetorius-staff-0.jpg: decodes (2000x1500)
+  + praetorius-staff-0.jpg: width 2000 <= 2000
+  + praetorius-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + ravensburg-solfege-0.jpg: 1241738 -> 266455 bytes (smaller)
+  + ravensburg-solfege-0.jpg: format=jpeg
+  + ravensburg-solfege-0.jpg: decodes (2000x1500)
+  + ravensburg-solfege-0.jpg: width 2000 <= 2000
+  + ravensburg-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + ravensburg-staff-0.jpg: 5512889 -> 402044 bytes (smaller)
+  + ravensburg-staff-0.jpg: format=jpeg
+  + ravensburg-staff-0.jpg: decodes (2000x1500)
+  + ravensburg-staff-0.jpg: width 2000 <= 2000
+  + ravensburg-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + rest-solfege-0.jpg: 4554554 -> 314794 bytes (smaller)
+  + rest-solfege-0.jpg: format=jpeg
+  + rest-solfege-0.jpg: decodes (2000x1500)
+  + rest-solfege-0.jpg: width 2000 <= 2000
+  + rest-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + rest-staff-0.jpg: 5500603 -> 395979 bytes (smaller)
+  + rest-staff-0.jpg: format=jpeg
+  + rest-staff-0.jpg: decodes (2000x1500)
+  + rest-staff-0.jpg: width 2000 <= 2000
+  + rest-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + richmond-solfege-0.jpg: 4608879 -> 305590 bytes (smaller)
+  + richmond-solfege-0.jpg: format=jpeg
+  + richmond-solfege-0.jpg: decodes (2000x1500)
+  + richmond-solfege-0.jpg: width 2000 <= 2000
+  + richmond-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + richmond-staff-0.jpg: 6500542 -> 557584 bytes (smaller)
+  + richmond-staff-0.jpg: format=jpeg
+  + richmond-staff-0.jpg: decodes (2000x1500)
+  + richmond-staff-0.jpg: width 2000 <= 2000
+  + richmond-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + rimington-solfege-0.jpg: 4565144 -> 299762 bytes (smaller)
+  + rimington-solfege-0.jpg: format=jpeg
+  + rimington-solfege-0.jpg: decodes (2000x1500)
+  + rimington-solfege-0.jpg: width 2000 <= 2000
+  + rimington-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + rimington-staff-0.jpg: 6761505 -> 596683 bytes (smaller)
+  + rimington-staff-0.jpg: format=jpeg
+  + rimington-staff-0.jpg: decodes (2000x1500)
+  + rimington-staff-0.jpg: width 2000 <= 2000
+  + rimington-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + rockingham-staff-0.jpg: 289635 -> 90513 bytes (smaller)
+  + rockingham-staff-0.jpg: format=jpeg
+  + rockingham-staff-0.jpg: decodes (1170x984)
+  + rockingham-staff-0.jpg: width 1170 <= 2000
+  + rockingham-staff-0.jpg: aspect ratio preserved (orig 1170x984, comp 1170x984)
+  + rutherford-staff-0.png: copied byte-identical (size 35604)
+  + rutherford-staff-0.png: copied byte-identical (sha256)
+  + rutherford-staff-1.png: copied byte-identical (size 38076)
+  + rutherford-staff-1.png: copied byte-identical (sha256)
+  + salzburg-solfege-0.jpg: 1556647 -> 394298 bytes (smaller)
+  + salzburg-solfege-0.jpg: format=jpeg
+  + salzburg-solfege-0.jpg: decodes (2000x1500)
+  + salzburg-solfege-0.jpg: width 2000 <= 2000
+  + salzburg-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + salzburg-staff-0.jpg: 6469923 -> 558737 bytes (smaller)
+  + salzburg-staff-0.jpg: format=jpeg
+  + salzburg-staff-0.jpg: decodes (2000x1500)
+  + salzburg-staff-0.jpg: width 2000 <= 2000
+  + salzburg-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + sawley-start-high-solfege-0.jpg: 1372635 -> 319218 bytes (smaller)
+  + sawley-start-high-solfege-0.jpg: format=jpeg
+  + sawley-start-high-solfege-0.jpg: decodes (2000x1500)
+  + sawley-start-high-solfege-0.jpg: width 2000 <= 2000
+  + sawley-start-high-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + sawley-start-high-staff-0.jpg: 6481262 -> 557945 bytes (smaller)
+  + sawley-start-high-staff-0.jpg: format=jpeg
+  + sawley-start-high-staff-0.jpg: decodes (2000x1500)
+  + sawley-start-high-staff-0.jpg: width 2000 <= 2000
+  + sawley-start-high-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + saxony-solfege-0.jpg: 4495889 -> 278597 bytes (smaller)
+  + saxony-solfege-0.jpg: format=jpeg
+  + saxony-solfege-0.jpg: decodes (2000x1500)
+  + saxony-solfege-0.jpg: width 2000 <= 2000
+  + saxony-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + saxony-solfege-1.jpg: 4235760 -> 230085 bytes (smaller)
+  + saxony-solfege-1.jpg: format=jpeg
+  + saxony-solfege-1.jpg: decodes (2000x1500)
+  + saxony-solfege-1.jpg: width 2000 <= 2000
+  + saxony-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + saxony-staff-0.jpg: 6111267 -> 508488 bytes (smaller)
+  + saxony-staff-0.jpg: format=jpeg
+  + saxony-staff-0.jpg: decodes (2000x1500)
+  + saxony-staff-0.jpg: width 2000 <= 2000
+  + saxony-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + saxony-staff-1.jpg: 6636193 -> 577102 bytes (smaller)
+  + saxony-staff-1.jpg: format=jpeg
+  + saxony-staff-1.jpg: decodes (2000x1500)
+  + saxony-staff-1.jpg: width 2000 <= 2000
+  + saxony-staff-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + scarborough-solfege-0.jpg: 1282649 -> 299211 bytes (smaller)
+  + scarborough-solfege-0.jpg: format=jpeg
+  + scarborough-solfege-0.jpg: decodes (2000x1500)
+  + scarborough-solfege-0.jpg: width 2000 <= 2000
+  + scarborough-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + scarborough-staff-0.jpg: 6534044 -> 559557 bytes (smaller)
+  + scarborough-staff-0.jpg: format=jpeg
+  + scarborough-staff-0.jpg: decodes (2000x1500)
+  + scarborough-staff-0.jpg: width 2000 <= 2000
+  + scarborough-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + selma-solfege-0.jpg: 4524959 -> 298478 bytes (smaller)
+  + selma-solfege-0.jpg: format=jpeg
+  + selma-solfege-0.jpg: decodes (2000x1500)
+  + selma-solfege-0.jpg: width 2000 <= 2000
+  + selma-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + selma-staff-0.jpg: 6853357 -> 607804 bytes (smaller)
+  + selma-staff-0.jpg: format=jpeg
+  + selma-staff-0.jpg: decodes (2000x1500)
+  + selma-staff-0.jpg: width 2000 <= 2000
+  + selma-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + sheffield-solfege-0.jpg: 4640641 -> 313333 bytes (smaller)
+  + sheffield-solfege-0.jpg: format=jpeg
+  + sheffield-solfege-0.jpg: decodes (2000x1500)
+  + sheffield-solfege-0.jpg: width 2000 <= 2000
+  + sheffield-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + sheffield-staff-0.jpg: 6578443 -> 571151 bytes (smaller)
+  + sheffield-staff-0.jpg: format=jpeg
+  + sheffield-staff-0.jpg: decodes (2000x1500)
+  + sheffield-staff-0.jpg: width 2000 <= 2000
+  + sheffield-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + shepherd-solfege-0.jpg: 4502238 -> 285440 bytes (smaller)
+  + shepherd-solfege-0.jpg: format=jpeg
+  + shepherd-solfege-0.jpg: decodes (2000x1500)
+  + shepherd-solfege-0.jpg: width 2000 <= 2000
+  + shepherd-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + shepherd-staff-0.jpg: 6400201 -> 575178 bytes (smaller)
+  + shepherd-staff-0.jpg: format=jpeg
+  + shepherd-staff-0.jpg: decodes (2000x1500)
+  + shepherd-staff-0.jpg: width 2000 <= 2000
+  + shepherd-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + silchester-solfege-0.jpg: 4440273 -> 280405 bytes (smaller)
+  + silchester-solfege-0.jpg: format=jpeg
+  + silchester-solfege-0.jpg: decodes (2000x1500)
+  + silchester-solfege-0.jpg: width 2000 <= 2000
+  + silchester-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + silchester-staff-0.jpg: 6739633 -> 595492 bytes (smaller)
+  + silchester-staff-0.jpg: format=jpeg
+  + silchester-staff-0.jpg: decodes (2000x1500)
+  + silchester-staff-0.jpg: width 2000 <= 2000
+  + silchester-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + soldau-solfege-0.jpg: 1136395 -> 244549 bytes (smaller)
+  + soldau-solfege-0.jpg: format=jpeg
+  + soldau-solfege-0.jpg: decodes (2000x1500)
+  + soldau-solfege-0.jpg: width 2000 <= 2000
+  + soldau-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + soldau-staff-0.jpg: 5312157 -> 376206 bytes (smaller)
+  + soldau-staff-0.jpg: format=jpeg
+  + soldau-staff-0.jpg: decodes (2000x1500)
+  + soldau-staff-0.jpg: width 2000 <= 2000
+  + soldau-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + southwark-solfege-0.jpg: 4622270 -> 309910 bytes (smaller)
+  + southwark-solfege-0.jpg: format=jpeg
+  + southwark-solfege-0.jpg: decodes (2000x1500)
+  + southwark-solfege-0.jpg: width 2000 <= 2000
+  + southwark-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + southwark-staff-0.jpg: 6020197 -> 502759 bytes (smaller)
+  + southwark-staff-0.jpg: format=jpeg
+  + southwark-staff-0.jpg: decodes (2000x1500)
+  + southwark-staff-0.jpg: width 2000 <= 2000
+  + southwark-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + southwold-solfege-0.jpg: 4548174 -> 295952 bytes (smaller)
+  + southwold-solfege-0.jpg: format=jpeg
+  + southwold-solfege-0.jpg: decodes (2000x1500)
+  + southwold-solfege-0.jpg: width 2000 <= 2000
+  + southwold-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  [progress 250/328 (from original)] rss=90MB
+  + southwold-staff-0.jpg: 5981511 -> 482119 bytes (smaller)
+  + southwold-staff-0.jpg: format=jpeg
+  + southwold-staff-0.jpg: decodes (2000x1500)
+  + southwold-staff-0.jpg: width 2000 <= 2000
+  + southwold-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + spohr-solfege-0.jpg: 4692051 -> 316655 bytes (smaller)
+  + spohr-solfege-0.jpg: format=jpeg
+  + spohr-solfege-0.jpg: decodes (2000x1500)
+  + spohr-solfege-0.jpg: width 2000 <= 2000
+  + spohr-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + spohr-staff-0.jpg: 6569541 -> 563951 bytes (smaller)
+  + spohr-staff-0.jpg: format=jpeg
+  + spohr-staff-0.jpg: decodes (2000x1500)
+  + spohr-staff-0.jpg: width 2000 <= 2000
+  + spohr-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-agnes-durham-start-high-solfege-0.jpg: 1356523 -> 332966 bytes (smaller)
+  + st-agnes-durham-start-high-solfege-0.jpg: format=jpeg
+  + st-agnes-durham-start-high-solfege-0.jpg: decodes (2000x1500)
+  + st-agnes-durham-start-high-solfege-0.jpg: width 2000 <= 2000
+  + st-agnes-durham-start-high-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-agnes-durham-start-high-staff-0.jpg: 5472611 -> 408934 bytes (smaller)
+  + st-agnes-durham-start-high-staff-0.jpg: format=jpeg
+  + st-agnes-durham-start-high-staff-0.jpg: decodes (2000x1500)
+  + st-agnes-durham-start-high-staff-0.jpg: width 2000 <= 2000
+  + st-agnes-durham-start-high-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-andrew-solfege-0.jpg: 4698287 -> 323874 bytes (smaller)
+  + st-andrew-solfege-0.jpg: format=jpeg
+  + st-andrew-solfege-0.jpg: decodes (2000x1500)
+  + st-andrew-solfege-0.jpg: width 2000 <= 2000
+  + st-andrew-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-andrew-staff-0.jpg: 5486359 -> 413500 bytes (smaller)
+  + st-andrew-staff-0.jpg: format=jpeg
+  + st-andrew-staff-0.jpg: decodes (2000x1500)
+  + st-andrew-staff-0.jpg: width 2000 <= 2000
+  + st-andrew-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-anne-solfege-0.jpg: 1297470 -> 303900 bytes (smaller)
+  + st-anne-solfege-0.jpg: format=jpeg
+  + st-anne-solfege-0.jpg: decodes (2000x1500)
+  + st-anne-solfege-0.jpg: width 2000 <= 2000
+  + st-anne-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-anne-staff-0.jpg: 5465700 -> 390131 bytes (smaller)
+  + st-anne-staff-0.jpg: format=jpeg
+  + st-anne-staff-0.jpg: decodes (2000x1500)
+  + st-anne-staff-0.jpg: width 2000 <= 2000
+  + st-anne-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-asaph-solfege-0.jpg: 1287079 -> 274034 bytes (smaller)
+  + st-asaph-solfege-0.jpg: format=jpeg
+  + st-asaph-solfege-0.jpg: decodes (2000x1500)
+  + st-asaph-solfege-0.jpg: width 2000 <= 2000
+  + st-asaph-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-asaph-solfege-1.jpg: 1229954 -> 296175 bytes (smaller)
+  + st-asaph-solfege-1.jpg: format=jpeg
+  + st-asaph-solfege-1.jpg: decodes (2000x1500)
+  + st-asaph-solfege-1.jpg: width 2000 <= 2000
+  + st-asaph-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-asaph-staff-0.jpg: 6046528 -> 509342 bytes (smaller)
+  + st-asaph-staff-0.jpg: format=jpeg
+  + st-asaph-staff-0.jpg: decodes (2000x1500)
+  + st-asaph-staff-0.jpg: width 2000 <= 2000
+  + st-asaph-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-asaph-staff-1.jpg: 5891181 -> 480922 bytes (smaller)
+  + st-asaph-staff-1.jpg: format=jpeg
+  + st-asaph-staff-1.jpg: decodes (2000x1500)
+  + st-asaph-staff-1.jpg: width 2000 <= 2000
+  + st-asaph-staff-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-bernard-solfege-0.jpg: 4638814 -> 312619 bytes (smaller)
+  + st-bernard-solfege-0.jpg: format=jpeg
+  + st-bernard-solfege-0.jpg: decodes (2000x1500)
+  + st-bernard-solfege-0.jpg: width 2000 <= 2000
+  + st-bernard-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-bernard-staff-0.jpg: 5325547 -> 391158 bytes (smaller)
+  + st-bernard-staff-0.jpg: format=jpeg
+  + st-bernard-staff-0.jpg: decodes (2000x1500)
+  + st-bernard-staff-0.jpg: width 2000 <= 2000
+  + st-bernard-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-botolph-staff-0.jpg: 5812543 -> 466384 bytes (smaller)
+  + st-botolph-staff-0.jpg: format=jpeg
+  + st-botolph-staff-0.jpg: decodes (2000x1500)
+  + st-botolph-staff-0.jpg: width 2000 <= 2000
+  + st-botolph-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-columba-staff-0.jpg: 669541 -> 110747 bytes (smaller)
+  + st-columba-staff-0.jpg: format=jpeg
+  + st-columba-staff-0.jpg: decodes (1170x696)
+  + st-columba-staff-0.jpg: width 1170 <= 2000
+  + st-columba-staff-0.jpg: aspect ratio preserved (orig 1170x696, comp 1170x696)
+  + st-ethelreda-solfege-0.jpg: 1713745 -> 431496 bytes (smaller)
+  + st-ethelreda-solfege-0.jpg: format=jpeg
+  + st-ethelreda-solfege-0.jpg: decodes (2000x1500)
+  + st-ethelreda-solfege-0.jpg: width 2000 <= 2000
+  + st-ethelreda-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-ethelreda-staff-0.jpg: 5301363 -> 375898 bytes (smaller)
+  + st-ethelreda-staff-0.jpg: format=jpeg
+  + st-ethelreda-staff-0.jpg: decodes (2000x1500)
+  + st-ethelreda-staff-0.jpg: width 2000 <= 2000
+  + st-ethelreda-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-flavian-solfege-0.jpg: 1397810 -> 337352 bytes (smaller)
+  + st-flavian-solfege-0.jpg: format=jpeg
+  + st-flavian-solfege-0.jpg: decodes (2000x1500)
+  + st-flavian-solfege-0.jpg: width 2000 <= 2000
+  + st-flavian-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-flavian-staff-0.jpg: 6726758 -> 594821 bytes (smaller)
+  + st-flavian-staff-0.jpg: format=jpeg
+  + st-flavian-staff-0.jpg: decodes (2000x1500)
+  + st-flavian-staff-0.jpg: width 2000 <= 2000
+  + st-flavian-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-james-solfege-0.jpg: 4539097 -> 303727 bytes (smaller)
+  + st-james-solfege-0.jpg: format=jpeg
+  + st-james-solfege-0.jpg: decodes (2000x1500)
+  + st-james-solfege-0.jpg: width 2000 <= 2000
+  + st-james-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-james-staff-0.jpg: 6728034 -> 582051 bytes (smaller)
+  + st-james-staff-0.jpg: format=jpeg
+  + st-james-staff-0.jpg: decodes (2000x1500)
+  + st-james-staff-0.jpg: width 2000 <= 2000
+  + st-james-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-john-solfege-0.jpg: 4520199 -> 275544 bytes (smaller)
+  + st-john-solfege-0.jpg: format=jpeg
+  + st-john-solfege-0.jpg: decodes (2000x1500)
+  + st-john-solfege-0.jpg: width 2000 <= 2000
+  + st-john-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-john-solfege-1.jpg: 3948459 -> 214020 bytes (smaller)
+  + st-john-solfege-1.jpg: format=jpeg
+  + st-john-solfege-1.jpg: decodes (2000x1500)
+  + st-john-solfege-1.jpg: width 2000 <= 2000
+  + st-john-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-kilda-solfege-0.jpg: 1150087 -> 250731 bytes (smaller)
+  + st-kilda-solfege-0.jpg: format=jpeg
+  + st-kilda-solfege-0.jpg: decodes (2000x1500)
+  + st-kilda-solfege-0.jpg: width 2000 <= 2000
+  + st-kilda-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-kilda-staff-0.jpg: 6280729 -> 509519 bytes (smaller)
+  + st-kilda-staff-0.jpg: format=jpeg
+  + st-kilda-staff-0.jpg: decodes (2000x1500)
+  + st-kilda-staff-0.jpg: width 2000 <= 2000
+  + st-kilda-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-lawrence-solfege-0.jpg: 4633282 -> 316030 bytes (smaller)
+  + st-lawrence-solfege-0.jpg: format=jpeg
+  + st-lawrence-solfege-0.jpg: decodes (2000x1500)
+  + st-lawrence-solfege-0.jpg: width 2000 <= 2000
+  + st-lawrence-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-lawrence-staff-0.jpg: 6832814 -> 608545 bytes (smaller)
+  + st-lawrence-staff-0.jpg: format=jpeg
+  + st-lawrence-staff-0.jpg: decodes (2000x1500)
+  + st-lawrence-staff-0.jpg: width 2000 <= 2000
+  + st-lawrence-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-leonard-solfege-0.jpg: 4532059 -> 289727 bytes (smaller)
+  + st-leonard-solfege-0.jpg: format=jpeg
+  + st-leonard-solfege-0.jpg: decodes (2000x1500)
+  + st-leonard-solfege-0.jpg: width 2000 <= 2000
+  + st-leonard-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-leonard-staff-0.jpg: 6047424 -> 472020 bytes (smaller)
+  + st-leonard-staff-0.jpg: format=jpeg
+  + st-leonard-staff-0.jpg: decodes (2000x1500)
+  + st-leonard-staff-0.jpg: width 2000 <= 2000
+  + st-leonard-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-magnus-solfege-0.jpg: 1194136 -> 263241 bytes (smaller)
+  + st-magnus-solfege-0.jpg: format=jpeg
+  + st-magnus-solfege-0.jpg: decodes (2000x1500)
+  + st-magnus-solfege-0.jpg: width 2000 <= 2000
+  + st-magnus-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-magnus-staff-0.jpg: 6268286 -> 519874 bytes (smaller)
+  + st-magnus-staff-0.jpg: format=jpeg
+  + st-magnus-staff-0.jpg: decodes (2000x1500)
+  + st-magnus-staff-0.jpg: width 2000 <= 2000
+  + st-magnus-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-mary-solfege-0.jpg: 767169 -> 245559 bytes (smaller)
+  + st-mary-solfege-0.jpg: format=jpeg
+  + st-mary-solfege-0.jpg: decodes (2000x1500)
+  + st-mary-solfege-0.jpg: width 2000 <= 2000
+  + st-mary-solfege-0.jpg: aspect ratio preserved (orig 3264x2448, comp 2000x1500)
+  + st-mary-staff-0.jpg: 6076801 -> 491928 bytes (smaller)
+  + st-mary-staff-0.jpg: format=jpeg
+  + st-mary-staff-0.jpg: decodes (2000x1500)
+  + st-mary-staff-0.jpg: width 2000 <= 2000
+  + st-mary-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-paul-solfege-0.jpg: 4949595 -> 332563 bytes (smaller)
+  + st-paul-solfege-0.jpg: format=jpeg
+  + st-paul-solfege-0.jpg: decodes (2000x1500)
+  + st-paul-solfege-0.jpg: width 2000 <= 2000
+  + st-paul-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-paul-staff-0.jpg: 6666560 -> 589706 bytes (smaller)
+  + st-paul-staff-0.jpg: format=jpeg
+  + st-paul-staff-0.jpg: decodes (2000x1500)
+  + st-paul-staff-0.jpg: width 2000 <= 2000
+  + st-paul-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-peter-solfege-0.jpg: 4534564 -> 296027 bytes (smaller)
+  + st-peter-solfege-0.jpg: format=jpeg
+  + st-peter-solfege-0.jpg: decodes (2000x1500)
+  + st-peter-solfege-0.jpg: width 2000 <= 2000
+  + st-peter-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-peter-staff-0.jpg: 6794749 -> 600899 bytes (smaller)
+  + st-peter-staff-0.jpg: format=jpeg
+  + st-peter-staff-0.jpg: decodes (2000x1500)
+  + st-peter-staff-0.jpg: width 2000 <= 2000
+  + st-peter-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-stephen-solfege-0.jpg: 4077120 -> 291535 bytes (smaller)
+  + st-stephen-solfege-0.jpg: format=jpeg
+  + st-stephen-solfege-0.jpg: decodes (2000x1500)
+  + st-stephen-solfege-0.jpg: width 2000 <= 2000
+  + st-stephen-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + st-stephen-staff-0.jpg: 6825955 -> 611456 bytes (smaller)
+  + st-stephen-staff-0.jpg: format=jpeg
+  + st-stephen-staff-0.jpg: decodes (2000x1500)
+  + st-stephen-staff-0.jpg: width 2000 <= 2000
+  + st-stephen-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + stracathro-solfege-0.jpg: 4548857 -> 295581 bytes (smaller)
+  + stracathro-solfege-0.jpg: format=jpeg
+  + stracathro-solfege-0.jpg: decodes (2000x1500)
+  + stracathro-solfege-0.jpg: width 2000 <= 2000
+  + stracathro-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + stracathro-staff-0.jpg: 6521583 -> 562632 bytes (smaller)
+  + stracathro-staff-0.jpg: format=jpeg
+  + stracathro-staff-0.jpg: decodes (2000x1500)
+  + stracathro-staff-0.jpg: width 2000 <= 2000
+  + stracathro-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + stroudwater-solfege-0.jpg: 1061315 -> 304282 bytes (smaller)
+  + stroudwater-solfege-0.jpg: format=jpeg
+  + stroudwater-solfege-0.jpg: decodes (2000x1500)
+  + stroudwater-solfege-0.jpg: width 2000 <= 2000
+  + stroudwater-solfege-0.jpg: aspect ratio preserved (orig 3264x2448, comp 2000x1500)
+  + stroudwater-staff-0.jpg: 6892542 -> 618057 bytes (smaller)
+  + stroudwater-staff-0.jpg: format=jpeg
+  + stroudwater-staff-0.jpg: decodes (2000x1500)
+  + stroudwater-staff-0.jpg: width 2000 <= 2000
+  + stroudwater-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + stuttgart-solfege-0.jpg: 4296389 -> 278651 bytes (smaller)
+  + stuttgart-solfege-0.jpg: format=jpeg
+  + stuttgart-solfege-0.jpg: decodes (2000x1500)
+  + stuttgart-solfege-0.jpg: width 2000 <= 2000
+  + stuttgart-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + tallis-solfege-0.jpg: 1477866 -> 303012 bytes (smaller)
+  + tallis-solfege-0.jpg: format=jpeg
+  + tallis-solfege-0.jpg: decodes (2000x1500)
+  + tallis-solfege-0.jpg: width 2000 <= 2000
+  + tallis-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + tallis-staff-0.jpg: 6697650 -> 595663 bytes (smaller)
+  + tallis-staff-0.jpg: format=jpeg
+  + tallis-staff-0.jpg: decodes (2000x1500)
+  + tallis-staff-0.jpg: width 2000 <= 2000
+  + tallis-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + tiverton-solfege-0.jpg: 1149809 -> 238167 bytes (smaller)
+  + tiverton-solfege-0.jpg: format=jpeg
+  + tiverton-solfege-0.jpg: decodes (2000x1500)
+  + tiverton-solfege-0.jpg: width 2000 <= 2000
+  + tiverton-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + tiverton-staff-0.jpg: 6740723 -> 624305 bytes (smaller)
+  + tiverton-staff-0.jpg: format=jpeg
+  + tiverton-staff-0.jpg: decodes (2000x1500)
+  + tiverton-staff-0.jpg: width 2000 <= 2000
+  + tiverton-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  [progress 300/328 (from original)] rss=90MB
+  + trentham-solfege-0.jpg: 4499152 -> 283419 bytes (smaller)
+  + trentham-solfege-0.jpg: format=jpeg
+  + trentham-solfege-0.jpg: decodes (2000x1500)
+  + trentham-solfege-0.jpg: width 2000 <= 2000
+  + trentham-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + trentham-staff-0.jpg: 5602518 -> 408260 bytes (smaller)
+  + trentham-staff-0.jpg: format=jpeg
+  + trentham-staff-0.jpg: decodes (2000x1500)
+  + trentham-staff-0.jpg: width 2000 <= 2000
+  + trentham-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + university-solfege-0.jpg: 4573106 -> 294575 bytes (smaller)
+  + university-solfege-0.jpg: format=jpeg
+  + university-solfege-0.jpg: decodes (2000x1500)
+  + university-solfege-0.jpg: width 2000 <= 2000
+  + university-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + university-staff-0.jpg: 6370212 -> 553168 bytes (smaller)
+  + university-staff-0.jpg: format=jpeg
+  + university-staff-0.jpg: decodes (2000x1500)
+  + university-staff-0.jpg: width 2000 <= 2000
+  + university-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + wallace-solfege-0.jpg: 4947881 -> 329177 bytes (smaller)
+  + wallace-solfege-0.jpg: format=jpeg
+  + wallace-solfege-0.jpg: decodes (2000x1500)
+  + wallace-solfege-0.jpg: width 2000 <= 2000
+  + wallace-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + wallace-solfege-1.jpg: 5128183 -> 354955 bytes (smaller)
+  + wallace-solfege-1.jpg: format=jpeg
+  + wallace-solfege-1.jpg: decodes (2000x1500)
+  + wallace-solfege-1.jpg: width 2000 <= 2000
+  + wallace-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + wallace-staff-0.jpg: 6809605 -> 592570 bytes (smaller)
+  + wallace-staff-0.jpg: format=jpeg
+  + wallace-staff-0.jpg: decodes (2000x1500)
+  + wallace-staff-0.jpg: width 2000 <= 2000
+  + wallace-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + wallace-staff-1.jpg: 6560237 -> 573789 bytes (smaller)
+  + wallace-staff-1.jpg: format=jpeg
+  + wallace-staff-1.jpg: decodes (2000x1500)
+  + wallace-staff-1.jpg: width 2000 <= 2000
+  + wallace-staff-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + walton-solfege-0.jpg: 1395501 -> 346868 bytes (smaller)
+  + walton-solfege-0.jpg: format=jpeg
+  + walton-solfege-0.jpg: decodes (2000x1500)
+  + walton-solfege-0.jpg: width 2000 <= 2000
+  + walton-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + walton-solfege-1.jpg: 1997391 -> 513271 bytes (smaller)
+  + walton-solfege-1.jpg: format=jpeg
+  + walton-solfege-1.jpg: decodes (2000x1500)
+  + walton-solfege-1.jpg: width 2000 <= 2000
+  + walton-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + walton-staff-0.jpg: 6687606 -> 576553 bytes (smaller)
+  + walton-staff-0.jpg: format=jpeg
+  + walton-staff-0.jpg: decodes (2000x1500)
+  + walton-staff-0.jpg: width 2000 <= 2000
+  + walton-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + walton-staff-1.jpg: 6524113 -> 553971 bytes (smaller)
+  + walton-staff-1.jpg: format=jpeg
+  + walton-staff-1.jpg: decodes (2000x1500)
+  + walton-staff-1.jpg: width 2000 <= 2000
+  + walton-staff-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + warwick-solfege-0.jpg: 4521455 -> 286887 bytes (smaller)
+  + warwick-solfege-0.jpg: format=jpeg
+  + warwick-solfege-0.jpg: decodes (2000x1500)
+  + warwick-solfege-0.jpg: width 2000 <= 2000
+  + warwick-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + warwick-staff-0.jpg: 6569497 -> 559686 bytes (smaller)
+  + warwick-staff-0.jpg: format=jpeg
+  + warwick-staff-0.jpg: decodes (2000x1500)
+  + warwick-staff-0.jpg: width 2000 <= 2000
+  + warwick-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + webb-solfege-0.jpg: 4417158 -> 270483 bytes (smaller)
+  + webb-solfege-0.jpg: format=jpeg
+  + webb-solfege-0.jpg: decodes (2000x1500)
+  + webb-solfege-0.jpg: width 2000 <= 2000
+  + webb-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + webb-solfege-1.jpg: 4414107 -> 265990 bytes (smaller)
+  + webb-solfege-1.jpg: format=jpeg
+  + webb-solfege-1.jpg: decodes (2000x1500)
+  + webb-solfege-1.jpg: width 2000 <= 2000
+  + webb-solfege-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + webb-staff-0.jpg: 5574848 -> 408002 bytes (smaller)
+  + webb-staff-0.jpg: format=jpeg
+  + webb-staff-0.jpg: decodes (2000x1500)
+  + webb-staff-0.jpg: width 2000 <= 2000
+  + webb-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + webb-staff-1.jpg: 5851533 -> 464052 bytes (smaller)
+  + webb-staff-1.jpg: format=jpeg
+  + webb-staff-1.jpg: decodes (2000x1500)
+  + webb-staff-1.jpg: width 2000 <= 2000
+  + webb-staff-1.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + westminster-solfege-0.jpg: 4587399 -> 298934 bytes (smaller)
+  + westminster-solfege-0.jpg: format=jpeg
+  + westminster-solfege-0.jpg: decodes (2000x1500)
+  + westminster-solfege-0.jpg: width 2000 <= 2000
+  + westminster-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + westminster-staff-0.jpg: 6609503 -> 582227 bytes (smaller)
+  + westminster-staff-0.jpg: format=jpeg
+  + westminster-staff-0.jpg: decodes (2000x1500)
+  + westminster-staff-0.jpg: width 2000 <= 2000
+  + westminster-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + wetherby-solfege-0.jpg: 1193568 -> 288487 bytes (smaller)
+  + wetherby-solfege-0.jpg: format=jpeg
+  + wetherby-solfege-0.jpg: decodes (2000x1500)
+  + wetherby-solfege-0.jpg: width 2000 <= 2000
+  + wetherby-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + wetherby-staff-0.jpg: 7477520 -> 703499 bytes (smaller)
+  + wetherby-staff-0.jpg: format=jpeg
+  + wetherby-staff-0.jpg: decodes (2000x1500)
+  + wetherby-staff-0.jpg: width 2000 <= 2000
+  + wetherby-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + wiltshire-solfege-0.jpg: 1295177 -> 309632 bytes (smaller)
+  + wiltshire-solfege-0.jpg: format=jpeg
+  + wiltshire-solfege-0.jpg: decodes (2000x1500)
+  + wiltshire-solfege-0.jpg: width 2000 <= 2000
+  + wiltshire-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + wiltshire-staff-0.jpg: 7008485 -> 659540 bytes (smaller)
+  + wiltshire-staff-0.jpg: format=jpeg
+  + wiltshire-staff-0.jpg: decodes (2000x1500)
+  + wiltshire-staff-0.jpg: width 2000 <= 2000
+  + wiltshire-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + winchester-solfege-0.jpg: 4563914 -> 296212 bytes (smaller)
+  + winchester-solfege-0.jpg: format=jpeg
+  + winchester-solfege-0.jpg: decodes (2000x1500)
+  + winchester-solfege-0.jpg: width 2000 <= 2000
+  + winchester-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + winchester-staff-0.jpg: 6592905 -> 578752 bytes (smaller)
+  + winchester-staff-0.jpg: format=jpeg
+  + winchester-staff-0.jpg: decodes (2000x1500)
+  + winchester-staff-0.jpg: width 2000 <= 2000
+  + winchester-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + woodworth-solfege-0.jpg: 4568542 -> 307809 bytes (smaller)
+  + woodworth-solfege-0.jpg: format=jpeg
+  + woodworth-solfege-0.jpg: decodes (2000x1500)
+  + woodworth-solfege-0.jpg: width 2000 <= 2000
+  + woodworth-solfege-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+  + woodworth-staff-0.jpg: 6826338 -> 598289 bytes (smaller)
+  + woodworth-staff-0.jpg: format=jpeg
+  + woodworth-staff-0.jpg: decodes (2000x1500)
+  + woodworth-staff-0.jpg: width 2000 <= 2000
+  + woodworth-staff-0.jpg: aspect ratio preserved (orig 4032x3024, comp 2000x1500)
+
+-- C. Aggregate summary --
+  Original bytes total:   1489381619
+  Compressed bytes total: 131097725
+  Saved:                  1358283894 bytes
+  Reduction:              91.2%
+  JPEGs checked:          320
+  PNGs checked:           6
+  Meta/dotfiles checked:  2
+  Smallest reduction:     forest-green-solfege-0.jpg (62.9%)
+  Largest reduction:      st-john-solfege-1.jpg (94.6%)
+
+==============================
+All checks passed
+COMPRESSION_VERIFIED
+==============================
