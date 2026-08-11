@@ -244,7 +244,15 @@ Plans:
   3. A Lighthouse run on the psalm list and psalm detail pages scores 90+ on Performance
   4. Navigating to search, explore, daily, or the homepage never shows a blank screen during load — a skeleton appears within one frame
   5. Every button, link, and card gives an immediate visual `:active`/pending state when clicked
-**Plans**: TBD
+**Plans**: 4 plans in 3 waves
+Plans:
+**Wave 1**
+- [ ] 14-01-PLAN.md — Styled 404 page per UI-SPEC §1 + favicon (icon.svg + apple-icon.png) + metadataBase in layout.tsx (wave 1)
+**Wave 2** *(parallel — no plan-to-plan dependencies)*
+- [ ] 14-02-PLAN.md — OG images for psalm + tune routes via next/og ImageResponse, 1200x630, edge runtime (wave 2)
+- [ ] 14-03-PLAN.md — Homepage skeleton (NEW src/app/loading.tsx) + richer daily skeleton (REPLACE src/app/daily/loading.tsx) + verify explore skeleton (wave 2)
+**Wave 3** *(blocked on Waves 1-2 merging + deploying)*
+- [ ] 14-04-PLAN.md — Click-feedback mechanical sweep across src/components/ and src/app/**/page.tsx (normalize 0.97→0.98, add active:bg-muted/translate-y-px), exclude Dialog/Sheet/Popover + Button shadcn + disabled, document contract + run Lighthouse 90+ verification against production (wave 3)
 **UI hint**: yes
 
 ## Backlog
