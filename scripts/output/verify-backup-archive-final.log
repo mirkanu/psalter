@@ -1,0 +1,19 @@
+Verifying archive: /home/services/psalter-backups/tunes-pre-compression-20260730.tar.gz
+sha256 expected: 28a83a7d0497db7353d7919293004b07533144a26f62a7a3fb899482e5b714a9
+sha256 actual:   28a83a7d0497db7353d7919293004b07533144a26f62a7a3fb899482e5b714a9
+size expected:   1431381138
+size actual:     1431381138
+mtime (epoch):   1785394660  (not hard-failed; printed for drift visibility)
+Restored images: 326 (expected 326)
+OK /tmp/tmp.78ySYZljjw/tunes/abbeyville-solfege-0.jpg (jpeg 4032x3024)
+OK /tmp/tmp.78ySYZljjw/tunes/abbeyville-staff-0.jpg (jpeg 4032x3024)
+OK /tmp/tmp.78ySYZljjw/tunes/agawam-solfege-0.jpg (jpeg 4032x3024)
+OK /tmp/tmp.78ySYZljjw/tunes/agawam-staff-0.jpg (jpeg 4032x3024)
+OK /tmp/tmp.78ySYZljjw/tunes/alexander-written-by-brian-crossett-staff-0.jpg (jpeg 1170x930)
+OK /tmp/tmp.78ySYZljjw/tunes/argyle-solfege-0.jpg (jpeg 4032x3024)
+OK /tmp/tmp.78ySYZljjw/tunes/argyle-staff-0.jpg (jpeg 4032x3024)
+OK /tmp/tmp.78ySYZljjw/tunes/arnold-solfege-0.jpg (jpeg 4032x3024)
+OK /tmp/tmp.78ySYZljjw/tunes/arnold-staff-0.jpg (jpeg 4032x3024)
+OK /tmp/tmp.78ySYZljjw/tunes/artaxerxes-epc-tune-solfege-0.jpg (jpeg 4032x3024)
+Decoded 10/10 sample files successfully
+ARCHIVE_VERIFIED
