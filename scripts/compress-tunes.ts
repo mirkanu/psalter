@@ -19,6 +19,7 @@ import { join, resolve, dirname } from 'node:path'
 import { execSync } from 'node:child_process'
 import sharp from 'sharp'
 
+// Phase 13 Plan 01 Task 3: human-approved setting w2000-q82, reviewed against 4 melisma-approved scores on 2026-08-11
 const DEFAULT_QUALITY = 82
 const DEFAULT_WIDTH = 2000
 const TUNES_DIR = join(process.cwd(), 'public/tunes')
