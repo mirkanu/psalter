@@ -284,7 +284,7 @@ sha256sum /home/services/psalter-backups/tunes-pre-compression-20260730.tar.gz
 | A3 | PNG files (6 of 326, already small — 12KB to 194KB) are in scope for this phase alongside the JPEGs | Don't Hand-Roll, Pitfalls | ASSET-01's title says "tune JPEGs" specifically; if PNGs are out of scope, the compression script should skip them rather than attempt (and possibly fail) to shrink already-optimized small PNGs. Flag for user/planner confirmation. |
 | A4 | The apparent 65-character hex string in `BACKUP-MANIFEST.md`'s sha256 field (`28a83a7d0497db7353d7919293004b07533144a26f62a7a3fb899482e5b714a9` — 66 hex chars, not the standard 64) is a documentation transcription artifact, and the correct verification approach is to re-run `sha256sum` live rather than trust the written value verbatim | Code Examples | Low risk — the fix (re-derive live rather than hardcode) is already the recommended approach regardless of whether the manifest's string has a typo. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should compressed output replace `public/tunes/` in place, or should the app be pointed at a new directory?**
    - What we know: `src/lib/tune-jpg-urls.ts` derives URLs as `/tunes/{slug}-{type}-{n}.jpg` from `public/tunes/` via `existsSync` probes, cached per-process. Swapping the directory contents (same filenames, same paths) requires no code changes and is the lowest-risk approach given the existing derivation logic.
