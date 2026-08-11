@@ -39,6 +39,11 @@ scripts/output/*.json
 # UAT screenshots pushed to Telegram during verification plans (runtime-generated)
 .tmp-uat/
 
+# Phase 13 tune-image-compression working directories (large image binaries — never commit)
+public/tunes-compressed/
+public/tunes-samples/
+public/tunes-old/
+
 # .planning operational history — may contain infra-specific details
 # Keep: ROADMAP.md, PROJECT.md, REQUIREMENTS.md, milestones/, seeds/, notes/, research/, todos/
 .planning/phases/
