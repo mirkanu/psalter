@@ -236,7 +236,7 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById, tuneTi
     <div className="max-w-4xl mx-auto px-4 py-6">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
-        <Link href="/precent" className="hover:text-foreground transition-colors">
+        <Link href="/precent" className="hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">
           Precent
         </Link>
         <span className="select-none">&rsaquo;</span>

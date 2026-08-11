@@ -45,7 +45,7 @@ export default async function NavesTopicPage({ params }: PageProps) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
       <div className="flex items-center gap-1 text-sm text-muted-foreground mb-4">
-        <Link href="/explore" className="hover:text-foreground">Explore</Link>
+        <Link href="/explore" className="hover:text-foreground active:bg-muted active:translate-y-px transition-all duration-75">Explore</Link>
         <span>›</span>
         <span className="text-foreground">Nave&apos;s Topics</span>
       </div>

@@ -12,11 +12,11 @@ export function SiteFooter() {
       <footer className="bg-muted border-t border-border py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="hidden sm:flex items-center gap-4">
-            <button onClick={() => setOpen('about')} className="text-sm text-muted-foreground hover:text-foreground transition-colors">About</button>
-            <button onClick={() => setOpen('copyright')} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Copyright</button>
-            <button onClick={() => setOpen('feedback')} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Feedback</button>
+            <button onClick={() => setOpen('about')} className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">About</button>
+            <button onClick={() => setOpen('copyright')} className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Copyright</button>
+            <button onClick={() => setOpen('feedback')} className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Feedback</button>
           </div>
-          <a href="https://gsdlabs.dev" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Made by GSD Labs</a>
+          <a href="https://gsdlabs.dev" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Made by GSD Labs</a>
         </div>
       </footer>
 

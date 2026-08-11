@@ -15,7 +15,7 @@ export default async function MessianicPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
       <div className="flex items-center gap-1 text-sm text-muted-foreground mb-4">
-        <Link href="/explore" className="hover:text-foreground">Explore</Link>
+        <Link href="/explore" className="hover:text-foreground active:bg-muted active:translate-y-px transition-all duration-75">Explore</Link>
         <span>›</span>
         <span className="text-foreground">Messianic Psalms</span>
       </div>
@@ -45,7 +45,7 @@ export default async function MessianicPage() {
               <div className="flex-1 min-w-0">
                 <Link
                   href={`/psalms/${p.psalmId}`}
-                  className="text-base hover:text-primary transition-colors"
+                  className="text-base hover:text-primary transition-colors active:bg-muted active:translate-y-px transition-all duration-75"
                 >
                   {p.firstLine ?? `Psalm ${p.psalmId}`}
                 </Link>

@@ -73,7 +73,7 @@ export default async function TopicPage({ params }: PageProps) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
       <div className="flex items-center gap-1 text-sm text-muted-foreground mb-4">
-        <Link href="/explore" className="hover:text-foreground">Explore</Link>
+        <Link href="/explore" className="hover:text-foreground active:bg-muted active:translate-y-px transition-all duration-75">Explore</Link>
         <span>›</span>
         <span className="text-foreground">{topic.name}</span>
       </div>
@@ -101,7 +101,7 @@ export default async function TopicPage({ params }: PageProps) {
                 {p.id}
               </span>
               <div className="flex-1 min-w-0">
-                <Link href={`/psalms/${p.id}`} className="text-base hover:text-primary transition-colors block">
+                <Link href={`/psalms/${p.id}`} className="text-base hover:text-primary transition-colors block active:bg-muted active:translate-y-px transition-all duration-75">
                   {p.firstLine ?? `Psalm ${p.id}`}
                 </Link>
                 {p.meter && (

@@ -40,7 +40,7 @@ export function TuneScoreGallery({ pages, alt }: TuneScoreGalleryProps) {
               onClick={(e) => { e.stopPropagation(); setIndex((i) => Math.max(0, i - 1)) }}
               disabled={index === 0}
               aria-label="Previous page"
-              className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-background/80 border border-border shadow hover:bg-muted disabled:opacity-30 transition-opacity"
+              className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-background/80 border border-border shadow hover:bg-muted disabled:opacity-30 transition-opacity active:bg-muted active:translate-y-px transition-all duration-75"
             >
               <ChevronLeft className="size-5" />
             </button>
@@ -49,7 +49,7 @@ export function TuneScoreGallery({ pages, alt }: TuneScoreGalleryProps) {
               onClick={(e) => { e.stopPropagation(); setIndex((i) => Math.min(pages.length - 1, i + 1)) }}
               disabled={index === pages.length - 1}
               aria-label="Next page"
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-background/80 border border-border shadow hover:bg-muted disabled:opacity-30 transition-opacity"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-background/80 border border-border shadow hover:bg-muted disabled:opacity-30 transition-opacity active:bg-muted active:translate-y-px transition-all duration-75"
             >
               <ChevronRight className="size-5" />
             </button>
@@ -72,7 +72,7 @@ export function TuneScoreGallery({ pages, alt }: TuneScoreGalleryProps) {
           <button
             type="button"
             onClick={() => setModalOpen(false)}
-            className="absolute top-4 right-4 p-2 rounded-full bg-background/80 border border-border hover:bg-muted"
+            className="absolute top-4 right-4 p-2 rounded-full bg-background/80 border border-border hover:bg-muted active:bg-muted active:translate-y-px transition-all duration-75"
             aria-label="Close fullscreen"
           >
             <X className="size-5" />
@@ -85,7 +85,7 @@ export function TuneScoreGallery({ pages, alt }: TuneScoreGalleryProps) {
                 onClick={(e) => { e.stopPropagation(); setIndex((i) => Math.max(0, i - 1)) }}
                 disabled={index === 0}
                 aria-label="Previous page"
-                className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-background/80 border border-border shadow hover:bg-muted disabled:opacity-30 transition-opacity"
+                className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-background/80 border border-border shadow hover:bg-muted disabled:opacity-30 transition-opacity active:bg-muted active:translate-y-px transition-all duration-75"
               >
                 <ChevronLeft className="size-6" />
               </button>
@@ -94,7 +94,7 @@ export function TuneScoreGallery({ pages, alt }: TuneScoreGalleryProps) {
                 onClick={(e) => { e.stopPropagation(); setIndex((i) => Math.min(pages.length - 1, i + 1)) }}
                 disabled={index === pages.length - 1}
                 aria-label="Next page"
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-background/80 border border-border shadow hover:bg-muted disabled:opacity-30 transition-opacity"
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-background/80 border border-border shadow hover:bg-muted disabled:opacity-30 transition-opacity active:bg-muted active:translate-y-px transition-all duration-75"
               >
                 <ChevronRight className="size-6" />
               </button>

@@ -87,7 +87,7 @@ export function PrecentingSetList({ sets }: Props) {
                   href={`/precent/${set.id}/sing/1`}
                   onClick={(e) => e.stopPropagation()}
                   aria-label="Start precenting"
-                  className="inline-flex items-center justify-center p-1.5 rounded hover:bg-muted transition-colors"
+                  className="inline-flex items-center justify-center p-1.5 rounded hover:bg-muted transition-colors active:bg-muted active:translate-y-px transition-all duration-75"
                 >
                   <PlayCircle className="h-4 w-4 text-green-600" />
                 </Link>
