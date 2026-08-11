@@ -62,7 +62,7 @@ function SubTopicCollapsible({ entry }: { entry: SubTopicEntry }) {
       <CollapsibleContent className="px-3 pt-2 space-y-2">
         {groups.map(({ psalmId, verses: groupVerses }) => (
           <div key={psalmId} className="mb-1">
-            <Link href={`/psalms/${psalmId}`} className="text-sm font-semibold hover:text-primary block">
+            <Link href={`/psalms/${psalmId}`} className="text-sm font-semibold hover:text-primary block active:bg-muted active:translate-y-px transition-all duration-75">
               Psalm {psalmId}
             </Link>
             {allParsed

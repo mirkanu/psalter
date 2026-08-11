@@ -64,9 +64,9 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [ ] **POLISH-01**: OG images
 - [ ] **POLISH-02**: Favicon + 404 page
-- [ ] **POLISH-03**: Lighthouse 90+ pass
+- [ ] **POLISH-03**: Lighthouse 90+ pass — *deferred verification 2026-08-11: all 3 pages scored below 0.9 (45% / 36% / 62%). Production build predates Phase 14 changes — see `.planning/phases/14-launch-polish/14-04-click-feedback-contract.md` Lighthouse section for open gaps and re-verify steps.*
 - [ ] **POLISH-04**: Remaining `loading.tsx` skeletons (search, explore, daily, homepage)
-- [ ] **POLISH-05**: Click-feedback states
+- [x] **POLISH-05**: Click-feedback states — *verified 2026-08-11: 51 active:bg-muted instances across 21 files; Pattern A on 40 Link/button/a elements, Pattern B on 9 card wrappers; 0.97 → 0.98 normalization applied per UI-SPEC §4. See `.planning/phases/14-launch-polish/14-04-click-feedback-contract.md`.*
 
 ## v2 Requirements
 
@@ -131,9 +131,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ASSET-01 | Phase 13 | Complete |
 | POLISH-01 | Phase 14 | Pending |
 | POLISH-02 | Phase 14 | Pending |
-| POLISH-03 | Phase 14 | Pending |
+| POLISH-03 | Phase 14 | Deferred (Lighthouse < 0.9 on 2026-08-11; needs fresh deploy) |
 | POLISH-04 | Phase 14 | Pending |
-| POLISH-05 | Phase 14 | Pending |
+| POLISH-05 | Phase 14 | Complete |
 
 **Coverage:**
 - v1 requirements: 31 total
