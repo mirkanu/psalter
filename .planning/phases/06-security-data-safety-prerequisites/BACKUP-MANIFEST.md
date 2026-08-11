@@ -73,3 +73,15 @@ bash scripts/backup-tunes.sh
 This creates a new dated archive; re-run `verify-tunes-backup.sh` afterward and
 update this manifest with the new path/checksum before the compression phase
 begins.
+
+## Post-compression status (Phase 13, 2026-08-11)
+
+`public/tunes/` was compressed in Phase 13 and NO LONGER matches this archive — that is intentional.
+
+- **Do not** re-run `scripts/verify-tunes-backup.sh` to check this archive: its md5 byte-identity step
+  diffs the archive against the live tree and will now fail by design.
+- **Do** run `bash scripts/verify-backup-archive.sh` instead — sha256 + 326-file restore count + sharp
+  decode sample, with no reference to the live tree.
+- Pre-compression originals also exist uncompressed at
+  `/home/services/psalter-backups/tunes-preswap-20260811/` until Phase 13 sign-off, after which this
+  tarball is again the sole copy.
