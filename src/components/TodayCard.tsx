@@ -48,7 +48,7 @@ export function TodayCard({ readings }: { readings: ReadingProp[] }) {
           <h2 className="text-2xl font-semibold mb-4">{psalmTitle}</h2>
           <Link
             href={`/psalms/${psalmId}`}
-            className="inline-flex items-center text-primary hover:underline font-medium"
+            className="inline-flex items-center text-primary hover:underline font-medium active:bg-muted active:translate-y-px transition-all duration-75"
           >
             Read Psalm {psalmId} →
           </Link>

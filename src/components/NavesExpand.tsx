@@ -40,7 +40,7 @@ export function NavesExpand({ topics }: NavesExpandProps) {
           <Link
             key={topic.id}
             href={`/explore/naves/${topic.slug}`}
-            className="block px-3 py-2 rounded-md border border-border text-sm hover:bg-muted hover:border-primary/30 transition-colors"
+            className="block px-3 py-2 rounded-md border border-border text-sm hover:bg-muted hover:border-primary/30 transition-colors active:bg-muted active:translate-y-px transition-all duration-75"
           >
             <Badge variant="secondary" className="float-right ml-2 mt-0.5 text-xs shrink-0">
               {topic.psalm_count} psalms
@@ -52,7 +52,7 @@ export function NavesExpand({ topics }: NavesExpandProps) {
       {hasMore && (
         <button
           onClick={() => setExpanded((prev) => !prev)}
-          className="mt-3 text-sm text-primary hover:underline underline-offset-4"
+          className="mt-3 text-sm text-primary hover:underline underline-offset-4 active:bg-muted active:translate-y-px transition-all duration-75"
         >
           {expanded ? "Show fewer" : `View all ${topics.length} topics`}
         </button>

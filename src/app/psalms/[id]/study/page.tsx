@@ -138,7 +138,7 @@ export default async function PsalmStudyPage({ params }: PageProps) {
       <div className="mb-4">
         <Link
           href={`/psalms/${slug}`}
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75"
           data-testid="study-back-to-singing"
         >
           <ArrowLeft className="h-4 w-4" />

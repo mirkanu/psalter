@@ -590,7 +590,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
           onClick={() => setAdvancedOpen(!advancedOpen)}
           aria-expanded={advancedOpen}
           aria-controls="tunes-advanced-panel"
-          className="text-sm font-normal active:scale-[0.98] px-0 hover:bg-transparent"
+          className="text-sm font-normal px-0 hover:bg-transparent"
         >
           Advanced Filters &amp; Columns
           {advancedOpen ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />}

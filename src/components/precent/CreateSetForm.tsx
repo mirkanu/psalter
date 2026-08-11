@@ -239,7 +239,7 @@ export function CreateSetForm({ psalms, targetUserId }: CreateSetFormProps) {
             type="submit"
             variant="default"
             disabled={!isValid || isPending}
-            className="w-full active:scale-[0.97] transition-transform duration-75"
+            className="w-full active:bg-muted active:scale-[0.98] transition-transform duration-75"
           >
             {isPending ? (
               <>

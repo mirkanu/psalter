@@ -39,7 +39,7 @@ function isEditableTarget(el: Element | null): boolean {
 }
 
 const ICON_BTN =
-  'min-h-11 min-w-11 rounded-md inline-flex items-center justify-center active:scale-[0.97] transition-transform motion-reduce:transition-none'
+  'min-h-11 min-w-11 rounded-md inline-flex items-center justify-center active:bg-muted active:scale-[0.98] transition-transform duration-75 motion-reduce:transition-none'
 const DISABLED = 'opacity-40 pointer-events-none'
 
 export function PsalmTopBar({

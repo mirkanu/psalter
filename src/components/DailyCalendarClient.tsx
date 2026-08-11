@@ -116,7 +116,7 @@ export function DailyCalendarClient({ readings, todayDay }: DailyCalendarClientP
             ? formatPsalmRef(psalmId, reading!.startingVerse, reading!.endingVerse, false)
             : ""
 
-          const cellClass = `border-r border-b border-border min-h-[44px] md:min-h-[52px] p-1 flex flex-col transition-colors duration-100 ${
+          const cellClass = `border-r border-b border-border min-h-[44px] md:min-h-[52px] p-1 flex flex-col transition-colors duration-100 active:bg-muted active:translate-y-px transition-all duration-75 ${
             isToday
               ? "bg-muted border-l-2 border-l-primary rounded-sm"
               : "hover:bg-muted/60"
