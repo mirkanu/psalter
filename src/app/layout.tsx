@@ -23,6 +23,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://psalter.gsdlabs.dev'),
   title: "CPRC Psalter",
   description: "Scottish Psalter for CPRC congregation and precentors",
   appleWebApp: {
