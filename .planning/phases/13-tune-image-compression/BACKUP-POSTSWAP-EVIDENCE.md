@@ -80,3 +80,12 @@ tar xzf /home/services/psalter-backups/tunes-pre-compression-20260730.tar.gz -C 
 This extracts a single top-level `tunes/` directory inside the archive, so the command above recreates `public/tunes/` exactly as archived. The compressed live tree will be overwritten by the original uncompressed scans — a deliberate destructive operation that should only be run if the human legibility sign-off rejects the compression.
 
 A second restore path exists until the human sign-off cleanup: the uncompressed originals are also still present at `/home/services/psalter-backups/tunes-preswap-20260811/` (328 entries) as a one-rename rollback (no archive extraction needed).
+
+## Human sign-off
+
+- **Date:** 2026-08-11
+- **Verdict:** approved
+- **Images checked:** https://psalter.gsdlabs.dev/tunes/beatitudo-staff-0.jpg, https://psalter.gsdlabs.dev/tunes/dundee-solfege-0.jpg, https://psalter.gsdlabs.dev/tunes/wetherby-staff-0.jpg
+- **Verifier confirmation:** `bash scripts/verify-backup-archive.sh` final stdout line `ARCHIVE_VERIFIED`, exit code 0 (full output captured at `scripts/output/verify-backup-archive-final.log`).
+
+The local rollback copy at `/home/services/psalter-backups/tunes-preswap-20260811/` and the Plan 01 sample directory at `public/tunes-samples/` have been removed. The Phase 6 tarball is now the sole copy of the uncompressed originals.

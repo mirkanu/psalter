@@ -82,6 +82,7 @@ begins.
   diffs the archive against the live tree and will now fail by design.
 - **Do** run `bash scripts/verify-backup-archive.sh` instead — sha256 + 326-file restore count + sharp
   decode sample, with no reference to the live tree.
-- Pre-compression originals also exist uncompressed at
-  `/home/services/psalter-backups/tunes-preswap-20260811/` until Phase 13 sign-off, after which this
-  tarball is again the sole copy.
+- Pre-compression originals also existed uncompressed at
+  `/home/services/psalter-backups/tunes-preswap-20260811/` until Phase 13 sign-off. That directory
+  has now been removed (2026-08-11, after human approval); this tarball is once again the sole copy
+  of the uncompressed originals.

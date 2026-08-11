@@ -2,7 +2,8 @@
 phase: 13-tune-image-compression
 plan: 03
 subsystem: assets
-tags: [swap, public-tunes, archive-verifier, evidence, pm2-restart, url-sweep]
+tags: [swap, public-tunes, archive-verifier, evidence, pm2-restart, url-sweep, human-sign-off, cleanup]
+updated: 2026-08-11
 dependency_graph:
   requires: [tune-image-compression-tooling, sample-comparison-page, staged-compressed-tree, full-set-compression-verifier, backup-preflight-evidence]
   provides: [compressed-public-tunes, archive-only-verifier, post-swap-evidence, preswap-rollback-directory]
@@ -27,7 +28,8 @@ decisions:
 metrics:
   duration: "~10 minutes"
   completed: 2026-08-11
-  tasks: 2 (Tasks 1 and 2; Task 3 is the human-verify checkpoint and runs on orchestrator approval)
+  updated: 2026-08-11
+  tasks: 3 (Tasks 1, 2, and 3 on-approval branch; the human-verify checkpoint concluded with approval)
   files: 4
 ---
 
@@ -114,6 +116,20 @@ Neither was executed during Task 1 or Task 2 — the swap is healthy and awaitin
 ## Auth Gates
 
 None.
+
+## Task 3 — Human sign-off and cleanup (2026-08-11)
+
+The on-approval branch of Task 3 was executed after the user verified the three melisma-bearing scores on the live site and replied with the verbatim verdict "approved".
+
+- **Images checked (live):** https://psalter.gsdlabs.dev/tunes/beatitudo-staff-0.jpg, https://psalter.gsdlabs.dev/tunes/dundee-solfege-0.jpg, https://psalter.gsdlabs.dev/tunes/wetherby-staff-0.jpg
+- **Cleanup performed:**
+  - `rm -rf /home/services/psalter/public/tunes-samples` — Plan 01 sample directory removed.
+  - `rm -rf /home/services/psalter-backups/tunes-preswap-20260811` — 1.4 GiB redundant uncompressed rollback copy removed.
+- **Final archive verification (post-cleanup):** `bash scripts/verify-backup-archive.sh` final stdout line `ARCHIVE_VERIFIED`, exit code 0, full log at `scripts/output/verify-backup-archive-final.log`. The tarball, now the sole copy of the uncompressed originals, was reconfirmed unchanged (sha256 `28a83a7d0497db7353d7919293004b07533144a26f62a7a3fb899482e5b714a9`, size `1431381138`, restored count `326`, sharp decode sample 10/10).
+- **Documentation updates:**
+  - `BACKUP-POSTSWAP-EVIDENCE.md` gained a `## Human sign-off` section with the date, the verbatim verdict, the three URLs checked, and the final `ARCHIVE_VERIFIED` confirmation.
+  - `BACKUP-MANIFEST.md` `## Post-compression status` last bullet was amended to past tense, confirming the `tunes-preswap-20260811/` directory has been removed and the tarball is again the sole copy.
+- **Live compressed tree untouched:** `public/tunes/` still holds 328 entries (160 jpg + 6 png + 2 dotfiles), `du -sh` under 500M. No modifications to the live tree during this step.
 
 ## Known Stubs
 
