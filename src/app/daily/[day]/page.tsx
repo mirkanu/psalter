@@ -31,7 +31,7 @@ export default async function DailyDayPage({ params }: PageProps) {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-      <Link href="/daily" className="text-sm text-muted-foreground hover:text-foreground">
+      <Link href="/daily" className="text-sm text-muted-foreground hover:text-foreground active:bg-muted active:translate-y-px transition-all duration-75">
         ← Back to plan
       </Link>
       <h1 className="text-3xl md:text-4xl font-bold text-foreground mt-4 mb-2">
@@ -39,7 +39,7 @@ export default async function DailyDayPage({ params }: PageProps) {
       </h1>
       {psalmId ? (
         <p className="text-lg">
-          <Link href={`/psalms/${psalmId}`} className="text-primary hover:underline font-medium">
+          <Link href={`/psalms/${psalmId}`} className="text-primary hover:underline font-medium active:bg-muted active:translate-y-px transition-all duration-75">
             Psalm {psalmId} — {psalmTitle}
           </Link>
         </p>
