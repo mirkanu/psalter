@@ -3,14 +3,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { RotateCcw } from 'lucide-react'
 import { NotationRendererClient } from '@/components/notation/NotationRendererClient'
-import { PsalmTopBar } from './PsalmTopBar'
+import { PsalmTopBarClient } from './PsalmTopBarClient'
 import { GlassBottomBar } from './GlassBottomBar'
 import { PlayMiniBarClient } from './PlayMiniBarClient'
-import { GearPopover } from './GearPopover'
-import { OnboardingTour } from './OnboardingTour'
+import { GearPopoverClient } from './GearPopoverClient'
+import { OnboardingTourClient } from './OnboardingTourClient'
 import { StanzaDotIndicator } from './StanzaDotIndicator'
-import { PsalmPickerModal } from '@/components/PsalmPickerModal'
-import { TuneSwitcherSheet } from './TuneSwitcherSheet'
+import { PsalmPickerModalClient } from '@/components/PsalmPickerModalClient'
+import { TuneSwitcherSheetClient } from './TuneSwitcherSheetClient'
 import type { TuneOption } from './types'
 import type { PsalmDetail } from '@/db/queries/psalms'
 import type { PsalmRow } from '@/components/PsalmListingGrid'
@@ -940,7 +940,7 @@ export function SingingView({
           </p>
         </div>
       )}
-      <PsalmTopBar
+      <PsalmTopBarClient
         prev={prevSlug}
         next={nextSlug}
         currentSlug={currentSlug}
@@ -1062,12 +1062,12 @@ export function SingingView({
         />
       </main>
 
-      <PsalmPickerModal
+      <PsalmPickerModalClient
         open={psalmSelectorOpen}
         onClose={() => setPsalmSelectorOpen(false)}
         psalms={psalmListRows}
       />
-      <TuneSwitcherSheet
+      <TuneSwitcherSheetClient
         open={tuneSwitcherOpen}
         onOpenChange={handleTuneSwitcherOpenChange}
         tunes={switcherTunes}
@@ -1089,7 +1089,7 @@ export function SingingView({
         onGearOpen={() => setGearOpen(true)}
         hidden={bottomBarHidden}
         gear={
-          <GearPopover
+          <GearPopoverClient
             open={gearOpen}
             onOpenChange={setGearOpen}
             viewMode={viewMode}
@@ -1129,7 +1129,7 @@ export function SingingView({
       {phoneLandscapeChromeHide && (totalStanzas ?? 0) > 1 && (
         <StanzaDotIndicator current={currentStanza ?? 1} total={totalStanzas as number} />
       )}
-      <OnboardingTour key={tourKey} totalStanzas={totalStanzas} />
+      <OnboardingTourClient key={tourKey} totalStanzas={totalStanzas} />
     </div>
   )
 }
