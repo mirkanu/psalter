@@ -105,9 +105,9 @@ export function SiteHeader() {
               <Image
                 src="https://assets.softr-files.com/applications/408bc320-dc3f-4d12-8434-de0ccf926f90/assets/71a94206-c1da-47f1-af98-00f758d2f3a6.png"
                 alt="CPRC Psalter"
-                width={140}
-                height={28}
-                sizes="28px"
+                width={350}
+                height={57}
+                sizes="(min-width: 768px) 350px, 175px"
                 priority
                 fetchPriority="high"
                 className="h-7 w-auto dark:[filter:invert(1)_hue-rotate(180deg)]"
