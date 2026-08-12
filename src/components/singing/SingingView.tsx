@@ -5,7 +5,7 @@ import { RotateCcw } from 'lucide-react'
 import { NotationRendererClient } from '@/components/notation/NotationRendererClient'
 import { PsalmTopBar } from './PsalmTopBar'
 import { GlassBottomBar } from './GlassBottomBar'
-import { PlayMiniBar } from './PlayMiniBar'
+import { PlayMiniBarClient } from './PlayMiniBarClient'
 import { GearPopover } from './GearPopover'
 import { OnboardingTour } from './OnboardingTour'
 import { StanzaDotIndicator } from './StanzaDotIndicator'
@@ -1109,7 +1109,7 @@ export function SingingView({
         }
       />
       {(abc || soundcloudUrl) && (
-        <PlayMiniBar
+        <PlayMiniBarClient
           abc={abc}
           mounted={miniBarMounted}
           visible={effectiveMiniBarVisible}
