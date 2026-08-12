@@ -11,6 +11,11 @@ const nextConfig: NextConfig = {
     ]
   },
   images: {
+    // Phase 15.2 Plan 01: declare the single quality the site uses so any
+    // future `quality` prop on <Image> is validated against this list
+    // (Next.js 16 emits a config warning otherwise). Default is 75; we do
+    // not override it anywhere, so this matches the runtime default exactly.
+    qualities: [75],
     remotePatterns: [
       {
         protocol: 'https',
