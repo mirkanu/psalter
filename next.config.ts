@@ -10,6 +10,15 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'assets.softr-files.com',
+        pathname: '/applications/408bc320-dc3f-4d12-8434-de0ccf926f90/assets/**',
+      },
+    ],
+  },
   // Phase 04.9.15 Plan 05 (Rule 3 - blocking-issue fix): this Hetzner VPS has
   // only 3.7GB RAM total and runs at ~2.4GB baseline across other services
   // (see CLAUDE.md "Hetzner VPS memory constraints"). Default build worker
