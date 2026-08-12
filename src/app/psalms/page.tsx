@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic'
-import { PsalmListingGrid } from "@/components/PsalmListingGrid"
+import { PsalmListingGridClient } from "@/components/PsalmListingGridClient"
 import { fetchPsalmListRows } from "@/db/queries/psalms"
 import type { Metadata } from "next"
 
@@ -21,7 +21,7 @@ export default async function PsalmsPage() {
           Browse all 150 psalms of the Scottish Psalter.
         </p>
       </div>
-      <PsalmListingGrid psalms={listRows} />
+      <PsalmListingGridClient psalms={listRows} />
     </div>
   )
 }
