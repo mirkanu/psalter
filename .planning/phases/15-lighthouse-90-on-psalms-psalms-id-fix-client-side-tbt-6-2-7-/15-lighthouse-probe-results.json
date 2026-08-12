@@ -1,0 +1,7 @@
+{
+  "captured": "2026-08-12T20:30:00Z",
+  "method": "Playwright PerformanceObserver metrics via shared playwright-daemon (CHROME_PATH unavailable in 3.7GB VPS — raw Lighthouse CLI would require second chromium spawn, blocked by CLAUDE.md memory constraint)",
+  "thresholds_lighthouse_mobile_p90": { "fcpMs": 1800, "lcpMs": 2500, "tbtMs": 200, "cls": 0.1, "ttfbMs": 800 },
+  "samples_per_route": 3,
+  "policy": "median of 3 navigations after 1 warmup"
+}

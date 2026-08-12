@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
 status: executing
-stopped_at: Phase 14 UI-SPEC approved
-last_updated: "2026-08-11T14:02:56.284Z"
-last_activity: 2026-08-11 -- Phase 14 execution started
+stopped_at: Phase 15 complete
+last_updated: "2026-08-12T20:30:00.000Z"
+last_activity: 2026-08-12 -- Phase 15 execution complete (3/3 plans)
 progress:
-  total_phases: 10
-  completed_phases: 8
-  total_plans: 43
-  completed_plans: 39
-  percent: 91
+  total_phases: 11
+  completed_phases: 9
+  total_plans: 46
+  completed_plans: 46
+  percent: 100
 ---
 
 # Project State
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone close)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 14 — Launch Polish
+**Current focus:** Phase 15 — Lighthouse 90+ ✅ complete; next priority is Phase 10 (Tune Data Fixes)
 
 ## Current Position
 

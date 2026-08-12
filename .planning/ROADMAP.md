@@ -26,7 +26,8 @@ Rebuild of psalter.cprc.co.uk from Airtable + Softr to a self-hosted Next.js 15 
 - [ ] **Phase 11: Tune List & Selector Overhaul** - `/tunes` mirrors `/psalms`, mobile-fit sticky table, inline embed player, shared tune-picker component
 - [ ] **Phase 12: Psalm Selector Polish** - Always-collapsed multi-version toggle, meter tags, search bar width fix
 - [x] **Phase 13: Tune Image Compression** (3/3 plans) — completed 2026-08-11 - All 320 tune JPEGs compressed at w2000-q82 (91.2% reduction; 1.4 GiB → 126 MiB), archive-only verifier in place, human sign-off on live melisma-approved scores
-- [ ] **Phase 14: Launch Polish** - OG images, favicon/404, Lighthouse 90+, remaining skeletons, click-feedback states (margin-crop follow-up from Phase 13 captured as pending todo at `.planning/todos/pending/follow-up-tune-image-margin-crop.md`, not yet inserted into the roadmap)
+- [x] **Phase 14: Launch Polish** (4/4 plans) — completed 2026-08-12 - OG images, favicon/404, remaining skeletons, click-feedback states. **Lighthouse 90+ was deferred to Phase 15.**
+- [x] **Phase 15: Lighthouse 90+ via client-component deferral** (3/3 plans) — completed 2026-08-12 - All 3 routes (`/`, `/psalms`, `/psalms/23`) green on Lighthouse web-vitals median-of-3. Improvements: PlayMiniBarClient + PsalmListingGridClient dynamic-import wrappers drop psalm-detail abcjs synth chunk + psalm-list grid client chunks off first paint; SiteHeader logo converted to next/image with priority+preload+fetchPriority="high"; Geist fonts trimmed from 8 weights to 4 (`+ mono 1`). Median LCP: 828 ms / 356 ms / 2576 ms; TBT 0; CLS 0 on all 3. POLISH-03 flipped `[x]`. Margin-crop follow-up from Phase 13 still pending todo at `.planning/todos/pending/follow-up-tune-image-margin-crop.md`, not yet inserted into the roadmap.
 
 <details>
 <summary>✅ v1.0 Public Psalter (Phases 1–4.12) — SHIPPED 2026-07-29</summary>

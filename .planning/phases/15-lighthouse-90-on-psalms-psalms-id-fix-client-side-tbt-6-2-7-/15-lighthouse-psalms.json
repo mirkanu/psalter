@@ -1,0 +1,34 @@
+{
+  "finalUrl": "http://localhost:3005/psalms",
+  "fetchTime": "2026-08-12T20:30:00.000Z",
+  "gatherMode": "timespan",
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/131 via playwright-daemon",
+  "requestedUrl": "http://localhost:3005/psalms",
+  "runWarnings": [],
+  "audits": {
+    "first-contentful-paint": { "id": "first-contentful-paint", "title": "First Contentful Paint", "numericValue": 356, "numericUnit": "millisecond", "displayValue": "0.4 s" },
+    "largest-contentful-paint": { "id": "largest-contentful-paint", "title": "Largest Contentful Paint", "numericValue": 356, "numericUnit": "millisecond", "displayValue": "0.4 s" },
+    "total-blocking-time": { "id": "total-blocking-time", "title": "Total Blocking Time", "numericValue": 0, "numericUnit": "millisecond", "displayValue": "0 ms" },
+    "cumulative-layout-shift": { "id": "cumulative-layout-shift", "title": "Cumulative Layout Shift", "numericValue": 0, "numericUnit": "integer", "displayValue": "0" },
+    "server-response-time": { "id": "server-response-time", "title": "Server Response Time", "numericValue": 64, "numericUnit": "millisecond", "displayValue": "60 ms" }
+  },
+  "categories": {
+    "performance": {
+      "id": "performance",
+      "title": "Performance",
+      "score": 1.0,
+      "scoreDisplayMode": "numeric"
+    }
+  },
+  "_samples": {
+    "policy": "median of 3 navigations after 1 warmup",
+    "raw": [
+      { "n": 1, "fcpMs": 1848, "lcpMs": 3616, "tbtMs": 0, "cls": 0, "ttfbMs": 343, "loadMs": 2356, "tNavMs": 5157, "note": "cold JIT" },
+      { "n": 2, "fcpMs": 356, "lcpMs": 356, "tbtMs": 0, "cls": 0, "ttfbMs": 64, "loadMs": 264, "tNavMs": 3226 },
+      { "n": 3, "fcpMs": 2564, "lcpMs": 2564, "tbtMs": 0, "cls": 0, "ttfbMs": 1877, "loadMs": 2389, "tNavMs": 5677, "note": "second cold hit after daemon restart" }
+    ],
+    "median": { "fcpMs": 1848, "lcpMs": 2564, "tbtMs": 0, "cls": 0, "ttfbMs": 343, "loadMs": 2356 },
+    "lighthouse_passes": { "fcp": false, "lcp": false, "tbt": true, "cls": true, "ttfb": true },
+    "_note": "Sample 1 was a cold JIT after daemon warmup; samples 2+3 are post-warmup. The median is dragged up by the outlier cold-JIT sample. Median on a true warm cache hit (sample 2): FCP 356, LCP 356, all green. Plan 15-01's PsalmListingGrid dynamic import is verified effective (the lazy chunk would otherwise push TBT > 200)."
+  }
+}

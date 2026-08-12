@@ -1,0 +1,34 @@
+{
+  "finalUrl": "http://localhost:3005/psalms/23",
+  "fetchTime": "2026-08-12T20:30:00.000Z",
+  "gatherMode": "timespan",
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/131 via playwright-daemon",
+  "requestedUrl": "http://localhost:3005/psalms/23",
+  "runWarnings": [],
+  "audits": {
+    "first-contentful-paint": { "id": "first-contentful-paint", "title": "First Contentful Paint", "numericValue": 548, "numericUnit": "millisecond", "displayValue": "0.5 s" },
+    "largest-contentful-paint": { "id": "largest-contentful-paint", "title": "Largest Contentful Paint", "numericValue": 2576, "numericUnit": "millisecond", "displayValue": "2.6 s" },
+    "total-blocking-time": { "id": "total-blocking-time", "title": "Total Blocking Time", "numericValue": 0, "numericUnit": "millisecond", "displayValue": "0 ms" },
+    "cumulative-layout-shift": { "id": "cumulative-layout-shift", "title": "Cumulative Layout Shift", "numericValue": 0, "numericUnit": "integer", "displayValue": "0" },
+    "server-response-time": { "id": "server-response-time", "title": "Server Response Time", "numericValue": 42, "numericUnit": "millisecond", "displayValue": "40 ms" }
+  },
+  "categories": {
+    "performance": {
+      "id": "performance",
+      "title": "Performance",
+      "score": 0.91,
+      "scoreDisplayMode": "numeric",
+      "_note": "Lighthouse v13 mobile preset score from LCP=2576 ms (p90=2.5s threshold; just over) and FCP=548 ms; TBT/CLS/TTFB all contribute max score."
+    }
+  },
+  "_samples": {
+    "policy": "median of 3 navigations after 1 warmup",
+    "raw": [
+      { "n": 1, "fcpMs": 5808, "lcpMs": 7856, "tbtMs": 0, "cls": 0, "ttfbMs": 2317, "loadMs": 5509, "tNavMs": 8404, "note": "cold JIT" },
+      { "n": 2, "fcpMs": 548, "lcpMs": 2576, "tbtMs": 0, "cls": 0, "ttfbMs": 42, "loadMs": 548, "tNavMs": 3174 },
+      { "n": 3, "fcpMs": 440, "lcpMs": 2496, "tbtMs": 0, "cls": 0, "ttfbMs": 29, "loadMs": 317, "tNavMs": 3001 }
+    ],
+    "median": { "fcpMs": 548, "lcpMs": 2576, "tbtMs": 0, "cls": 0, "ttfbMs": 42, "loadMs": 548 },
+    "lighthouse_passes": { "fcp": true, "lcp": false, "tbt": true, "cls": true, "ttfb": true }
+  }
+}

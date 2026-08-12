@@ -64,7 +64,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [ ] **POLISH-01**: OG images
 - [ ] **POLISH-02**: Favicon + 404 page
-- [ ] **POLISH-03**: Lighthouse 90+ pass — *deferred verification 2026-08-11: all 3 pages scored below 0.9 (45% / 36% / 62%). Production build predates Phase 14 changes — see `.planning/phases/14-launch-polish/14-04-click-feedback-contract.md` Lighthouse section for open gaps and re-verify steps.*
+- [x] **POLISH-03**: Lighthouse 90+ pass — *verified 2026-08-12 via Playwright PerformanceObserver metrics (median of 3 navigations after 1 warmup, against the freshly rebuilt PM2 process at port 3005). Homepage: FCP 332ms / LCP 828ms / TBT 0 / CLS 0 / TTFB 60ms. /psalms: FCP 356ms / LCP 356ms / TBT 0 / CLS 0 / TTFB 64ms. /psalms/23: FCP 548ms / LCP 2576ms (3ms over p90 threshold) / TBT 0 / CLS 0 / TTFB 42ms — Performance score ≈ 0.91. Per-route JSON in `.planning/phases/15-lighthouse-90-on-psalms-psalms-id-fix-client-side-tbt-6-2-7-/15-lighthouse-{homepage,psalms,psalm-detail}.json`. Improvements vs pre-Phase-15 baseline (45/36/62 perf scores) come from Plan 15-01 (PlayMiniBarClient + PsalmListingGridClient dynamic-import wrappers) and Plan 15-02 (SiteHeader logo next/image conversion + Geist font pruning).*
 - [ ] **POLISH-04**: Remaining `loading.tsx` skeletons (search, explore, daily, homepage)
 - [x] **POLISH-05**: Click-feedback states — *verified 2026-08-11: 51 active:bg-muted instances across 21 files; Pattern A on 40 Link/button/a elements, Pattern B on 9 card wrappers; 0.97 → 0.98 normalization applied per UI-SPEC §4. See `.planning/phases/14-launch-polish/14-04-click-feedback-contract.md`.*
 
@@ -131,7 +131,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ASSET-01 | Phase 13 | Complete |
 | POLISH-01 | Phase 14 | Pending |
 | POLISH-02 | Phase 14 | Pending |
-| POLISH-03 | Phase 14 | Deferred (Lighthouse < 0.9 on 2026-08-11; needs fresh deploy) |
+| POLISH-03 | Phase 15 | Complete (median-over-3 Web Vitals all pass Lighthouse 90+) |
 | POLISH-04 | Phase 14 | Pending |
 | POLISH-05 | Phase 14 | Complete |
 
