@@ -7,8 +7,8 @@ import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { Sheet, SheetTrigger, SheetContent, SheetClose } from '@/components/ui/sheet'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { GlobalSearch } from '@/components/GlobalSearch'
-import { FeedbackModal } from '@/components/FeedbackModal'
+import { GlobalSearchClient } from '@/components/GlobalSearchClient'
+import { FeedbackModalClient } from '@/components/FeedbackModalClient'
 import { cn } from '@/lib/utils'
 import { useChromeHidden } from '@/lib/chrome-hidden-store'
 import { authClient } from '@/lib/auth-client'
@@ -241,7 +241,7 @@ export function SiteHeader() {
           </div>
         </div>
 
-        <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
+        <GlobalSearchClient open={searchOpen} onClose={() => setSearchOpen(false)} />
       </header>
 
       {footerOpen === 'about' && (
@@ -274,7 +274,7 @@ export function SiteHeader() {
         </Dialog>
       )}
 
-      <FeedbackModal open={footerOpen === 'feedback'} onClose={() => setFooterOpen(null)} />
+      <FeedbackModalClient open={footerOpen === 'feedback'} onClose={() => setFooterOpen(null)} />
     </>
   )
 }
