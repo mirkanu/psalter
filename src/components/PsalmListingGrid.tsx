@@ -190,7 +190,17 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
   const trimmedQuery = query.trim()
   const isNumeric = /^\d+$/.test(trimmedQuery)
 
-  useEffect(() => { setSelectedIndex(0) }, [trimmedQuery, meterFilter])
+  // Phase 15.1 (POLISH-03): skip the FIRST render's setSelectedIndex — the initial state is
+  // already 0, so the first-run is a wasted re-render. After hydration completes the dep
+  // array still drives subsequent resets (meterFilter changing, query changing, etc.).
+  const isFirstRenderRef = useRef(true)
+  useEffect(() => {
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false
+      return
+    }
+    setSelectedIndex(0)
+  }, [trimmedQuery, meterFilter])
 
   const meters = useMemo(() => {
     const unique = Array.from(
