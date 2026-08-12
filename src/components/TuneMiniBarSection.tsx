@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback } from 'react'
-import { PlayMiniBar } from './singing/PlayMiniBar'
+import { PlayMiniBarClient } from './singing/PlayMiniBarClient'
 
 interface Props {
   abc: string
@@ -28,7 +28,7 @@ export function TuneMiniBarSection({ abc, soundcloudUrl, tuneName }: Props) {
 
   return (
     <div className="mt-4">
-      <PlayMiniBar
+      <PlayMiniBarClient
         abc={abc}
         mounted={miniBarMounted}
         visible={miniBarVisible}
