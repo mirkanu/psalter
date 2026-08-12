@@ -1,6 +1,5 @@
 'use client'
 import React, { useMemo, useState, useRef, useEffect } from "react"
-import { useMediaQuery } from "@/hooks/useMediaQuery"
 import { useRouter } from "next/navigation"
 import { Search, X, ChevronDown, ChevronUp, Download } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -103,7 +102,14 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
     showRecommendedTune: false,
     meterFilter: 'all',
   })
+  // Gap 1 (12-VERIFICATION.md): the SSR-safe default for `isNarrowViewport`
+  // is `false`. Phase 15.1 (POLISH-03): the matchMedia listener is now deferred
+  // until hydration completes — `hydrated` is the signal that the first render
+  // has finished and it's safe to install the listener (which avoids throwing in
+  // jsdom/SSR environments where `window.matchMedia` is undefined).
+  const [isNarrowViewport, setIsNarrowViewport] = useState(false)
   const hydratedRef = useRef(false)
+  const [hydrated, setHydrated] = useState(false)
   useEffect(() => {
     if (typeof window === 'undefined') return
     let nextAdvancedOpen = false
@@ -134,6 +140,7 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
       meterFilter: nextMeterFilter,
     })
     hydratedRef.current = true
+    setHydrated(true)
   }, [])
 
   function updatePersisted<K extends keyof typeof persisted>(
@@ -158,14 +165,23 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
 
   // Gap 1 (12-VERIFICATION.md): a single-line input cannot wrap its placeholder, and the full hint is
   // wider than the usable text area on a narrow phone (~176px at a 320px viewport), so use shorter copy
-  // below `sm`. useMediaQuery returns false during SSR and first paint, so the server always renders the
-  // long string — no hydration mismatch, the short string swaps in on mount.
-  const isNarrowViewport = useMediaQuery('(max-width: 639px)')
+  // below `sm`. Phase 15.1 (POLISH-03): the matchMedia listener is now deferred until hydration completes
+  // — initial paint (and SSR) always shows the long string, no mismatch.
+  useEffect(() => {
+    if (!hydrated) return
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
+    const mq = window.matchMedia('(max-width: 639px)')
+    setIsNarrowViewport(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsNarrowViewport(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [hydrated])
   const searchPlaceholder = isNarrowViewport
     ? 'Number or keyword…'
     : 'Search by psalm number or keyword…'
 
   useEffect(() => {
+    if (!hydratedRef.current) return
     if (typeof window !== 'undefined' && window.innerWidth >= 768) {
       inputRef.current?.focus()
     }
