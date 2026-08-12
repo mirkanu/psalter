@@ -1,0 +1,38 @@
+# Playwright assertion for SiteHeader logo next/image conversion
+# Plan: 15-02, Task 4 (T3 from 15-VALIDATION.md)
+# Date: 2026-08-12
+# Target: http://localhost:3098/ (worktree-local next dev with this plan's commits applied)
+# Method: POST /job to shared playwright-daemon (port 3099)
+
+# Compact form for the plan's grep acceptance criteria:
+{"src":"/_next/image?url=https%3A%2F%2Fassets.softr-files.com%2Fapplications%2F408bc320-dc3f-4d12-8434-de0ccf926f90%2Fassets%2F71a94206-c1da-47f1-af98-00f758d2f3a6.png&w=3840&q=75","fetchpriority":"high","alt":"CPRC Psalter"}
+
+# The script:
+#   await page.goto('http://localhost:3098/', { waitUntil: 'networkidle' });
+#   await page.waitForTimeout(2000);
+#   const logo = await page.locator('header img[alt="CPRC Psalter"]').first();
+#   const src = await logo.getAttribute('src');
+#   const fetchpriority = await logo.getAttribute('fetchpriority');
+#   const alt = await logo.getAttribute('alt');
+#   const preloadLink = await page.locator('head link[rel="preload"][as="image"]').first();
+#   const preloadImageSrcSet = await preloadLink.getAttribute('imageSrcSet');
+#   const preloadImageSizes = await preloadLink.getAttribute('imageSizes');
+#   return { src, fetchpriority, alt, preloadImageSrcSet, preloadImageSizes };
+
+# Result (daemon returned { "result": <below> }):
+
+{
+  "src": "/_next/image?url=https%3A%2F%2Fassets.softr-files.com%2Fapplications%2F408bc320-dc3f-4d12-8434-de0ccf926f90%2Fassets%2F71a94206-c1da-47f1-af98-00f758d2f3a6.png&w=3840&q=75",
+  "fetchpriority": "high",
+  "alt": "CPRC Psalter",
+  "preloadImageSrcSet": "/_next/image?url=https%3A%2F%2Fassets.softr-files.com%2Fapplications%2F408bc320-dc3f-4d12-8434-de0ccf926f90%2Fassets%2F71a94206-c1da-47f1-af98-00f758d2f3a6.png&w=32&q=75 32w, /_next/image?url=https%3A%2F%2Fassets.softr-files.com%2Fapplications%2F408bc320-dc3f-4d12-8434-de0ccf926f90%2Fassets%2F71a94206-c1da-47f1-af98-00f758d2f3a6.png&w=48&q=75 48w, /_next/image?url=https%3A%2F%2Fassets.softr-files.com%2Fapplications%2F408bc320-dc3f-4d12-8434-de0ccf926f90%2Fassets%2F71a94206-c1da-47f1-af98-00f758d2f3a6.png&w=64&q=75 64w, /_next/image?url=https%3A%2F%2Fassets.softr-files.com%2Fapplications%2F408bc320-dc3f-4d12-8434-de0ccf926f90%2Fassets%2F71a94206-c1da-47f1-af98-00f758d2f3a6.png&w=96&q=75 96w, /_next/image?url=https%3A%2F%2Fassets.softr-files.com%2Fapplications%2F408bc320-dc3f-4d12-8434-de0ccf926f90%2Fassets%2F71a94206-c1da-47f1-af98-00f758d2f3a6.png&w=128&q=75 128w, /_next/image?url=https%3A%2F%2Fassets.softr-files.com%2Fapplications%2F408bc320-dc3f-4d12-8434-de0ccf926f90%2Fassets%2F71a94206-c1da-47f1-af98-00f758d2f3a6.png&w=256&q=75 256w, /_next/image?url=https%3A%2F%2Fassets.softr-files.com%2Fapplications%2F408bc320-dc3f-4d12-8434-de0ccf926f90%2Fassets%2F71a94206-c1da-47f1-af98-00f758d2f3a6.png&w=384&q=75 384w, /_next/image?url=https%3A%2F%2Fassets.softr-files.com%2Fapplications%2F408bc320-dc3f-4d12-8434-de0ccf926f90%2Fassets%2F71a94206-c1da-47f1-af98-00f758d2f3a6.png&w=640&q=75 640w, /_next/image?url=https%3A%2F%2Fassets.softr-files.com%2Fapplications%2F408bc320-dc3f-4d12-8434-de0ccf926f90%2Fassets%2F71a94206-c1da-47f1-af98-00f758d2f3a6.png&w=750&q=75 750w, /_next/image?url=https%3A%2F%2Fassets.softr-files.com%2Fapplications%2F408bc320-dc3f-4d12-8434-de0ccf926f90%2Fassets%2F71a94206-c1da-47f1-af98-00f758d2f3a6.png&w=828&q=75 828w, /_next/image?url=https%3A%2F%2Fassets.softr-files.com%2Fapplications%2F408bc320-dc3f-4d12-8434-de0ccf926f90%2Fassets%2F71a94206-c1da-47f1-af98-00f758d2f3a6.png&w=1080&q=75 1080w, /_next/image?url=https%3A%2F%2Fassets.softr-files.com%2Fapplications%2F408bc320-dc3f-4d12-8434-de0ccf926f90%2Fassets%2F71a94206-c1da-47f1-af98-00f758d2f3a6.png&w=1200&q=75 1200w, /_next/image?url=https%3A%2F%2Fassets.softr-files.com%2Fapplications%2F408bc320-dc3f-4d12-8434-de0ccf926f90%2Fassets%2F71a94206-c1da-47f1-af98-00f758d2f3a6.png&w=1920&q=75 1920w, /_next/image?url=https%3A%2F%2Fassets.softr-files.com%2Fapplications%2F408bc320-dc3f-4d12-8434-de0ccf926f90%2Fassets%2F71a94206-c1da-47f1-af98-00f758d2f3a6.png&w=2048&q=75 2048w, /_next/image?url=https%3A%2F%2Fassets.softr-files.com%2Fapplications%2F408bc320-dc3f-4d12-8434-de0ccf926f90%2Fassets%2F71a94206-c1da-47f1-af98-00f758d2f3a6.png&w=3840&q=75 3840w",
+  "preloadImageSizes": "28px"
+}
+
+# Gate verification (15-VALIDATION.md T3):
+#   [PASS] src starts with "/_next/image?url="   -- next/image optimizer is serving the logo
+#   [PASS] alt is "CPRC Psalter"                  -- the selector matched the right element
+#   [PASS] fetchpriority is "high"                -- <Image fetchPriority="high"> prop emitted
+#   [PASS] <link rel="preload" as="image"> exists with imageSrcSet + imageSizes="28px"
+#                                            -- next/image `priority` emitted the preload hint
+#                                            in <head>
