@@ -126,7 +126,7 @@ export function TuneGrid({ tunes, initialMeter, onSelectTune }: TuneGridProps) {
             ? tune.recommendedPsalmIds.slice(0, 6).join(', ') + ` +${tune.recommendedPsalmIds.length - 6} more`
             : tune.recommendedPsalmIds.join(', ')
 
-          const cardClasses = "block bg-card border border-border rounded-lg p-4 hover:border-primary hover:shadow-sm transition-transform duration-75 group active:bg-muted active:scale-[0.98]"
+          const cardClasses = "block bg-card border border-border rounded-lg p-4 hover:border-primary hover:shadow-sm group active:bg-muted active:scale-[0.98] transition-all duration-75"
 
           const cardContent = (
             <>
