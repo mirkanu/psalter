@@ -66,9 +66,33 @@ export function SiteHeader() {
   // store, which only SingingView ever writes to. Defaults false (visible)
   // everywhere else, so this has zero effect on non-singing pages.
   const chromeHidden = useChromeHidden()
+  // The session fetch exists only to decide whether to show the Log Out link.
+  // SiteHeader is in the root layout, so an eager useSession() puts a
+  // blocking /api/auth/get-session request on the critical path of every
+  // route for every visitor, including anonymous ones. Deferring the
+  // consumption of the session to idle keeps the link correct for logged-in
+  // precentors while gating its display off first paint. Note: the hook
+  // itself fires on mount regardless — Better Auth 1.6.9 useSession() takes
+  // no arguments, so the request cannot be unconditionally skipped. What
+  // this gains is taking `showLogout` off the first-paint render path; the
+  // request still happens, just slightly later. requestIdleCallback is
+  // not available in Safari, hence the setTimeout fallback.
+  const [sessionEnabled, setSessionEnabled] = useState(false)
+  useEffect(() => {
+    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number }
+    if (typeof w.requestIdleCallback === 'function') {
+      const id = w.requestIdleCallback(() => setSessionEnabled(true))
+      return () => (window as Window & { cancelIdleCallback?: (h: number) => void })
+        .cancelIdleCallback?.(id)
+    }
+    const t = setTimeout(() => setSessionEnabled(true), 1)
+    return () => clearTimeout(t)
+  }, [])
   // Visibility only, like ChangelogComposer's session gate — not a security boundary.
+  // Hook is called unconditionally (rules-of-hooks): only `showLogout` is gated
+  // by `sessionEnabled` so the link does not appear on first paint.
   const { data: session, isPending: sessionPending } = authClient.useSession()
-  const showLogout = !sessionPending && !!session
+  const showLogout = sessionEnabled && !sessionPending && !!session
 
   async function handleLogout() {
     await authClient.signOut()
