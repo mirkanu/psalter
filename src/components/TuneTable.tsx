@@ -512,7 +512,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
                   e.stopPropagation()
                   setExpandedTuneId((cur) => (cur === tune.id ? null : tune.id))
                 }}
-                className={`inline-flex items-center justify-center h-11 w-11 md:h-8 md:w-8 rounded-md transition-colors ${
+                className={`inline-flex items-center justify-center h-11 w-11 md:h-8 md:w-8 rounded-md active:bg-muted active:translate-y-px transition-all duration-75 ${
                   expandedTuneId === tune.id
                     ? 'bg-primary text-primary-foreground'
                     : 'text-primary hover:bg-muted'

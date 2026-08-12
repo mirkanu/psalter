@@ -267,7 +267,7 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
             data-version-toggle={id}
             onClick={toggle}
             className={[
-              "rounded-lg hover:border-primary transition-colors duration-200 active:bg-muted active:scale-[0.98] transition-transform duration-75",
+              "rounded-lg hover:border-primary active:bg-muted active:scale-[0.98] transition-all duration-75",
               "flex items-center justify-center relative min-w-[44px] h-12 md:h-14",
               isExpanded ? "bg-primary/5 border-primary border-2" : "bg-card border border-border",
             ].join(' ')}
@@ -347,7 +347,7 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
               type="button"
               onClick={() => setQuery('')}
               aria-label="Clear search"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground active:bg-muted active:translate-y-px transition-all duration-75"
             >
               <X className="h-4 w-4" />
             </button>
@@ -465,7 +465,7 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
               <button
                 key={book.sectionId}
                 onClick={() => scrollToSection(book.sectionId)}
-                className="bg-background/95 border border-r-0 border-border rounded-l-md text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center overflow-hidden w-6 h-14"
+                className="bg-background/95 border border-r-0 border-border rounded-l-md text-muted-foreground hover:text-foreground hover:bg-muted active:bg-muted active:translate-y-px transition-all duration-75 flex items-center justify-center overflow-hidden w-6 h-14"
               >
                 <span className="text-[9px] font-mono whitespace-nowrap rotate-90 block">{book.range}</span>
               </button>
