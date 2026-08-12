@@ -162,7 +162,7 @@ export function AccountsClient({ users }: Props) {
                 <Button
                   type="submit"
                   disabled={isPending || !name.trim() || !email.trim() || !password.trim()}
-                  className="w-full active:bg-muted active:scale-[0.98] transition-transform duration-75"
+                  className="w-full"
                 >
                   {isPending ? (
                     <>

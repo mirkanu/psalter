@@ -258,7 +258,7 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById, tuneTi
             <button
               type="button"
               onClick={() => setEditMetaOpen(true)}
-              className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
+              className="text-muted-foreground hover:text-foreground active:bg-muted active:translate-y-px transition-all duration-75 p-1 rounded"
               aria-label="Edit date and type"
             >
               <Pencil className="h-4 w-4" />
@@ -266,7 +266,7 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById, tuneTi
             <button
               type="button"
               onClick={() => setDeleteOpen(true)}
-              className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded"
+              className="text-muted-foreground hover:text-destructive active:bg-muted active:translate-y-px transition-all duration-75 p-1 rounded"
               aria-label="Delete set"
             >
               <Trash2 className="h-4 w-4" />
@@ -282,14 +282,13 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById, tuneTi
           <Button
             variant="outline"
             onClick={() => { setPsalmPickerMode('add'); setPsalmPickerItemId(null); setPsalmPickerOpen(true) }}
-            className="active:bg-muted active:scale-[0.98] transition-transform duration-75"
           >
             Add Psalm
           </Button>
           <Button
             variant="ghost"
             onClick={() => setPasteOpen(true)}
-            className="active:bg-muted active:scale-[0.98] transition-transform duration-75 text-muted-foreground"
+            className="text-muted-foreground"
           >
             Paste List
           </Button>
@@ -297,7 +296,7 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById, tuneTi
         <Button
           disabled={set.setItems.length === 0}
           onClick={() => router.push(`/precent/${set.id}/sing/1`)}
-          className="bg-green-100 text-green-900 hover:bg-green-200 border border-green-300 active:bg-muted active:scale-[0.98] transition-transform duration-75 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-green-100 text-green-900 hover:bg-green-200 border border-green-300 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Start Precenting
         </Button>

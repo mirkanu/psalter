@@ -45,8 +45,7 @@ export function PsalmNumberBox({ psalm, isTopResult, showFirstLine, showMeter, s
 
   const baseClasses = [
     "block rounded-lg",
-    "hover:border-primary transition-colors duration-200",
-    "active:bg-muted active:scale-[0.98] transition-transform duration-75",
+    "hover:border-primary active:bg-muted active:scale-[0.98] transition-all duration-75",
     hasContent
       ? "flex flex-col py-2 px-2 min-h-[44px] min-w-[44px]"
       : `flex items-center justify-center relative min-w-[44px] h-12 md:h-14${className ? ` ${className}` : ''}`,

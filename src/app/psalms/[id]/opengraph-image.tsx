@@ -22,12 +22,14 @@ export default async function Image({ params }: Props) {
   const psalm = psalmId ? await fetchPsalmDetail(psalmId) : null
 
   const titleNumber = psalm?.id ?? psalmId ?? "?"
-  const title = `Psalm ${titleNumber}`
+  const title = parsed?.versionLetter
+    ? `Psalm ${titleNumber}${parsed.versionLetter}`
+    : `Psalm ${titleNumber}`
 
-  // First-line subtitle: prefer the bibleTitle, then the first version's firstLine,
-  // then empty. Truncate to 100 chars per UI-SPEC §2.
+  // Subtitle: first verse line of the first version (per UI-SPEC §2).
+  // Truncate to 100 chars per UI-SPEC §2.
   const subtitle =
-    truncate(psalm?.bibleTitle ?? psalm?.psalmVersions?.[0]?.firstLine ?? "", 100)
+    truncate(psalm?.psalmVersions?.[0]?.firstLine ?? "", 100)
 
   return new ImageResponse(
     (
