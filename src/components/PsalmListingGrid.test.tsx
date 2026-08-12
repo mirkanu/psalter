@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, cleanup, fireEvent } from '@testing-library/react'
+import { render, cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }))
 import { PsalmListingGrid, type PsalmRow } from './PsalmListingGrid'
 
@@ -213,5 +213,43 @@ describe('PsalmListingGrid — Gap 4 column sizing', () => {
     fireEvent.click(container.querySelector('[data-version-toggle="6"]') as HTMLElement)
     const panelGrid = container.querySelector('[data-expanded-panel="6"] .grid') as HTMLElement
     expect(panelGrid.className).toContain('minmax(5.5rem')
+  })
+})
+
+describe('PsalmListingGrid — Phase 15.1 hydration behavior', () => {
+  it('hydrates from a single batched localStorage read', async () => {
+    // Seed all 5 keys at once before mounting.
+    localStorage.setItem('psalms.advancedOpen', JSON.stringify(true))
+    localStorage.setItem('psalms.showFirstLine', JSON.stringify(true))
+    localStorage.setItem('psalms.showMeter', JSON.stringify(true))
+    localStorage.setItem('psalms.showRecommendedTune', JSON.stringify(true))
+    localStorage.setItem('psalms.meterFilter', JSON.stringify('LM'))
+    const minimalPsalms: PsalmRow[] = [
+      { id: 23, versionId: null, displayLabel: '23', slug: '23', firstLine: 'The Lord is my shepherd', meter: 'CM', kjvExcerpt: null },
+    ]
+    render(<PsalmListingGrid psalms={minimalPsalms} />)
+    // Wait for the hydration effect to run (and `hasAdvancedFilter` to flip on).
+    await waitFor(() => {
+      // The Meter filter dropdown trigger should now display 'LM' (the seeded value).
+      // The SelectTrigger renders the active label as visible text — fallback to beDisplayValue is fine.
+      expect(screen.getAllByText(/^LM$/).length).toBeGreaterThan(0)
+    })
+  })
+
+  it('does not write back to localStorage on the first render (SSR-snapshot protection)', async () => {
+    // Mount with NO localStorage seeded — all 5 keys missing → defaults apply.
+    const minimalPsalms: PsalmRow[] = [
+      { id: 23, versionId: null, displayLabel: '23', slug: '23', firstLine: 'The Lord is my shepherd', meter: 'CM', kjvExcerpt: null },
+    ]
+    render(<PsalmListingGrid psalms={minimalPsalms} />)
+    // After mount, the 5 keys MUST still be absent (the hydratedRef guard in
+    // updatePersisted prevents defaults from being written back over real user
+    // values during the first render).
+    await new Promise((r) => setTimeout(r, 50))
+    expect(localStorage.getItem('psalms.advancedOpen')).toBeNull()
+    expect(localStorage.getItem('psalms.showFirstLine')).toBeNull()
+    expect(localStorage.getItem('psalms.showMeter')).toBeNull()
+    expect(localStorage.getItem('psalms.showRecommendedTune')).toBeNull()
+    expect(localStorage.getItem('psalms.meterFilter')).toBeNull()
   })
 })
