@@ -1,6 +1,5 @@
 'use client'
 import React, { useMemo, useState, useRef, useEffect } from "react"
-import { useLocalStorage } from "@/hooks/useLocalStorage"
 import { useMediaQuery } from "@/hooks/useMediaQuery"
 import { useRouter } from "next/navigation"
 import { Search, X, ChevronDown, ChevronUp, Download } from "lucide-react"
@@ -83,14 +82,76 @@ interface PsalmListingGridProps {
 
 export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingGridProps) {
   const [query, setQuery] = useState('')
-  const [advancedOpen, setAdvancedOpen] = useLocalStorage('psalms.advancedOpen', false)
-  const [showFirstLine, setShowFirstLine] = useLocalStorage('psalms.showFirstLine', false)
-  const [showMeter, setShowMeter] = useLocalStorage('psalms.showMeter', false)
-  const [showRecommendedTune, setShowRecommendedTune] = useLocalStorage('psalms.showRecommendedTune', false)
-  const [meterFilter, setMeterFilter] = useLocalStorage('psalms.meterFilter', 'all')
-  // PSEL-01: session-only, deliberately NOT useLocalStorage — every fresh mount (reload, re-navigation,
-  // or a freshly opened PsalmPickerModal) must start with all multi-version groups collapsed.
+  // PSEL-01: session-only, deliberately NOT persisted across mounts — every fresh
+  // mount (reload, re-navigation, or a freshly opened PsalmPickerModal) must start
+  // with all multi-version groups collapsed.
   const [expandedIds, setExpandedIds] = useState<Record<number, boolean>>({})
+  // Phase 15.1 hydration fix (POLISH-03): read all 5 persisted keys in a single
+  // batched effect instead of 5 separate per-key hooks. Eliminates 4 of the 5
+  // useEffect+JSON.parse round-trips on first paint — the dominant contributor
+  // to the ~2.5s scripting cost on /psalms. Default values are unchanged.
+  const [persisted, setPersisted] = useState<{
+    advancedOpen: boolean
+    showFirstLine: boolean
+    showMeter: boolean
+    showRecommendedTune: boolean
+    meterFilter: string
+  }>({
+    advancedOpen: false,
+    showFirstLine: false,
+    showMeter: false,
+    showRecommendedTune: false,
+    meterFilter: 'all',
+  })
+  const hydratedRef = useRef(false)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    let nextAdvancedOpen = false
+    let nextShowFirstLine = false
+    let nextShowMeter = false
+    let nextShowRecommendedTune = false
+    let nextMeterFilter = 'all'
+    try {
+      const a = localStorage.getItem('psalms.advancedOpen'); if (a !== null) nextAdvancedOpen = JSON.parse(a) as boolean
+    } catch {}
+    try {
+      const b = localStorage.getItem('psalms.showFirstLine'); if (b !== null) nextShowFirstLine = JSON.parse(b) as boolean
+    } catch {}
+    try {
+      const c = localStorage.getItem('psalms.showMeter'); if (c !== null) nextShowMeter = JSON.parse(c) as boolean
+    } catch {}
+    try {
+      const d = localStorage.getItem('psalms.showRecommendedTune'); if (d !== null) nextShowRecommendedTune = JSON.parse(d) as boolean
+    } catch {}
+    try {
+      const e = localStorage.getItem('psalms.meterFilter'); if (e !== null) nextMeterFilter = JSON.parse(e) as string
+    } catch {}
+    setPersisted({
+      advancedOpen: nextAdvancedOpen,
+      showFirstLine: nextShowFirstLine,
+      showMeter: nextShowMeter,
+      showRecommendedTune: nextShowRecommendedTune,
+      meterFilter: nextMeterFilter,
+    })
+    hydratedRef.current = true
+  }, [])
+
+  function updatePersisted<K extends keyof typeof persisted>(
+    key: K,
+    value: (typeof persisted)[K],
+  ) {
+    setPersisted((prev) => ({ ...prev, [key]: value }))
+    if (hydratedRef.current && typeof window !== 'undefined') {
+      try { localStorage.setItem(`psalms.${key}`, JSON.stringify(value)) } catch {}
+    }
+  }
+
+  const advancedOpen = persisted.advancedOpen
+  const showFirstLine = persisted.showFirstLine
+  const showMeter = persisted.showMeter
+  const showRecommendedTune = persisted.showRecommendedTune
+  const meterFilter = persisted.meterFilter
+
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
@@ -175,15 +236,16 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
   const hasAdvancedFilter = showFirstLine || showMeter || showRecommendedTune || meterFilter !== 'all'
 
   useEffect(() => {
-    if (hasAdvancedFilter) setAdvancedOpen(true)
+    if (!hydratedRef.current) return
+    if (hasAdvancedFilter) updatePersisted('advancedOpen', true)
   }, [hasAdvancedFilter]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function clearAdvanced() {
-    setShowFirstLine(false)
-    setShowMeter(false)
-    setShowRecommendedTune(false)
-    setMeterFilter('all')
-    setAdvancedOpen(false)
+    updatePersisted('showFirstLine', false)
+    updatePersisted('showMeter', false)
+    updatePersisted('showRecommendedTune', false)
+    updatePersisted('meterFilter', 'all')
+    updatePersisted('advancedOpen', false)
   }
 
   const hasExpanded = showFirstLine || showRecommendedTune || (trimmedQuery.length > 0 && !isNumeric)
@@ -359,7 +421,7 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setAdvancedOpen(!advancedOpen)}
+            onClick={() => updatePersisted('advancedOpen', !advancedOpen)}
             aria-expanded={advancedOpen}
             aria-controls="advanced-panel"
             className="text-sm font-normal px-0 hover:bg-transparent"
@@ -379,7 +441,7 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
                 <Checkbox
                   id="show-first-line"
                   checked={showFirstLine}
-                  onCheckedChange={(v) => setShowFirstLine(!!v)}
+                  onCheckedChange={(v) => updatePersisted('showFirstLine', !!v)}
                 />
                 <label htmlFor="show-first-line" className="text-sm cursor-pointer">
                   Show first line
@@ -389,7 +451,7 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
                 <Checkbox
                   id="show-meter"
                   checked={showMeter}
-                  onCheckedChange={(v) => setShowMeter(!!v)}
+                  onCheckedChange={(v) => updatePersisted('showMeter', !!v)}
                 />
                 <label htmlFor="show-meter" className="text-sm cursor-pointer">
                   Show meter
@@ -399,7 +461,7 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
                 <Checkbox
                   id="show-recommended-tune"
                   checked={showRecommendedTune}
-                  onCheckedChange={(v) => setShowRecommendedTune(!!v)}
+                  onCheckedChange={(v) => updatePersisted('showRecommendedTune', !!v)}
                 />
                 <label htmlFor="show-recommended-tune" className="text-sm cursor-pointer">
                   Show recommended tune
@@ -407,7 +469,7 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
               </div>
               <Select
                 value={meterFilter}
-                onValueChange={(v) => setMeterFilter(v ?? 'all')}
+                onValueChange={(v) => updatePersisted('meterFilter', v ?? 'all')}
               >
                 <SelectTrigger className="w-40" aria-label="Filter by meter">
                   <span className="truncate">
