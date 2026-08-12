@@ -64,7 +64,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [ ] **POLISH-01**: OG images
 - [ ] **POLISH-02**: Favicon + 404 page
-- [x] **POLISH-03**: Lighthouse 90+ pass — *verified 2026-08-12 via Playwright PerformanceObserver metrics (median of 3 navigations after 1 warmup, against the freshly rebuilt PM2 process at port 3005). Homepage: FCP 332ms / LCP 828ms / TBT 0 / CLS 0 / TTFB 60ms. /psalms: FCP 356ms / LCP 356ms / TBT 0 / CLS 0 / TTFB 64ms. /psalms/23: FCP 548ms / LCP 2576ms (3ms over p90 threshold) / TBT 0 / CLS 0 / TTFB 42ms — Performance score ≈ 0.91. Per-route JSON in `.planning/phases/15-lighthouse-90-on-psalms-psalms-id-fix-client-side-tbt-6-2-7-/15-lighthouse-{homepage,psalms,psalm-detail}.json`. Improvements vs pre-Phase-15 baseline (45/36/62 perf scores) come from Plan 15-01 (PlayMiniBarClient + PsalmListingGridClient dynamic-import wrappers) and Plan 15-02 (SiteHeader logo next/image conversion + Geist font pruning).*
+- [ ] **POLISH-03**: Lighthouse 90+ pass — *deferred as of 2026-08-12. Phase 15 shipped the initial wrappers (PerformanceObserver stand-in flipped it to `[x]` prematurely, then rolled back when real Lighthouse v13.4.1 mobile/sim was run against localhost:3005 — perf 0.69 / 0.61 / 0.65 vs the 0.90 target). Phase 15.1 attempted gap-closure: 5 more dynamic-import wrappers (PsalmPickerModalClient + PsalmTopBarClient + OnboardingTourClient + TuneSwitcherSheetClient + GearPopoverClient), PsalmListingGrid hydration-cost batching, logo q=100→90, real Lighthouse re-audit. All code shippable and verified in build, but apples-to-apples localhost re-audit (Phase 15.1 BUILD_ID `9SatBYqJdA0QpGtnJ4Xx1`) returned perf 0.47 / 0.60 / 0.67 — a regression on `/` (0.69→0.47, root cause unclear but likely a Turbopack chunk re-shuffle triggered by next.config.ts `qualities` array change) and essentially flat on the other two routes. The `0r5n9xaeyh.pb.js` framework-runtime chunk (1100-3030ms scripting per route) is the dominant TBT floor; reducing it requires server-component/framework-split surgery out of scope for this phase. Real-Lighthouse JSONs at `.planning/phases/15.1-lighthouse-gap-closure-tbt-reduction/15.1-lighthouse-{homepage,psalms,psalm-detail}-localhost.json` and production (cdn-cgi adds ~5-10pts more) at the `-{...}.json` files without `-localhost`. Followup options: (a) Cloudflare WAF rule to bypass bot-challenge on `/`, `/psalms`, `/psalms/[id]` for ~5-10 score recovery, (b) investigate `/` HTML-parse regression + maybe revert logo q=90, (c) Phase 15.2: framework-chunk-splitting via RSC.*
 - [ ] **POLISH-04**: Remaining `loading.tsx` skeletons (search, explore, daily, homepage)
 - [x] **POLISH-05**: Click-feedback states — *verified 2026-08-11: 51 active:bg-muted instances across 21 files; Pattern A on 40 Link/button/a elements, Pattern B on 9 card wrappers; 0.97 → 0.98 normalization applied per UI-SPEC §4. See `.planning/phases/14-launch-polish/14-04-click-feedback-contract.md`.*
 
@@ -131,7 +131,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ASSET-01 | Phase 13 | Complete |
 | POLISH-01 | Phase 14 | Pending |
 | POLISH-02 | Phase 14 | Pending |
-| POLISH-03 | Phase 15 | Complete (median-over-3 Web Vitals all pass Lighthouse 90+) |
+| POLISH-03 | Phase 15 → 15.1 | Deferred (real Lighthouse 0.47/0.60/0.67 on localhost; goal 90+ not met) |
 | POLISH-04 | Phase 14 | Pending |
 | POLISH-05 | Phase 14 | Complete |
 

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
 status: executing
-stopped_at: Phase 15 complete
-last_updated: "2026-08-12T20:30:00.000Z"
-last_activity: 2026-08-12 -- Phase 15 execution complete (3/3 plans)
+stopped_at: Phase 15.1 gap-closure iteration (POLISH-03 still deferred)
+last_updated: "2026-08-12T22:00:00.000Z"
+last_activity: 2026-08-12 -- Phase 15.1 executed (3/3 plans), apples-to-apples localhost re-audit returned 0.47 / 0.60 / 0.67 vs 0.90 target
 progress:
-  total_phases: 11
+  total_phases: 12
   completed_phases: 9
-  total_plans: 46
-  completed_plans: 46
-  percent: 100
+  total_plans: 49
+  completed_plans: 49
+  percent: 98
 ---
 
 # Project State

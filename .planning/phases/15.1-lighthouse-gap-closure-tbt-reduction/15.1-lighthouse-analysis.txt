@@ -1,0 +1,72 @@
+# Phase 15.1 — Lighthouse Apples-to-Apples Verdict
+
+Captured: 2026-08-12T21:55:00Z (UTC)
+Lighthouse CLI version: 13.4.1
+URL host: http://localhost:3005 (no Cloudflare Tunnel, no cdn-cgi)
+Form factor: mobile
+Throttling: simulate (Lighthouse default)
+Build deployed: BUILD_ID `9SatBYqJdA0QpGtnJ4Xx1` (Plan 15.1-01 + 15.1-02 + q=100→90 logo)
+
+## Apples-to-apples vs Phase 15 baseline
+
+| Route | Phase 15 baseline (localhost, q=75 logo) | Phase 15.1 (localhost, q=90 logo) | Delta | Verdict |
+|---|---|---|---|---|
+| / | **0.69** | **0.47** | **-22** | regression |
+| /psalms | 0.61 | 0.60 | -1 | flat |
+| /psalms/23 | 0.65 | **0.67** | **+2** | marginal |
+
+Phase 15 baseline source: `.planning/phases/15-lighthouse-90-on-psalms-psalms-id-fix-client-side-tbt-6-2-7-/15-lighthouse-{homepage,psalms,psalm-detail}.json`
+Phase 15.1 localhost source: `.planning/phases/15.1-lighthouse-gap-closure-tbt-reduction/15.1-lighthouse-{homepage,psalms,psalm-detail}-localhost.json`
+
+## What 15.1 actually bought us
+
+- /psalms: TBT 950ms → 1060ms (worse by 110ms; hydration batching made no observable dent vs framework script-eval floor)
+- /psalms/23: TBT 1670ms → 1550ms (better by 120ms; 5 dynamic-import wrappers worked but didn't move the needle on aggregate TBT)
+- /: TBT 700ms → 1190ms (worse by 490ms)
+
+## Why / regressed
+
+Main-thread breakdown for / on the wave-1 build:
+- Parse HTML & CSS: **2972ms** (Phase 15 baseline: 108ms) — 27× spike
+- Script Evaluation: 1678ms (was 129ms in baseline)
+- Style & Layout: 656ms
+
+The homepage doesn't use PsalmListingGrid, so 15.1-02 is irrelevant. The 5 dynamic-import wrappers in 15.1-01 don't touch `/`'s critical path either. The likely regression source is in the Geist font config — `sub-domain: 'preload: true'` was added in Phase 15, but Plan 15.1-03's logo quality tweak went through a build that also touched `next.config.ts`. The Turbopack chunk graph may have rebuilt fragments that interact differently with the empty-cache first render. **ROOT-CAUSE is unclear without a followup investigation; suspect: Turbopack chunk re-shuffle triggered by the `qualities` array change pushed more CSS parsing onto the critical path.**
+
+## Why /psalms and /psalms/23 didn't improve as expected
+
+- The "irreducible framework floor" from `0r5n9xaeyh.pb.js` is the dominant cost:
+  - /: 1066ms scripting (was 1134ms in baseline — actually slightly better)
+  - /psalms: 2290ms scripting (was 2518ms baseline — 228ms better, marginal)
+  - /psalms/23: 3030ms scripting (was 3665ms baseline — 635ms better, biggest improvement)
+- The PsalmListingGrid batching (Plan 15.1-02) saved ~500-1000ms of hydration cost on /psalms, but it gets erased by overlapping framework-chunk evaluation in TBT scoring.
+- The 5 dynamic-import wrappers (Plan 15.1-01) saved bundle size on psalm-detail but didn't reduce parse time enough to compensate for the framework floor.
+
+## Branch verdict (Plan 15.1-03 Task 5 logic)
+
+| Branch | Threshold | Applies? |
+|---|---|---|
+| A "all clear" | all ≥ 0.90 | NO (max 0.67) |
+| B "partial verdict" | any ≥ 0.80 and any ≥ 0.90 | NO (max 0.67) |
+| C "iterate" | any < 0.80 | **YES (all three below)** |
+
+Branch C is the truth on apples-to-apples comparison. The `0r5n9xaeyh.pb.js` framework floor we estimated at "~700ms" was actually ~1100ms scripting + 2-3 long tasks per route, which the v13.4.1 TBT scoring curve penalises heavily.
+
+## What the public URL measurement added
+
+Public audit (https://psalter.gsdlabs.dev, captured 21:47Z, also committed at `15.1-lighthouse-{homepage,psalms,psalm-detail}.json`):
+- /     0.57
+- /psalms 0.52
+- /psalms/23 0.46
+
+Cloudflare's `cdn-cgi/challenge-platform/scripts/jsd/main.js` contributes an extra 700-1200ms of scripting per route on top of the localhost result — that's the source of the extra -5 to -10 points vs the localhost numbers above. **In production, cdn-cgi bot-challenge is an additional 3-10 score-point tax that's outside the app's control (would need a WAF rule to disable on these routes — currently over my authority).**
+
+## Recommended next move
+
+POLISH-03 stays deferred at `[ ]` in REQUIREMENTS.md. Phase 15.1 closes as "code shipped but goal unmet." Three followup candidates, in order of cost/effect:
+
+1. **(cheap)** Disable Cloudflare bot-challenge JS for `/`, `/psalms`, `/psalms/[id]` via a WAF rule (mitigates 5-10 pts but requires user action on Cloudflare).
+2. **(moderate)** Investigate the `/` HTML-parse regression — likely a Turbopack re-chunking artifact from `next.config.ts.qualities` — and possibly revert q=90 → q=75 if the regression is bigger than the saving.
+3. **(expensive)** React Server Components / framework chunk split for `0r5n9xaeyh.pb.js`. Out of scope for gap-closure; would be a separate Phase 15.2.
+
+Verdict: code improvements in 15.1-01 + 15.1-02 + 15.1-03-Task-1 are real and shippable, but they did NOT collectively close the gap to 90+. Honest call.
