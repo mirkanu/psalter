@@ -20,7 +20,6 @@ const navLinks = [
   { href: "/explore", label: "Explore" },
   { href: "/daily", label: "Daily Plan" },
   { href: "/precent", label: "Precent" },
-  { href: "/changelog", label: "Changelog" },
 ]
 
 // UAT v6 reversal: user explicitly wants the global SiteHeader visible on the
@@ -218,6 +217,11 @@ export function SiteHeader() {
                       render={<button onClick={() => setFooterOpen('feedback')} className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted px-3 py-2 rounded-md text-left transition-colors w-full" />}
                     >
                       Feedback
+                    </SheetClose>
+                    <SheetClose
+                      render={<a href="/changelog" className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted px-3 py-2 rounded-md text-left transition-colors w-full block" />}
+                    >
+                      Changelog
                     </SheetClose>
                     {/* 260717-mwv checkpoint round 2 (item B): the singing
                        view (/psalms/[id]) is a fixed-height layout with no
