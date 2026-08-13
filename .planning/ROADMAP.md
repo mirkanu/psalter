@@ -262,6 +262,21 @@ Plans:
 
 Deferred, not part of the active v2.0 milestone. Pick up via `/gsd-phase` + `/gsd-discuss-phase` whenever prioritised.
 
+### Phase 16: Tune Page First-Class Surface
+
+**Goal**: `/tunes/[slug]` is a first-class surface that mirrors `/psalms/[slug]` — a shared tune picker lives permanently under `/tunes`, and the tune detail page renders the same split-leaf staff/solfège notation with the same player as the psalm page, organised under Details / Notation tabs
+**Depends on**: Phase 11 (shared `TieredTuneRowList` + `NotationRendererClient` helpers exist)
+**Requirements**: TPAGE-01, TPAGE-02, TPAGE-03
+**Success Criteria** (what must be TRUE):
+  1. The tune selector modal used on the single-psalm view is the SAME component used on the precent list view (currently `TunePickerModal`), and both live as children of the `/tunes` route (e.g. `src/components/tune-picker/` or `src/app/tunes/_components/`) — no orphan modal duplicates anywhere else in `src/components/`
+  2. `/tunes/[slug]` renders the same staff-only and solfège-only split-leaf views as `/psalms/[slug]` — but WITHOUT lyrics (tunes have no lyrics) — sharing the existing `NotationRendererClient` helper so any future notation work reaches both pages in one edit
+  3. `/tunes/[slug]` includes the same tune player (audio playback control) as `/psalms/[slug]`, positioned consistently with the psalm view
+  4. `/tunes/[slug]` is organised as a tabbed surface: **Details** tab shows current metadata (tune name, composer, meter, time signature, source, etc.) at the top and a "Recommended psalms" list below; **Notation** tab shows the staff/solfège split-leaf + player
+  5. The default tab on first visit is Details; selecting Notation does not reset the user's position on the page (URL state via search params is preserved on refresh)
+  6. All abcjs rendering continues to obey the project rule: client-only, `dynamic({ ssr: false })`, `useEffect`+`useRef` container, `<Suspense>` skeleton
+**Note**: This phase explicitly reuses `TieredTuneRowList` and `NotationRendererClient` from Phase 11 — do not duplicate or fork these. The "tabbed layout" is the same shadcn `Tabs` pattern already used on `/psalms/[slug]` (PsalmTabs.tsx). Reference `.planning/research/lyric-to-note-alignment.md` only for the cross-check that "no lyrics" does not break the `padWLineToNoteCount` / `getPassingPositions` paths.
+**Plans**: [ ] Not planned (0 plans)
+
 ### Phase 999.1: Airtable Exit Verification (BACKLOG)
 
 **Goal**: Every byte of Airtable data is accounted for in PostgreSQL and R2 before the Airtable subscription is cancelled; a permanent backup and read-only DB viewer are in place

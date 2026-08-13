@@ -49,6 +49,12 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [x] **TSEL-01**: Single-psalm view and precent-list view share one tune-picker component (mirrors the existing psalm-picker consolidation)
 
+### Tune Page First-Class Surface
+
+- [ ] **TPAGE-01**: The single-psalm view's tune selector modal and the precent list view's tune selector modal are the SAME component, living permanently under `/tunes` (e.g. `src/components/tune-picker/` or `src/app/tunes/_components/`) — no orphan duplicate modal anywhere in `src/components/`. Re-validates and extends TSEL-01's consolidation goal.
+- [ ] **TPAGE-02**: `/tunes/[slug]` renders the same staff-only and solfège-only split-leaf views as `/psalms/[slug]`, sharing `NotationRendererClient` (no lyrics on the tune page). Tune player is included, positioned consistently with the psalm view.
+- [ ] **TPAGE-03**: `/tunes/[slug]` uses a tabbed layout with **Details** (metadata + recommended psalms) and **Notation** (staff/solfège split-leaf + player) tabs. URL search-param state is preserved on refresh. Default tab is Details.
+
 ### Tune List Display
 
 - [x] **TLIST-01**: `/tunes` display mirrors `/psalms` (staff + solfège split-leaf views, without lyrics)
@@ -124,6 +130,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PSEL-02 | Phase 12 | Complete |
 | PSEL-03 | Phase 12 | Complete |
 | TSEL-01 | Phase 11 | Complete |
+| TPAGE-01 | Phase 16 | Pending |
+| TPAGE-02 | Phase 16 | Pending |
+| TPAGE-03 | Phase 16 | Pending |
 | TLIST-01 | Phase 11 | Complete |
 | TLIST-02 | Phase 11 | Complete |
 | TLIST-03 | Phase 11 | Complete |
