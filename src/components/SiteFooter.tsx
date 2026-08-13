@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { FeedbackModal } from '@/components/FeedbackModal'
 
 export function SiteFooter() {
-  const [open, setOpen] = useState<'about' | 'copyright' | 'feedback' | null>(null)
+  const [open, setOpen] = useState<'about' | 'copyright' | 'feedback' | 'install' | null>(null)
 
   return (
     <>
@@ -15,6 +15,7 @@ export function SiteFooter() {
             <button onClick={() => setOpen('about')} className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">About</button>
             <button onClick={() => setOpen('copyright')} className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Copyright</button>
             <button onClick={() => setOpen('feedback')} className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Feedback</button>
+            <button onClick={() => setOpen('install')} className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Install</button>
             <a href="/changelog" className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Changelog</a>
           </div>
           <a href="https://gsdlabs.dev" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Made by GSD Labs</a>
@@ -46,6 +47,29 @@ export function SiteFooter() {
                 <li>Images/scores of tunes: Copyright 1979 Reformed Presb. Church Ireland. Copyright expired in 2004 (25 years after publication under &ldquo;<a href="https://assets.publishing.service.gov.uk/media/5a801e5140f0b623026919f9/Copyright_Notice_Printed_Music.pdf" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Typographical Arrangement</a>&rdquo;).</li>
               </ol>
               <p>All other sources explicitly acknowledged</p>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {open === 'install' && (
+        <Dialog open onOpenChange={(v) => !v && setOpen(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader><DialogTitle>Install on your phone</DialogTitle></DialogHeader>
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <p>The Psalter works as a Progressive Web App — once installed it opens full-screen, loads faster, and is reachable from your home screen just like a native app.</p>
+              <p>
+                Step-by-step instructions for iOS Safari and Android Chrome (kept up to date by the Chrome team):{' '}
+                <a
+                  href="https://web.dev/articles/install-criteria"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-foreground"
+                >
+                  web.dev &mdash; Install criteria
+                </a>
+                .
+              </p>
             </div>
           </DialogContent>
         </Dialog>
