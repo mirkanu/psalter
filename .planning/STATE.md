@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
 status: executing
-stopped_at: Phase 15.1 gap-closure iteration (POLISH-03 still deferred)
-last_updated: "2026-08-12T22:00:00.000Z"
-last_activity: 2026-08-12 -- Phase 15.1 executed (3/3 plans), apples-to-apples localhost re-audit returned 0.47 / 0.60 / 0.67 vs 0.90 target
+stopped_at: Phase 15.2 plan 15.2-03 complete -- POLISH-03 still deferred, awaiting user decision (accept / RSC refactor / Cloudflare WAF)
+last_updated: "2026-08-13T00:00:00.000Z"
+last_activity: 2026-08-13 -- Phase 15.2 plan 15.2-03 executed; final-analysis.md written; REQUIREMENTS/ROADMAP/STATE corrected; median-of-5 final scores / = 0.68, /psalms = 0.69, /psalms/23 = 0.45 (each inside baseline spread)
 progress:
   total_phases: 12
   completed_phases: 9
-  total_plans: 49
-  completed_plans: 49
+  total_plans: 51
+  completed_plans: 51
   percent: 98
 ---
 
@@ -25,10 +25,12 @@ See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone clos
 
 ## Current Position
 
-Phase: 14 (Launch Polish) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 14
-Last activity: 2026-08-11 -- Phase 14 execution started
+Phase: 15.2 (Lighthouse final TBT reduction) — COMPLETE (3/3 plans)
+Plan: 15.2-03 of 3
+Status: Phase 15.2 complete; POLISH-03 stays `[ ] deferred`; user decision recorded in `15.2-FINAL-ANALYSIS.md`
+Last activity: 2026-08-13 -- Phase 15.2 plan 15.2-03 executed; corrected record written across REQUIREMENTS.md, ROADMAP.md, STATE.md
+
+**Authoritative Lighthouse record:** `.planning/phases/15.2-lighthouse-final-tbt-reduction/15.2-FINAL-ANALYSIS.md`. Any future performance claim must start from this document, not the superseded single-run analyses (Phase 15.1 `15.1-lighthouse-analysis.txt`). The harness is `scripts/lighthouse-bench.mjs --runs 5` and the methodology rule is binding: report median **with spread**, never just a median.
 
 ## Performance Metrics
 
