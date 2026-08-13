@@ -445,7 +445,6 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
             onClose={() => setChangeTuneOpen(false)}
             currentTuneId={activeTune.id}
             tunes={alternateTunes}
-            meter={primaryVersion?.meter ?? null}
             tuneTiers={tuneTiers}
             onSelect={(tune) => { setOverrideTune(tune); setChangeTuneOpen(false) }}
           />
@@ -481,7 +480,6 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
             onClose={() => setNoRecDialogOpen(false)}
             currentTuneId={null}
             tunes={alternateTunes}
-            meter={primaryVersion?.meter ?? null}
             tuneTiers={tuneTiers}
             onSelect={(tune) => { setOverrideTune(tune); setNoRecDialogOpen(false) }}
           />

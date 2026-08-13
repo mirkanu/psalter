@@ -11,12 +11,11 @@ interface ChangeTuneDialogProps {
   onClose: () => void
   currentTuneId: number | null
   tunes: AlternateTune[]
-  meter: string | null
   tuneTiers?: PsalmVersionTuneTiers
   onSelect: (tune: AlternateTune) => void
 }
 
-export function ChangeTuneDialog({ open, onClose, currentTuneId, tunes, meter, tuneTiers, onSelect }: ChangeTuneDialogProps) {
+export function ChangeTuneDialog({ open, onClose, currentTuneId, tunes, tuneTiers, onSelect }: ChangeTuneDialogProps) {
   const [query, setQuery] = useState('')
 
   const q = query.trim().toLowerCase()
@@ -33,11 +32,6 @@ export function ChangeTuneDialog({ open, onClose, currentTuneId, tunes, meter, t
       <DialogContent className="max-w-lg max-h-[80vh] flex flex-col gap-4">
         <DialogHeader>
           <DialogTitle>Select a Tune</DialogTitle>
-          {meter && (
-            <p className="text-sm text-muted-foreground">
-              Showing tunes in <span className="font-medium">{meter}</span> meter
-            </p>
-          )}
         </DialogHeader>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
