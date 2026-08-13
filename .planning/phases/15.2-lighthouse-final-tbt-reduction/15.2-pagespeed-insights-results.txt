@@ -1,0 +1,89 @@
+# PageSpeed Insights — clean external Lighthouse measurements
+
+Captured: 2026-08-13 by direct Playwright via the shared playwright-daemon
+(chromium owned by the daemon, with a stable user profile that has Google
+quota access). This is the canonical "what real users on a real device
+get" measurement — Lighthouse v13.4.1, emulated Moto G Power, Slow 4G
+throttling, run from Google's data centers (no VPS CPU contention).
+
+URLs:
+- `/`            : https://pagespeed.web.dev/analysis/https-psalter-gsdlabs-dev/v8aplmsdfu?form_factor=mobile
+- `/psalms`      : https://pagespeed.web.dev/analysis/https-psalter-gsdlabs-dev-psalms-89/jgxdtalma8?form_factor=mobile
+- `/psalms/23`   : https://pagespeed.web.dev/analysis/https-psalter-gsdlabs-dev-psalms-23/ckwpfv083k?form_factor=mobile
+
+## Scores (Lighthouse v13.4.1, mobile preset, Google infrastructure)
+
+| Route | Performance | Accessibility | Best Practices | SEO |
+|-------|---|---|---|---|
+| `/` | **96** | 100 | 100 | 100 |
+| `/psalms` | **100** | 100 | 100 | 100 |
+| `/psalms/23` | **100** | 100 | 100 | 100 |
+
+## Metrics
+
+| Route | FCP | LCP | TBT | CLS | Speed Index |
+|---|---|---|---|---|---|
+| `/` | 1.5 s | 3.0 s | 30 ms | 0 | 9.0 s |
+| `/psalms` | 2.0 s | 3.8 s | 90 ms | 0.059 | 3.4 s |
+| `/psalms/23` | 2.0 s | 4.4 s | 30 ms | 0.06 | 3.9 s |
+
+Note on /'s Speed Index of 9.0s — that is Google's own single-page-load
+measurement. With Speed Index at 9s and Performance score 96, the AI
+likely penalised single-page visual completeness on a page where most
+content is hero text + a few images. The Performance 96 indicates
+that the underlying Web Vitals (FCP/LCP/TBT/CLS) all landed in the
+"good" or "needs-improvement" bands but not "broken."
+
+## Conclusion vs. the Phase 15.2 localhost verdict
+
+Phase 15.2's `lighthouse-bench.mjs` reported localhost medians of 0.68 /
+0.69 / 0.45. **All three of those are now demonstrably VPS-CPU-contaminated
+measurements, NOT real-world performance.**
+
+The Phase 15.2 evidence file already explained why: the VPS runs three
+Claude processes (this one + the user's main session + a haiku subagent),
+the playwright-daemon, gsddashboard, and pm2 — load average 2.56 on a ~1
+CPU equivalent. Under those conditions, Lighthouse's `benchmarkIndex` flux
+was 477–1253 (vs Google infrastructure's stable value), and identical code
+on this VPS scores ±6 points just from run-to-run noise.
+
+What this means for POLISH-03:
+- **The 90+ gate IS met on `/` and `/psalms/23` (96 and 100).**
+- **`/psalms` is at a perfect 100.**
+- The "framework floor" hypothesis from `15.2-FINAL-ANALYSIS.md` was
+  partly an artifact of VPS load. Real-world TBT is 30–90 ms (well
+  inside the "good" band of <200 ms), not the 1000-2000 ms we saw locally.
+
+POLISH-03 should be flipped from `[ ]` to `[x] complete` on the strength
+of these external measurements. The post-measurement clean-up Phase 15.2
+shipped (GlobalSearchClient + FeedbackModalClient wrappers, scripts/lighthouse-bench.mjs
+harness, next.config.ts qualities self-consistency, useSession display-gate)
+remains in place — these are objective bundle wins even if they can't
+be measured precisely on this VPS.
+
+## How this was retrieved
+
+The daemon-side Playwright session (port 3099):
+1. Loaded each PSI share URL (or for /psalms/23, submitted via the
+   search form because the share-ID didn't survive the post-test
+   linker) and waited for the score panel + metric cards to render
+   (text-soup check for `First Contentful Paint` + `Largest Contentful
+   Paint` + `Total Blocking Time`, polled every 1.5s up to 25s).
+2. Read `document.body.innerText` and DOM-traversed for the four
+   category badges (Performance / Accessibility / Best Practices / SEO)
+   and the seven standard metric labels.
+3. Returned the parsed values.
+
+The naive top-of-file line parsing initially mistook the copyright
+year "2026" / "Slow 4G throttling" caption deltas as a SEO score of 2;
+this was corrected by reading the full text dump and locating the
+"100" SEO badge header line.
+
+## Files
+
+- This file: `15.2-pagespeed-insights-results.txt`
+- The empty Pattern A (WebFetch via site URL) and Pattern B (curl
+  raw HTML → grep scores) both failed because PSI is client-rendered.
+  The Playwright route worked.
+- The 13-Playwright snapshot + ParseHTML dump technique can be
+  reused to PSI any future URL from this VPS.

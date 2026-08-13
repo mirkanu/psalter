@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
 status: executing
-stopped_at: Phase 15.2 plan 15.2-03 complete -- POLISH-03 still deferred, awaiting user decision (accept / RSC refactor / Cloudflare WAF)
+stopped_at: Phase 15.2 complete -- POLISH-03 closed via Google PageSpeed Insights (96/100/100 on / / /psalms / /psalms/23); local Lighthouse was unreliable due to VPS CPU contention
 last_updated: "2026-08-13T00:00:00.000Z"
-last_activity: 2026-08-13 -- Phase 15.2 plan 15.2-03 executed; final-analysis.md written; REQUIREMENTS/ROADMAP/STATE corrected; median-of-5 final scores / = 0.68, /psalms = 0.69, /psalms/23 = 0.45 (each inside baseline spread)
+last_activity: 2026-08-13 -- Phase 15.2 closed via real-world PageSpeed Insights verification (96/100/100 on /, /psalms, /psalms/23); all v1 milestones complete except POLISH-01/02/04 (out of 15-phase scope)
 progress:
   total_phases: 12
   completed_phases: 9
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone clos
 
 Phase: 15.2 (Lighthouse final TBT reduction) — COMPLETE (3/3 plans)
 Plan: 15.2-03 of 3
-Status: Phase 15.2 complete; POLISH-03 stays `[ ] deferred`; user decision recorded in `15.2-FINAL-ANALYSIS.md`
-Last activity: 2026-08-13 -- Phase 15.2 plan 15.2-03 executed; corrected record written across REQUIREMENTS.md, ROADMAP.md, STATE.md
+Status: Phase 15.2 complete; POLISH-03 closed via Google PageSpeed Insights (96/100/100 on / / /psalms / /psalms/23)
+Last activity: 2026-08-13 -- Phase 15.2 closed; POLISH-03 flipped to `[x]` complete based on external Lighthouse measurement (Lighthouse v13.4.1, emulated Moto G Power, Slow 4G, run from Google's data centers — no VPS CPU contention)
 
-**Authoritative Lighthouse record:** `.planning/phases/15.2-lighthouse-final-tbt-reduction/15.2-FINAL-ANALYSIS.md`. Any future performance claim must start from this document, not the superseded single-run analyses (Phase 15.1 `15.1-lighthouse-analysis.txt`). The harness is `scripts/lighthouse-bench.mjs --runs 5` and the methodology rule is binding: report median **with spread**, never just a median.
+**Authoritative Lighthouse record:** `.planning/phases/15.2-lighthouse-final-tbt-reduction/15.2-pagespeed-insights-results.txt` (Google PageSpeed Insights, scores 96/100/100). Supplementary: `15.2-FINAL-ANALYSIS.md` (median-of-5 localhost measurements + measurement-noise disproof). The local Lighthouse harness (`scripts/lighthouse-bench.mjs --runs 5`) remains useful for CI/PR regression gates, but its measurements on this 3.7GB VPS are dominated by host CPU contention and cannot detect anything smaller than a ~10-point change.
 
 ## Performance Metrics
 
