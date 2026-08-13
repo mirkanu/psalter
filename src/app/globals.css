@@ -143,6 +143,16 @@
   }
 }
 
+/* iOS Safari URL-bar shrink relies on document.body being the scroll
+   container, NOT a nested overflow-y-auto wrapper. `html { height: 100% }`
+   plus `body { min-height: 100% }` (set in layout.tsx) keep the body's own
+   scroll active everywhere; `overscroll-behavior-y: contain` here just
+   stops rubber-band scrolling from triggering pull-to-refresh on Chrome
+   mobile, which can otherwise look like a frozen URL bar. */
+html, body {
+  overscroll-behavior-y: contain;
+}
+
 /* Prevent iOS Safari from zooming on input focus — triggered when font-size < 16px */
 @media screen and (max-width: 768px) {
   input, textarea, select {
