@@ -296,12 +296,15 @@ export function OnboardingTour({ totalStanzas }: Props = {}) {
               100% { transform: translate(calc(-50% - 46px), -50%); opacity: 0; }
             }
           `}</style>
-          {/* dotted swipe trail */}
+          {/* dotted swipe trail — light-on-dark for visibility against the
+               spotlight cutout. rgba(255,255,255,0.5) reads as a soft white
+               on the dark page background and as a mid-grey on light mode
+               (the cutout is over the page content, not the bubble). */}
           <div
             className="absolute top-1/2 left-1/2 h-0.5 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full motion-reduce:hidden"
             style={{
               backgroundImage:
-                'repeating-linear-gradient(90deg, rgba(120,120,120,0.5) 0 6px, transparent 6px 12px)',
+                'repeating-linear-gradient(90deg, rgba(255,255,255,0.5) 0 6px, transparent 6px 12px)',
             }}
           />
           {/* animated hand glyph — static + centered when reduced motion is set */}
