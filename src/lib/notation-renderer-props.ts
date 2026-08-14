@@ -10,7 +10,9 @@
  *
  * This helper is prop plumbing only. It does not compute melisma positions, w: lines, underlines or
  * syllable alignment — see .planning/research/lyric-to-note-alignment.md. `melismaPositions` is
- * deliberately NOT part of the core set.
+ * plumbed through verbatim so /tunes/[slug] can render `_` melisma marks
+ * (Phase 16 / D-02): caller passes renderWLineUnderStaff:true to emit w:
+ * lines while keeping showLyrics:false (suppresses the StanzaList panel).
  */
 import type { NotationRendererProps, ViewMode } from '@/components/notation/NotationRenderer'
 import type { StructuredLyrics } from '@/lib/lyrics-structured'
@@ -26,6 +28,12 @@ export interface NotationSourceTune {
   solfegeOcrText?: string | null
   scoreJpgUrl?: string | null
   solfegeJpgUrl?: string | null
+  /**
+   * Per-phrase melisma note indices from tunes.melisma_positions.
+   * Phase 16 / D-02: plumbed through so /tunes/[slug] can render `_` marks
+   * even with showLyrics:false (via renderWLineUnderStaff:true).
+   */
+  melismaPositions?: number[][] | null
 }
 
 /** Psalm-version-derived values. Callers already hold these in different shapes, so they are passed explicitly. */
@@ -39,6 +47,15 @@ export interface BuildNotationPropsOptions {
   /** Default true (NotationRenderer's own default). /tunes/[slug] passes false — no lyrics on a tune-only page. */
   showLyrics?: boolean
   /**
+   * Phase 16 / D-02: when true, emit w: lines under the staff so abcjs
+   * renders `_` melisma continuation marks. Independent from `showLyrics`
+   * which gates the StanzaList panel. Defaults to `showLyrics` so existing
+   * call sites keep their behaviour. /tunes/[slug] passes
+   * `showLyrics: false, renderWLineUnderStaff: true` to suppress the
+   * StanzaList panel while still rendering melisma marks.
+   */
+  renderWLineUnderStaff?: boolean
+  /**
    * Omit when the caller is an RSC — the returned object then stays JSON-serialisable and can be handed to a
    * thin client wrapper that attaches its own callback (see src/components/TuneScoreSection.tsx).
    */
@@ -51,7 +68,8 @@ export type CoreNotationProps = Pick<
   NotationRendererProps,
   | 'abc' | 'lyrics' | 'scoreJpgUrl' | 'solfegeJpgUrl' | 'tuneName' | 'tuneMeter'
   | 'phraseShapeOverride' | 'stanzaMeter' | 'lyricsStructured' | 'doubleLength'
-  | 'solfegeOcrText' | 'showLyrics' | 'onViewModeChange'
+  | 'solfegeOcrText' | 'showLyrics' | 'onViewModeChange' | 'melismaPositions'
+  | 'renderWLineUnderStaff'
 >
 
 export function buildNotationRendererProps(
@@ -73,6 +91,8 @@ export function buildNotationRendererProps(
     doubleLength: tune?.doubleLength ?? false,
     solfegeOcrText: tune?.solfegeOcrText ?? null,
     showLyrics: options.showLyrics ?? true,
+    renderWLineUnderStaff: options.renderWLineUnderStaff ?? options.showLyrics ?? true,
+    melismaPositions: tune?.melismaPositions ?? null,
     onViewModeChange: options.onViewModeChange,
   }
 }

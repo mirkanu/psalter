@@ -184,16 +184,36 @@ export default async function TunePage({ params }: PageProps) {
                   // (always-NULL) DB columns — see src/lib/tune-jpg-urls.ts.
                   scoreJpgUrl: staffPages[0] ?? null,
                   solfegeJpgUrl: solfegePages[0] ?? null,
+                  // Phase 16 / D-02: plumb melismaPositions so /tunes/[slug]
+                  // can render `_` melisma continuation marks even though the
+                  // page suppresses the StanzaList panel. Combined with
+                  // renderWLineUnderStaff:true below, the staff now shows
+                  // slurs/underlines correctly (e.g. Darwall at /tunes/darwall
+                  // has no melismas — its positions array is [[],[],[],[],[],[]] —
+                  // so it renders identically, but other tunes with actual
+                  // melismas now render them here too).
+                  melismaPositions: tune.melismaPositions ?? null,
                 },
                 {
                   lyrics: tunesLyrics,
                   stanzaMeter: firstLinkedPsalmVersion?.meter ?? null,
                   lyricsStructured: (firstLinkedPsalmVersion?.lyricsStructured ?? null) as import('@/lib/lyrics-structured').StructuredLyrics | null,
                 },
-                // showLyrics stays false: /tunes/[slug] is a tune-only page and never shows lyrics (D-02, UI-SPEC §Patterns 4).
-                // onViewModeChange is deliberately NOT passed here — an RSC cannot serialise a function across the
-                // client boundary; TuneScoreSection attaches it, which is where D-02's second prop is satisfied.
-                { showLyrics: false, fallbackTuneName: `Tune ${tune.id}` },
+                // Phase 16 / D-02: split the D-02 contract — showLyrics:false
+                // still suppresses the StanzaList panel (lyrics don't belong
+                // on a tune-only page), but renderWLineUnderStaff:true
+                // re-enables w-line emission so abcjs draws `_` melisma
+                // marks beneath the staff. Previously showLyrics:false
+                // suppressed BOTH the panel AND the w-lines, which silently
+                // dropped melisma data on this route (Phase 4.9 / 06 bug).
+                // onViewModeChange is deliberately NOT passed here — an RSC
+                // cannot serialise a function across the client boundary;
+                // TuneScoreSection attaches it.
+                {
+                  showLyrics: false,
+                  renderWLineUnderStaff: true,
+                  fallbackTuneName: `Tune ${tune.id}`,
+                },
               )}
               staffPages={staffPages}
               solfegePages={solfegePages}
