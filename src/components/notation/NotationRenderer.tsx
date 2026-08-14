@@ -136,6 +136,15 @@ export interface NotationRendererProps {
    * a melisma continuation (w: `_` token). NULL/undefined = use heuristic path.
    */
   melismaPositions?: number[][] | null
+  /**
+   * When true, the staff ABC includes `w:` lines under the notes (slurs
+   * render via `_` melisma continuation tokens). Defaults to `showLyrics`.
+   * Set to true on the tune page where lyrics are intentionally hidden
+   * (`showLyrics: false`) but melisma contours still need to render.
+   * (Phase 4.9 / Phase 16 — D-02 split: hide the StanzaList panel but
+   * still emit w: lines so abcjs renders `_` marks for melisma positions.)
+   */
+  renderWLineUnderStaff?: boolean
   /** Full ordered list of staff-score image paths for the active tune (server-derived). Enables multi-page thumbnail nav. */
   staffPages?: string[]
   /** Full ordered list of solfège image paths for the active tune (server-derived). Enables multi-page thumbnail nav. */
@@ -239,6 +248,11 @@ export function NotationRenderer({
   phraseShapeOverride,
   stanzaMeter,
   showLyrics = true,
+  // Default w-line emission to `showLyrics` so existing call sites that
+  // pass neither flag keep their current behaviour. Tune-page callers
+  // pass showLyrics:false + renderWLineUnderStaff:true to emit w: lines
+  // (for melisma `_` marks) while still suppressing the StanzaList panel.
+  renderWLineUnderStaff,
   onViewModeChange,
   viewMode: viewModeProp,
   baseSize: baseSizeProp,
@@ -994,9 +1008,13 @@ export function NotationRenderer({
       //   3. Build the w: line: for each intra-phrase note index k,
       //      emit `_` if k is in melismaPositions[i], else consume the next syllable.
       //
-      // ONLY takes this branch when showLyrics=true AND positions data exists.
+      // ONLY takes this branch when emitWLines=true AND positions data exists.
+      // Phase 16 / D-02: gate on emitWLines (default = showLyrics) rather
+      // than showLyrics directly, so the tune page can render melisma `_`
+      // marks without showing lyrics.
+      const emitWLines = renderWLineUnderStaff ?? showLyrics
       const phrasePositions = melismaPositions?.[i]
-      if (showLyrics && phrasePositions != null) {
+      if (emitWLines && phrasePositions != null) {
         const posSet = new Set(phrasePositions)
 
         // Count note heads in this phrase to know total slot count.
@@ -1101,7 +1119,14 @@ export function NotationRenderer({
       // RENDER-07b (Phase 4.9.7 Plan 03): wLines is one string[] per visible
       // cycle. Inner array length = linesPerPhrase. Cross-stanza alignment
       // guarantee: same meter → identical inner length across all cycles.
-      const wLines: string[][] = showLyrics ? wLinesForPhrase(i) : []
+      //
+      // Phase 16 / D-02: gate w-line emission on renderWLineUnderStaff
+      // (default = showLyrics). On the tune page we suppress the StanzaList
+      // panel (showLyrics=false) but still need w: lines so abcjs renders
+      // `_` melisma continuation marks from tunes.melisma_positions.
+      // (emitWLines is declared ABOVE this loop — used by the melisma-
+      // positions branch at the top of the loop body.)
+      const wLines: string[][] = emitWLines ? wLinesForPhrase(i) : []
       const linesPerPhrase = wLines[0]?.length ?? 0
 
       // Each metrical line gets its own sub-staff. Bump subdivisions when
@@ -1166,7 +1191,7 @@ export function NotationRenderer({
   // defeat the memo; its own inputs are all listed explicitly below.
   const unifiedAbc = useMemo(
     () => buildUnifiedAbc(abc),
-    [abc, phraseShapeOverride, visibleCycles, tuneMeter, showLyrics, phraseSubdivisions, chromeless, solfegeVoices, melismaPositions],
+    [abc, phraseShapeOverride, visibleCycles, tuneMeter, showLyrics, phraseSubdivisions, chromeless, solfegeVoices, melismaPositions, renderWLineUnderStaff],
   )
 
   // Split-leaf staff view needs ABC without inline w: lyrics (lyrics render in separate column).
