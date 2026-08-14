@@ -1,11 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { FeedbackModal } from '@/components/FeedbackModal'
 
 export function SiteFooter() {
   const [open, setOpen] = useState<'about' | 'copyright' | 'feedback' | 'install' | null>(null)
+  // Hide the Install entry when the site is already running as an installed
+  // PWA (display-mode: standalone on Android/desktop, navigator.standalone on
+  // iOS Safari). SSR-safe: matchMedia is undefined on the server, so we gate
+  // on a mounted flag and check on the client only.
+  const [isStandalone, setIsStandalone] = useState(false)
+  useEffect(() => {
+    const standalone =
+      (typeof window !== 'undefined' &&
+        (window.matchMedia?.('(display-mode: standalone)').matches ||
+          // @ts-expect-error navigator.standalone is iOS-Safari-only
+          window.navigator?.standalone === true)) ||
+      false
+    setIsStandalone(standalone)
+  }, [])
 
   return (
     <>
@@ -15,7 +29,9 @@ export function SiteFooter() {
             <button onClick={() => setOpen('about')} className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">About</button>
             <button onClick={() => setOpen('copyright')} className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Copyright</button>
             <button onClick={() => setOpen('feedback')} className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Feedback</button>
-            <button onClick={() => setOpen('install')} className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Install</button>
+            {!isStandalone && (
+              <button onClick={() => setOpen('install')} className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Install</button>
+            )}
             <a href="/changelog" className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Changelog</a>
           </div>
           <a href="https://gsdlabs.dev" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Made by GSD Labs</a>
@@ -59,14 +75,14 @@ export function SiteFooter() {
             <div className="space-y-3 text-sm text-muted-foreground">
               <p>The Psalter works as a Progressive Web App — once installed it opens full-screen, loads faster, and is reachable from your home screen just like a native app.</p>
               <p>
-                Step-by-step instructions for iOS Safari and Android Chrome (kept up to date by the Chrome team):{' '}
+                Step-by-step instructions for every major browser and platform (kept up to date by MDN):{' '}
                 <a
-                  href="https://web.dev/articles/install-criteria"
+                  href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Installing"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline hover:text-foreground"
                 >
-                  web.dev &mdash; Install criteria
+                  MDN &mdash; Installing PWAs
                 </a>
                 .
               </p>
