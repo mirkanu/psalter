@@ -147,10 +147,21 @@ export function OnboardingTour({ totalStanzas }: Props = {}) {
       }
       setRects(rs)
     }
-    update()
+    // Double-rAF: wait two frames so any concurrent DOM mutation (e.g. the
+    // 200ms transform/opacity transitions on topBarHidden/bottomBarHidden
+    // or the viewMode-driven <main> height swap in SingingView) has at least
+    // started to settle before getBoundingClientRect reads geometry.
+    // Single-rAF was insufficient on the final step in dark mode — the
+    // gear-button cutout landed on stale coordinates.
+    let raf2 = 0
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(update)
+    })
     window.addEventListener('resize', update)
     window.addEventListener('orientationchange', update)
     return () => {
+      cancelAnimationFrame(raf1)
+      if (raf2) cancelAnimationFrame(raf2)
       window.removeEventListener('resize', update)
       window.removeEventListener('orientationchange', update)
     }
@@ -266,7 +277,7 @@ export function OnboardingTour({ totalStanzas }: Props = {}) {
             ))}
           </mask>
         </defs>
-        <rect width="100%" height="100%" fill="rgba(0,0,0,0.30)" mask="url(#tour-mask)" />
+        <rect width="100%" height="100%" fill="var(--tour-wash, rgba(0,0,0,0.30))" mask="url(#tour-mask)" />
       </svg>
       {/* 04.9.15.1-03 (MOBILE-10): swipe-step-only visual — animated hand,
          positioned inside the spotlight cutout (Sketch 007 Variant C, minus
