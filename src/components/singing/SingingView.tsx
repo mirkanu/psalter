@@ -922,6 +922,32 @@ export function SingingView({
     }
   }, [])
 
+  // iOS Safari URL-bar shrink: SingingView's locked-to-staff layout (overflow:
+  // hidden on html, fixed-height <main>, nested overflow-y-auto on the
+  // notation viewarea) means the document body never receives a scroll event,
+  // so iOS refuses to shrink its bottom URL bar. A single 1px scrollTo on the
+  // user's first touch promotes the page to iOS's "scrolling document" state
+  // so subsequent scrolls (even inside nested containers) trigger the bar
+  // shrink. The onceRef ensures we only do this once per mount — repeated
+  // calls would cause visible micro-jitter. Pairs with the
+  // `overscroll-behavior-y: contain` baseline in globals.css.
+  const onceRef = useRef(false)
+  useEffect(() => {
+    const handler = () => {
+      if (onceRef.current) return
+      onceRef.current = true
+      window.scrollTo(0, 0)
+      window.removeEventListener('touchstart', handler)
+      window.removeEventListener('pointerdown', handler)
+    }
+    window.addEventListener('touchstart', handler, { passive: true, once: false })
+    window.addEventListener('pointerdown', handler, { passive: true, once: false })
+    return () => {
+      window.removeEventListener('touchstart', handler)
+      window.removeEventListener('pointerdown', handler)
+    }
+  }, [])
+
   return (
     <div data-singing-view className="relative">
       {showRotatePrompt && (
