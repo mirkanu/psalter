@@ -96,11 +96,16 @@
   --sidebar-ring: oklch(0.708 0 0);
   --staff-base-size: 14px;
   /* OnboardingTour overlay backdrop wash. Light mode uses a soft 30% black;
-     dark mode bumps to 55% because rgba(0,0,0,0.30) over oklch(0.145)
-     background is perceptually near-invisible — the spotlight cutouts
-     (especially over the gear button on the final step) appear missing.
+     dark mode bumps to 75% (was 55%) so the dimming is unmistakable against
+     the oklch(0.145) background — paired with the white spotlight ring
+     (--tour-ring) the cutout edges are now clearly delineated.
      See OnboardingTour.tsx SVG mask fill. */
   --tour-wash: rgba(0, 0, 0, 0.30);
+  /* Spotlight ring: 2px white outline drawn around each cutout in the SVG
+     ring layer. Full white in both modes — the ring exists specifically to
+     make highlighted UI parts stand out from the dimmed backdrop, so any
+     softer colour defeats the purpose. */
+  --tour-ring: #ffffff;
 }
 
 .dark {
@@ -135,7 +140,7 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
-  --tour-wash: rgba(0, 0, 0, 0.55);
+  --tour-wash: rgba(0, 0, 0, 0.75);
 }
 
 @layer base {

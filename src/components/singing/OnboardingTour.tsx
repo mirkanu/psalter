@@ -253,7 +253,9 @@ export function OnboardingTour({ totalStanzas }: Props = {}) {
     <div data-onboarding-tour className="fixed inset-0 z-[200] pointer-events-auto">
       {/* 260517-ht8 #1b — SVG-mask spotlight supports MULTIPLE simultaneous cutouts
          so e.g. the back and forward arrows are individually highlighted (instead
-         of one wide region covering the whole top bar). Backdrop alpha = 0.30. */}
+         of one wide region covering the whole top bar). Backdrop alpha is set
+         via the --tour-wash CSS variable (0.30 light / 0.75 dark) so the
+         dimming remains visible against both backgrounds. */}
       <svg
         data-tour-spotlight
         width={viewportW}
@@ -278,6 +280,34 @@ export function OnboardingTour({ totalStanzas }: Props = {}) {
           </mask>
         </defs>
         <rect width="100%" height="100%" fill="var(--tour-wash, rgba(0,0,0,0.30))" mask="url(#tour-mask)" />
+      </svg>
+      {/* Spotlight ring (260814): draws a 2px white outline around each
+         cutout. The mask's fill=black only makes the wash transparent inside
+         the cutout — without this ring, the cutout's edges blur into the
+         dimmed backdrop, especially in dark mode. The ring uses
+         var(--tour-ring, white) so light mode can soften if needed in the
+         future; defaults to full white today. Sits between the wash
+         (z 201) and the bubble (z 202) so it doesn't intercept clicks. */}
+      <svg
+        data-tour-ring
+        width={viewportW}
+        height={viewportH}
+        className="absolute inset-0 pointer-events-none"
+        style={{ zIndex: 201 }}
+        fill="none"
+        stroke="var(--tour-ring, #ffffff)"
+        strokeWidth={2}
+      >
+        {rects.map((r, i) => (
+          <rect
+            key={i}
+            x={r.left - padding}
+            y={r.top - padding}
+            width={r.width + padding * 2}
+            height={r.height + padding * 2}
+            rx={8}
+          />
+        ))}
       </svg>
       {/* 04.9.15.1-03 (MOBILE-10): swipe-step-only visual — animated hand,
          positioned inside the spotlight cutout (Sketch 007 Variant C, minus
