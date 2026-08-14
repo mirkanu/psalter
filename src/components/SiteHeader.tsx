@@ -22,6 +22,25 @@ const navLinks = [
   { href: "/precent", label: "Precent" },
 ]
 
+// 260814-isStandalone: when the site is opened as an installed PWA
+// (display-mode: standalone on Android/desktop, navigator.standalone on
+// iOS Safari), the Install menu entry is meaningless and is hidden from
+// the mobile Sheet's footer-menu block. SSR-safe — matchMedia is only
+// consulted on the client after mount.
+function useIsStandalone() {
+  const [isStandalone, setIsStandalone] = useState(false)
+  useEffect(() => {
+    const standalone =
+      (typeof window !== 'undefined' &&
+        (window.matchMedia?.('(display-mode: standalone)').matches ||
+          // @ts-expect-error navigator.standalone is iOS-Safari-only
+          window.navigator?.standalone === true)) ||
+      false
+    setIsStandalone(standalone)
+  }, [])
+  return isStandalone
+}
+
 // UAT v6 reversal: user explicitly wants the global SiteHeader visible on the
 // singing view (overrides UI-SPEC §"Page anatomy"). PsalmTopBar sticks below
 // it (offset adjusted in that component). Body height in SingingView subtracts
@@ -58,6 +77,7 @@ function ThemeToggle() {
 
 export function SiteHeader() {
   const pathname = usePathname()
+  const isStandalone = useIsStandalone()
   const router = useRouter()
   const [searchOpen, setSearchOpen] = useState(false)
   const [footerOpen, setFooterOpen] = useState<'about' | 'copyright' | 'feedback' | 'install' | null>(null)
@@ -218,11 +238,13 @@ export function SiteHeader() {
                     >
                       Feedback
                     </SheetClose>
-                    <SheetClose
-                      render={<button onClick={() => setFooterOpen('install')} className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted px-3 py-2 rounded-md text-left transition-colors w-full" />}
-                    >
-                      Install on phone
-                    </SheetClose>
+                    {!isStandalone && (
+                      <SheetClose
+                        render={<button onClick={() => setFooterOpen('install')} className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted px-3 py-2 rounded-md text-left transition-colors w-full" />}
+                      >
+                        Install on phone
+                      </SheetClose>
+                    )}
                     <SheetClose
                       render={<a href="/changelog" className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted px-3 py-2 rounded-md text-left transition-colors w-full block" />}
                     >
@@ -292,14 +314,14 @@ export function SiteHeader() {
             <div className="space-y-3 text-sm text-muted-foreground">
               <p>The Psalter works as a Progressive Web App — once installed it opens full-screen, loads faster, and is reachable from your home screen just like a native app.</p>
               <p>
-                Step-by-step instructions for iOS Safari and Android Chrome (kept up to date by the Chrome team):{' '}
+                Step-by-step instructions for every major browser and platform (kept up to date by MDN):{' '}
                 <a
-                  href="https://web.dev/articles/install-criteria"
+                  href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Installing"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline hover:text-foreground"
                 >
-                  web.dev &mdash; Install criteria
+                  MDN &mdash; Installing PWAs
                 </a>
                 .
               </p>
