@@ -95,6 +95,12 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
   --staff-base-size: 14px;
+  /* OnboardingTour overlay backdrop wash. Light mode uses a soft 30% black;
+     dark mode bumps to 55% because rgba(0,0,0,0.30) over oklch(0.145)
+     background is perceptually near-invisible — the spotlight cutouts
+     (especially over the gear button on the final step) appear missing.
+     See OnboardingTour.tsx SVG mask fill. */
+  --tour-wash: rgba(0, 0, 0, 0.30);
 }
 
 .dark {
@@ -129,6 +135,7 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --tour-wash: rgba(0, 0, 0, 0.55);
 }
 
 @layer base {
