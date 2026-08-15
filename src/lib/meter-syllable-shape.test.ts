@@ -15,6 +15,21 @@ describe('expectedSyllablesByLine', () => {
   it('8.7.8.7 parses', () => expect(expectedSyllablesByLine('8.7.8.7')).toEqual([8, 7, 8, 7]))
   it('null meter returns null', () => expect(expectedSyllablesByLine(null)).toBeNull())
   it('unknown returns null', () => expect(expectedSyllablesByLine('XYZ')).toBeNull())
+  it('CM with doubleLength=true doubles to 8 entries', () => {
+    expect(expectedSyllablesByLine('CM', true)).toEqual([8, 6, 8, 6, 8, 6, 8, 6])
+  })
+  it('DCM with doubleLength=true is idempotent (already doubled)', () => {
+    expect(expectedSyllablesByLine('DCM', true)).toEqual([8, 6, 8, 6, 8, 6, 8, 6])
+  })
+  it('numeric 76 76 with doubleLength=true doubles to 8 entries', () => {
+    expect(expectedSyllablesByLine('76 76', true)).toEqual([7, 6, 7, 6, 7, 6, 7, 6])
+  })
+  it('numeric 76 76 D with doubleLength=true is idempotent (already doubled)', () => {
+    expect(expectedSyllablesByLine('76 76 D', true)).toEqual([7, 6, 7, 6, 7, 6, 7, 6])
+  })
+  it('null meter with doubleLength=true still returns null', () => {
+    expect(expectedSyllablesByLine(null, true)).toBeNull()
+  })
 })
 
 describe('checkAgainstMeter', () => {
@@ -40,5 +55,22 @@ describe('checkAgainstMeter', () => {
       { actual: 8, expected: null, match: true },
       { actual: 6, expected: null, match: true },
     ])
+  })
+  it('CM with second-last line doubled is accepted (repeat-second-last)', () => {
+    // CM shape is [8,6,8,6]; second-last = index 2 (expected 8). A folded
+    // repeat-second-last pattern would have 16 syllables (8 × 2) at index 2.
+    const r = checkAgainstMeter(
+      [Array(8).fill('x'), Array(6).fill('x'), Array(16).fill('x'), Array(6).fill('x')],
+      'CM',
+    )
+    expect(r.map(c => c.match)).toEqual([true, true, true, true])
+  })
+  it('CM with second-last line at non-multiple ratio is still flagged', () => {
+    // 14 syllables is not a multiple of 8 — flagged even with second-last tolerance.
+    const r = checkAgainstMeter(
+      [Array(8).fill('x'), Array(6).fill('x'), Array(14).fill('x'), Array(6).fill('x')],
+      'CM',
+    )
+    expect(r[2]).toEqual({ actual: 14, expected: 8, match: false })
   })
 })
