@@ -25,9 +25,13 @@ import type { AlternateTune, PsalmVersionTuneTiers } from '@/db/queries/tunes'
  * correct concrete type.
  *
  * Type-narrowing: the `onSelect` callback is typed as
- * `(tune: AlternateTune & Partial<TuneRow>) => void | Promise<void>` so both call-site signatures
- * (Mode A: `(tune: TuneRow) => void | Promise<void>`; Mode B: `(tune: AlternateTune) => void`) are
- * contravariantly assignable.
+ * `(tune: AlternateTune & TuneRow) => void | Promise<void>` (full intersection, not `Partial`) so
+ * both call-site signatures (Mode A: `(tune: TuneRow) => void | Promise<void>`; Mode B:
+ * `(tune: AlternateTune) => void`) are contravariantly assignable — the intersection type is
+ * structurally assignable to each individual member type, which is what function-parameter
+ * contravariance requires. `Partial<TuneRow>` was tried first but fails: several `TuneRow` fields
+ * are non-optional, so `AlternateTune & Partial<TuneRow>` is NOT assignable to plain `TuneRow`,
+ * breaking the `SetDetail` call site (`handleSelectTune: (tune: TuneRow) => Promise<void>`).
  */
 export interface TunePickerDialogProps {
   open: boolean
@@ -41,7 +45,7 @@ export interface TunePickerDialogProps {
   tuneTiers?: PsalmVersionTuneTiers | null
   /** Highlight the currently-active tune in the picker (Mode B only). */
   currentTuneId?: number | null
-  onSelect: (tune: AlternateTune & Partial<TuneRow>) => void | Promise<void>
+  onSelect: (tune: AlternateTune & TuneRow) => void | Promise<void>
   /**
    * `false` (default) = study-tab compact list.
    * `true` = precentor full table (TuneTable inside).
@@ -71,7 +75,7 @@ export function TunePickerDialog({
           <div className="overflow-y-auto flex-1 min-h-0">
             <TuneTable
               tunes={tunes as TuneRow[]}
-              onSelectTune={(t) => { onSelect(t as AlternateTune & Partial<TuneRow>); onClose() }}
+              onSelectTune={(t) => { onSelect(t as AlternateTune & TuneRow); onClose() }}
               hideExport
               initialMeter={psalmMeter}
               hideMeterFilter
@@ -101,7 +105,7 @@ interface StudyTabModeProps {
   tunes: readonly (AlternateTune | TuneRow)[]
   tuneTiers?: PsalmVersionTuneTiers | null
   currentTuneId?: number | null
-  onSelect: (tune: AlternateTune & Partial<TuneRow>) => void | Promise<void>
+  onSelect: (tune: AlternateTune & TuneRow) => void | Promise<void>
 }
 
 function StudyTabMode({
@@ -119,7 +123,7 @@ function StudyTabMode({
     ? tunes.filter((t) => (t.name ?? '').toLowerCase().includes(q))
     : tunes
 
-  function handleSelect(tune: AlternateTune & Partial<TuneRow>) {
+  function handleSelect(tune: AlternateTune & TuneRow) {
     onSelect(tune)
     onClose()
     setQuery('')
@@ -152,7 +156,7 @@ function StudyTabMode({
               renderRow={({ tune, isCurrent }) => (
                 <button
                   type="button"
-                  onClick={() => handleSelect(tune as AlternateTune & Partial<TuneRow>)}
+                  onClick={() => handleSelect(tune as AlternateTune & TuneRow)}
                   className={`w-full text-left px-3 py-2.5 rounded-md text-sm transition-colors flex items-center justify-between gap-2 ${
                     isCurrent ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
                   }`}
