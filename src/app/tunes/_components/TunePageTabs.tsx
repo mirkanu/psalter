@@ -3,11 +3,11 @@
 import { useCallback, useState } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Badge } from '@/components/ui/badge'
+import { NotationRendererClient } from '@/components/notation/NotationRendererClient'
 import { TuneScoreSection } from '@/components/TuneScoreSection'
 import { TuneMiniBarSection } from '@/components/TuneMiniBarSection'
-import { PsalmsByTuneSection } from '@/components/PsalmsByTuneSection'
 import { TuneDetailClient } from '@/components/TuneDetailClient'
+import { PsalmsByTuneSection } from '@/components/PsalmsByTuneSection'
 import type { CoreNotationProps } from '@/lib/notation-renderer-props'
 import type { PsalmRow } from '@/components/PsalmListingGrid'
 
@@ -57,30 +57,12 @@ function parseTab(value: string | null): TunePageTab {
   return value === 'notation' ? 'notation' : 'details'
 }
 
+// Match the exact TabsList + TabsTrigger class string used on /psalms/[slug]
+// (PsalmTabs.tsx desktop layout) so /tunes/[slug] is visually indistinguishable
+// from the existing tabbed surface.
 const TAB_TRIGGER_CLASS =
   'rounded-none border-b-[3px] border-b-transparent -mb-px data-[active]:border-b-foreground data-[active]:bg-transparent data-[active]:text-foreground'
 
-/**
- * TunePageTabs — owns the Details/Notation tabbed surface for /tunes/[slug] (TPAGE-03, Phase 16).
- *
- * The active tab is synced to the `?tab=` URL search param via `router.replace(..., { scroll:
- * false })` — NOT `router.push`, which would add a history entry and reset scroll on switch.
- * `?tab=` is validated against a strict allowlist ('details' | 'notation'); any other value falls
- * back to 'details' (threat T-16-05).
- *
- * Deviation from the 16-03 plan text (Rule 1 — avoid regression): the plan's Task 2 "done"
- * criteria described removing the `TuneDetailClient` import entirely and replacing the no-ABC
- * case with a static "Notation not available" placeholder. Plan 16-02 (commit 3b79121) already
- * confirmed and documented that `TuneDetailClient`'s two JPG-only fallback call sites must stay,
- * "per the plan's explicit instruction not to regress image-only tunes." Dropping them here would
- * silently break every tune without approved ABC notation (currently ~102/172 tunes not yet
- * approved in /dev/melisma-editor — see PROJECT.md Backlog). The Notation tab therefore preserves
- * all three branches from the pre-tabs page.tsx: the ABC path (TuneScoreSection +
- * TuneMiniBarSection), the JPG-only fallback (TuneDetailClient), and the ABC+audio-without-
- * embedded-player combination (TuneDetailClient with staffPages=[]). The plan's literal "Notation
- * not available" placeholder is kept as a last-resort empty state for the (currently nonexistent)
- * case where a tune has none of ABC, JPGs, or audio.
- */
 export function TunePageTabs(props: TunePageTabsProps) {
   const {
     tuneName,
@@ -130,10 +112,7 @@ export function TunePageTabs(props: TunePageTabsProps) {
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange}>
-      <TabsList
-        variant="line"
-        className="flex flex-wrap h-auto gap-0 mb-6 bg-transparent p-0 border-b border-border"
-      >
+      <TabsList className="flex flex-wrap h-auto gap-0 mb-6 bg-transparent p-0 border-b border-border">
         <TabsTrigger value="details" className={TAB_TRIGGER_CLASS}>
           Details
         </TabsTrigger>
@@ -143,20 +122,6 @@ export function TunePageTabs(props: TunePageTabsProps) {
       </TabsList>
 
       <TabsContent value="details" className="space-y-8">
-        <header>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-            Tune
-          </p>
-          <div className="flex items-baseline gap-3 flex-wrap">
-            <h1 className="text-2xl md:text-4xl font-bold text-foreground">{tuneName}</h1>
-            {meter && (
-              <Badge variant="secondary" className="text-base px-2.5 py-0.5">
-                {meter}
-              </Badge>
-            )}
-          </div>
-        </header>
-
         {hasMetadata && (
           <section className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
             {moods.length > 0 && (
@@ -202,13 +167,15 @@ export function TunePageTabs(props: TunePageTabsProps) {
         />
       </TabsContent>
 
-      <TabsContent value="notation" className="space-y-8">
-        {/* ABC path — same NotationRendererClient chain as /psalms/[slug]'s Study tab
-            (TPAGE-02, plan 16-02). This is the primary notation experience. */}
+      <TabsContent value="notation" className="space-y-6">
+        {/* "Sing this tune" — the full notation display (matching /psalms/[slug]'s Study
+            tab but with showLyrics:false to suppress the StanzaList + lyrics-only mode)
+            plus the audio mini-bar for playback. Same NotationRendererClient → abcjs chain
+            as the Study tab; only the props differ (showLyrics:false here). */}
         {hasAbc && (
           <section>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-              Score
+              Sing this tune
             </h2>
             <TuneScoreSection
               notationProps={notationProps}
@@ -219,30 +186,15 @@ export function TunePageTabs(props: TunePageTabsProps) {
           </section>
         )}
 
-        {/* Image-based fallback for tunes with NO ABC notation. TPAGE-02/03 do not change this
-            path — kept verbatim per plan 16-02's explicit no-regression decision. */}
+        {/* Image-based fallback for tunes with NO ABC notation. */}
         {!hasAbc && (hasImages || hasAudio) && (
           <section>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-              Score
+              Sing this tune
             </h2>
             <TuneDetailClient
               tuneName={tuneName}
               staffPages={staffPages}
-              solfegePages={solfegePages}
-              soundcloudUrl={soundcloudUrl}
-              youtubeUrl={youtubeUrl}
-            />
-          </section>
-        )}
-
-        {/* ABC tunes that also have audio: a secondary Solfège+play-button block below the
-            notation. JPG-only fallback — kept verbatim per plan 16-02. */}
-        {hasAbc && hasAudio && (
-          <section>
-            <TuneDetailClient
-              tuneName={tuneName}
-              staffPages={[]}
               solfegePages={solfegePages}
               soundcloudUrl={soundcloudUrl}
               youtubeUrl={youtubeUrl}
