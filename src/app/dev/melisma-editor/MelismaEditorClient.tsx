@@ -810,10 +810,10 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
     }
   }, [tune, built, willSaveMode, effectiveAbc, effectiveSyllablesPerLine, effectiveRawSoprano, ocrOriginalSoprano, tokens, underlined, underlineCount])
 
-  if (!tune) return <div className="p-8 text-gray-700">No tunes with ABC notation in the DB.</div>
+  if (!tune) return <div className="melisma-editor-scope p-8 text-gray-700">No tunes with ABC notation in the DB.</div>
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="melisma-editor-scope min-h-screen bg-gray-50">
       <div className="border-b border-gray-200 bg-white px-6 py-3 flex items-center gap-4 sticky top-0 z-10">
         <h1 className="text-lg font-semibold">Melisma Editor</h1>
         <input
