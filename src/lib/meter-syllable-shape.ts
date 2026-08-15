@@ -8,8 +8,20 @@
  * Returns `null` for unknown / numeric meters where we can't derive a shape.
  */
 
-/** Per-line expected syllable count for a given meter name. */
-export function expectedSyllablesByLine(meter: string | null | undefined): number[] | null {
+/** Per-line expected syllable count for a given meter name.
+ *
+ * When `doubleLength` is true, returns the doubled shape (concatenated with
+ * itself) so each of the doubled tune's metrical lines has a defined expected
+ * count. Without this, doubled-CM tunes (which already have `doubleLength`
+ * paired elsewhere) get cropped to the un-doubled shape and every other
+ * 6-syllable line in the doubled pairing is silently merged or split by
+ * `forceMatchMeterShape`. Pass `doubleLength` from any caller that has the
+ * tune's doubling flag in scope.
+ */
+export function expectedSyllablesByLine(
+  meter: string | null | undefined,
+  doubleLength: boolean = false,
+): number[] | null {
   if (!meter) return null
   const m = meter.trim().toUpperCase()
 
@@ -23,6 +35,7 @@ export function expectedSyllablesByLine(meter: string | null | undefined): numbe
   // splitting it leaves syllable counts in the singable range (3–10).
   const isDoubled = / D\b/.test(m)
   const groups = (m.match(/\d+/g) ?? []).map(s => s)
+  let shape: number[] | null = null
   if (groups.length > 0) {
     let nums: number[]
     const allMultiDigit = groups.every(g => g.length >= 2)
@@ -36,36 +49,51 @@ export function expectedSyllablesByLine(meter: string | null | undefined): numbe
     }
     nums = nums.filter(n => Number.isFinite(n) && n > 0)
     if (nums.length > 0) {
-      return isDoubled ? [...nums, ...nums] : nums
+      shape = isDoubled ? [...nums, ...nums] : nums
     }
   }
 
   // Named meters
-  switch (m) {
-    case 'CM':
-    case 'COMMON METER':
-      return [8, 6, 8, 6]
-    case 'LM':
-    case 'LONG METER':
-      return [8, 8, 8, 8]
-    case 'SM':
-    case 'SHORT METER':
-      return [6, 6, 8, 6]
-    case 'CMD':
-    case 'DCM':
-    case 'COMMON METER DOUBLED':
-      return [8, 6, 8, 6, 8, 6, 8, 6]
-    case 'LMD':
-    case 'DLM':
-    case 'LONG METER DOUBLED':
-      return [8, 8, 8, 8, 8, 8, 8, 8]
-    case 'SMD':
-    case 'DSM':
-    case 'SHORT METER DOUBLED':
-      return [6, 6, 8, 6, 6, 6, 8, 6]
-    default:
-      return null
+  if (shape === null) {
+    switch (m) {
+      case 'CM':
+      case 'COMMON METER':
+        shape = [8, 6, 8, 6]
+        break
+      case 'LM':
+      case 'LONG METER':
+        shape = [8, 8, 8, 8]
+        break
+      case 'SM':
+      case 'SHORT METER':
+        shape = [6, 6, 8, 6]
+        break
+      case 'CMD':
+      case 'DCM':
+      case 'COMMON METER DOUBLED':
+        shape = [8, 6, 8, 6, 8, 6, 8, 6]
+        break
+      case 'LMD':
+      case 'DLM':
+      case 'LONG METER DOUBLED':
+        shape = [8, 8, 8, 8, 8, 8, 8, 8]
+        break
+      case 'SMD':
+      case 'DSM':
+      case 'SHORT METER DOUBLED':
+        shape = [6, 6, 8, 6, 6, 6, 8, 6]
+        break
+      default:
+        return null
+    }
   }
+
+  // Apply doubleLength only when the meter itself isn't already doubled
+  // (DCM/LMD/SMD are intrinsically doubled — no need to double again).
+  if (doubleLength && !isDoubled && !m.startsWith('D') && !/(?:^|\s)DOUBLED/.test(m)) {
+    shape = [...shape, ...shape]
+  }
+  return shape
 }
 
 export interface LineCheck {
@@ -81,6 +109,13 @@ export interface LineCheck {
  *
  * `expected: null` means "we don't know the meter shape" — the row is shown
  * but not flagged.
+ *
+ * Repeat-line tolerance: the last and second-last meter lines allow
+ * `actual = N × expected` (positive integer multiple). This covers folds
+ * where a singer collapsed two identical lines into one entry (e.g. CM
+ * stanza-1 line 4 = 12 syllables = 6 × 2 for a repeat-last-line tune; or
+ * line 3 for a repeat-second-last-line tune). Other lines are flagged as
+ * mismatches.
  */
 export function checkAgainstMeter(
   actualPerLine: string[][],
@@ -92,15 +127,17 @@ export function checkAgainstMeter(
     : actualPerLine.length
   const out: LineCheck[] = []
   const lastExpectedIdx = expected ? expected.length - 1 : -1
+  const secondLastExpectedIdx = expected ? expected.length - 2 : -1
   for (let i = 0; i < maxLines; i++) {
     const a = actualPerLine[i]?.length ?? 0
     const e = expected?.[i] ?? null
-    // Last meter line allows "repeat last line" patterns where the user folded
-    // the repeat into the same line (e.g. CM stanza-1 line 4 = 12 syllables =
-    // 6 × 2). Pass when `actual` is a positive integer multiple of `expected`.
     const isLastMeterLine = i === lastExpectedIdx
-    const isRepeatedLast = e !== null && e > 0 && isLastMeterLine && a > 0 && a % e === 0
-    const match = e === null ? true : a === e || isRepeatedLast
+    const isSecondLastMeterLine = i === secondLastExpectedIdx
+    const isRepeatedLast =
+      e !== null && e > 0 && isLastMeterLine && a > 0 && a % e === 0
+    const isRepeatedSecondLast =
+      e !== null && e > 0 && isSecondLastMeterLine && a > 0 && a % e === 0
+    const match = e === null ? true : a === e || isRepeatedLast || isRepeatedSecondLast
     out.push({ actual: a, expected: e, match })
   }
   return out

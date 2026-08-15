@@ -910,8 +910,19 @@ export function NotationRenderer({
 
     // Plan 04.9.9: per-phrase helper that uses buildWLineFromSolfa when solfège
     // OCR data is available, falling back to syllabifyForAbc otherwise.
-    // Defined inside useMemo so it closes over solfegeVoices and tuneMeter.
-    function wLineForSyllables(rawText: string, phraseIndex: number, musicForPhrase?: string): string {
+    // Defined inside useMemo so it closes over solfegeVoices, tuneMeter, and
+    // doubleLength. `metricalLineIndex` is the position of this w: line within
+    // the stanza's sequence of metrical lines (0..shape.length-1), used to
+    // look up the expected syllable count. Doubled/compound phrases must pass
+    // `phraseIndex * linesPerPhrase + sub` so the index points at the right
+    // element of the doubled shape; defaults to `phraseIndex` for the
+    // single-line-per-phrase path.
+    function wLineForSyllables(
+      rawText: string,
+      phraseIndex: number,
+      musicForPhrase?: string,
+      metricalLineIndex: number = phraseIndex,
+    ): string {
       const text = rawText.replace(/\n/g, ' ')
       let raw: string
       if (solfegeVoices && tuneMeter) {
@@ -964,9 +975,9 @@ export function NotationRenderer({
         }
       }
 
-      const expectedShape = expectedSyllablesByLine(tuneMeter)
+      const expectedShape = expectedSyllablesByLine(tuneMeter, doubleLength)
       if (expectedShape) {
-        const expected = expectedShape[phraseIndex]
+        const expected = expectedShape[metricalLineIndex]
         if (expected !== undefined && tokens.length !== expected) {
           const { fixed } = forceMatchMeterShape([tokens], [expected])
           return (fixed[0] ?? tokens).join(' ')
@@ -1177,7 +1188,12 @@ export function NotationRenderer({
             // emit no w: line for that sub-staff.
             const text = cycleLines[sub]
             if (!text || !text.trim()) continue
-            const wRaw = wLineForSyllables(text, Math.min(i, localSplit.phrases.length - 1), musicSubLines[sub])
+            // i is the ABC phrase index; sub is the sub-line within the phrase.
+            // Combined, they form the position in the doubled shape — required
+            // for `expectedSyllablesByLine` to find the correct expected count.
+            const phraseIdx = Math.min(i, localSplit.phrases.length - 1)
+            const metricalIdx = phraseIdx * linesPerPhrase + sub
+            const wRaw = wLineForSyllables(text, phraseIdx, musicSubLines[sub], metricalIdx)
             parts.push(`w: ${padWLineToNoteCount(wRaw, musicSubLines[sub])}`)
           }
         }
