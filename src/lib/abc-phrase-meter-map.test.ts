@@ -62,6 +62,42 @@ describe('phrasesForMeter', () => {
     expect(phrasesForMeter('cm')).toBe(4)
     expect(phrasesForMeter('dcm')).toBe(8)
   })
+
+  // ── Numeric-string fallback (post 260815-audit) ───────────────────────────
+  // Tuned to the 5 numeric meter strings in the corpus that previously
+  // collapsed to 1 phrase even though their shape was known.
+
+  it('falls back to 6 for "66 66 88" (run-together)', () => {
+    expect(phrasesForMeter('66 66 88')).toBe(6)
+  })
+
+  it('falls back to 4 for "87 87" (run-together)', () => {
+    expect(phrasesForMeter('87 87')).toBe(4)
+  })
+
+  it('falls back to 8 for "76 76 D" (run-together doubled)', () => {
+    expect(phrasesForMeter('76 76 D')).toBe(8)
+  })
+
+  it('falls back to 5 for "10 10 10 10 10" (zero-guard)', () => {
+    expect(phrasesForMeter('10 10 10 10 10')).toBe(5)
+  })
+
+  it('falls back to 4 for "66 66" (run-together)', () => {
+    expect(phrasesForMeter('66 66')).toBe(4)
+  })
+
+  it('falls back to 2 for "10 10" (zero-guard)', () => {
+    expect(phrasesForMeter('10 10')).toBe(2)
+  })
+
+  it('falls back to 4 for "76 76" (run-together)', () => {
+    expect(phrasesForMeter('76 76')).toBe(4)
+  })
+
+  it('falls back to 8 for "66 66 D" (run-together doubled)', () => {
+    expect(phrasesForMeter('66 66 D')).toBe(8)
+  })
 })
 
 describe('PHRASES_PER_STANZA', () => {
