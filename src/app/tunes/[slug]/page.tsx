@@ -160,7 +160,14 @@ export default async function TunePage({ params }: PageProps) {
         </section>
       )}
 
-      {/* Score — ABC notation with interactive player */}
+      {/* Score — ABC notation with interactive player.
+          TPAGE-02 (Phase 16): this section uses the SAME NotationRendererClient
+          chain as /psalms/[slug]'s Study tab — page (RSC) → TuneScoreSection
+          ('use client') → NotationRendererClient (dynamic, ssr:false) →
+          NotationRenderer (calls ABCJS.renderAbc inside useEffect+useRef).
+          The TuneScoreSection wrapper is the abcjs client-only boundary required
+          by CLAUDE.md ("abcjs — Never use server-side"). showLyrics:false below
+          suppresses the StanzaList panel and the "Lyrics only" view-mode button. */}
       {hasAbc && (() => {
         const firstLinkedPsalmVersion = tune.psalmVersionTunes?.[0]?.psalmVersion ?? null
         const tunesLyrics = firstLinkedPsalmVersion?.lyricsImportedRaw ?? ''
@@ -227,7 +234,10 @@ export default async function TunePage({ params }: PageProps) {
         )
       })()}
 
-      {/* Score — image-based with Staff/Solfège tabs, multi-page arrows, play button */}
+      {/* Score — image-based with Staff/Solfège tabs, multi-page arrows, play button.
+          JPG-only fallback for tunes that have NO ABC notation. TPAGE-02 (Phase 16)
+          does NOT apply here — the split-leaf parity requirement only covers the
+          ABC path above. */}
       {!hasAbc && (hasImages || hasAudio) && (
         <section>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
@@ -243,7 +253,8 @@ export default async function TunePage({ params }: PageProps) {
         </section>
       )}
 
-      {/* For ABC tunes that also have audio: show play button below notation */}
+      {/* For ABC tunes that also have audio: show play button below notation.
+          JPG-only fallback — TPAGE-02 (Phase 16) does not apply. */}
       {hasAbc && hasAudio && (
         <section>
           <TuneDetailClient
