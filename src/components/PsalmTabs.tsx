@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Pencil } from 'lucide-react'
 import { NotationRendererClient } from '@/components/notation/NotationRendererClient'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
-import { ChangeTuneDialog } from '@/components/ChangeTuneDialog'
+import { TunePickerDialog } from '@/components/tune-picker/TunePickerDialog'
 import type { PsalmDetail } from '@/db/queries/psalms'
 import type { AlternateTune, PsalmVersionTuneTiers } from '@/db/queries/tunes'
 import { sopranoOnly } from '@/lib/utils'
@@ -440,7 +440,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
               { onViewModeChange: setNotationViewMode },
             )}
           />
-          <ChangeTuneDialog
+          <TunePickerDialog
             open={changeTuneOpen}
             onClose={() => setChangeTuneOpen(false)}
             currentTuneId={activeTune.id}
@@ -475,7 +475,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
           ) : (
             <p className="text-sm text-muted-foreground italic">No lyrics available.</p>
           )}
-          <ChangeTuneDialog
+          <TunePickerDialog
             open={noRecDialogOpen}
             onClose={() => setNoRecDialogOpen(false)}
             currentTuneId={null}

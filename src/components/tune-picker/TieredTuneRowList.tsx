@@ -73,9 +73,9 @@ interface TieredTuneRowListProps<T extends TieredRowTune> {
   renderHeading?: (args: { tier: TuneTier; label: string }) => ReactNode
   tierLabels?: Partial<Record<TuneTier, string>>
   /**
-   * 'div' (default) wraps each heading+row pair in a <div key>, preserving ChangeTuneDialog's existing
-   * `grid gap-1` spacing exactly. 'fragment' emits no wrapper element — required inside <tbody>, where a
-   * <div> would be invalid HTML.
+   * 'div' (default) wraps each heading+row pair in a <div key>, preserving the study-tab picker's
+   * existing `grid gap-1` spacing exactly. 'fragment' emits no wrapper element — required inside
+   * <tbody>, where a <div> would be invalid HTML.
    */
   itemWrapper?: 'div' | 'fragment'
 }
