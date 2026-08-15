@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { PsalmPickerModal } from '@/components/PsalmPickerModal'
-import { TunePickerModal } from '@/components/precent/TunePickerModal'
+import { TunePickerDialog } from '@/components/tune-picker/TunePickerDialog'
 import { PastePsalmsDialog } from '@/components/precent/PastePsalmsDialog'
 import { SetItemsSortableList } from '@/components/precent/SetItemsSortableList'
 import type { PsalmRow } from '@/components/PsalmListingGrid'
@@ -328,7 +328,8 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById, tuneTi
         onAdd={handleAddPsalm}
       />
 
-      <TunePickerModal
+      <TunePickerDialog
+        useTable
         open={tunePickerOpen}
         onClose={() => setTunePickerOpen(false)}
         tunes={allTunes}
