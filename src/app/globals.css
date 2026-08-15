@@ -172,6 +172,37 @@ html, body {
   }
 }
 
+/* MelismaEditor light-mode scope: the editor uses hardcoded Tailwind
+   utilities (bg-white / text-gray-*) that were authored for light mode and
+   never received dark: variants. Restarting the whole editor under dark
+   mode leaves white text on a white background. Scope-light the editor by
+   pinning the CSS custom properties to light values on the editor's root
+   container, so anything inside that uses bg-background / text-foreground /
+   *-foreground / etc. tokens renders in light mode regardless of the
+   surrounding `.dark` class. We also pin color-scheme so native form
+   controls follow suit. See MelismaEditorClient.tsx root div className. */
+.melisma-editor-scope {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  color-scheme: light;
+}
+
 /* Search result snippet — scope ts_headline <b>/<strong> tags to avoid polluting other bold elements */
 [data-snippet] b,
 [data-snippet] strong {
