@@ -10,9 +10,8 @@ import type { AlternateTune, PsalmVersionTuneTiers } from '@/db/queries/tunes'
 /**
  * Shared tune-picker modal (TPAGE-01, Phase 16-01).
  *
- * Replaces two previously-separate modals:
- *   - `src/components/ChangeTuneDialog.tsx` (study-tab surface, compact list)
- *   - `src/components/precent/TunePickerModal.tsx` (precentor surface, full table)
+ * Replaces two previously-separate modal components (deleted in this same phase plan): the
+ * study-tab surface's compact list modal, and the precentor surface's full-table modal.
  *
  * Both surfaces now call this single component with a `useTable` flag:
  *   - `useTable=false` (default): study-tab style — tiny Dialog, search input, TieredTuneRowList.
