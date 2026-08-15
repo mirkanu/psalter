@@ -8,6 +8,7 @@ import { tuneNameToSlug, isNumericTuneSlug } from "@/lib/tune-slug"
 import { deriveTuneJpgPages } from "@/lib/tune-jpg-urls"
 import { sopranoOnly, pickAbcWithMarkers } from "@/lib/utils"
 import { buildNotationRendererProps } from "@/lib/notation-renderer-props"
+import { Badge } from "@/components/ui/badge"
 import { TunePageTabs } from "../_components/TunePageTabs"
 
 interface PageProps {
@@ -143,6 +144,24 @@ export default async function TunePage({ params }: PageProps) {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+      {/* Page-level header — independent of the tabs below so the title
+          and meter badge stay visible no matter which tab is active. */}
+      <header className="mb-6">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+          Tune
+        </p>
+        <div className="flex items-baseline gap-3 flex-wrap">
+          <h1 className="text-2xl md:text-4xl font-bold text-foreground">
+            {tune.name ?? `Tune ${tune.id}`}
+          </h1>
+          {tune.meter && (
+            <Badge variant="secondary" className="text-base px-2.5 py-0.5">
+              {tune.meter}
+            </Badge>
+          )}
+        </div>
+      </header>
+
       <TunePageTabs
         tuneName={tune.name ?? `Tune ${tune.id}`}
         tuneId={tune.id}
