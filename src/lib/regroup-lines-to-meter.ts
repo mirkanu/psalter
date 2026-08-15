@@ -68,3 +68,88 @@ export function regroupLinesToMeter(
   }
   return { regrouped: out, merged: true }
 }
+
+/**
+ * Cross-stanza regrouping for cases where the source lyrics are broken into
+ * the wrong stanza boundaries (e.g. one physical stanza = half a metrical
+ * stanza, so two physical stanzas must merge into one). The 260815 audit
+ * found psalm 148 has this case: 6 physical stanzas of 4 lines, but the
+ * meter expects 6 metrical lines per stanza.
+ *
+ * Walks `expectedStanzaShape` (an array of per-line expected syllable counts,
+ * one per metrical line of the whole poem) and accumulates adjacent physical
+ * stanzas until the running syllable sum matches one metrical stanza's total.
+ * Returns the merged stanzas or the original input if a clean fit isn't
+ * possible.
+ *
+ * Strategy: first flatten all physical lines into a single sequence, call
+ * `regroupLinesToMeter` on the flattened sequence against the CONCATENATED
+ * expected shape, then split the result back into per-stanza chunks sized
+ * to the sum of each physical-stanza's expected lines.
+ *
+ * Pure module. Used by the import pipeline when re-parsing raw lyrics that
+ * have wrong stanza breaks.
+ */
+export function regroupStanzasAcrossBoundaries(
+  actualStanzas: string[][][],
+  expectedStanzaShape: number[][] | null | undefined,
+): { regrouped: string[][][]; merged: boolean } {
+  // Trivial inputs: nothing to do.
+  if (
+    !expectedStanzaShape ||
+    expectedStanzaShape.length === 0 ||
+    actualStanzas.length === 0
+  ) {
+    return { regrouped: actualStanzas, merged: false }
+  }
+  // Expected shape must equal the number of physical stanzas for a no-op
+  // pass; otherwise the func has work to do.
+  if (expectedStanzaShape.length === actualStanzas.length) {
+    return { regrouped: actualStanzas, merged: false }
+  }
+
+  // Flatten physical lines into one sequence.
+  const flat: string[][] = []
+  for (const stanza of actualStanzas) {
+    for (const line of stanza) {
+      flat.push(line)
+    }
+  }
+
+  // Concatenate expected per-line counts into a single shape.
+  const flatExpected: number[] = []
+  for (const stanza of expectedStanzaShape) {
+    for (const count of stanza) {
+      flatExpected.push(count)
+    }
+  }
+
+  // Run the single-stanza regroup on the flattened sequence.
+  const result = regroupLinesToMeter(flat, flatExpected)
+  if (!result.merged) {
+    return { regrouped: actualStanzas, merged: false }
+  }
+
+  // Split the regrouped lines back into per-stanza chunks, sized by the
+  // expected metrical-line count per stanza.
+  const regrouped: string[][][] = []
+  let cursor = 0
+  for (const stanza of expectedStanzaShape) {
+    const chunk: string[][] = []
+    for (let i = 0; i < stanza.length; i++) {
+      const line = result.regrouped[cursor + i]
+      if (!line) {
+        // Defensive — regroupLinesToMeter should have produced exactly
+        // flatExpected.length entries.
+        return { regrouped: actualStanzas, merged: false }
+      }
+      chunk.push(line)
+    }
+    regrouped.push(chunk)
+    cursor += stanza.length
+  }
+  if (cursor !== result.regrouped.length) {
+    return { regrouped: actualStanzas, merged: false }
+  }
+  return { regrouped, merged: true }
+}
