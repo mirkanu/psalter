@@ -5,14 +5,10 @@ import { fetchTuneDetail, fetchTuneBySlug, fetchTuneSlugs } from "@/db/queries/t
 import { fetchPsalmsByMeter, fetchPsalmListRows } from "@/db/queries/psalms"
 import { deriveVersionSlug, stripStar } from "@/lib/psalm-slugs"
 import { tuneNameToSlug, isNumericTuneSlug } from "@/lib/tune-slug"
-import { Badge } from "@/components/ui/badge"
-import { TuneDetailClient } from "@/components/TuneDetailClient"
-import { PsalmsByTuneSection } from "@/components/PsalmsByTuneSection"
-import { TuneMiniBarSection } from "@/components/TuneMiniBarSection"
-import { TuneScoreSection } from "@/components/TuneScoreSection"
 import { deriveTuneJpgPages } from "@/lib/tune-jpg-urls"
 import { sopranoOnly, pickAbcWithMarkers } from "@/lib/utils"
 import { buildNotationRendererProps } from "@/lib/notation-renderer-props"
+import { TunePageTabs } from "../_components/TunePageTabs"
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -102,179 +98,71 @@ export default async function TunePage({ params }: PageProps) {
   const moods = tune.tuneMoods.map((tm) => tm.mood.name).filter(Boolean) as string[]
   const rawAbc = pickAbcWithMarkers(tune.abcSatb, tune.abcNotation)
   const bestAbc = rawAbc ? sopranoOnly(rawAbc) : null
-  const hasAbc = !!bestAbc
-  const hasImages = staffPages.length > 0 || solfegePages.length > 0
-  const hasAudio = !!(tune.soundcloudUrl || tune.youtubeUrl)
+
+  const firstLinkedPsalmVersion = tune.psalmVersionTunes?.[0]?.psalmVersion ?? null
+  const tunesLyrics = firstLinkedPsalmVersion?.lyricsImportedRaw ?? ''
+
+  // TPAGE-02 (Phase 16): this section uses the SAME NotationRendererClient chain as
+  // /psalms/[slug]'s Study tab — page (RSC) → TuneScoreSection ('use client') →
+  // NotationRendererClient (dynamic, ssr:false) → NotationRenderer (calls ABCJS.renderAbc
+  // inside useEffect+useRef). TuneScoreSection is the abcjs client-only boundary required by
+  // CLAUDE.md ("abcjs — Never use server-side"). showLyrics:false suppresses the StanzaList
+  // panel and the "Lyrics only" view-mode button; renderWLineUnderStaff:true re-enables w-line
+  // emission so abcjs still draws `_` melisma marks beneath the staff (Phase 16 / D-02).
+  const notationProps = buildNotationRendererProps(
+    {
+      abcNotation: tune.abcNotation ?? null,
+      abcSatb: tune.abcSatb ?? null,
+      name: tune.name ?? null,
+      meter: tune.meter ?? null,
+      phraseShapeOverride: tune.phraseShapeOverride ?? null,
+      doubleLength: tune.doubleLength ?? false,
+      // D-02: solfegeOcrText was MISSING at this call site before Phase 11.
+      solfegeOcrText: tune.solfegeOcrText ?? null,
+      // Note: JPG urls come from the filesystem-derived page arrays, not the
+      // (always-NULL) DB columns — see src/lib/tune-jpg-urls.ts.
+      scoreJpgUrl: staffPages[0] ?? null,
+      solfegeJpgUrl: solfegePages[0] ?? null,
+      // Phase 16 / D-02: plumb melismaPositions so /tunes/[slug] can render `_` melisma
+      // continuation marks even though the page suppresses the StanzaList panel.
+      melismaPositions: tune.melismaPositions ?? null,
+    },
+    {
+      lyrics: tunesLyrics,
+      stanzaMeter: firstLinkedPsalmVersion?.meter ?? null,
+      lyricsStructured: (firstLinkedPsalmVersion?.lyricsStructured ?? null) as import('@/lib/lyrics-structured').StructuredLyrics | null,
+    },
+    // onViewModeChange is deliberately NOT passed here — an RSC cannot serialise a function
+    // across the client boundary; TuneScoreSection attaches it.
+    {
+      showLyrics: false,
+      renderWLineUnderStaff: true,
+      fallbackTuneName: `Tune ${tune.id}`,
+    },
+  )
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-8">
-
-      {/* Title + meter badge */}
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Tune</p>
-        <div className="flex items-baseline gap-3 flex-wrap">
-          <h1 className="text-2xl md:text-4xl font-bold text-foreground">
-            {tune.name ?? `Tune ${tune.id}`}
-          </h1>
-          {tune.meter && (
-            <Badge variant="secondary" className="text-base px-2.5 py-0.5">
-              {tune.meter}
-            </Badge>
-          )}
-        </div>
-      </header>
-
-      {/* Metadata — only render non-empty fields */}
-      {(moods.length > 0 || tune.numberIn1979RpPsalter || tune.numInPrcaPsalter || tune.precentingComment || (tune.hasFamousHymn && tune.famousHymn)) && (
-        <section className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
-          {moods.length > 0 && (
-            <div className="flex gap-2">
-              <span className="text-muted-foreground w-36 shrink-0">Mood</span>
-              <span>{moods.join(', ')}</span>
-            </div>
-          )}
-          {tune.numberIn1979RpPsalter && (
-            <div className="flex gap-2">
-              <span className="text-muted-foreground w-36 shrink-0">RP Psalter (1979)</span>
-              <span>#{tune.numberIn1979RpPsalter}</span>
-            </div>
-          )}
-          {tune.numInPrcaPsalter && (
-            <div className="flex gap-2">
-              <span className="text-muted-foreground w-36 shrink-0">PR Psalter</span>
-              <span>#{tune.numInPrcaPsalter}</span>
-            </div>
-          )}
-          {tune.hasFamousHymn && tune.famousHymn && (
-            <div className="flex gap-2">
-              <span className="text-muted-foreground w-36 shrink-0">Famous hymn</span>
-              <span>{tune.famousHymn}</span>
-            </div>
-          )}
-          {tune.precentingComment && (
-            <div className="flex gap-2 sm:col-span-2">
-              <span className="text-muted-foreground w-36 shrink-0">Precenting notes</span>
-              <span className="text-foreground">{tune.precentingComment}</span>
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* Score — ABC notation with interactive player.
-          TPAGE-02 (Phase 16): this section uses the SAME NotationRendererClient
-          chain as /psalms/[slug]'s Study tab — page (RSC) → TuneScoreSection
-          ('use client') → NotationRendererClient (dynamic, ssr:false) →
-          NotationRenderer (calls ABCJS.renderAbc inside useEffect+useRef).
-          The TuneScoreSection wrapper is the abcjs client-only boundary required
-          by CLAUDE.md ("abcjs — Never use server-side"). showLyrics:false below
-          suppresses the StanzaList panel and the "Lyrics only" view-mode button. */}
-      {hasAbc && (() => {
-        const firstLinkedPsalmVersion = tune.psalmVersionTunes?.[0]?.psalmVersion ?? null
-        const tunesLyrics = firstLinkedPsalmVersion?.lyricsImportedRaw ?? ''
-        return (
-          <section>
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-              Score
-            </h2>
-            <TuneScoreSection
-              notationProps={buildNotationRendererProps(
-                {
-                  abcNotation: tune.abcNotation ?? null,
-                  abcSatb: tune.abcSatb ?? null,
-                  name: tune.name ?? null,
-                  meter: tune.meter ?? null,
-                  phraseShapeOverride: tune.phraseShapeOverride ?? null,
-                  doubleLength: tune.doubleLength ?? false,
-                  // D-02: solfegeOcrText was MISSING at this call site before Phase 11.
-                  solfegeOcrText: tune.solfegeOcrText ?? null,
-                  // Note: JPG urls come from the filesystem-derived page arrays, not the
-                  // (always-NULL) DB columns — see src/lib/tune-jpg-urls.ts.
-                  scoreJpgUrl: staffPages[0] ?? null,
-                  solfegeJpgUrl: solfegePages[0] ?? null,
-                  // Phase 16 / D-02: plumb melismaPositions so /tunes/[slug]
-                  // can render `_` melisma continuation marks even though the
-                  // page suppresses the StanzaList panel. Combined with
-                  // renderWLineUnderStaff:true below, the staff now shows
-                  // slurs/underlines correctly (e.g. Darwall at /tunes/darwall
-                  // has no melismas — its positions array is [[],[],[],[],[],[]] —
-                  // so it renders identically, but other tunes with actual
-                  // melismas now render them here too).
-                  melismaPositions: tune.melismaPositions ?? null,
-                },
-                {
-                  lyrics: tunesLyrics,
-                  stanzaMeter: firstLinkedPsalmVersion?.meter ?? null,
-                  lyricsStructured: (firstLinkedPsalmVersion?.lyricsStructured ?? null) as import('@/lib/lyrics-structured').StructuredLyrics | null,
-                },
-                // Phase 16 / D-02: split the D-02 contract — showLyrics:false
-                // still suppresses the StanzaList panel (lyrics don't belong
-                // on a tune-only page), but renderWLineUnderStaff:true
-                // re-enables w-line emission so abcjs draws `_` melisma
-                // marks beneath the staff. Previously showLyrics:false
-                // suppressed BOTH the panel AND the w-lines, which silently
-                // dropped melisma data on this route (Phase 4.9 / 06 bug).
-                // onViewModeChange is deliberately NOT passed here — an RSC
-                // cannot serialise a function across the client boundary;
-                // TuneScoreSection attaches it.
-                {
-                  showLyrics: false,
-                  renderWLineUnderStaff: true,
-                  fallbackTuneName: `Tune ${tune.id}`,
-                },
-              )}
-              staffPages={staffPages}
-              solfegePages={solfegePages}
-            />
-            <TuneMiniBarSection
-              abc={bestAbc!}
-              soundcloudUrl={tune.soundcloudUrl ?? null}
-              tuneName={tune.name ?? `Tune ${tune.id}`}
-            />
-          </section>
-        )
-      })()}
-
-      {/* Score — image-based with Staff/Solfège tabs, multi-page arrows, play button.
-          JPG-only fallback for tunes that have NO ABC notation. TPAGE-02 (Phase 16)
-          does NOT apply here — the split-leaf parity requirement only covers the
-          ABC path above. */}
-      {!hasAbc && (hasImages || hasAudio) && (
-        <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-            Score
-          </h2>
-          <TuneDetailClient
-            tuneName={tune.name ?? `Tune ${tune.id}`}
-            staffPages={staffPages}
-            solfegePages={solfegePages}
-            soundcloudUrl={tune.soundcloudUrl}
-            youtubeUrl={tune.youtubeUrl}
-          />
-        </section>
-      )}
-
-      {/* For ABC tunes that also have audio: show play button below notation.
-          JPG-only fallback — TPAGE-02 (Phase 16) does not apply. */}
-      {hasAbc && hasAudio && (
-        <section>
-          <TuneDetailClient
-            tuneName={tune.name ?? `Tune ${tune.id}`}
-            staffPages={[]}
-            solfegePages={solfegePages}
-            soundcloudUrl={tune.soundcloudUrl}
-            youtubeUrl={tune.youtubeUrl}
-          />
-        </section>
-      )}
-
-      {/* Sing this tune — recommended + other psalms */}
-      <PsalmsByTuneSection
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+      <TunePageTabs
+        tuneName={tune.name ?? `Tune ${tune.id}`}
+        tuneId={tune.id}
+        meter={tune.meter}
+        moods={moods}
+        numberIn1979RpPsalter={tune.numberIn1979RpPsalter}
+        numInPrcaPsalter={tune.numInPrcaPsalter}
+        hasFamousHymn={tune.hasFamousHymn ?? false}
+        famousHymn={tune.famousHymn}
+        precentingComment={tune.precentingComment}
         recommendedPsalms={recommendedPsalms}
         otherPsalms={otherPsalms}
         psalmsForMeter={psalmsForMeter}
         allPsalmRows={allPsalmRows}
-        tuneId={tune.id}
-        meter={tune.meter}
+        notationProps={notationProps}
+        staffPages={staffPages}
+        solfegePages={solfegePages}
+        bestAbc={bestAbc}
+        soundcloudUrl={tune.soundcloudUrl ?? null}
+        youtubeUrl={tune.youtubeUrl ?? null}
       />
     </div>
   )
