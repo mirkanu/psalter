@@ -26,6 +26,7 @@ Rebuild of psalter.cprc.co.uk from Airtable + Softr to a self-hosted Next.js 15 
 - [ ] **Phase 11: Tune List & Selector Overhaul** - `/tunes` mirrors `/psalms`, mobile-fit sticky table, inline embed player, shared tune-picker component
 - [ ] **Phase 12: Psalm Selector Polish** - Always-collapsed multi-version toggle, meter tags, search bar width fix
 - [x] **Phase 13: Tune Image Compression** (3/3 plans) — completed 2026-08-11 - All 320 tune JPEGs compressed at w2000-q82 (91.2% reduction; 1.4 GiB → 126 MiB), archive-only verifier in place, human sign-off on live melisma-approved scores
+- [x] **Phase 16: Tune Page First-Class Surface** (3/3 plans) — completed 2026-08-15 - `/tunes/[slug]` is now a first-class surface: shared `TunePickerDialog` consolidates the two prior duplicate modals (TPAGE-01), notation section shares the `NotationRendererClient` helper with `/psalms/[slug]` (TPAGE-02), and the page is wrapped in a Details/Notation Tabs surface with `?tab=` URL sync (TPAGE-03). All 3 plans shipped; 28 unit tests pass on the touched suites. Code review found 3 latent warnings (WR-01/02/03) — all non-blocking, filed as follow-up tickets.
 - [x] **Phase 14: Launch Polish** (4/4 plans) — completed 2026-08-12 - OG images, favicon/404, remaining skeletons, click-feedback states. **Lighthouse 90+ was deferred to Phase 15.**
 - [x] **Phase 15: Lighthouse 90+ via client-component deferral** (3/3 plans) — completed 2026-08-12 - Dynamic-import wrappers, next/image logo, Geist pruning. DELIVERED but **POLISH-03 not actually met** — initial verification used a PerformanceObserver stand-in for Lighthouse (loopback localhost, no simulated throttling) that returned inflated median metrics. Real Lighthouse v13.4.1 mobile/sim-throttling re-audit (committed at `15-lighthouse-{homepage,psalms,psalm-detail}.json`) shows Performance **69/61/65** vs the 90+ gate — main blockers are TBT (700/950/1670 ms) and LCP (3.9/3.8/2.3 s). Logo blur also fixed as a side fix (sizes 28px → 175/350px, q=75 → 100). Gap-closure scoped as Phase 15.1.
 - [x] **Phase 15.1: Lighthouse gap-closure — TBT and LCP reduction** (3/3 plans) — completed 2026-08-12 - Shipped 5 dynamic-import wrappers (`PsalmPickerModalClient`, `PsalmTopBarClient`, `OnboardingTourClient`, `TuneSwitcherSheetClient`, `GearPopoverClient`) + PsalmListingGrid hydration batching + logo q=100→90. All code verified in build. The single-run scores reported here (`0.47 / 0.60 / 0.67`) used a noisy comparison method and are **superseded** by the median-of-5 methodology introduced in Phase 15.2. The 0.47 "regression" attribution to a `qualities` array change is **retracted** — see Phase 15.2 evidence (`15.2-measurement-noise-evidence.md`): identical framework chunk hashes between the compared runs, 28-byte script-payload delta, 2.2× slower `benchmarkIndex` on the slow run. **POLISH-03 stays `[ ] deferred`** with the measured ceiling in Phase 15.2.
@@ -262,21 +263,6 @@ Plans:
 
 Deferred, not part of the active v2.0 milestone. Pick up via `/gsd-phase` + `/gsd-discuss-phase` whenever prioritised.
 
-### Phase 16: Tune Page First-Class Surface
-
-**Goal**: `/tunes/[slug]` is a first-class surface that mirrors `/psalms/[slug]` — a shared tune picker lives permanently under `/tunes`, and the tune detail page renders the same split-leaf staff/solfège notation with the same player as the psalm page, organised under Details / Notation tabs
-**Depends on**: Phase 11 (shared `TieredTuneRowList` + `NotationRendererClient` helpers exist)
-**Requirements**: TPAGE-01, TPAGE-02, TPAGE-03
-**Success Criteria** (what must be TRUE):
-  1. The tune selector modal used on the single-psalm view is the SAME component used on the precent list view (currently `TunePickerModal`), and both live as children of the `/tunes` route (e.g. `src/components/tune-picker/` or `src/app/tunes/_components/`) — no orphan modal duplicates anywhere else in `src/components/`
-  2. `/tunes/[slug]` renders the same staff-only and solfège-only split-leaf views as `/psalms/[slug]` — but WITHOUT lyrics (tunes have no lyrics) — sharing the existing `NotationRendererClient` helper so any future notation work reaches both pages in one edit
-  3. `/tunes/[slug]` includes the same tune player (audio playback control) as `/psalms/[slug]`, positioned consistently with the psalm view
-  4. `/tunes/[slug]` is organised as a tabbed surface: **Details** tab shows current metadata (tune name, composer, meter, time signature, source, etc.) at the top and a "Recommended psalms" list below; **Notation** tab shows the staff/solfège split-leaf + player
-  5. The default tab on first visit is Details; selecting Notation does not reset the user's position on the page (URL state via search params is preserved on refresh)
-  6. All abcjs rendering continues to obey the project rule: client-only, `dynamic({ ssr: false })`, `useEffect`+`useRef` container, `<Suspense>` skeleton
-**Note**: This phase explicitly reuses `TieredTuneRowList` and `NotationRendererClient` from Phase 11 — do not duplicate or fork these. The "tabbed layout" is the same shadcn `Tabs` pattern already used on `/psalms/[slug]` (PsalmTabs.tsx). Reference `.planning/research/lyric-to-note-alignment.md` only for the cross-check that "no lyrics" does not break the `padWLineToNoteCount` / `getPassingPositions` paths.
-**Plans**: [ ] Not planned (0 plans)
-
 ### Phase 999.1: Airtable Exit Verification (BACKLOG)
 
 **Goal**: Every byte of Airtable data is accounted for in PostgreSQL and R2 before the Airtable subscription is cancelled; a permanent backup and read-only DB viewer are in place
@@ -314,5 +300,6 @@ Phases 7 and 10 have no dependencies on Phase 6 or each other and may be worked 
 | 10. Tune Data Fixes | 5/5 | Complete    | 2026-08-08 |
 | 11. Tune List & Selector Overhaul | 6/6 | Complete    | 2026-08-09 |
 | 12. Psalm Selector Polish | 8/8 | Complete    | 2026-08-10 |
-| 13. Tune Image Compression | 0/TBD | Not started | - |
+| 13. Tune Image Compression | 3/3 | Complete    | 2026-08-11 |
 | 14. Launch Polish | 0/TBD | Not started | - |
+| 16. Tune Page First-Class Surface | 3/3 | Complete    | 2026-08-15 |

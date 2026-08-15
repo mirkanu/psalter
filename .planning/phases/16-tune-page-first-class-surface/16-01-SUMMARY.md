@@ -83,6 +83,13 @@ The two old files (`src/components/ChangeTuneDialog.tsx`, `src/components/precen
 
 None of these deviations required an architectural decision (Rule 4) — all were straightforward type-correctness or gate-compliance fixes within the scope of this plan's own files.
 
+### Audit Deviations (review-time, not execution-time)
+
+**5. [Rule 2 - Behavior drop] "Showing tunes in {meter} meter" subtitle was removed during consolidation without being recorded here**
+- **Found during:** Phase 16 code review (REVIEW.md WR-03, 2026-08-15)
+- **Issue:** The pre-consolidation `ChangeTuneDialog.tsx` rendered a `"Showing tunes in {meter} meter"` subtitle in its dialog header. The consolidation commit dropped this subtitle without recording it in `16-01-PLAN.md` or `16-01-SUMMARY.md`, despite the plan's `must_haves` requiring preservation of the existing Study-tab experience. The substitution is harmless at both current call sites (both pre-filter by meter upstream, so the subtitle would have been redundant), but the audit trail should have noted the behaviour change.
+- **Resolution:** No fix required — but if a future caller invokes `TunePickerDialog` with meter-unfiltered `tunes`, the subtitle should be reintroduced in the dialog header. Filed as a follow-up ticket.
+
 ## Verification results
 
 - `npx vitest run src/components/tune-picker/` — 2 test files, 18 tests, all passing (8 new `TunePickerDialog` tests + 10 pre-existing `TieredTuneRowList` tests, unaffected).
