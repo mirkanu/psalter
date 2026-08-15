@@ -711,6 +711,15 @@ export function NotationRenderer({
         }
       }
       const grid = mapCycleToPhraseSyllableLines(workingCycle, effectivePhraseCount)
+      if (i >= grid.length && typeof console !== 'undefined') {
+        // Lyric would be silently dropped because the cycle has fewer metrical
+        // lines than the meter/override expects. Surface this in dev so the
+        // root cause (insufficient lines in lyrics) is debuggable.
+        console.warn(
+          `[NotationRenderer] meter expects ${effectivePhraseCount} phrases but cycle ${visibleCycles.indexOf(cycle)} has only ${grid.length} (phrase ${i} dropped). ` +
+          `tuneMeter=${tuneMeter ?? 'null'}, phraseShapeOverride=${JSON.stringify(phraseShapeOverride ?? null)}, doubleLength=${doubleLength}.`,
+        )
+      }
       return grid[i] ?? []
     })
   }
@@ -1573,6 +1582,35 @@ export function NotationRenderer({
     </div>
   ) : null
 
+  // TUNE-02b: surface "shape unknown" so silent lyric misalignment becomes visible.
+  // Two failure modes from the 260815 audit:
+  //   (a) tune.meter is null/empty/unrecognized — no shape available, the
+  //       syllable-count fallback cannot rescue off-count lines.
+  //   (b) ABC has more phrase breaks than the meter predicts (rare after the
+  //       numeric-fallback fix in phrasesForMeter, but still possible if a
+  //       tune's meter is genuinely unparseable). Without this banner, the
+  //       trailing lines render silently dropped.
+  // Banner is intentionally soft (amber, not red) — the tune may still be
+  // singable; this just tells the user the alignment is heuristic.
+  const shapeUnknown =
+    !tuneMeter ||
+    !expectedSyllablesByLine(tuneMeter) ||
+    phrasesForMeter(tuneMeter) === 1
+  const shapeUnknownBanner = shapeUnknown && !meterMismatch ? (
+    <div
+      data-meter-shape-unknown-banner
+      role="status"
+      className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 px-3 py-2 text-sm flex-shrink-0"
+    >
+      <span className="font-semibold text-amber-900 dark:text-amber-200">Meter shape unknown</span>
+      <span className="text-amber-800 dark:text-amber-300">
+        {tuneMeter
+          ? ` — phrase count could not be derived from "${tuneMeter}". Lyric alignment is heuristic; cross-check with the tune book.`
+          : ' — this tune has no meter recorded. Lyric alignment is heuristic; cross-check with the tune book.'}
+      </span>
+    </div>
+  ) : null
+
   // ── Fullscreen branch ─────────────────────────────────────────────────────
   if (isFullscreen && allowFullscreen) {
     const fullscreenTopBar = (
@@ -1612,6 +1650,7 @@ export function NotationRenderer({
       >
         <div data-notation-renderer style={rootStyle} className="w-full">
           {meterMismatchBanner}
+          {shapeUnknownBanner}
           {viewArea}
         </div>
       </FullscreenOverlay>
@@ -1640,6 +1679,7 @@ export function NotationRenderer({
       }
     >
       {meterMismatchBanner}
+      {shapeUnknownBanner}
       {!chromeless && controlBar}
       {chromeless ? (
         <div
