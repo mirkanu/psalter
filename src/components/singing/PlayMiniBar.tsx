@@ -203,6 +203,11 @@ export function PlayMiniBar({
         // skipped in flow mode (the bar is always visible if visible=true).
         isFlow && 'static w-full rounded-lg border border-border/40 bg-background/90 backdrop-blur-sm px-2 shadow-sm',
         isFlow && 'translate-y-0 opacity-100',
+        // 2026-08-16: in flow mode there is nowhere to collapse TO — the bar
+        // already lives in the document. Hide the collapse button so users
+        // aren't tempted to click a no-op arrow. Scoped via data attribute
+        // rather than a class so the rule stays on the parent element.
+        isFlow && '[&_[aria-label="Collapse player"]]:hidden',
         'transition-all duration-200 ease-out',
         'motion-reduce:translate-y-0 motion-reduce:!transition-opacity motion-reduce:duration-100',
         visible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0',
