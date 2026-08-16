@@ -149,6 +149,11 @@ export default async function TunePage({ params }: PageProps) {
       showLyrics: false,
       renderWLineUnderStaff: false,
       fallbackTuneName: `Tune ${tune.id}`,
+      // 2026-08-16 (Phase 16 R3, user sign-off): drops A+/A-, Stanza nav,
+      // fullscreen icon, and the bottom Play/Key/BPM/Show-original bar.
+      // Keeps Staff/Solfège toggle; routes both to their JPG-fallback modes
+      // when there's no abcjs to render (many tunes lack digital notation).
+      tunePageMode: true,
     },
   )
 
@@ -207,15 +212,20 @@ export default async function TunePage({ params }: PageProps) {
       />
 
       {/* Sing this tune — OUTSIDE the tabbed content (Phase 16 R3 user spec).
-          Recommended Psalms + Other Psalms + "Sing to a different psalm". */}
-      <PsalmsByTuneSection
-        recommendedPsalms={recommendedPsalms}
-        otherPsalms={otherPsalms}
-        psalmsForMeter={psalmsForMeter}
-        allPsalmRows={allPsalmRows}
-        tuneId={tune.id}
-        meter={tune.meter}
-      />
+          Recommended Psalms + Other Psalms + "Sing to a different psalm".
+          mt-12 gives the section clear vertical breathing room from whatever
+          the active tab renders (notation ends ~mb-6 above the bottom of
+          NotationRendererClient's own controls). */}
+      <div className="mt-12">
+        <PsalmsByTuneSection
+          recommendedPsalms={recommendedPsalms}
+          otherPsalms={otherPsalms}
+          psalmsForMeter={psalmsForMeter}
+          allPsalmRows={allPsalmRows}
+          tuneId={tune.id}
+          meter={tune.meter}
+        />
+      </div>
     </div>
   )
 }
