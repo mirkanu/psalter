@@ -11,7 +11,7 @@ import { NotationRendererClient } from '@/components/notation/NotationRendererCl
 import type { ViewMode } from '@/components/notation/NotationRenderer'
 import { TunePickerDialog } from '@/components/tune-picker/TunePickerDialog'
 import type { PsalmDetail } from '@/db/queries/psalms'
-import type { AlternateTune, PsalmVersionTuneTiers } from '@/db/queries/tunes'
+import type { AlternateTune, EnrichedTuneRow, PsalmVersionTuneTiers } from '@/db/queries/tunes'
 import { sopranoOnly } from '@/lib/utils'
 import { buildNotationRendererProps } from '@/lib/notation-renderer-props'
 
@@ -28,7 +28,16 @@ interface PsalmTabsProps {
   primaryTuneDerivedSolfegeUrl?: string | null
   /** Server-computed slug for primaryTune (raw DB rows have no slug field). */
   primaryTuneSlug?: string | null
-  alternateTunes: AlternateTune[]
+  /**
+   * Phase 16 R3: union — page may pass either raw AlternateTune[] (legacy) or
+   * EnrichedTuneRow[] (enriched via enrichAlternateTunesToTuneRows). The
+   * TunePickerDialog already accepts the union; the only consumers of fields
+   * outside AlternateTune (id/length) are inside the dialog itself, which
+   * silently breaks on AlternateTune because fields like `recommendedPsalmIds`
+   * arrive as undefined. Pages that feed the picker should pass the enriched
+   * shape so the /precent and /psalms pickers render identically.
+   */
+  alternateTunes: readonly (AlternateTune | EnrichedTuneRow)[]
   activeVersionId?: number
   recommendedVersionSlug?: string | null
   /** Per-psalm-version Backup/Historical tune ids for the Change Tune list (TUNE-04). */
@@ -334,7 +343,10 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
   const preselectedTune = tuneParam
     ? alternateTunes.find((t) => String(t.id) === tuneParam) ?? null
     : null
-  const [overrideTune, setOverrideTune] = useState<AlternateTune | null>(preselectedTune)
+  // Phase 16 R3: alternateTunes may be AlternateTune or EnrichedTuneRow — keep
+  // the override as the same union so we don't lose metadata when the user
+  // switches tunes mid-session.
+  const [overrideTune, setOverrideTune] = useState<AlternateTune | EnrichedTuneRow | null>(preselectedTune)
 
   useEffect(() => {
     if (mobileTabsRef.current) {
