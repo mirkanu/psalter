@@ -16,12 +16,6 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/components/TuneScoreSection', () => ({
   TuneScoreSection: () => <div data-testid="tune-score-section" />,
 }))
-vi.mock('@/components/TuneMiniBarSection', () => ({
-  TuneMiniBarSection: () => <div data-testid="tune-mini-bar-section" />,
-}))
-vi.mock('@/components/TuneDetailClient', () => ({
-  TuneDetailClient: () => <div data-testid="tune-detail-client" />,
-}))
 
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import { TunePageTabs, type TunePageTabsProps } from './TunePageTabs'
@@ -49,9 +43,6 @@ function baseProps(overrides: Partial<TunePageTabsProps> = {}): TunePageTabsProp
     notationProps: baseNotationProps,
     staffPages: [],
     solfegePages: [],
-    bestAbc: 'X:1\nK:C\nCDEF|',
-    soundcloudUrl: null,
-    youtubeUrl: null,
     ...overrides,
   }
 }
@@ -107,33 +98,19 @@ describe('TunePageTabs', () => {
     expect(screen.getByText('Mood')).toBeTruthy()
   })
 
-  it('renders TuneScoreSection in the Notation tab when bestAbc is non-null', () => {
-    // 2026-08-16: TuneMiniBarSection moved OUT of the Notation tab — audio
-    // now sits above the tabs (page.tsx). The Notation tab is score-only.
+  it('always renders TuneScoreSection in the Notation tab, regardless of abc/image availability', () => {
+    // 2026-08-16 (Phase 16 R3 sign-off round): TunePageTabs no longer branches
+    // on hasAbc/hasImages/hasAudio — a single NotationRenderer instance
+    // (via TuneScoreSection, driven by tunePageMode) now owns every case:
+    // live abcjs, JPG fallback (staff-split/solfege-split), and the final
+    // "not available" message. TuneDetailClient (the old branch) was removed
+    // because it duplicated the audio player that now lives above the tabs.
+    // TuneScoreSection is mocked here, so this only proves TunePageTabs always
+    // renders it — the fallback behaviour itself lives in NotationRenderer and
+    // was verified live via Playwright screenshots (no abcjs unit coverage
+    // exists for that 1700-line component yet).
     useSearchParamsMock.mockReturnValue(new URLSearchParams('tab=notation'))
-    render(<TunePageTabs {...baseProps({ bestAbc: 'X:1\nK:C\nCDEF|' })} />)
+    render(<TunePageTabs {...baseProps({ staffPages: [], solfegePages: [] })} />)
     expect(screen.getByTestId('tune-score-section')).toBeTruthy()
-    expect(screen.queryByTestId('tune-mini-bar-section')).toBeNull()
-  })
-
-  it('falls back to TuneDetailClient (JPG-only) when bestAbc is null but images exist', () => {
-    useSearchParamsMock.mockReturnValue(new URLSearchParams('tab=notation'))
-    render(
-      <TunePageTabs
-        {...baseProps({ bestAbc: null, staffPages: ['/img/staff-1.jpg'] })}
-      />,
-    )
-    expect(screen.queryByTestId('tune-score-section')).toBeNull()
-    expect(screen.getByTestId('tune-detail-client')).toBeTruthy()
-  })
-
-  it('shows a "Notation not available" placeholder when there is no ABC, no images, and no audio', () => {
-    useSearchParamsMock.mockReturnValue(new URLSearchParams('tab=notation'))
-    render(
-      <TunePageTabs
-        {...baseProps({ bestAbc: null, staffPages: [], solfegePages: [], soundcloudUrl: null, youtubeUrl: null })}
-      />,
-    )
-    expect(screen.getByText('Notation not available for this tune.')).toBeTruthy()
   })
 })

@@ -4,7 +4,6 @@ import { useCallback, useState } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TuneScoreSection } from '@/components/TuneScoreSection'
-import { TuneDetailClient } from '@/components/TuneDetailClient'
 import type { CoreNotationProps } from '@/lib/notation-renderer-props'
 
 export interface TunePageVersionEntry {
@@ -40,9 +39,6 @@ export interface TunePageTabsProps {
   notationProps: CoreNotationProps
   staffPages: string[]
   solfegePages: string[]
-  bestAbc: string | null
-  soundcloudUrl: string | null
-  youtubeUrl: string | null
 }
 
 function parseTab(value: string | null): TunePageTab {
@@ -55,77 +51,9 @@ function parseTab(value: string | null): TunePageTab {
 const TAB_TRIGGER_CLASS =
   'rounded-none border-b-[3px] border-b-transparent -mb-px data-[active]:border-b-foreground data-[active]:bg-transparent data-[active]:text-foreground'
 
-/**
- * SingThisTuneSection — the canonical "Sing this tune" panel rendered inside the
- * Notation tab on /tunes/[slug]. Matches the user's spec for the simplified
- * /psalms/[slug] main-sing-view notation panel:
- *   1. NotationRendererClient emits the inline Staff / Solfège single-row toggle
- *      at the top of its own controlBar (showLyrics:false suppresses the
- *      "Lyrics only" button, leaving exactly the two buttons the spec calls for).
- *   2. Audio mini-bar — SoundCloud + abc switcher via PlayMiniBarClient (same
- *      component /psalms/[slug] uses via SingingView's PlayMiniBarClient slot).
- *   3. Score — same renderer chain, no lyrics (showLyrics:false already in props).
- *
- * Three render branches:
- *   - hasAbc — ABC available: render the NotationRenderer via TuneScoreSection.
- *     Audio lives ABOVE the tabs (page.tsx), not inside this tab — Phase 16 R3.
- *   - !hasAbc but has images or audio — render TuneDetailClient (image-based fallback).
- *   - neither — render a small "Notation not available" note.
- */
-interface SingThisTuneSectionProps {
-  hasAbc: boolean
-  hasImages: boolean
-  hasAudio: boolean
-  notationProps: CoreNotationProps
-  staffPages: string[]
-  solfegePages: string[]
-  soundcloudUrl: string | null
-  youtubeUrl: string | null
-  tuneName: string
-}
-
-function SingThisTuneSection({
-  hasAbc,
-  hasImages,
-  hasAudio,
-  notationProps,
-  staffPages,
-  solfegePages,
-  soundcloudUrl,
-  youtubeUrl,
-  tuneName,
-}: SingThisTuneSectionProps) {
-  if (hasAbc) {
-    return (
-      <TuneScoreSection
-        notationProps={notationProps}
-        staffPages={staffPages}
-        solfegePages={solfegePages}
-      />
-    )
-  }
-
-  if (hasImages || hasAudio) {
-    return (
-      <TuneDetailClient
-        tuneName={tuneName}
-        staffPages={staffPages}
-        solfegePages={solfegePages}
-        soundcloudUrl={soundcloudUrl}
-        youtubeUrl={youtubeUrl}
-      />
-    )
-  }
-
-  return (
-    <p className="text-sm text-muted-foreground italic">Notation not available for this tune.</p>
-  )
-}
-
 export function TunePageTabs(props: TunePageTabsProps) {
   const {
     tuneName,
-    tuneId,
     meter,
     moods,
     numberIn1979RpPsalter,
@@ -136,9 +64,6 @@ export function TunePageTabs(props: TunePageTabsProps) {
     notationProps,
     staffPages,
     solfegePages,
-    bestAbc,
-    soundcloudUrl,
-    youtubeUrl,
   } = props
 
   const router = useRouter()
@@ -155,9 +80,6 @@ export function TunePageTabs(props: TunePageTabsProps) {
     [router, pathname],
   )
 
-  const hasAbc = !!bestAbc
-  const hasImages = staffPages.length > 0 || solfegePages.length > 0
-  const hasAudio = !!(soundcloudUrl || youtubeUrl)
   const hasMetadata =
     moods.length > 0 ||
     !!numberIn1979RpPsalter ||
@@ -215,23 +137,22 @@ export function TunePageTabs(props: TunePageTabsProps) {
 
         <TabsContent value="notation" className="space-y-6">
           {/* Notation tab — simplified version of /psalms/[slug]'s main Sing view:
-              NotationRendererClient emits the inline Staff/Solfege single-row
-              toggle (showLyrics:false suppresses the "Lyrics only" button) at the
-              top of its own controlBar, followed by the score. Same
-              NotationRendererClient used on /psalms/[slug], so notation behaviour
-              changes there propagate here automatically. Audio lives ABOVE the
-              tabs (see /tunes/[slug]/page.tsx), not inside this tab — Phase 16
-              R3 user spec. */}
-          <SingThisTuneSection
-            hasAbc={hasAbc}
-            hasImages={hasImages}
-            hasAudio={hasAudio}
+              NotationRendererClient (via TuneScoreSection) emits the Staff/Solfège
+              toggle (tunePageMode suppresses A+/A-, Stanza nav, fullscreen, and the
+              bottom Play/Key/BPM bar — see buildNotationRendererProps' tunePageMode
+              option) followed by the score. Always rendered regardless of whether
+              this tune has digital abc — NotationRenderer's own tunePageMode JPG
+              fallback (staff-split / solfege-split) and "not available" message
+              cover the no-abc and no-image cases, so a single component handles
+              every tune instead of branching into a separate TuneDetailClient
+              fallback (removed 2026-08-16 — it duplicated the audio player that
+              now lives above the tabs). Audio lives ABOVE the tabs
+              (see /tunes/[slug]/page.tsx), not inside this tab — Phase 16 R3
+              user spec. */}
+          <TuneScoreSection
             notationProps={notationProps}
             staffPages={staffPages}
             solfegePages={solfegePages}
-            soundcloudUrl={soundcloudUrl}
-            youtubeUrl={youtubeUrl}
-            tuneName={tuneName}
           />
         </TabsContent>
     </Tabs>
