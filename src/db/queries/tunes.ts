@@ -309,6 +309,11 @@ export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]>
 }
 
 export interface PsalmVersionTuneTiers {
+  /** Tunes flagged psalmVersionTunes.isPrimary=true for THIS psalm version — the canonical
+   *  recommended tune(s). Distinct from backupTuneIds: DB check (2026-08-16) found only 8 rows
+   *  where isPrimary and isBackup both hold, vs 176 primary-only and 31 backup-only — these are
+   *  largely different tunes, not aliases of the same concept. */
+  recommendedTuneIds: number[]
   /** Tunes flagged as the 2024 CPRC backup for THIS psalm version. */
   backupTuneIds: number[]
   /** Tunes historically sung for THIS psalm version (Airtable "Historical CPRC Usage"). */
@@ -320,12 +325,18 @@ export interface PsalmVersionTuneTiers {
  *
  * Deliberately psalm-version-scoped: "Historical" answers "what did we sing for THIS psalm",
  * not "how popular is this tune overall". The global tunes.weightedHistoricalFrequency stat is
- * only a tie-breaker inside the third tier.
+ * only a tie-breaker inside the fourth (Other) tier.
  */
 export const fetchPsalmVersionTuneTiers = cache(async function fetchPsalmVersionTuneTiers(
   psalmVersionId: number,
 ): Promise<PsalmVersionTuneTiers> {
-  const [backupRows, historicalRows] = await Promise.all([
+  const [recommendedRows, backupRows, historicalRows] = await Promise.all([
+    db.select({ tuneId: psalmVersionTunes.tuneId })
+      .from(psalmVersionTunes)
+      .where(and(
+        eq(psalmVersionTunes.psalmVersionId, psalmVersionId),
+        eq(psalmVersionTunes.isPrimary, true),
+      )),
     db.select({ tuneId: psalmVersionTunes.tuneId })
       .from(psalmVersionTunes)
       .where(and(
@@ -337,6 +348,7 @@ export const fetchPsalmVersionTuneTiers = cache(async function fetchPsalmVersion
       .where(eq(psalmVersionHistoricalTunes.psalmVersionId, psalmVersionId)),
   ])
   return {
+    recommendedTuneIds: recommendedRows.map((r) => r.tuneId),
     backupTuneIds: backupRows.map((r) => r.tuneId),
     historicalTuneIds: historicalRows.map((r) => r.tuneId),
   }

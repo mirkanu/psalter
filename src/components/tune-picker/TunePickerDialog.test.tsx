@@ -114,7 +114,7 @@ describe('TunePickerDialog', () => {
   })
 
   it('emits tier headings in Mode B when tuneTiers includes backupTuneIds', () => {
-    const tuneTiers = { backupTuneIds: [7], historicalTuneIds: [3] }
+    const tuneTiers = { recommendedTuneIds: [], backupTuneIds: [7], historicalTuneIds: [3] }
     render(
       <TunePickerDialog
         open
