@@ -4,8 +4,8 @@ import { notFound, redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { headers } from 'next/headers'
 import { db } from '@/db'
-import { precentingSets, setItems } from '@/db/schema'
-import { eq, asc } from 'drizzle-orm'
+import { precentingSets, setItems, psalmVersions } from '@/db/schema'
+import { eq, asc, inArray } from 'drizzle-orm'
 import { fetchPsalmListRows } from '@/db/queries/psalms'
 import { fetchAllTunes, fetchPsalmVersionTuneTiers, type PsalmVersionTuneTiers } from '@/db/queries/tunes'
 import { SetDetail } from '@/components/precent/SetDetail'
@@ -45,11 +45,42 @@ export default async function PrecentSetPage({
   const psalmListRows: PsalmRow[] = await fetchPsalmListRows()
   const allTunes: TuneRow[] = (await fetchAllTunes()) as TuneRow[]
 
+  // setItems.psalmVersionId is nullable — it only records an EXPLICIT a/b version choice (see
+  // schema.ts comment on setItems.psalmVersionId). Most set items reference a single-version psalm
+  // and never get one written, unlike /psalms/[id]/page.tsx which always resolves an `activeVersion`
+  // (defaulting to the lowest-id version) regardless of whether the slug names one explicitly. Without
+  // the same fallback here, single-version-psalm set items silently got tuneTiers=null and the
+  // "Historically sung for this psalm" section never appeared in the /precent tune picker — the tiers
+  // logic was correct, but most items simply had no version id to key off.
+  const psalmIdsNeedingDefaultVersion = [...new Set(
+    set.setItems.filter((i) => i.psalmVersionId == null).map((i) => i.psalmId)
+  )]
+  const defaultVersionRows = psalmIdsNeedingDefaultVersion.length
+    ? await db
+        .select({ id: psalmVersions.id, psalmId: psalmVersions.psalmId })
+        .from(psalmVersions)
+        .where(inArray(psalmVersions.psalmId, psalmIdsNeedingDefaultVersion))
+        .orderBy(asc(psalmVersions.id))
+    : []
+  // First row per psalmId wins (orderBy id asc), matching /psalms/[id]/page.tsx's
+  // `sortedVersions[0]` default-version convention.
+  const defaultVersionIdByPsalmId: Record<number, number> = {}
+  for (const row of defaultVersionRows) {
+    if (row.psalmId != null && !(row.psalmId in defaultVersionIdByPsalmId)) {
+      defaultVersionIdByPsalmId[row.psalmId] = row.id
+    }
+  }
+  const effectiveVersionIdByItemId: Record<number, number | null> = {}
+  for (const item of set.setItems) {
+    effectiveVersionIdByItemId[item.id] =
+      item.psalmVersionId ?? defaultVersionIdByPsalmId[item.psalmId] ?? null
+  }
+
   // TSEL-01/D-13: Backup/Historical tune ids for every distinct psalm version in this set, fetched once
   // server-side. SetDetail is a client component and cannot call the DB; batching here mirrors how allTunes
   // is already loaded above rather than adding a client-callable API route.
   const uniqueVersionIds = [...new Set(
-    set.setItems.map((i) => i.psalmVersionId).filter((v): v is number => v != null)
+    Object.values(effectiveVersionIdByItemId).filter((v): v is number => v != null)
   )]
   const tierEntries = await Promise.all(
     uniqueVersionIds.map(async (vid) => [vid, await fetchPsalmVersionTuneTiers(vid)] as const)
@@ -80,6 +111,9 @@ export default async function PrecentSetPage({
       psalmId: item.psalmId,
       tuneId: item.tuneId ?? null,
       psalmVersionId: item.psalmVersionId ?? null,
+      // Resolved fallback for tune-tier lookups only — see comment above. Distinct from
+      // psalmVersionId (which stays null/explicit-only for the a/b version-select UI).
+      effectiveVersionId: effectiveVersionIdByItemId[item.id] ?? null,
       verseRange: item.verseRange ?? null,
       position: item.position,
       psalm: item.psalm
