@@ -62,6 +62,16 @@ export interface BuildNotationPropsOptions {
   onViewModeChange?: (mode: ViewMode) => void
   /** Used when tune is null or tune.name is null. Default 'Tune'. */
   fallbackTuneName?: string
+  /**
+   * Phase 16 R3: /tunes/[slug] passes true. Keeps the Staff/Solfège
+   * view-mode toggle but drops sizeGroup (A+/A-), stanza pagination, the
+   * fullscreen icon, and the bottom Play/Key/BPM/Show-original controls
+   * (audio lives above the tabs in page chrome). Also routes Staff/Solfège
+   * clicks to their JPG-fallback split-leaf modes and normalizes any
+   * localStorage-restored 'solfege'/'lyrics' view mode on mount — see
+   * NotationRenderer.tsx for the full rationale.
+   */
+  tunePageMode?: boolean
 }
 
 export type CoreNotationProps = Pick<
@@ -69,7 +79,7 @@ export type CoreNotationProps = Pick<
   | 'abc' | 'lyrics' | 'scoreJpgUrl' | 'solfegeJpgUrl' | 'tuneName' | 'tuneMeter'
   | 'phraseShapeOverride' | 'stanzaMeter' | 'lyricsStructured' | 'doubleLength'
   | 'solfegeOcrText' | 'showLyrics' | 'onViewModeChange' | 'melismaPositions'
-  | 'renderWLineUnderStaff'
+  | 'renderWLineUnderStaff' | 'tunePageMode'
 >
 
 export function buildNotationRendererProps(
@@ -94,5 +104,6 @@ export function buildNotationRendererProps(
     renderWLineUnderStaff: options.renderWLineUnderStaff ?? options.showLyrics ?? true,
     melismaPositions: tune?.melismaPositions ?? null,
     onViewModeChange: options.onViewModeChange,
+    tunePageMode: options.tunePageMode ?? false,
   }
 }

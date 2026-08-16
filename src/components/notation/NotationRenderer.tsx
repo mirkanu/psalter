@@ -99,6 +99,15 @@ export interface NotationRendererProps {
    */
   chromeless?: boolean
   /**
+   * 2026-08-16 (Phase 16 R3): tune-page mode for /tunes/[slug]. Suppresses
+   * sizeGroup (A+/A-), paginationGroup (Stanza nav), fullscreen icon, and the
+   * bottom player controls (Play/Key/BPM/Show original). Keeps the view-mode
+   * toggle (Staff / Solfège) so users can still pick which view to see.
+   * Distinct from `chromeless`: chromeless drops the entire controlBar
+   * INCLUDING the view-mode buttons, which we still want here.
+   */
+  tunePageMode?: boolean
+  /**
    * Fired whenever stanza navigation changes. `current` is reported 1-indexed
    * (`cyclePage + 1`) so consumers can render directly as `Stanza ${current} / ${total}`.
    * Fired once on mount with the initial values, and on every subsequent change.
@@ -259,6 +268,7 @@ export function NotationRenderer({
   onBaseSizeChange,
   notationBaseSize,
   chromeless = false,
+  tunePageMode = false,
   onStanzaChange,
   stanzaPage,
   onStanzaPageChange,
@@ -367,6 +377,18 @@ export function NotationRenderer({
   useEffect(() => {
     if (!showLyrics && viewMode === 'lyrics') setViewMode('staff')
   }, [showLyrics, viewMode])
+  // 2026-08-16 (Phase 16 R3): STORAGE_MODE_KEY is a single localStorage key
+  // shared across every NotationRenderer instance app-wide (line 184/354). A
+  // user who picked inline 'solfege' or 'lyrics' on /psalms/[id] Sing view
+  // would otherwise land on /tunes/[slug] with that stale mode restored —
+  // 'solfege' hits the "coming soon" placeholder (never the JPG fallback),
+  // and 'lyrics' has no button to get back from since showLyrics is false
+  // here. Normalize both to their tune-page equivalents on mount/prop-change.
+  useEffect(() => {
+    if (!tunePageMode) return
+    if (viewMode === 'solfege') setViewMode('solfege-split')
+    else if (viewMode === 'staff' && !abc.trim()) setViewMode('staff-split')
+  }, [tunePageMode, viewMode, abc])
   // UI-SPEC §3: multi-page solfège — selected image page. Reset when the
   // active page-array identity changes (tune switch / legacy URL change).
   const [pageIndex, setPageIndex] = useState(0)
@@ -762,18 +784,26 @@ export function NotationRenderer({
   const viewGroup = (
     <div className="flex items-center gap-1">
       <Button
-        variant={viewMode === 'staff' ? 'default' : 'outline'}
+        variant={viewMode === 'staff' || viewMode === 'staff-split' ? 'default' : 'outline'}
         size="xs"
-        onClick={() => setViewMode('staff')}
-        aria-pressed={viewMode === 'staff'}
+        // 2026-08-16 (Phase 16 R3): on the tune page, clicking Staff routes to
+        // staff-split (scanned JPG) when there's no abcjs to render inline —
+        // mirrors the Gear → Solfège routing on /psalms/1 (line 90 of
+        // GearPopover). On other surfaces we keep the inline 'staff' default.
+        onClick={() => setViewMode(tunePageMode && !abc.trim() ? 'staff-split' : 'staff')}
+        aria-pressed={viewMode === 'staff' || viewMode === 'staff-split'}
       >
         Staff
       </Button>
       <Button
-        variant={viewMode === 'solfege' ? 'default' : 'outline'}
+        variant={viewMode === 'solfege' || viewMode === 'solfege-split' ? 'default' : 'outline'}
         size="xs"
-        onClick={() => setViewMode('solfege')}
-        aria-pressed={viewMode === 'solfege'}
+        // 2026-08-16: abcjs has no tonic sol-fa support, so 'solfege' routes
+        // to 'solfege-split' (scanned JPG) on the tune page. Without this
+        // gate, clicking would land on the "coming soon" placeholder
+        // (line 1510).
+        onClick={() => setViewMode(tunePageMode ? 'solfege-split' : 'solfege')}
+        aria-pressed={viewMode === 'solfege' || viewMode === 'solfege-split'}
       >
         Solfège
       </Button>
@@ -825,27 +855,32 @@ export function NotationRenderer({
 
   const controlBar = (
     <div className="flex flex-wrap items-center gap-2">
-      {sizeGroup}
-      {divider}
+      {/* 2026-08-16 (Phase 16 R3): tunePageMode keeps the view-mode toggle
+          (Staff / Solfège) but drops sizeGroup (A+/A-), pagination, and
+          fullscreen. Audio lives above the tabs in the page chrome. */}
+      {!tunePageMode && sizeGroup}
+      {!tunePageMode && divider}
       {viewGroup}
-      {showPagination && (
+      {!tunePageMode && showPagination && (
         <>
           {divider}
           {paginationGroup}
         </>
       )}
-      <div className="ml-auto flex items-center gap-1">
-        {!isFullscreen && (
-          <Button
-            variant="ghost"
-            size="xs"
-            onClick={() => setIsFullscreen(true)}
-            aria-label="Enter fullscreen"
-          >
-            <Expand className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
+      {!tunePageMode && (
+        <div className="ml-auto flex items-center gap-1">
+          {!isFullscreen && (
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={() => setIsFullscreen(true)}
+              aria-label="Enter fullscreen"
+            >
+              <Expand className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   )
 
@@ -1251,7 +1286,7 @@ export function NotationRenderer({
   // page navigation now flanks the image itself (left/right of the JPEG)
   // instead of living in a separate row below it — maximizes the JPEG's
   // display size and frees vertical space for lyrics underneath.
-  function renderScannedPages(pages: string[], fallbackUrl: string | null, altText: string) {
+  function renderScannedPages(pages: string[], fallbackUrl: string | null, altText: string, emptyMessage = 'Score image not available') {
     const hasMultiPages = pages.length > 1
     const currentSrc = pages[pageIndex] ?? fallbackUrl ?? null
 
@@ -1273,7 +1308,7 @@ export function NotationRenderer({
         style={chromeless && !isSplit ? { maxWidth: '100%' } : undefined}
       />
     ) : (
-      <p className="text-sm text-muted-foreground italic">Score image not available</p>
+      <p className="text-sm text-muted-foreground italic">{emptyMessage}</p>
     )
 
     // 260717-mwv checkpoint round 2 (item 1): the buttons were 44x44 (full
@@ -1420,13 +1455,17 @@ export function NotationRenderer({
     // shouldFallbackToSplit) — so a user correctly bounced from inline to
     // Split-Leaf still saw the unapproved tune's live-rendered abcjs there.
     // Reuse the same scanned-JPG path Split-Leaf Solfège already always uses.
-    const forceStaffJpgFallback = isSplit && !staffInlineApproved
+    // 2026-08-16 (Phase 16 R3): also force the JPG when there's NO abc to
+    // render at all — many tunes lack digital staff notation, and on the
+    // tune page we surface the scanned staff sheet as the default fallback.
+    const forceStaffJpgFallback = (isSplit && !staffInlineApproved) || (tunePageMode && !abc.trim())
 
     const notationBlock: ReactNode = forceStaffJpgFallback
       ? renderScannedPages(
           activePages('staff-split', staffPages, solfegePages),
           scoreJpgUrl,
           `Staff notation for ${tuneName}`,
+          tunePageMode ? 'Staff notation not available for this tune yet' : undefined,
         ).imageBlock
       : (
         <div ref={staffRef} style={applyMinHeight ? { minHeight: minStaffHeight } : undefined}>
@@ -1440,7 +1479,7 @@ export function NotationRenderer({
             showOriginal={showOriginal}
             onShowOriginalChange={setShowOriginal}
             renderAboveOriginal={<BackToNotationButton onClick={() => setShowOriginal(false)} />}
-            hidePlayerControls={isFullscreen || chromeless}
+            hidePlayerControls={isFullscreen || chromeless || tunePageMode}
             staffWidthFactor={staffWidthFactor}
             compactSplitMobile={compactSplitMobile}
           />
@@ -1504,6 +1543,7 @@ export function NotationRenderer({
       activePages(viewMode, staffPages, solfegePages),
       solfegeJpgUrl,
       `Solfège for ${tuneName}`,
+      tunePageMode ? 'Solfège notation not available for this tune yet' : undefined,
     )
 
     // 260717-mwv checkpoint round 1 follow-up: data-lyrics-scroll marks the
@@ -1680,6 +1720,10 @@ export function NotationRenderer({
     >
       {meterMismatchBanner}
       {shapeUnknownBanner}
+      {/* 2026-08-16 (Phase 16 R3): tunePageMode keeps controlBar visible but
+          suppresses sizeGroup / pagination / fullscreen icon INSIDE it
+          (see controlBar definition above) — so /tunes/[slug] gets only the
+          view-mode (Staff / Solfège) toggle above the notation view. */}
       {!chromeless && controlBar}
       {chromeless ? (
         <div
