@@ -4,7 +4,6 @@ import { useCallback, useState } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TuneScoreSection } from '@/components/TuneScoreSection'
-import { TuneMiniBarSection } from '@/components/TuneMiniBarSection'
 import { TuneDetailClient } from '@/components/TuneDetailClient'
 import type { CoreNotationProps } from '@/lib/notation-renderer-props'
 
@@ -68,7 +67,8 @@ const TAB_TRIGGER_CLASS =
  *   3. Score — same renderer chain, no lyrics (showLyrics:false already in props).
  *
  * Three render branches:
- *   - hasAbc — ABC available: render the full notation renderer + mini-bar.
+ *   - hasAbc — ABC available: render the NotationRenderer via TuneScoreSection.
+ *     Audio lives ABOVE the tabs (page.tsx), not inside this tab — Phase 16 R3.
  *   - !hasAbc but has images or audio — render TuneDetailClient (image-based fallback).
  *   - neither — render a small "Notation not available" note.
  */
@@ -79,7 +79,6 @@ interface SingThisTuneSectionProps {
   notationProps: CoreNotationProps
   staffPages: string[]
   solfegePages: string[]
-  bestAbc: string | null
   soundcloudUrl: string | null
   youtubeUrl: string | null
   tuneName: string
@@ -92,21 +91,17 @@ function SingThisTuneSection({
   notationProps,
   staffPages,
   solfegePages,
-  bestAbc,
   soundcloudUrl,
   youtubeUrl,
   tuneName,
 }: SingThisTuneSectionProps) {
   if (hasAbc) {
     return (
-      <div className="space-y-6">
-        <TuneScoreSection
-          notationProps={notationProps}
-          staffPages={staffPages}
-          solfegePages={solfegePages}
-        />
-        <TuneMiniBarSection abc={bestAbc!} soundcloudUrl={soundcloudUrl} tuneName={tuneName} />
-      </div>
+      <TuneScoreSection
+        notationProps={notationProps}
+        staffPages={staffPages}
+        solfegePages={solfegePages}
+      />
     )
   }
 
@@ -171,19 +166,15 @@ export function TunePageTabs(props: TunePageTabsProps) {
     (hasFamousHymn && !!famousHymn)
 
   return (
-    // Themed box wrapping both tabs — light styling, just enough to distinguish
-    // the tabbed content from the audio player above and the "Sing this tune"
-    // section below (Phase 16 R3 user spec).
-    <div className="rounded-lg border border-border bg-card p-4 sm:p-6">
-      <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="flex flex-wrap h-auto gap-0 mb-6 bg-transparent p-0 border-b border-border">
-          <TabsTrigger value="details" className={TAB_TRIGGER_CLASS}>
-            Details
-          </TabsTrigger>
-          <TabsTrigger value="notation" className={TAB_TRIGGER_CLASS}>
-            Notation
-          </TabsTrigger>
-        </TabsList>
+    <Tabs value={activeTab} onValueChange={handleTabChange}>
+      <TabsList className="flex flex-wrap h-auto gap-0 mb-6 bg-transparent p-0 border-b border-border">
+        <TabsTrigger value="details" className={TAB_TRIGGER_CLASS}>
+          Details
+        </TabsTrigger>
+        <TabsTrigger value="notation" className={TAB_TRIGGER_CLASS}>
+          Notation
+        </TabsTrigger>
+      </TabsList>
 
         <TabsContent value="details" className="space-y-8">
           {hasMetadata && (
@@ -238,13 +229,11 @@ export function TunePageTabs(props: TunePageTabsProps) {
             notationProps={notationProps}
             staffPages={staffPages}
             solfegePages={solfegePages}
-            bestAbc={bestAbc}
             soundcloudUrl={soundcloudUrl}
             youtubeUrl={youtubeUrl}
             tuneName={tuneName}
           />
         </TabsContent>
-      </Tabs>
-    </div>
+    </Tabs>
   )
 }

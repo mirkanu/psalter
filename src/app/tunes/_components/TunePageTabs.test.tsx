@@ -107,11 +107,13 @@ describe('TunePageTabs', () => {
     expect(screen.getByText('Mood')).toBeTruthy()
   })
 
-  it('renders TuneScoreSection and TuneMiniBarSection in the Notation tab when bestAbc is non-null', () => {
+  it('renders TuneScoreSection in the Notation tab when bestAbc is non-null', () => {
+    // 2026-08-16: TuneMiniBarSection moved OUT of the Notation tab — audio
+    // now sits above the tabs (page.tsx). The Notation tab is score-only.
     useSearchParamsMock.mockReturnValue(new URLSearchParams('tab=notation'))
     render(<TunePageTabs {...baseProps({ bestAbc: 'X:1\nK:C\nCDEF|' })} />)
     expect(screen.getByTestId('tune-score-section')).toBeTruthy()
-    expect(screen.getByTestId('tune-mini-bar-section')).toBeTruthy()
+    expect(screen.queryByTestId('tune-mini-bar-section')).toBeNull()
   })
 
   it('falls back to TuneDetailClient (JPG-only) when bestAbc is null but images exist', () => {

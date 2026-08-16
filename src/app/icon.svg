@@ -1,8 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <rect width="32" height="32" rx="2" fill="oklch(0.205 0 0)"/>
-  <g transform="translate(6,4)" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M9 18V5l12-2v13"/>
-    <circle cx="6" cy="18" r="3"/>
-    <circle cx="18" cy="16" r="3"/>
+  <rect width="32" height="32" rx="6" fill="#1a1a1a"/>
+  <g transform="translate(4,4)" fill="#ffffff" stroke="none">
+    <!-- Single eighth note glyph, centered in 24x24 area -->
+    <path d="M19 3.5v13.4a4 4 0 1 1-2-3.46V6.6L8 8.6v10.4a4 4 0 1 1-2-3.46V5.5l13-3z"/>
   </g>
 </svg>

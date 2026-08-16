@@ -109,9 +109,10 @@ export default async function TunePage({ params }: PageProps) {
   // /psalms/[slug]'s Study tab — page (RSC) → TuneScoreSection ('use client') →
   // NotationRendererClient (dynamic, ssr:false) → NotationRenderer (calls ABCJS.renderAbc
   // inside useEffect+useRef). TuneScoreSection is the abcjs client-only boundary required by
-  // CLAUDE.md ("abcjs — Never use server-side"). showLyrics:false suppresses the StanzaList
-  // panel and the "Lyrics only" view-mode button; renderWLineUnderStaff:true re-enables w-line
-  // emission so abcjs still draws `_` melisma marks beneath the staff (Phase 16 / D-02).
+  // CLAUDE.md ("abcjs — Never use server-side"). showLyrics:false + renderWLineUnderStaff:false
+  // (both set in the options below) suppress ALL synthetic w: line emission — no lyrics under
+  // the staff, no `_` melisma marks. The tune page is the tune alone; users wanting lyrics
+  // click into "Sing this tune" below the tabs.
   const notationProps = buildNotationRendererProps(
     {
       abcNotation: tune.abcNotation ?? null,
@@ -137,9 +138,16 @@ export default async function TunePage({ params }: PageProps) {
     },
     // onViewModeChange is deliberately NOT passed here — an RSC cannot serialise a function
     // across the client boundary; TuneScoreSection attaches it.
+    //
+    // 2026-08-16 (Phase 16 R3): the tune page is the tune ALONE — no lyrics, no
+    // melisma `_` marks. emitWLines inside NotationRenderer = renderWLineUnderStaff
+    // ?? showLyrics (line 1035 of NotationRenderer.tsx); passing both false here
+    // suppresses the synthetic w: lines that abcjs would otherwise render under
+    // each staff system. Users wanting the full sung view click into "Sing this
+    // tune" below the tabs and pick a psalm version.
     {
       showLyrics: false,
-      renderWLineUnderStaff: true,
+      renderWLineUnderStaff: false,
       fallbackTuneName: `Tune ${tune.id}`,
     },
   )
