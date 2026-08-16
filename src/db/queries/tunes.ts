@@ -96,6 +96,89 @@ export async function fetchAllTunes() {
 }
 
 /**
+ * Enrich AlternateTune[] (e.g. from fetchTunesByMeter) into the full TuneRow[]
+ * shape that TuneTable / TunePickerDialog (Mode A) expect.
+ *
+ * Phase 16 R3: without this enrichment the /psalms/[id] picker passed
+ * AlternateTune[] directly into TunePickerDialog, where the cast to TuneRow[]
+ * left `inPrcaPsalter`, `hasFamousHymn`, `recommendedPsalmIds`, `moods`, etc.
+ * as undefined — silently breaking:
+ *   - the In PRCA filter (`onlyPrca` check), since undefined is falsy
+ *   - the Famous Hymn filter (same reason)
+ *   - psalm-number search inside the picker (uses recommendedPsalmIds.includes)
+ *   - the default sort by recommendedPsalmIds.length
+ *   - the per-row "Recommended for this psalm" highlight
+ *   - the Recommended Psalms column count
+ *   - the In PRCA column (always '—')
+ *
+ * Implementation: joins against the React.cache()-memoised fetchAllTunes() by
+ * id, so within a single RSC render the second call is essentially free (cache
+ * hit). Return type intersects the inferred TuneRow shape with the AlternateTune
+ * fields fetchAllTunes doesn't query (`melismaPositions`, `melismaStatus`,
+ * `historicalUsageCount`) — those are populated by fetchTunesByMeter and
+ * merged in by the helper, so the result satisfies BOTH shapes structurally.
+ */
+type FetchAllTunesRow = Awaited<ReturnType<typeof fetchAllTunes>>[number]
+export type EnrichedTuneRow = FetchAllTunesRow &
+  Pick<AlternateTune, 'melismaPositions' | 'melismaStatus' | 'historicalUsageCount'>
+
+export async function enrichAlternateTunesToTuneRows(
+  alternates: AlternateTune[],
+): Promise<EnrichedTuneRow[]> {
+  if (alternates.length === 0) return []
+  const allTunes = await fetchAllTunes()
+  const byId = new Map<number, FetchAllTunesRow>()
+  for (const t of allTunes) byId.set(t.id, t)
+
+  // fetchAllTunes doesn't query `melismaPositions`/`melismaStatus`/
+  // `historicalUsageCount` — those live on AlternateTune. Index the input
+  // alternates by id so the rich-lookup path can layer those fields back on.
+  const altById = new Map<number, AlternateTune>()
+  for (const a of alternates) altById.set(a.id, a)
+
+  return alternates.map((alt) => {
+    const rich = byId.get(alt.id)
+    const extra: Pick<AlternateTune, 'melismaPositions' | 'melismaStatus' | 'historicalUsageCount'> = {
+      melismaPositions: alt.melismaPositions,
+      melismaStatus: alt.melismaStatus,
+      historicalUsageCount: alt.historicalUsageCount,
+    }
+    if (rich) return { ...rich, ...extra }
+    // Fallback: shape derived purely from AlternateTune, with the missing
+    // fields filled to safe defaults so TuneTable still renders. This path is
+    // hit only for tunes that exist in fetchTunesByMeter but not in
+    // fetchAllTunes — i.e. a stale cache or a tune added since the last
+    // fetchAllTunes call.
+    return {
+      id: alt.id,
+      name: alt.name,
+      slug: alt.slug,
+      meter: alt.meter,
+      scoreJpgUrl: alt.scoreJpgUrl,
+      inPrcaPsalter: false,
+      hasFamousHymn: false,
+      famousHymn: null,
+      numberIn1979RpPsalter: null,
+      numInPrcaPsalter: null,
+      moods: [],
+      recommendedPsalmIds: [],
+      soundcloudUrl: alt.soundcloudUrl,
+      solfegeJpgUrl: alt.solfegeJpgUrl,
+      youtubeUrl: alt.youtubeUrl,
+      abcNotation: alt.abcNotation,
+      abcSatb: alt.abcSatb,
+      phraseShapeOverride: alt.phraseShapeOverride,
+      doubleLength: alt.doubleLength,
+      solfegeOcrText: alt.solfegeOcrText,
+      weightedHistoricalFrequency: alt.weightedHistoricalFrequency,
+      staffPages: alt.staffPages,
+      solfegePages: alt.solfegePages,
+      ...extra,
+    } satisfies EnrichedTuneRow
+  })
+}
+
+/**
  * Memoised with React cache() so that generateMetadata and the page
  * component share a single DB query per request rather than making two.
  */
