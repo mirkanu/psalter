@@ -16,23 +16,25 @@ interface Props {
   soundcloudUrl?: string | null
   tuneName: string
   /**
-   * 'fixed' (default) = floating viewport-bottom bar; 'inline' = inside the
-   * page max-w container above the tabbed content. Phase 16 R3 /tunes/[slug]
-   * uses 'inline' so the audio bar sits above the Details/Notation tabs and
-   * is always visible on both tabs without competing with the GlassBottomBar.
+   * 'fixed' (default) = floating viewport-bottom bar; 'inline' = fixed above
+   * the GlassBottomBar inside the page container (still fixed-positioned);
+   * 'flow' = literal document-flow placement — the bar sits between page
+   * blocks and scrolls with the page (used on /tunes/[slug] between the tune
+   * name and the tabs per user spec).
    */
-  variant?: 'fixed' | 'inline'
+  variant?: 'fixed' | 'inline' | 'flow'
 }
 
 /**
  * TuneMiniBarSection — client wrapper that owns playback state for the
- * STATIC (page-flow) PlayMiniBar instance on /tunes/[id].
+ * PlayMiniBar instance on /tunes/[slug].
  *
  * The tune page is a server component and cannot own client-side state
  * itself, so this thin wrapper lifts isPlaying / miniBarMounted /
- * miniBarVisible here. Phase 16 R3: callers pass `variant="inline"` when the
- * bar should sit inside the page container (above the tabs); the default
- * `'fixed'` keeps the historical viewport-bottom behaviour.
+ * miniBarVisible here. Phase 16 R3: callers pass `variant="flow"` so the
+ * bar sits between the tune name and the tabs in document flow (the user
+ * explicitly rejected floating/fixed variants). The default `'fixed'` is
+ * retained for other potential call sites.
  */
 export function TuneMiniBarSection({ abc, soundcloudUrl, tuneName, variant = 'fixed' }: Props) {
   const [miniBarMounted, setMiniBarMounted] = useState(true)

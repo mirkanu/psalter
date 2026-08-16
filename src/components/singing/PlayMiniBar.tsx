@@ -14,8 +14,9 @@ interface Props {
   onPlayingChange: (playing: boolean) => void
   soundcloudUrl?: string | null
   tuneName?: string
-  /** 'fixed' = floating viewport bar (tune page); 'inline' = inside max-w-4xl container (psalm page). */
-  variant?: 'fixed' | 'inline'
+  /** 'fixed' = floating viewport bar; 'inline' = fixed above GlassBottomBar (psalm page, still fixed);
+   *  'flow' = true document-flow placement — sits between page content blocks, scrolls with the page. */
+  variant?: 'fixed' | 'inline' | 'flow'
   /** Plan 04.9.14-03 (Task 4): reports the bar's rendered height (0 when
    *  effectively hidden) so callers can reserve matching bottom padding in
    *  the scrollable content area — avoids a hardcoded height guess that
@@ -167,6 +168,7 @@ export function PlayMiniBar({
 
   const isFixed = variant === 'fixed'
   const isInline = variant === 'inline'
+  const isFlow = variant === 'flow'
 
   return (
     <div
@@ -193,6 +195,14 @@ export function PlayMiniBar({
         // bug b). Scoped to md: ONLY; mobile keeps the unprefixed `inset-x-0` full-width
         // layout above, which must not regress.
         isInline && 'md:inset-x-auto md:right-[calc(max(0px,(100vw_-_56rem)/2)_+_0.5rem)] md:max-w-md md:w-auto md:rounded-lg md:border md:border-border/40 md:shadow-lg md:px-2',
+        // 2026-08-16 (Phase 16 R3): 'flow' variant renders in document flow
+        // (position:static), used on /tunes/[slug] between the tune name and
+        // the tabs. No fixed/inset-x/bottom — the bar scrolls with the page
+        // like normal content. A border + rounded card frames it as an audio
+        // element rather than chrome. translate-y/opacity transitions are
+        // skipped in flow mode (the bar is always visible if visible=true).
+        isFlow && 'static w-full rounded-lg border border-border/40 bg-background/90 backdrop-blur-sm px-2 shadow-sm',
+        isFlow && 'translate-y-0 opacity-100',
         'transition-all duration-200 ease-out',
         'motion-reduce:translate-y-0 motion-reduce:!transition-opacity motion-reduce:duration-100',
         visible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0',
