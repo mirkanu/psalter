@@ -174,19 +174,16 @@ export default async function TunePage({ params }: PageProps) {
 
       {(bestAbc || tune.soundcloudUrl || tune.youtubeUrl) && (
         <div className="mb-6">
-          {/* Audio player anchor above tabs (Phase 16 R3 user spec).
-              PlayMiniBar is fixed-positioned (both 'fixed' and 'inline'
-              variants are fixed; 'inline' just nudges the bar above the
-              GlassBottomBar). The bar is therefore always visible at the
-              viewport bottom regardless of which tab is active, satisfying
-              the user's "audio player always visible on both tabs" spec
-              without competing with the tabbed content's reading flow.
-              SoundCloud + abc switcher via the same PlayMiniBarClient
-              /psalms/[slug] uses via SingingView. */}
+          {/* Audio player — literal document-flow placement between the tune
+              name header and the tabs (Phase 16 R3 user spec). PlayMiniBar's
+              'flow' variant is position:static, so the bar scrolls with the
+              page rather than floating at the viewport bottom. Users see it
+              immediately under the tune name, on both tabs. */}
           <TuneMiniBarSection
             abc={bestAbc}
             soundcloudUrl={tune.soundcloudUrl ?? null}
             tuneName={tune.name ?? `Tune ${tune.id}`}
+            variant="flow"
           />
         </div>
       )}
