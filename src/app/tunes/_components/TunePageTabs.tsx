@@ -6,9 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TuneScoreSection } from '@/components/TuneScoreSection'
 import { TuneMiniBarSection } from '@/components/TuneMiniBarSection'
 import { TuneDetailClient } from '@/components/TuneDetailClient'
-import { PsalmsByTuneSection } from '@/components/PsalmsByTuneSection'
 import type { CoreNotationProps } from '@/lib/notation-renderer-props'
-import type { PsalmRow } from '@/components/PsalmListingGrid'
 
 export interface TunePageVersionEntry {
   psalmVersionId: number
@@ -39,10 +37,6 @@ export interface TunePageTabsProps {
   hasFamousHymn: boolean
   famousHymn: string | null
   precentingComment: string | null
-  recommendedPsalms: TunePageVersionEntry[]
-  otherPsalms: TunePageVersionEntry[]
-  psalmsForMeter: TunePagePsalmForMeter[]
-  allPsalmRows: PsalmRow[]
   /** Server-built core props from buildNotationRendererProps() — JSON-serialisable, no callbacks. */
   notationProps: CoreNotationProps
   staffPages: string[]
@@ -144,10 +138,6 @@ export function TunePageTabs(props: TunePageTabsProps) {
     hasFamousHymn,
     famousHymn,
     precentingComment,
-    recommendedPsalms,
-    otherPsalms,
-    psalmsForMeter,
-    allPsalmRows,
     notationProps,
     staffPages,
     solfegePages,
@@ -181,83 +171,80 @@ export function TunePageTabs(props: TunePageTabsProps) {
     (hasFamousHymn && !!famousHymn)
 
   return (
-    <Tabs value={activeTab} onValueChange={handleTabChange}>
-      <TabsList className="flex flex-wrap h-auto gap-0 mb-6 bg-transparent p-0 border-b border-border">
-        <TabsTrigger value="details" className={TAB_TRIGGER_CLASS}>
-          Details
-        </TabsTrigger>
-        <TabsTrigger value="notation" className={TAB_TRIGGER_CLASS}>
-          Notation
-        </TabsTrigger>
-      </TabsList>
+    // Themed box wrapping both tabs — light styling, just enough to distinguish
+    // the tabbed content from the audio player above and the "Sing this tune"
+    // section below (Phase 16 R3 user spec).
+    <div className="rounded-lg border border-border bg-card p-4 sm:p-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <TabsList className="flex flex-wrap h-auto gap-0 mb-6 bg-transparent p-0 border-b border-border">
+          <TabsTrigger value="details" className={TAB_TRIGGER_CLASS}>
+            Details
+          </TabsTrigger>
+          <TabsTrigger value="notation" className={TAB_TRIGGER_CLASS}>
+            Notation
+          </TabsTrigger>
+        </TabsList>
 
-      <TabsContent value="details" className="space-y-8">
-        {hasMetadata && (
-          <section className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
-            {moods.length > 0 && (
-              <div className="flex gap-2">
-                <span className="text-muted-foreground w-36 shrink-0">Mood</span>
-                <span>{moods.join(', ')}</span>
-              </div>
-            )}
-            {numberIn1979RpPsalter && (
-              <div className="flex gap-2">
-                <span className="text-muted-foreground w-36 shrink-0">RP Psalter (1979)</span>
-                <span>#{numberIn1979RpPsalter}</span>
-              </div>
-            )}
-            {numInPrcaPsalter && (
-              <div className="flex gap-2">
-                <span className="text-muted-foreground w-36 shrink-0">PR Psalter</span>
-                <span>#{numInPrcaPsalter}</span>
-              </div>
-            )}
-            {hasFamousHymn && famousHymn && (
-              <div className="flex gap-2">
-                <span className="text-muted-foreground w-36 shrink-0">Famous hymn</span>
-                <span>{famousHymn}</span>
-              </div>
-            )}
-            {precentingComment && (
-              <div className="flex gap-2 sm:col-span-2">
-                <span className="text-muted-foreground w-36 shrink-0">Precenting notes</span>
-                <span className="text-foreground">{precentingComment}</span>
-              </div>
-            )}
-          </section>
-        )}
+        <TabsContent value="details" className="space-y-8">
+          {hasMetadata && (
+            <section className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+              {moods.length > 0 && (
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground w-36 shrink-0">Mood</span>
+                  <span>{moods.join(', ')}</span>
+                </div>
+              )}
+              {numberIn1979RpPsalter && (
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground w-36 shrink-0">RP Psalter (1979)</span>
+                  <span>#{numberIn1979RpPsalter}</span>
+                </div>
+              )}
+              {numInPrcaPsalter && (
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground w-36 shrink-0">PR Psalter</span>
+                  <span>#{numInPrcaPsalter}</span>
+                </div>
+              )}
+              {hasFamousHymn && famousHymn && (
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground w-36 shrink-0">Famous hymn</span>
+                  <span>{famousHymn}</span>
+                </div>
+              )}
+              {precentingComment && (
+                <div className="flex gap-2 sm:col-span-2">
+                  <span className="text-muted-foreground w-36 shrink-0">Precenting notes</span>
+                  <span className="text-foreground">{precentingComment}</span>
+                </div>
+              )}
+            </section>
+          )}
+        </TabsContent>
 
-        <PsalmsByTuneSection
-          recommendedPsalms={recommendedPsalms}
-          otherPsalms={otherPsalms}
-          psalmsForMeter={psalmsForMeter}
-          allPsalmRows={allPsalmRows}
-          tuneId={tuneId}
-          meter={meter}
-        />
-      </TabsContent>
-
-      <TabsContent value="notation" className="space-y-6">
-        {/* Notation tab — simplified version of /psalms/[slug]'s main Sing view:
-            NotationRendererClient emits the inline Staff/Solfege single-row
-            toggle (showLyrics:false suppresses the "Lyrics only" button) at the
-            top of its own controlBar, followed by the score; the audio mini-bar
-            (SoundCloud + abc switcher via PlayMiniBarClient) renders after.
-            Same NotationRendererClient + PlayMiniBarClient used on /psalms/[slug],
-            so notation behaviour changes there propagate here automatically. */}
-        <SingThisTuneSection
-          hasAbc={hasAbc}
-          hasImages={hasImages}
-          hasAudio={hasAudio}
-          notationProps={notationProps}
-          staffPages={staffPages}
-          solfegePages={solfegePages}
-          bestAbc={bestAbc}
-          soundcloudUrl={soundcloudUrl}
-          youtubeUrl={youtubeUrl}
-          tuneName={tuneName}
-        />
-      </TabsContent>
-    </Tabs>
+        <TabsContent value="notation" className="space-y-6">
+          {/* Notation tab — simplified version of /psalms/[slug]'s main Sing view:
+              NotationRendererClient emits the inline Staff/Solfege single-row
+              toggle (showLyrics:false suppresses the "Lyrics only" button) at the
+              top of its own controlBar, followed by the score. Same
+              NotationRendererClient used on /psalms/[slug], so notation behaviour
+              changes there propagate here automatically. Audio lives ABOVE the
+              tabs (see /tunes/[slug]/page.tsx), not inside this tab — Phase 16
+              R3 user spec. */}
+          <SingThisTuneSection
+            hasAbc={hasAbc}
+            hasImages={hasImages}
+            hasAudio={hasAudio}
+            notationProps={notationProps}
+            staffPages={staffPages}
+            solfegePages={solfegePages}
+            bestAbc={bestAbc}
+            soundcloudUrl={soundcloudUrl}
+            youtubeUrl={youtubeUrl}
+            tuneName={tuneName}
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
   )
 }
