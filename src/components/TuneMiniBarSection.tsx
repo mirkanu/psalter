@@ -4,7 +4,15 @@ import { useState, useCallback } from 'react'
 import { PlayMiniBarClient } from './singing/PlayMiniBarClient'
 
 interface Props {
-  abc: string
+  /**
+   * ABC notation string. null/empty is allowed — PlayMiniBar internally
+   * disables abc-source playback and falls back to SoundCloud when
+   * `soundcloudUrl` is set (see PlayMiniBar's `hasAbc = !!abc && abc.trim().length > 0`).
+   * Phase 16 R3: /tunes/[slug] now renders this section ABOVE the tabs with
+   * both abc and SoundCloud availability, so the caller may not know which
+   * side is non-null.
+   */
+  abc: string | null
   soundcloudUrl?: string | null
   tuneName: string
 }
@@ -26,10 +34,15 @@ export function TuneMiniBarSection({ abc, soundcloudUrl, tuneName }: Props) {
   const [isPlaying, setIsPlaying] = useState(false)
   const handlePlayingChange = useCallback((playing: boolean) => setIsPlaying(playing), [])
 
+  // Guard: PlayMiniBar wants abc as a string. Empty string is its native
+  // "no abc" sentinel (see PlayMiniBar.hasAbc) — pass it through so the bar
+  // can decide whether to render the abc-source toggle.
+  const abcForBar = abc ?? ''
+
   return (
     <div className="mt-4">
       <PlayMiniBarClient
-        abc={abc}
+        abc={abcForBar}
         mounted={miniBarMounted}
         visible={miniBarVisible}
         onCollapse={() => setMiniBarVisible(false)}

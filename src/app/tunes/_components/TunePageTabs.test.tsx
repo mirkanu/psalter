@@ -22,13 +22,6 @@ vi.mock('@/components/TuneMiniBarSection', () => ({
 vi.mock('@/components/TuneDetailClient', () => ({
   TuneDetailClient: () => <div data-testid="tune-detail-client" />,
 }))
-vi.mock('@/components/PsalmsByTuneSection', () => ({
-  PsalmsByTuneSection: () => (
-    <div data-testid="psalms-by-tune-section">
-      <h3>Recommended Psalms</h3>
-    </div>
-  ),
-}))
 
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import { TunePageTabs, type TunePageTabsProps } from './TunePageTabs'
@@ -53,10 +46,6 @@ function baseProps(overrides: Partial<TunePageTabsProps> = {}): TunePageTabsProp
     hasFamousHymn: false,
     famousHymn: null,
     precentingComment: null,
-    recommendedPsalms: [],
-    otherPsalms: [],
-    psalmsForMeter: [],
-    allPsalmRows: [],
     notationProps: baseNotationProps,
     staffPages: [],
     solfegePages: [],
@@ -109,10 +98,13 @@ describe('TunePageTabs', () => {
     expect(routerReplaceMock).toHaveBeenCalledWith('/tunes/darwall?tab=details', { scroll: false })
   })
 
-  it('renders metadata fields (Mood) and the Recommended Psalms heading in the Details tab', () => {
+  it('renders metadata fields (Mood) in the Details tab', () => {
+    // Phase 16 R3: "Sing this tune" (Recommended Psalms + Other Psalms) was
+    // moved OUT of the Details tab — it's now rendered below the tabs in the
+    // /tunes/[slug] page via <PsalmsByTuneSection>. TunePageTabs only owns the
+    // Details metadata grid + the Notation tab.
     render(<TunePageTabs {...baseProps()} />)
     expect(screen.getByText('Mood')).toBeTruthy()
-    expect(screen.getByText('Recommended Psalms')).toBeTruthy()
   })
 
   it('renders TuneScoreSection and TuneMiniBarSection in the Notation tab when bestAbc is non-null', () => {

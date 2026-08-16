@@ -9,6 +9,8 @@ import { deriveTuneJpgPages } from "@/lib/tune-jpg-urls"
 import { sopranoOnly, pickAbcWithMarkers } from "@/lib/utils"
 import { buildNotationRendererProps } from "@/lib/notation-renderer-props"
 import { Badge } from "@/components/ui/badge"
+import { TuneMiniBarSection } from "@/components/TuneMiniBarSection"
+import { PsalmsByTuneSection } from "@/components/PsalmsByTuneSection"
 import { TunePageTabs } from "../_components/TunePageTabs"
 
 interface PageProps {
@@ -162,6 +164,19 @@ export default async function TunePage({ params }: PageProps) {
         </div>
       </header>
 
+      {(bestAbc || tune.soundcloudUrl || tune.youtubeUrl) && (
+        <div className="mb-6">
+          {/* Audio player above tabs (Phase 16 R3 user spec) — always visible
+              on both Details and Notation tabs. SoundCloud + abc switcher via
+              the same PlayMiniBarClient /psalms/[slug] uses via SingingView. */}
+          <TuneMiniBarSection
+            abc={bestAbc}
+            soundcloudUrl={tune.soundcloudUrl ?? null}
+            tuneName={tune.name ?? `Tune ${tune.id}`}
+          />
+        </div>
+      )}
+
       <TunePageTabs
         tuneName={tune.name ?? `Tune ${tune.id}`}
         tuneId={tune.id}
@@ -172,16 +187,23 @@ export default async function TunePage({ params }: PageProps) {
         hasFamousHymn={tune.hasFamousHymn ?? false}
         famousHymn={tune.famousHymn}
         precentingComment={tune.precentingComment}
-        recommendedPsalms={recommendedPsalms}
-        otherPsalms={otherPsalms}
-        psalmsForMeter={psalmsForMeter}
-        allPsalmRows={allPsalmRows}
         notationProps={notationProps}
         staffPages={staffPages}
         solfegePages={solfegePages}
         bestAbc={bestAbc}
         soundcloudUrl={tune.soundcloudUrl ?? null}
         youtubeUrl={tune.youtubeUrl ?? null}
+      />
+
+      {/* Sing this tune — OUTSIDE the tabbed content (Phase 16 R3 user spec).
+          Recommended Psalms + Other Psalms + "Sing to a different psalm". */}
+      <PsalmsByTuneSection
+        recommendedPsalms={recommendedPsalms}
+        otherPsalms={otherPsalms}
+        psalmsForMeter={psalmsForMeter}
+        allPsalmRows={allPsalmRows}
+        tuneId={tune.id}
+        meter={tune.meter}
       />
     </div>
   )
