@@ -8,7 +8,7 @@ import {
   getEditoriallyLinkedTuneIdsForPsalm,
   fetchPsalmListRows,
 } from '@/db/queries/psalms'
-import { fetchTunesByMeter, fetchTuneMelismaStatus, fetchPsalmVersionTuneTiers, type AlternateTune, type MelismaStatus } from '@/db/queries/tunes'
+import { fetchTunesByMeter, fetchTuneMelismaStatus, fetchPsalmVersionTuneTiers, enrichAlternateTunesToTuneRows, type AlternateTune, type MelismaStatus } from '@/db/queries/tunes'
 import { SingingView } from '@/components/singing/SingingView'
 import { PrecentingBar } from '@/components/precent/PrecentingBar'
 import { deriveTuneJpgPages } from '@/lib/tune-jpg-urls'
@@ -62,7 +62,14 @@ export default async function PrecentSingPage({ params }: PageProps) {
 
   const primaryMeter = activeVersion?.meter ?? rawTune?.meter ?? null
   const rawAlternateTunes = primaryMeter ? await fetchTunesByMeter(primaryMeter) : []
-  const alternateTunes = rawAlternateTunes.map((t) => ({
+  // 2026-08-16 (Sing-view picker parity): enrich to full TuneRow shape so
+  // SingingView's tune switcher — now TunePickerDialog's Mode A / full
+  // TuneTable, same as /precent's own picker and the Study tab — has the
+  // metadata fields it reads (inPrcaPsalter, recommendedPsalmIds, moods,
+  // etc.). Mirrors /psalms/[id]/page.tsx; without this the Mood/RP#/PRCA#/
+  // Famous Hymn/In PRCA columns silently render blank on this route only.
+  const enrichedAlternateTunes = await enrichAlternateTunesToTuneRows(rawAlternateTunes)
+  const alternateTunes = enrichedAlternateTunes.map((t) => ({
     ...t,
     scoreJpgUrl: t.staffPages[0] ?? t.scoreJpgUrl,
     solfegeJpgUrl: t.solfegePages[0] ?? t.solfegeJpgUrl,

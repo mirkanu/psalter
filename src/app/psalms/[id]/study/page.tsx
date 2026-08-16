@@ -124,7 +124,7 @@ export default async function PsalmStudyPage({ params }: PageProps) {
 
   const tuneTiers = activeVersion
     ? await fetchPsalmVersionTuneTiers(activeVersion.id)
-    : { backupTuneIds: [], historicalTuneIds: [] }
+    : { recommendedTuneIds: [], backupTuneIds: [], historicalTuneIds: [] }
 
   const displayTitle = slugToDisplayTitle(slug)
   const { prev, next } = await getPsalmNeighbors(slug)

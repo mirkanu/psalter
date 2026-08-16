@@ -15,7 +15,7 @@ const tunes = [
   { id: 2, name: 'Bravo', weightedHistoricalFrequency: 0.3 },
 ]
 
-const tuneTiers = { backupTuneIds: [7], historicalTuneIds: [3, 9] }
+const tuneTiers = { recommendedTuneIds: [], backupTuneIds: [7], historicalTuneIds: [3, 9] }
 
 function renderRowButton<T extends TieredRowTune>(row: TieredTuneRow<T>) {
   return (
@@ -44,6 +44,28 @@ describe('TieredTuneRowList', () => {
     )
     const headings = container.querySelectorAll('[data-tune-tier-heading]')
     expect(headings.length).toBe(3)
+  })
+
+  it('emits Recommended → Backup → Historical → Other in that order when all four tiers are present', () => {
+    const fourTierTiers = { recommendedTuneIds: [2], backupTuneIds: [7], historicalTuneIds: [3, 9] }
+    const { container } = render(
+      <TieredTuneRowList tunes={tunes} tuneTiers={fourTierTiers} renderRow={renderRowButton} />,
+    )
+    const headings = Array.from(container.querySelectorAll('[data-tune-tier-heading]'))
+    expect(headings.map((h) => h.textContent)).toEqual([
+      'Recommended',
+      'Backup tune',
+      'Historically sung for this psalm',
+      'Other tunes in this meter',
+    ])
+  })
+
+  it('a tune flagged both recommended and backup sorts into Recommended, not Backup', () => {
+    const overlapTiers = { recommendedTuneIds: [7], backupTuneIds: [7], historicalTuneIds: [] }
+    const renderRow = vi.fn(renderRowButton)
+    render(<TieredTuneRowList tunes={tunes} tuneTiers={overlapTiers} renderRow={renderRow} />)
+    const row = renderRow.mock.calls.find(([r]) => r.tune.id === 7)?.[0]
+    expect(row?.tier).toBe('recommended')
   })
 
   it('rows render in sortTunesByTier order', () => {
