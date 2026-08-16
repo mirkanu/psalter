@@ -86,7 +86,9 @@ describe('TunePageTabs', () => {
     render(<TunePageTabs {...baseProps()} />)
     const notationTab = screen.getByRole('tab', { name: 'Notation' })
     expect(notationTab.getAttribute('data-active')).not.toBeNull()
-    expect(screen.getByTestId('tune-score-section')).toBeTruthy()
+    // SingThisTuneSection now renders in both the Notation tab AND page-level below
+    // tabs (Round 2 feedback, 2026-08-16), so we expect 2 instances.
+    expect(screen.getAllByTestId('tune-score-section').length).toBeGreaterThanOrEqual(1)
   })
 
   it('falls back to Details for an unknown ?tab= value (allowlist, T-16-05)', () => {
@@ -118,8 +120,10 @@ describe('TunePageTabs', () => {
   it('renders TuneScoreSection and TuneMiniBarSection in the Notation tab when bestAbc is non-null', () => {
     useSearchParamsMock.mockReturnValue(new URLSearchParams('tab=notation'))
     render(<TunePageTabs {...baseProps({ bestAbc: 'X:1\nK:C\nCDEF|' })} />)
-    expect(screen.getByTestId('tune-score-section')).toBeTruthy()
-    expect(screen.getByTestId('tune-mini-bar-section')).toBeTruthy()
+    // SingThisTuneSection renders in both the Notation tab AND page-level below
+    // tabs (Round 2 feedback, 2026-08-16) — so we get 2 of each.
+    expect(screen.getAllByTestId('tune-score-section').length).toBe(2)
+    expect(screen.getAllByTestId('tune-mini-bar-section').length).toBe(2)
   })
 
   it('falls back to TuneDetailClient (JPG-only) when bestAbc is null but images exist', () => {
@@ -130,7 +134,8 @@ describe('TunePageTabs', () => {
       />,
     )
     expect(screen.queryByTestId('tune-score-section')).toBeNull()
-    expect(screen.getByTestId('tune-detail-client')).toBeTruthy()
+    // 2× — once in Notation tab, once at page level below tabs.
+    expect(screen.getAllByTestId('tune-detail-client').length).toBe(2)
   })
 
   it('shows a "Notation not available" placeholder when there is no ABC, no images, and no audio', () => {
@@ -140,6 +145,7 @@ describe('TunePageTabs', () => {
         {...baseProps({ bestAbc: null, staffPages: [], solfegePages: [], soundcloudUrl: null, youtubeUrl: null })}
       />,
     )
-    expect(screen.getByText('Notation not available for this tune.')).toBeTruthy()
+    // 2× — once in Notation tab, once at page level below tabs.
+    expect(screen.getAllByText('Notation not available for this tune.').length).toBe(2)
   })
 })
