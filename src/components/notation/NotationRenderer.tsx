@@ -683,7 +683,14 @@ export function NotationRenderer({
   // against is not actually triggered by real CM/LM/SM phrase widths at
   // mobile staffwidth. Verified broadly across meters/tunes with and without
   // melisma data (see 260715-s7b SUMMARY) before removing.
-  const baseSubdivisions = !chromeless && viewportW < 480 ? 2 : 1
+  // 2026-08-16 (Phase 16 R3 sign-off round 2): tunePageMode is excluded from
+  // this forced-split rule too. The MOBILE-LYRIC-FIX concern above (w: lyrics
+  // losing sync across an abcjs-internal wrap) cannot occur on the tune page
+  // — showLyrics:false + renderWLineUnderStaff:false mean there are no w:
+  // lines to begin with. Without this exclusion CM tunes rendered 8 staff
+  // systems on mobile instead of the 4 that /psalms/[id]'s Sing view (and
+  // the 260716 fix above) already established as correct.
+  const baseSubdivisions = !chromeless && !tunePageMode && viewportW < 480 ? 2 : 1
   const extraSubdivisions = chromeless
     ? baseSize >= 28
       ? 2
@@ -1563,8 +1570,12 @@ export function NotationRenderer({
       </div>
     ) : null
 
+    // 2026-08-16 (Phase 16 R3 sign-off round 2): tunePageMode already shows
+    // the Staff/Solfège toggle above the score (see viewGroup), so the
+    // "Back to notation" button is redundant there — hide it alongside the
+    // chromeless case.
     if (isSplit) {
-      viewArea = !chromeless ? (
+      viewArea = !chromeless && !tunePageMode ? (
         <div className="space-y-4">
           <BackToNotationButton onClick={() => setViewMode('staff')} />
           {renderSplitLeaf(imageBlock, stanzaBlock, true)}
@@ -1575,7 +1586,7 @@ export function NotationRenderer({
     } else {
       viewArea = (
         <div className={chromeless ? 'space-y-4 px-4 pt-4' : 'space-y-4'}>
-          {!chromeless && (
+          {!chromeless && !tunePageMode && (
             <BackToNotationButton onClick={() => setViewMode('staff')} />
           )}
           {imageBlock}
