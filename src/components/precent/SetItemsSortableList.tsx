@@ -26,6 +26,8 @@ export interface SetItemView {
   psalmId: number
   tuneId: number | null
   psalmVersionId: number | null
+  /** psalmVersionId ?? the psalm's default version — see SetDetail.tsx's SetItemView doc comment. */
+  effectiveVersionId: number | null
   verseRange: string | null
   position: number
   psalm: { id: number; bibleTitle: string | null } | null

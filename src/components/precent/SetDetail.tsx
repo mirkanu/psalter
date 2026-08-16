@@ -36,6 +36,14 @@ export interface SetItemView {
   psalmId: number
   tuneId: number | null
   psalmVersionId: number | null
+  /**
+   * psalmVersionId ?? (the psalm's default/lowest-id version) — resolved server-side in
+   * /precent/[id]/page.tsx. Use this (not psalmVersionId) for tune-tier lookups: most set items
+   * reference a single-version psalm and never get an explicit psalmVersionId, but tier data is
+   * still keyed by version id (see fetchPsalmVersionTuneTiers), so a fallback is required to match
+   * /psalms/[id]/page.tsx's `activeVersion` default-resolution behaviour.
+   */
+  effectiveVersionId: number | null
   verseRange: string | null
   position: number
   psalm: { id: number; bibleTitle: string | null } | null
@@ -166,14 +174,17 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById, tuneTi
 
   function handleTuneClick(item: SetItemView) {
     setTunePickerItemId(item.id)
-    const rawMeter = item.psalmVersionId != null
-      ? (meterByVersionId[item.psalmVersionId] ?? psalmMeterById[item.psalmId] ?? null)
+    const rawMeter = item.effectiveVersionId != null
+      ? (meterByVersionId[item.effectiveVersionId] ?? psalmMeterById[item.psalmId] ?? null)
       : (psalmMeterById[item.psalmId] ?? null)
     // Strip "D" (Double) suffix so "66 66 D" matches tunes stored as "66 66"
     const meter = rawMeter?.replace(/\s+D$/i, '') ?? null
     setTunePickerPsalmMeter(meter)
     setTunePickerPsalmId(item.psalmId)
-    setTunePickerVersionId(item.psalmVersionId ?? null)
+    // effectiveVersionId (not the raw, often-null psalmVersionId) so the "Historically sung for
+    // this psalm" tier section shows even when this set item never got an explicit a/b version
+    // choice — see the SetItemView.effectiveVersionId doc comment.
+    setTunePickerVersionId(item.effectiveVersionId)
     setTunePickerOpen(true)
   }
 
