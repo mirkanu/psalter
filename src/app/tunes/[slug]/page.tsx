@@ -167,12 +167,16 @@ export default async function TunePage({ params }: PageProps) {
       {(bestAbc || tune.soundcloudUrl || tune.youtubeUrl) && (
         <div className="mb-6">
           {/* Audio player above tabs (Phase 16 R3 user spec) — always visible
-              on both Details and Notation tabs. SoundCloud + abc switcher via
-              the same PlayMiniBarClient /psalms/[slug] uses via SingingView. */}
+              on both Details and Notation tabs. Inline (max-w-4xl) variant
+              keeps the bar inside the page flow between the header and the
+              tabbed content, matching the user's spec ("Above the tabs: Tune
+              Azmon/Denfield CM and the audio player"). SoundCloud + abc
+              switcher via the same PlayMiniBarClient /psalms/[slug] uses. */}
           <TuneMiniBarSection
             abc={bestAbc}
             soundcloudUrl={tune.soundcloudUrl ?? null}
             tuneName={tune.name ?? `Tune ${tune.id}`}
+            variant="inline"
           />
         </div>
       )}
