@@ -206,9 +206,6 @@ export default async function TunePage({ params }: PageProps) {
         notationProps={notationProps}
         staffPages={staffPages}
         solfegePages={solfegePages}
-        bestAbc={bestAbc}
-        soundcloudUrl={tune.soundcloudUrl ?? null}
-        youtubeUrl={tune.youtubeUrl ?? null}
       />
 
       {/* Sing this tune — OUTSIDE the tabbed content (Phase 16 R3 user spec).
