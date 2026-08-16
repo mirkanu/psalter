@@ -154,6 +154,19 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
   const [colHymn, setColHymn] = useLocalStorage('tunes.col.hymn', true)
   const [colInPrca, setColInPrca] = useLocalStorage('tunes.col.inPrca', true)
   const [colRecording, setColRecording] = useLocalStorage('tunes.col.recording', true)
+
+  // Modal-mode column clamp: when the table is rendered inside a Dialog (onSelectTune set), the
+  // 9-column desktop default overflows the max-w-5xl container and the Tune Name column gets
+  // squeezed into nothing. Force the reference-info columns (#1979 RP, #1912 PRCA, Famous Hymn,
+  // In PRCA) OFF in modal mode — they're not relevant when picking a tune. Recording stays
+  // available so the picker shows which tunes have audio. Standalone /tunes page is unaffected.
+  // useLocalStorage still owns the user's preference; we just AND it with !onSelectTune here
+  // so the table layout is bounded inside the dialog without losing customisability on /tunes.
+  const showColRp = colRp && !onSelectTune
+  const showColPrca = colPrca && !onSelectTune
+  const showColHymn = colHymn && !onSelectTune
+  const showColInPrca = colInPrca && !onSelectTune
+  const showColRecording = colRecording && !onSelectTune
   // Track whether mobile defaults have been applied.
   // v2: bumped in Phase 11 so the corrected TLIST-02 defaults (Recording ON) re-apply once for users whose
   // browser already ran the v1 effect, which hid Recording.
@@ -388,7 +401,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
     ro.observe(wrap)
     ro.observe(table)
     return () => ro.disconnect()
-  }, [colMeter, colPsalms, colMood, colRp, colPrca, colHymn, colInPrca, colRecording, filtered.length])
+  }, [colMeter, colPsalms, colMood, showColRp, showColPrca, showColHymn, showColInPrca, showColRecording, filtered.length])
 
   const hasFilter = query || selectedMeter !== 'all' || selectedMood !== 'all' || onlyPrca || onlyFamous
   const hasAdvancedFilter = selectedMeter !== 'all' || selectedMood !== 'all' || onlyPrca || onlyFamous
@@ -409,9 +422,9 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
 
   const visibleColumnCount =
     1 +
-    (colMeter ? 1 : 0) + (colPsalms ? 1 : 0) + (colMood ? 1 : 0) + (colRp ? 1 : 0) +
-    (colPrca ? 1 : 0) + (colHymn ? 1 : 0) + (colInPrca ? 1 : 0) +
-    (colRecording && !onSelectTune ? 1 : 0)
+    (colMeter ? 1 : 0) + (colPsalms ? 1 : 0) + (colMood ? 1 : 0) + (showColRp ? 1 : 0) +
+    (showColPrca ? 1 : 0) + (showColHymn ? 1 : 0) + (showColInPrca ? 1 : 0) +
+    (showColRecording ? 1 : 0)
 
   function renderTuneRow(tune: TuneRow) {
     const psalmDisplay = truncatePsalmIds(
@@ -476,27 +489,27 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
             ) : <span className="text-muted-foreground">—</span>}
           </td>
         )}
-        {colRp && (
+        {showColRp && (
           <td className="px-3 py-2.5 text-right font-mono text-xs text-muted-foreground">
             {tune.numberIn1979RpPsalter ?? '—'}
           </td>
         )}
-        {colPrca && (
+        {showColPrca && (
           <td className="px-3 py-2.5 text-right font-mono text-xs text-muted-foreground">
             {tune.numInPrcaPsalter ?? '—'}
           </td>
         )}
-        {colHymn && (
+        {showColHymn && (
           <td className="px-3 py-2.5 text-muted-foreground text-xs">
             {tune.famousHymn ?? '—'}
           </td>
         )}
-        {colInPrca && (
+        {showColInPrca && (
           <td className="px-3 py-2.5 text-center text-xs text-muted-foreground">
             {tune.inPrcaPsalter ? 'Yes' : '—'}
           </td>
         )}
-        {colRecording && !onSelectTune && (
+        {showColRecording && (
           <td className="px-2 py-2.5 text-center overflow-hidden w-20">
             {hasAnyTuneMedia(tune) ? (
               <button
@@ -711,42 +724,47 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
                   />
                   <label htmlFor="col-mood" className="text-sm cursor-pointer">Mood</label>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" title={onSelectTune ? 'Hidden in modal picker' : undefined}>
                   <Checkbox
                     id="col-rp"
-                    checked={colRp}
+                    checked={colRp && !onSelectTune}
+                    disabled={!!onSelectTune}
                     onCheckedChange={(v) => setColRp(!!v)}
                   />
                   <label htmlFor="col-rp" className="text-sm cursor-pointer">RP# (1979)</label>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" title={onSelectTune ? 'Hidden in modal picker' : undefined}>
                   <Checkbox
                     id="col-prca"
-                    checked={colPrca}
+                    checked={colPrca && !onSelectTune}
+                    disabled={!!onSelectTune}
                     onCheckedChange={(v) => setColPrca(!!v)}
                   />
                   <label htmlFor="col-prca" className="text-sm cursor-pointer">PRCA#</label>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" title={onSelectTune ? 'Hidden in modal picker' : undefined}>
                   <Checkbox
                     id="col-hymn"
-                    checked={colHymn}
+                    checked={colHymn && !onSelectTune}
+                    disabled={!!onSelectTune}
                     onCheckedChange={(v) => setColHymn(!!v)}
                   />
                   <label htmlFor="col-hymn" className="text-sm cursor-pointer">Famous Hymn</label>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" title={onSelectTune ? 'Hidden in modal picker' : undefined}>
                   <Checkbox
                     id="col-inPrca"
-                    checked={colInPrca}
+                    checked={colInPrca && !onSelectTune}
+                    disabled={!!onSelectTune}
                     onCheckedChange={(v) => setColInPrca(!!v)}
                   />
                   <label htmlFor="col-inPrca" className="text-sm cursor-pointer">In PRCA</label>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" title={onSelectTune ? 'Hidden in modal picker' : undefined}>
                   <Checkbox
                     id="col-recording"
-                    checked={colRecording}
+                    checked={colRecording && !onSelectTune}
+                    disabled={!!onSelectTune}
                     onCheckedChange={(v) => setColRecording(!!v)}
                   />
                   <label htmlFor="col-recording" className="text-sm cursor-pointer">Recording</label>
@@ -826,19 +844,19 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
                 {colMood && (
                   <th className={`text-left px-3 py-2.5 font-medium text-muted-foreground w-24 ${stickyTh}`} style={stickyThStyle}>Mood</th>
                 )}
-                {colRp && (
+                {showColRp && (
                   <th className={`text-right px-3 py-2.5 font-medium text-muted-foreground w-[4.5rem] ${stickyTh}`} style={stickyThStyle}># 1979 RP</th>
                 )}
-                {colPrca && (
+                {showColPrca && (
                   <th className={`text-right px-3 py-2.5 font-medium text-muted-foreground w-[4.5rem] ${stickyTh}`} style={stickyThStyle}># 1912 PRCA</th>
                 )}
-                {colHymn && (
+                {showColHymn && (
                   <th className={`text-left px-3 py-2.5 font-medium text-muted-foreground w-36 ${stickyTh}`} style={stickyThStyle}>Famous Hymn</th>
                 )}
-                {colInPrca && (
+                {showColInPrca && (
                   <th className={`text-center px-3 py-2.5 font-medium text-muted-foreground w-16 ${stickyTh}`} style={stickyThStyle}>In PRCA</th>
                 )}
-                {colRecording && !onSelectTune && (
+                {showColRecording && (
                   <th className={`text-center px-2 py-2.5 font-medium text-muted-foreground w-20 ${stickyTh}`} style={stickyThStyle}>Recording</th>
                 )}
               </tr>
