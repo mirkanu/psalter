@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, type TransitionEvent } from 'react'
-import { ChevronDown, Music, Film } from 'lucide-react'
+import { ChevronDown, Piano, Film } from 'lucide-react'
 import { AbcAudioControls } from './AbcAudioControls'
 import { cn } from '@/lib/utils'
 
@@ -225,7 +225,10 @@ export function PlayMiniBar({
         </button>
       )}
 
-      {/* B(e): abc/SoundCloud toggle — Film icon for SC, Music for abc */}
+      {/* B(e): abc/SoundCloud toggle. 2026-08-16 (icon review round): user
+          picked Piano (was Music note) for "on recording, tap to switch to
+          digital" — reviewed via a side-by-side mockup sent over Telegram.
+          Film for "on digital, tap to switch to recording" is unchanged. */}
       {showScToggle && (
         <div className="relative">
           <button
@@ -238,7 +241,7 @@ export function PlayMiniBar({
               isScMode ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
             )}
           >
-            {isScMode ? <Music className="h-4 w-4" /> : <Film className="h-4 w-4" />}
+            {isScMode ? <Piano className="h-4 w-4" /> : <Film className="h-4 w-4" />}
           </button>
           {/* B(f): One-time tour */}
           {showScToggle && showTour && (
