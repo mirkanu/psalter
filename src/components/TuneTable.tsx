@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useLocalStorage } from "@/hooks/useLocalStorage"
 import { useMediaQuery } from "@/hooks/useMediaQuery"
 import Link from "next/link"
-import { Search, X, ChevronDown, ChevronUp, Download, Music, Star } from "lucide-react"
+import { Search, X, ChevronDown, ChevronUp, Download, Music } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
@@ -68,10 +68,10 @@ interface TuneTableProps {
   isIOS?: boolean
 }
 
-/** Tiering only makes sense when there is at least one backup or historical tune to separate out. */
+/** Tiering only makes sense when there is at least one recommended, backup, or historical tune to separate out. */
 export function shouldTierRows(tuneTiers?: PsalmVersionTuneTiers | null): boolean {
   if (!tuneTiers) return false
-  return tuneTiers.backupTuneIds.length + tuneTiers.historicalTuneIds.length > 0
+  return tuneTiers.recommendedTuneIds.length + tuneTiers.backupTuneIds.length + tuneTiers.historicalTuneIds.length > 0
 }
 
 type SortBy = 'psalms' | 'name' | 'meter' | 'rp' | 'prca' | 'recording'
@@ -328,9 +328,10 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
           return b.recommendedPsalmIds.length - a.recommendedPsalmIds.length || (a.name ?? '').localeCompare(b.name ?? '')
       }
     })
-    // In modal mode: float recommended tunes for this psalm to the top.
-    // When tier data is available the Backup → Historical → Other order takes precedence (D-13); the Star
-    // icon still marks recommended tunes, it just no longer reorders them.
+    // In modal mode: float recommended tunes for this psalm to the top. This is a weak fallback
+    // for the (rare) case tuneTiers has no recommended/backup/historical entries at all — when
+    // tier data IS available, the Recommended → Backup → Historical → Other tier order (D-13,
+    // 2026-08-16) takes precedence via the `tiered` branch below instead.
     if (psalmId != null && !tiered) {
       sorted.sort((a, b) => {
         const aRec = a.recommendedPsalmIds.includes(psalmId) ? 0 : 1
@@ -439,9 +440,6 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
       >
         <td className="px-3 py-2.5 font-medium overflow-hidden">
           <span className="inline-flex items-center gap-1.5 min-w-0">
-            {psalmId != null && tune.recommendedPsalmIds.includes(psalmId) && (
-              <Star className="h-3.5 w-3.5 text-amber-500 shrink-0" aria-label="Recommended for this psalm" />
-            )}
             {onSelectTune ? (
               <span className="group-hover:underline underline-offset-2 line-clamp-2 min-w-0">
                 {tune.name ?? `Tune ${tune.id}`}

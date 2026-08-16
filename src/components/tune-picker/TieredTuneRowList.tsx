@@ -28,6 +28,7 @@ export interface TieredTuneRow<T extends TieredRowTune> {
 }
 
 export const DEFAULT_TIER_LABELS: Record<TuneTier, string> = {
+  recommended: 'Recommended',
   backup: 'Backup tune',
   historical: 'Historically sung for this psalm',
   other: 'Other tunes in this meter',
@@ -43,6 +44,7 @@ export function buildTieredTuneRows<T extends TieredRowTune>(
   currentTuneId?: number | null,
   tierLabels: Partial<Record<TuneTier, string>> = {},
 ): TieredTuneRow<T>[] {
+  const recommendedTuneIds = tuneTiers?.recommendedTuneIds ?? []
   const backupTuneIds = tuneTiers?.backupTuneIds ?? []
   const historicalTuneIds = tuneTiers?.historicalTuneIds ?? []
   const projected = tunes.map((t, index) => ({
@@ -51,12 +53,12 @@ export function buildTieredTuneRows<T extends TieredRowTune>(
     weightedHistoricalFrequency: t.weightedHistoricalFrequency,
     index,
   }))
-  const sorted = sortTunesByTier(projected, backupTuneIds, historicalTuneIds)
+  const sorted = sortTunesByTier(projected, recommendedTuneIds, backupTuneIds, historicalTuneIds)
   const labels = { ...DEFAULT_TIER_LABELS, ...tierLabels }
   let prevTier: TuneTier | null = null
   return sorted.map((p) => {
     const tune = tunes[p.index]
-    const tier = tuneTier(tune.id, backupTuneIds, historicalTuneIds)
+    const tier = tuneTier(tune.id, recommendedTuneIds, backupTuneIds, historicalTuneIds)
     const heading = tier === prevTier ? null : labels[tier]
     prevTier = tier
     return { tune, tier, isCurrent: currentTuneId != null && tune.id === currentTuneId, heading }

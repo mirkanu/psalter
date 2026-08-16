@@ -1,6 +1,6 @@
 'use client'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { RotateCcw } from 'lucide-react'
 import { NotationRendererClient } from '@/components/notation/NotationRendererClient'
 import { PsalmTopBarClient } from './PsalmTopBarClient'
@@ -10,8 +10,10 @@ import { GearPopoverClient } from './GearPopoverClient'
 import { OnboardingTourClient } from './OnboardingTourClient'
 import { StanzaDotIndicator } from './StanzaDotIndicator'
 import { PsalmPickerModalClient } from '@/components/PsalmPickerModalClient'
-import { TuneSwitcherSheetClient } from './TuneSwitcherSheetClient'
+import { TunePickerDialog } from '@/components/tune-picker/TunePickerDialog'
 import type { TuneOption } from './types'
+import type { AlternateTune } from '@/db/queries/tunes'
+import type { TuneRow } from '@/components/TuneTable'
 import type { PsalmDetail } from '@/db/queries/psalms'
 import type { PsalmRow } from '@/components/PsalmListingGrid'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
@@ -122,6 +124,8 @@ export function SingingView({
   versionSiblings,
   isRecommendedVersion = true,
 }: Props) {
+  const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
   const tuneParam = searchParams?.get('tune') ?? null
 
@@ -611,16 +615,41 @@ export function SingingView({
   }, [])
 
   // If the tune switcher closes WITHOUT a tune having been picked (activeTune
-  // is still null at close time — TuneSwitcherSheet delays onOpenChange(false)
-  // by 120ms after a real selection specifically so the router update lands
-  // first), drop any pending intent so a later, unrelated tune change doesn't
-  // retroactively trigger the item 2b/2c routing below.
+  // is still null at close time), drop any pending intent so a later,
+  // unrelated tune change doesn't retroactively trigger the item 2b/2c
+  // routing below.
   const handleTuneSwitcherOpenChange = useCallback((open: boolean) => {
     setTuneSwitcherOpen(open)
     if (!open && !activeTune) {
       setPendingTuneIntent(null)
     }
   }, [activeTune])
+
+  // 2026-08-16 (Sing-view picker parity): the tune switcher is now
+  // TunePickerDialog (the same /tunes-table modal /precent and the Study tab
+  // use), which — unlike the old TuneSwitcherSheet — calls its `onClose` prop
+  // synchronously right after `onSelect`, with no built-in delay. Without a
+  // delay, `router.replace` hasn't landed yet, so `activeTune` in THIS
+  // closure is still stale/null when onClose's check above runs — it would
+  // wrongly treat a successful pick as "closed without picking" and clear
+  // pendingTuneIntent before the activeTune-watching effect (below) gets a
+  // chance to resolve it. tuneJustSelectedRef distinguishes the two cases
+  // instead of relying on activeTune's (still-stale) value at close time.
+  const tuneJustSelectedRef = useRef(false)
+  const handleTuneSelect = useCallback((tune: AlternateTune & TuneRow) => {
+    tuneJustSelectedRef.current = true
+    const params = new URLSearchParams(searchParams?.toString() ?? '')
+    params.set('tune', String(tune.id))
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [router, pathname, searchParams])
+  const handleTunePickerClose = useCallback(() => {
+    if (tuneJustSelectedRef.current) {
+      tuneJustSelectedRef.current = false
+      setTuneSwitcherOpen(false)
+      return
+    }
+    handleTuneSwitcherOpenChange(false)
+  }, [handleTuneSwitcherOpenChange])
 
   // Resolves pendingTuneIntent once a real tune becomes active (i.e. the user
   // picked one from the tune switcher opened by handleRequestTuneSelection /
@@ -1093,13 +1122,21 @@ export function SingingView({
         onClose={() => setPsalmSelectorOpen(false)}
         psalms={psalmListRows}
       />
-      <TuneSwitcherSheetClient
+      {/* 2026-08-16 (Sing-view picker parity, user sign-off): the tune switcher
+          is now the SAME modal /precent and the Study tab use — TunePickerDialog
+          in Mode A (full /tunes TuneTable: search, Advanced Filters, Recommended/
+          Backup/Historical/Other tiering) — replacing the old TuneSwitcherSheet
+          bottom-sheet list. useTable implies hideExport internally. */}
+      <TunePickerDialog
+        useTable
         open={tuneSwitcherOpen}
-        onOpenChange={handleTuneSwitcherOpenChange}
+        onClose={handleTunePickerClose}
         tunes={switcherTunes}
         currentTuneId={activeTune?.id ?? null}
         tuneTiers={tuneTiers}
-        meterLabel={meter}
+        psalmMeter={meter}
+        psalmId={psalm.id}
+        onSelect={handleTuneSelect}
       />
 
       <GlassBottomBar
