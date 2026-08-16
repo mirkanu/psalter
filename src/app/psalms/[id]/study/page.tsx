@@ -7,7 +7,7 @@ import { db } from '@/db'
 import { psalms, psalmVersions } from '@/db/schema'
 import { asc, eq } from 'drizzle-orm'
 import { fetchPsalmDetail } from '@/db/queries/psalms'
-import { fetchTunesByMeter, fetchPsalmVersionTuneTiers } from '@/db/queries/tunes'
+import { fetchTunesByMeter, fetchPsalmVersionTuneTiers, enrichAlternateTunesToTuneRows } from '@/db/queries/tunes'
 import { PsalmTabs } from '@/components/PsalmTabs'
 import { PsalmNav } from '@/components/PsalmNav'
 import { parseSlug, deriveVersionSlug, stripStar, slugToDisplayTitle } from '@/lib/psalm-slugs'
@@ -110,14 +110,10 @@ export default async function PsalmStudyPage({ params }: PageProps) {
 
   const primaryMeter = activeVersion?.meter ?? rawTune?.meter ?? null
   const rawAlternateTunes = primaryMeter ? await fetchTunesByMeter(primaryMeter) : []
-  const alternateTunes = rawAlternateTunes.map((t) => {
-    const { staffPages, solfegePages } = deriveTuneJpgPages(t.name)
-    return {
-      ...t,
-      scoreJpgUrl: staffPages[0] ?? t.scoreJpgUrl,
-      solfegeJpgUrl: solfegePages[0] ?? t.solfegeJpgUrl,
-    }
-  })
+  // Phase 16 R3: enrich to full TuneRow shape so the Change Tune picker on the
+  // Study tab renders identically to /precent. See the matching note in
+  // src/app/psalms/[id]/page.tsx for the breakage list.
+  const alternateTunes = await enrichAlternateTunesToTuneRows(rawAlternateTunes)
 
   const primaryTuneDerivedStaffUrl = primaryTune
     ? (deriveTuneJpgPages(primaryTune.name).staffPages[0] ?? null)
