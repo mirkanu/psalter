@@ -75,7 +75,19 @@ export function TunePickerDialog({
   if (useTable) {
     return (
       <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
-        <DialogContent className="max-w-5xl w-full max-h-[90vh] flex flex-col gap-4">
+        <DialogContent
+          className="max-w-5xl w-full max-h-[90vh] flex flex-col gap-4"
+          // 2026-08-17: Base UI's Dialog.Popup auto-focuses the first focusable
+          // descendant (the search input) on open by default — independent of
+          // TuneTable's own width-gated `.focus()` effect, which only ever
+          // fires on desktop widths. On mobile this left the input with a
+          // stray, badly-rendered focus ring (no keyboard opened, since
+          // programmatic focus without a real tap doesn't reliably summon
+          // iOS's keyboard, but the CSS focus state still applied) until the
+          // user tapped in and back out. Skip initial focus entirely when the
+          // dialog was opened via touch; keep the existing desktop auto-focus.
+          initialFocus={(openType: string) => openType !== 'touch'}
+        >
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">Select Tune</DialogTitle>
           </DialogHeader>
