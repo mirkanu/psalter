@@ -1,37 +1,26 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { FeedbackModal } from '@/components/FeedbackModal'
 
 export function SiteFooter() {
-  const [open, setOpen] = useState<'about' | 'copyright' | 'feedback' | 'install' | null>(null)
-  // Hide the Install entry when the site is already running as an installed
-  // PWA (display-mode: standalone on Android/desktop, navigator.standalone on
-  // iOS Safari). SSR-safe: matchMedia is undefined on the server, so we gate
-  // on a mounted flag and check on the client only.
-  const [isStandalone, setIsStandalone] = useState(false)
-  useEffect(() => {
-    const standalone =
-      (typeof window !== 'undefined' &&
-        (window.matchMedia?.('(display-mode: standalone)').matches ||
-          // @ts-expect-error navigator.standalone is iOS-Safari-only
-          window.navigator?.standalone === true)) ||
-      false
-    setIsStandalone(standalone)
-  }, [])
+  const [open, setOpen] = useState<'about' | 'copyright' | 'feedback' | null>(null)
 
   return (
     <>
-      <footer className="bg-muted border-t border-border py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div className="hidden sm:flex items-center gap-4">
+      {/* Quick task 260817-p17: below `md` (768px) the hamburger menu in
+          SiteHeader already carries About/Copyright/Feedback/Changelog and
+          the "Made by GSD Labs" credit, so a mobile footer would be a
+          duplicate (and, with the credit moved there, an empty grey bar).
+          `md` matches the `md:hidden` gate on the hamburger cluster so the
+          two are exact complements at every width. */}
+      <footer className="hidden md:block bg-muted border-t border-border py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-row items-center justify-between gap-2">
+          <div className="flex items-center gap-4">
             <button onClick={() => setOpen('about')} className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">About</button>
             <button onClick={() => setOpen('copyright')} className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Copyright</button>
             <button onClick={() => setOpen('feedback')} className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Feedback</button>
-            {!isStandalone && (
-              <button onClick={() => setOpen('install')} className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Install</button>
-            )}
             <a href="/changelog" className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Changelog</a>
           </div>
           <a href="https://gsdlabs.dev" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Made by GSD Labs</a>
@@ -63,29 +52,6 @@ export function SiteFooter() {
                 <li>Images/scores of tunes: Copyright 1979 Reformed Presb. Church Ireland. Copyright expired in 2004 (25 years after publication under &ldquo;<a href="https://assets.publishing.service.gov.uk/media/5a801e5140f0b623026919f9/Copyright_Notice_Printed_Music.pdf" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">Typographical Arrangement</a>&rdquo;).</li>
               </ol>
               <p>All other sources explicitly acknowledged</p>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {open === 'install' && (
-        <Dialog open onOpenChange={(v) => !v && setOpen(null)}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader><DialogTitle>Install on your phone</DialogTitle></DialogHeader>
-            <div className="space-y-3 text-sm text-muted-foreground">
-              <p>The Psalter works as a Progressive Web App — once installed it opens full-screen, loads faster, and is reachable from your home screen just like a native app.</p>
-              <p>
-                Step-by-step instructions for every major browser and platform (kept up to date by MDN):{' '}
-                <a
-                  href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Installing"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-foreground"
-                >
-                  MDN &mdash; Installing PWAs
-                </a>
-                .
-              </p>
             </div>
           </DialogContent>
         </Dialog>
