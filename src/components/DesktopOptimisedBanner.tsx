@@ -1,10 +1,21 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { X } from 'lucide-react'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 const STORAGE_KEY = 'psalter.desktopBannerDismissed'
+
+function readDismissed(): boolean {
+  if (typeof window === 'undefined') return true
+  try {
+    return window.localStorage.getItem(STORAGE_KEY) === '1'
+  } catch {
+    // Private mode / storage disabled — default to dismissed so we don't
+    // crash the root layout if storage throws.
+    return true
+  }
+}
 
 /**
  * Quick task 260817-p17: desktop-only banner telling visitors the site is
@@ -19,31 +30,20 @@ const STORAGE_KEY = 'psalter.desktopBannerDismissed'
  */
 export function DesktopOptimisedBanner() {
   const isDesktop = useMediaQuery('(min-width: 768px)')
-  // Start dismissed (hidden) and only flip to visible once the mount effect
-  // confirms no stored dismissal flag exists — avoids a flash-then-hide for
-  // returning desktop visitors who already dismissed it.
-  const [dismissed, setDismissed] = useState(true)
+  // Read the dismissal flag at mount (SSR-safe: returns true on the server,
+  // so the SSR markup never includes the banner). After hydration on the
+  // client, the initializer runs once and returns the stored value.
+  const [dismissed, setDismissed] = useState(readDismissed)
 
-  useEffect(() => {
-    try {
-      if (localStorage.getItem(STORAGE_KEY) !== '1') {
-        setDismissed(false)
-      }
-    } catch {
-      // Private mode / storage disabled — leave dismissed (hidden) rather
-      // than crash the root layout.
-    }
-  }, [])
-
-  function handleDismiss() {
+  const handleDismiss = useCallback(() => {
     setDismissed(true)
     try {
-      localStorage.setItem(STORAGE_KEY, '1')
+      window.localStorage.setItem(STORAGE_KEY, '1')
     } catch {
       // Private mode / storage disabled — dismissal still hides it for this
       // page view, it just won't persist across reloads.
     }
-  }
+  }, [])
 
   if (!isDesktop || dismissed) return null
 
