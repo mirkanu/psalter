@@ -78,15 +78,17 @@ export function TunePickerDialog({
         <DialogContent
           className="max-w-5xl w-full max-h-[90vh] flex flex-col gap-4"
           // 2026-08-17: Base UI's Dialog.Popup auto-focuses the first focusable
-          // descendant (the search input) on open by default — independent of
-          // TuneTable's own width-gated `.focus()` effect, which only ever
-          // fires on desktop widths. On mobile this left the input with a
-          // stray, badly-rendered focus ring (no keyboard opened, since
-          // programmatic focus without a real tap doesn't reliably summon
-          // iOS's keyboard, but the CSS focus state still applied) until the
-          // user tapped in and back out. Skip initial focus entirely when the
-          // dialog was opened via touch; keep the existing desktop auto-focus.
-          initialFocus={(openType: string) => openType !== 'touch'}
+          // descendant (the search input) on open by default, leaving a stray
+          // focus ring on mobile with no keyboard opened. Base UI's own
+          // touch-vs-mouse `openType` detection (tried first) had no effect —
+          // it relies on inspecting the interaction that triggered the open,
+          // which only works via Base UI's own <Dialog.Trigger>. Every dialog
+          // here is externally controlled (`open={state}`, toggled by our own
+          // onClick handlers, no Dialog.Trigger in the tree), so Base UI never
+          // sees a real interaction event to classify. Falling back to the
+          // same window.innerWidth check TuneTable's own auto-focus effect
+          // already uses successfully for this exact purpose.
+          initialFocus={() => typeof window !== 'undefined' && window.innerWidth >= 768}
         >
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">Select Tune</DialogTitle>
