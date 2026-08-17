@@ -43,7 +43,7 @@ function parseBpmFromAbc(abc: string): number {
  * 260712-kov). Root-cause diagnostic (tests/diagnostics/split-leaf-staff-diff.mjs
  * Part B) found abcjs's JS-level `options.format` object is routed through
  * `globalFormatting`, which only recognizes a small allowlist (font
- * directives, scale, stretchlast, fontboxpadding, stafftopmargin) —
+ * directives, scale, fontboxpadding, stafftopmargin) —
  * `topmargin`/`botmargin`/`staffsep`/`systemsep` are silently ignored there.
  * Those keys ARE honored, but only as `%%directive value` lines written
  * INSIDE the ABC text itself (the per-line directive parser). This inserts
@@ -603,11 +603,11 @@ export default function AbcPlayer({
         scale: 1,
         staffwidth: effectiveStaffWidth,
         responsive: 'resize',
-        // UAT v6 issue #2(a): force every system — including the last — to
-        // span the full staffwidth so all lines are visually even-length.
-        format: { stretchlast: 1 },
         // MOBILE-07: see comment above effectiveStaffWidth — lets a row that
-        // naturally needs more than our target re-layout every row to match.
+        // naturally needs more than our target re-layout every row to match,
+        // unifying per-row widths so the last row no longer needs the old
+        // last-row-only stretch (removed 2026-08-17 to close the right-side
+        // viewBox whitespace that last-row stretch was producing).
         expandToWidest,
       })
       visualObjRef.current = visualObjs?.[0] ?? null
