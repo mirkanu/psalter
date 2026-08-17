@@ -42,6 +42,12 @@ interface PsalmTabsProps {
   recommendedVersionSlug?: string | null
   /** Per-psalm-version Backup/Historical tune ids for the Change Tune list (TUNE-04). */
   tuneTiers?: PsalmVersionTuneTiers
+  /**
+   * 2026-08-17: true tune-catalog size — alternateTunes here is already meter-scoped (fetched via
+   * fetchTunesByMeter), so alternateTunes.length is NOT the total; see TuneTable's totalTuneCount
+   * doc for why that matters for the picker's "filtered from N" count.
+   */
+  totalTuneCount?: number
 }
 
 // ── Content section components (shared between mobile/desktop) ───────────────
@@ -327,7 +333,7 @@ const DESKTOP_TABS = MOBILE_TABS.filter((t) => t.value !== 'sing')
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, primaryTuneDerivedSolfegeUrl, primaryTuneSlug, alternateTunes, activeVersionId, recommendedVersionSlug, tuneTiers }: PsalmTabsProps) {
+export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, primaryTuneDerivedSolfegeUrl, primaryTuneSlug, alternateTunes, activeVersionId, recommendedVersionSlug, tuneTiers, totalTuneCount }: PsalmTabsProps) {
   const mobileTabsRef = useRef<HTMLDivElement>(null)
   const searchParams = useSearchParams()
   const [noRecDialogOpen, setNoRecDialogOpen] = useState(false)
@@ -461,6 +467,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
             psalmMeter={primaryTune?.meter ?? null}
             psalmId={psalm.id}
             useTable
+            totalTuneCount={totalTuneCount}
             onSelect={(tune) => { setOverrideTune(tune); setChangeTuneOpen(false) }}
           />
         </div>
@@ -499,6 +506,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
             psalmMeter={primaryTune?.meter ?? null}
             psalmId={psalm.id}
             useTable
+            totalTuneCount={totalTuneCount}
             onSelect={(tune) => { setOverrideTune(tune); setNoRecDialogOpen(false) }}
           />
         </div>
