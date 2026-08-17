@@ -967,14 +967,27 @@ export function SingingView({
   // shrink. The onceRef ensures we only do this once per mount — repeated
   // calls would cause visible micro-jitter. Pairs with the
   // `overscroll-behavior-y: contain` baseline in globals.css.
+  //
+  // The sibling effect above locks documentElement.style.overflow = 'hidden',
+  // which would normally swallow the first-touch scrollTo (no scrollable
+  // document → iOS doesn't see a scroll target). Briefly unset overflow for
+  // one paint frame so iOS observes a real scroll, then re-lock. The blink
+  // is invisible (~16ms) and the lock is restored on the very next frame.
   const onceRef = useRef(false)
   useEffect(() => {
     const handler = () => {
       if (onceRef.current) return
       onceRef.current = true
-      window.scrollTo(0, 0)
       window.removeEventListener('touchstart', handler)
       window.removeEventListener('pointerdown', handler)
+      // Unlock documentElement for one paint so iOS sees a scroll target
+      document.documentElement.style.overflow = ''
+      requestAnimationFrame(() => {
+        window.scrollTo(0, 0)
+        requestAnimationFrame(() => {
+          document.documentElement.style.overflow = 'hidden'
+        })
+      })
     }
     window.addEventListener('touchstart', handler, { passive: true, once: false })
     window.addEventListener('pointerdown', handler, { passive: true, once: false })
