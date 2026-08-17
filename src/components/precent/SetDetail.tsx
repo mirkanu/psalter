@@ -27,6 +27,7 @@ import { PsalmPickerModal } from '@/components/PsalmPickerModal'
 import { TunePickerDialog } from '@/components/tune-picker/TunePickerDialog'
 import { PastePsalmsDialog } from '@/components/precent/PastePsalmsDialog'
 import { SetItemsSortableList } from '@/components/precent/SetItemsSortableList'
+import { stripDoubleMeterSuffix } from '@/lib/meter-abbrev'
 import type { PsalmRow } from '@/components/PsalmListingGrid'
 import type { TuneRow } from '@/components/TuneTable'
 
@@ -177,9 +178,7 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById, tuneTi
     const rawMeter = item.effectiveVersionId != null
       ? (meterByVersionId[item.effectiveVersionId] ?? psalmMeterById[item.psalmId] ?? null)
       : (psalmMeterById[item.psalmId] ?? null)
-    // Strip "D" (Double) suffix so "66 66 D" matches tunes stored as "66 66"
-    const meter = rawMeter?.replace(/\s+D$/i, '') ?? null
-    setTunePickerPsalmMeter(meter)
+    setTunePickerPsalmMeter(stripDoubleMeterSuffix(rawMeter))
     setTunePickerPsalmId(item.psalmId)
     // effectiveVersionId (not the raw, often-null psalmVersionId) so the "Historically sung for
     // this psalm" tier section shows even when this set item never got an explicit a/b version
@@ -347,6 +346,7 @@ export function SetDetail({ set, psalmListRows, allTunes, psalmMeterById, tuneTi
         psalmMeter={tunePickerPsalmMeter}
         psalmId={tunePickerPsalmId}
         tuneTiers={tunePickerVersionId != null ? tuneTiersByVersionId[tunePickerVersionId] ?? null : null}
+        totalTuneCount={allTunes.length}
         onSelect={handleSelectTune}
       />
 

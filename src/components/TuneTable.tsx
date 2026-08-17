@@ -51,6 +51,17 @@ interface TuneTableProps {
   hideMeterFilter?: boolean     // hide the meter filter select (modal mode with locked meter)
   psalmId?: number              // highlight recommended tunes for this psalm
   /**
+   * 2026-08-17: true tune-catalog size, for the "N tunes (filtered from TOTAL, showing only
+   * matching METER meter)" count text shown whenever hideMeterFilter is set. `tunes` itself is
+   * NOT a reliable source for this — /precent passes the full catalog (tunes.length already
+   * correct) but the Sing view and Study tab pass an already meter-scoped array (tunes.length
+   * would read e.g. 128 instead of the true 170), which is what caused those two surfaces to
+   * show "128 tunes (filtered from 128)" instead of "...from 170". Falls back to tunes.length
+   * when omitted, so standalone-/tunes-page and any caller that already passes the full catalog
+   * need no changes.
+   */
+  totalTuneCount?: number
+  /**
    * TSEL-01/D-13: when supplied (precentor picker only), rows are grouped Backup → Historical → Other via
    * the shared TieredTuneRowList. Absent on the standalone /tunes page, which stays untiered (D-07).
    */
@@ -122,7 +133,7 @@ export function truncatePsalmIds(ids: number[], limit: number): string {
 export const PSALM_IDS_LIMIT_DESKTOP = 8
 export const PSALM_IDS_LIMIT_MOBILE = 3
 
-export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideMeterFilter, psalmId, tuneTiers, isIOS: isIOSProp }: TuneTableProps) {
+export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideMeterFilter, psalmId, tuneTiers, totalTuneCount, isIOS: isIOSProp }: TuneTableProps) {
   const tiered = shouldTierRows(tuneTiers)
   const router = useRouter()
   const [query, setQuery] = useState('')
@@ -792,11 +803,17 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
       </div>
       </div>
 
-      {/* Results bar */}
+      {/* Results bar. 2026-08-17: hideMeterFilter (the meter-locked picker — Sing view, Study
+          tab, /precent) always shows the parenthetical, spelling out WHY the count is narrower
+          than the full catalog ("showing only matching CM meter") rather than leaving the user to
+          infer it. totalTuneCount (not tunes.length) is the true catalog size — see its prop doc
+          for why tunes.length alone is unreliable for this on two of those three surfaces. */}
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
           {filtered.length} {filtered.length === 1 ? 'tune' : 'tunes'}
-          {hasFilter && ` (filtered from ${tunes.length})`}
+          {hideMeterFilter
+            ? ` (filtered from ${totalTuneCount ?? tunes.length}${initialMeter ? `, showing only matching ${initialMeter} meter` : ''})`
+            : hasFilter && ` (filtered from ${totalTuneCount ?? tunes.length})`}
         </p>
         {!hideExport && (
           <Button

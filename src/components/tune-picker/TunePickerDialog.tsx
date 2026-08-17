@@ -50,6 +50,13 @@ export interface TunePickerDialogProps {
    * `true` = precentor full table (TuneTable inside).
    */
   useTable?: boolean
+  /**
+   * 2026-08-17: true tune-catalog size — see TuneTable's totalTuneCount doc. Mode A only (Mode B's
+   * TieredTuneRowList has no count text). Callers whose `tunes` is already the full catalog
+   * (e.g. /precent's allTunes) can pass `tunes.length`; callers whose `tunes` is pre-filtered to
+   * one meter (Sing view, Study tab) must pass the real total separately.
+   */
+  totalTuneCount?: number
 }
 
 export function TunePickerDialog({
@@ -62,6 +69,7 @@ export function TunePickerDialog({
   currentTuneId,
   onSelect,
   useTable = false,
+  totalTuneCount,
 }: TunePickerDialogProps) {
   // Mode A — precentor surface: full TuneTable inside a wide Dialog.
   if (useTable) {
@@ -80,6 +88,7 @@ export function TunePickerDialog({
               hideMeterFilter
               psalmId={psalmId ?? undefined}
               tuneTiers={tuneTiers}
+              totalTuneCount={totalTuneCount}
             />
           </div>
         </DialogContent>

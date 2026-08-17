@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { abbreviateMeter, groupMeterTag } from './meter-abbrev'
+import { abbreviateMeter, groupMeterTag, stripDoubleMeterSuffix } from './meter-abbrev'
 
 describe('abbreviateMeter', () => {
   const cases: [string | null | undefined, string | null][] = [
@@ -52,5 +52,27 @@ describe('groupMeterTag', () => {
     expect(groupMeterTag(['CM', '66 66 88'])).toBe('HM')                  // Ps 148
     expect(groupMeterTag(['66 66 88', '87 87'])).toBeNull()               // Ps 136 (mixed)
     expect(groupMeterTag(Array(22).fill('CM'))).toBeNull()                // Ps 119
+  })
+})
+
+describe('stripDoubleMeterSuffix', () => {
+  it('strips a trailing " D" (case-insensitive) from a raw meter string', () => {
+    expect(stripDoubleMeterSuffix('66 66 D')).toBe('66 66')   // Ps 143 Second Version
+    expect(stripDoubleMeterSuffix('76 76 D')).toBe('76 76')
+    expect(stripDoubleMeterSuffix('66 66 d')).toBe('66 66')
+  })
+  it('leaves non-Double meters unchanged', () => {
+    expect(stripDoubleMeterSuffix('CM')).toBe('CM')
+    expect(stripDoubleMeterSuffix('66 66 88')).toBe('66 66 88')
+    expect(stripDoubleMeterSuffix('10 10 10 10 10')).toBe('10 10 10 10 10')
+  })
+  it('does not strip a bare trailing "D" glued to a digit (only a space-separated D)', () => {
+    expect(stripDoubleMeterSuffix('CMD')).toBe('CMD')
+    expect(stripDoubleMeterSuffix('DCM')).toBe('DCM')
+  })
+  it('handles null/undefined/empty', () => {
+    expect(stripDoubleMeterSuffix(null)).toBeNull()
+    expect(stripDoubleMeterSuffix(undefined)).toBeNull()
+    expect(stripDoubleMeterSuffix('')).toBeNull()
   })
 })
