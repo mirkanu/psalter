@@ -24,9 +24,9 @@ function readDismissed(): boolean {
  *
  * Fixed positioning is required (not document flow): `/psalms/[id]` uses
  * `h-[calc(100vh-3.5rem)]` fixed-height math keyed to the 56px SiteHeader,
- * and an in-flow banner would overflow that layout. Bottom-centre placement
- * (with `max-w-md`) keeps it clear of the Toaster, which sits bottom-right
- * with an 88px offset (see `layout.tsx`).
+ * and an in-flow banner would overflow that layout. Top-centre placement
+ * directly under the 56px SiteHeader (top-14) keeps the message prominent
+ * for first-time desktop visitors without obscuring page content.
  */
 export function DesktopOptimisedBanner() {
   const isDesktop = useMediaQuery('(min-width: 768px)')
@@ -50,7 +50,7 @@ export function DesktopOptimisedBanner() {
   return (
     <div
       role="status"
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-md bg-muted border border-border rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 text-sm text-muted-foreground"
+      className="fixed top-14 left-1/2 -translate-x-1/2 z-40 max-w-md bg-muted border border-border rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 text-sm text-muted-foreground"
     >
       <span>This website is optimised for use on phones.</span>
       <button
