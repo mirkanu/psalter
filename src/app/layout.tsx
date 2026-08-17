@@ -7,6 +7,7 @@ import { Toaster } from "sonner";
 import Script from "next/script";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ToastTapDismiss } from "@/components/ToastTapDismiss";
+import { DesktopOptimisedBanner } from "@/components/DesktopOptimisedBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -72,6 +73,10 @@ export default function RootLayout({
           <Toaster richColors closeButton offset={{ bottom: '88px' }} mobileOffset={{ bottom: '88px' }} />
           <ToastTapDismiss />
           <SiteFooter />
+          {/* Quick task 260817-p17: fixed-positioned, so its place in the
+              tree does not affect layout — placing it last keeps it above
+              other content in paint order. */}
+          <DesktopOptimisedBanner />
           {process.env.NEXT_PUBLIC_PSALTER_UMAMI_WEBSITE_ID && (
             <Script
               src="https://umami.gsdlabs.dev/script.js"
