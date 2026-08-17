@@ -605,7 +605,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type here to search by tune name or Psalter number (RP or PRCA)"
+          placeholder="Search by tune name or psalm number"
           aria-label="Search tunes"
           className="pl-9 pr-9 w-full"
         />
