@@ -167,6 +167,23 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
   const showColHymn = colHymn && !onSelectTune
   const showColInPrca = colInPrca && !onSelectTune
   const showColRecording = colRecording && !onSelectTune
+  // 2026-08-16 (sign-off): the picker modal always calls TuneTable with
+  // initialMeter locked to the active psalm's meter (hideMeterFilter is set
+  // alongside it in TunePickerDialog Mode A) — every visible row already
+  // shares one meter, so the Meter column is pure redundancy there. Hidden
+  // AND unselectable in modal mode (same always-off treatment as RP#/PRCA#
+  // above), never touching the standalone /tunes page's own colMeter pref.
+  const showColMeter = colMeter && !onSelectTune
+  // Mood gets the opposite treatment: the width Meter no longer needs (most
+  // valuable on narrow/mobile layouts, but kept simple — same at every size)
+  // goes to defaulting Mood ON in the picker. Deliberately NOT the same
+  // colMood/setColMood pair the standalone page persists — modalColMood is
+  // local-only (starts true every time a picker mounts, independently
+  // toggleable within that session) so this default can't leak into or be
+  // overridden by the standalone page's own Mood preference or its
+  // mobile-init effect below.
+  const [modalColMood, setModalColMood] = useState(true)
+  const showColMood = onSelectTune ? modalColMood : colMood
   // Track whether mobile defaults have been applied.
   // v2: bumped in Phase 11 so the corrected TLIST-02 defaults (Recording ON) re-apply once for users whose
   // browser already ran the v1 effect, which hid Recording.
@@ -402,7 +419,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
     ro.observe(wrap)
     ro.observe(table)
     return () => ro.disconnect()
-  }, [colMeter, colPsalms, colMood, showColRp, showColPrca, showColHymn, showColInPrca, showColRecording, filtered.length])
+  }, [showColMeter, colPsalms, showColMood, showColRp, showColPrca, showColHymn, showColInPrca, showColRecording, filtered.length])
 
   const hasFilter = query || selectedMeter !== 'all' || selectedMood !== 'all' || onlyPrca || onlyFamous
   const hasAdvancedFilter = selectedMeter !== 'all' || selectedMood !== 'all' || onlyPrca || onlyFamous
@@ -423,7 +440,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
 
   const visibleColumnCount =
     1 +
-    (colMeter ? 1 : 0) + (colPsalms ? 1 : 0) + (colMood ? 1 : 0) + (showColRp ? 1 : 0) +
+    (showColMeter ? 1 : 0) + (colPsalms ? 1 : 0) + (showColMood ? 1 : 0) + (showColRp ? 1 : 0) +
     (showColPrca ? 1 : 0) + (showColHymn ? 1 : 0) + (showColInPrca ? 1 : 0) +
     (showColRecording ? 1 : 0)
 
@@ -454,7 +471,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
             )}
           </span>
         </td>
-        {colMeter && (
+        {showColMeter && (
           <td className="px-3 py-2.5 text-muted-foreground w-14 overflow-hidden">
             {tune.meter ? (
               <Popover>
@@ -480,7 +497,7 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
             ) : <span className="text-muted-foreground">—</span>}
           </td>
         )}
-        {colMood && (
+        {showColMood && (
           <td className="px-3 py-2.5">
             {tune.moods.length > 0 ? (
               <span className="text-muted-foreground text-xs">{tune.moods.join(', ')}</span>
@@ -698,10 +715,11 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
             <div className="border-t border-border/50 pt-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Columns</p>
               <div className="flex flex-wrap gap-x-6 gap-y-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" title={onSelectTune ? 'Hidden in modal picker — this view is already filtered to one meter' : undefined}>
                   <Checkbox
                     id="col-meter"
-                    checked={colMeter}
+                    checked={colMeter && !onSelectTune}
+                    disabled={!!onSelectTune}
                     onCheckedChange={(v) => setColMeter(!!v)}
                   />
                   <label htmlFor="col-meter" className="text-sm cursor-pointer">Meter</label>
@@ -717,8 +735,8 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
                 <div className="flex items-center gap-2">
                   <Checkbox
                     id="col-mood"
-                    checked={colMood}
-                    onCheckedChange={(v) => setColMood(!!v)}
+                    checked={showColMood}
+                    onCheckedChange={(v) => (onSelectTune ? setModalColMood(!!v) : setColMood(!!v))}
                   />
                   <label htmlFor="col-mood" className="text-sm cursor-pointer">Mood</label>
                 </div>
@@ -833,13 +851,13 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
                     column is what actually keeps the default mobile set (Name/Meter/Psalms/Recording)
                     inside the viewport without horizontal scroll (TLIST-02). */}
                 <th className={`text-left px-3 py-2.5 font-medium text-muted-foreground ${stickyTh}`} style={stickyThStyle}>Tune Name</th>
-                {colMeter && (
+                {showColMeter && (
                   <th className={`text-left px-3 py-2.5 font-medium text-muted-foreground w-14 ${stickyTh}`} style={stickyThStyle}>Meter</th>
                 )}
                 {colPsalms && (
                   <th className={`text-left px-3 py-2.5 font-medium text-muted-foreground w-[27%] ${stickyTh}`} style={stickyThStyle}>Psalms</th>
                 )}
-                {colMood && (
+                {showColMood && (
                   <th className={`text-left px-3 py-2.5 font-medium text-muted-foreground w-24 ${stickyTh}`} style={stickyThStyle}>Mood</th>
                 )}
                 {showColRp && (
