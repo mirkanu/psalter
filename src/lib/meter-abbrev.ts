@@ -6,6 +6,23 @@
  * standard short form — it is the correct answer, not a fallback, so it is returned verbatim.
  */
 
+/**
+ * 2026-08-17: strips a trailing " D" (Double meter) suffix from a raw psalm-version meter string
+ * so it matches how tunes.meter is stored — e.g. "66 66 D" -> "66 66". A doubled psalm version is
+ * sung to two repetitions of the SAME (non-doubled) tune; tunes.meter never itself carries a "D"
+ * suffix, so fetching/filtering tunes by the raw, un-stripped psalm-version meter finds zero
+ * matches (confirmed live: Psalm 143 Second Version, meter "66 66 D", has exactly 1 matching tune
+ * at "66 66" — the Sing view and Study tab tune pickers showed "0 tunes" before this fix, while
+ * /precent's picker already stripped the suffix inline in SetDetail.tsx's handleTuneClick).
+ * Distinct from abbreviateMeter() above, which produces a short DISPLAY code (CM, LM, CMD) for a
+ * fully-formed meter string — this operates on the raw numeric-syllable string used for DB
+ * lookups, before any abbreviation.
+ */
+export function stripDoubleMeterSuffix(meter: string | null | undefined): string | null {
+  if (!meter) return null
+  return meter.replace(/\s+D$/i, '')
+}
+
 // Longer codes first: 'DCM' must win before 'CM', 'SMD' before 'SM', etc.
 const LETTER_CODES = ['CMD', 'DCM', 'LMD', 'SMD', 'CM', 'LM', 'SM'] as const
 

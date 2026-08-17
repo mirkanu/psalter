@@ -52,6 +52,12 @@ interface Props {
    * renders every tune in the 'other' tier.
    */
   tuneTiers?: import('@/db/queries/tunes').PsalmVersionTuneTiers
+  /**
+   * 2026-08-17: true tune-catalog size — alternateTunes here is already meter-scoped
+   * (fetchTunesByMeter), so alternateTunes.length isn't the total the tune-picker's "filtered
+   * from N" count text needs. See TuneTable's totalTuneCount doc.
+   */
+  totalTuneCount?: number
   meter: string | null
   stanzaMeter: string | null
   lyrics: string
@@ -111,6 +117,7 @@ export function SingingView({
   alternateTunes,
   editoriallyLinkedTuneIds,
   tuneTiers,
+  totalTuneCount,
   meter,
   stanzaMeter,
   lyrics,
@@ -1136,6 +1143,7 @@ export function SingingView({
         tuneTiers={tuneTiers}
         psalmMeter={meter}
         psalmId={psalm.id}
+        totalTuneCount={totalTuneCount}
         onSelect={handleTuneSelect}
       />
 

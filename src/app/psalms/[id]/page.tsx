@@ -9,12 +9,13 @@ import {
   getEditoriallyLinkedTuneIdsForPsalm,
   fetchPsalmListRows,
 } from '@/db/queries/psalms'
-import { fetchTunesByMeter, fetchTuneMelismaStatus, fetchPsalmVersionTuneTiers, enrichAlternateTunesToTuneRows } from '@/db/queries/tunes'
+import { fetchTunesByMeter, fetchTuneMelismaStatus, fetchPsalmVersionTuneTiers, enrichAlternateTunesToTuneRows, fetchTuneCount } from '@/db/queries/tunes'
 import { SingingView } from '@/components/singing/SingingView'
 import { parseSlug, deriveVersionSlug, stripStar, slugToDisplayTitle } from '@/lib/psalm-slugs'
 import { deriveTuneJpgPages } from '@/lib/tune-jpg-urls'
 import { tuneNameToSlug } from '@/lib/tune-slug'
 import { getPsalmNeighbors } from '@/lib/psalm-navigation'
+import { stripDoubleMeterSuffix } from '@/lib/meter-abbrev'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -109,7 +110,13 @@ export default async function PsalmPage({ params }: PageProps) {
   const isPlaceholderTune = !!rawTune?.name?.toLowerCase().includes('aots')
   const primaryTuneRow = isPlaceholderTune ? null : rawTune
 
-  const primaryMeter = activeVersion?.meter ?? rawTune?.meter ?? null
+  // stripDoubleMeterSuffix: a psalm version's meter can carry a trailing " D" (e.g. "66 66 D" for
+  // a doubled/DCM-style version), but tunes.meter never does — a doubled psalm is sung to two
+  // repetitions of the same non-doubled tune. Without stripping, fetchTunesByMeter finds zero
+  // matches for any Double-meter psalm (confirmed live: Psalm 143 Second Version showed "0 tunes"
+  // in the Sing view's tune picker before this fix — /precent's picker already stripped this
+  // inline in SetDetail.tsx's handleTuneClick).
+  const primaryMeter = stripDoubleMeterSuffix(activeVersion?.meter ?? rawTune?.meter ?? null)
   const rawAlternateTunes = primaryMeter ? await fetchTunesByMeter(primaryMeter) : []
   // Phase 16 R3: enrich to full TuneRow shape so TunePickerDialog (Mode A, the
   // precentor-style table) receives all the metadata fields it reads
@@ -122,6 +129,10 @@ export default async function PsalmPage({ params }: PageProps) {
   // TSEL-01/D-13: per-psalm-version Backup/Historical tune ids for the tune-switcher sheet.
   // Mirrors src/app/psalms/[id]/study/page.tsx, which already does this for the Study tab.
   const tuneTiers = activeVersion ? await fetchPsalmVersionTuneTiers(activeVersion.id) : undefined
+  // 2026-08-17: alternateTunes above is already meter-scoped (fetchTunesByMeter), so its length
+  // isn't the true catalog size the tune-picker's count text needs — see TuneTable's
+  // totalTuneCount doc.
+  const totalTuneCount = await fetchTuneCount()
 
   // Wrap primaryTune in TuneOption (AlternateTune) shape — used uniformly by SingingView
   const primaryTune = primaryTuneRow
@@ -200,6 +211,7 @@ export default async function PsalmPage({ params }: PageProps) {
         alternateTunes={alternateTunes}
         editoriallyLinkedTuneIds={Array.from(editorialSet)}
         tuneTiers={tuneTiers}
+        totalTuneCount={totalTuneCount}
         meter={primaryMeter}
         stanzaMeter={stanzaMeter}
         lyrics={lyrics}

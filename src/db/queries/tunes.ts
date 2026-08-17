@@ -29,6 +29,17 @@ function isPlaceholderTuneName(name: string): boolean {
   return PLACEHOLDER_PREFIXES.some((p) => lower.startsWith(p))
 }
 
+/**
+ * 2026-08-17: total tune catalog size, for the tune-picker's "N tunes (filtered from TOTAL,
+ * showing only matching METER meter)" count. Fetches only `name` (not full rows) — filtering
+ * mirrors fetchAllTunes()'s isPlaceholderTuneName exclusion exactly so this stays the same
+ * number fetchAllTunes()'s callers (e.g. /precent's allTunes.length) already see.
+ */
+export async function fetchTuneCount(): Promise<number> {
+  const rows = await db.select({ name: tunes.name }).from(tunes)
+  return rows.filter((r) => !isPlaceholderTuneName(r.name)).length
+}
+
 export async function fetchAllTunes() {
   const rows = await db.query.tunes.findMany({
     columns: {
