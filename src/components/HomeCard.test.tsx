@@ -93,6 +93,7 @@ describe('HomeCard (quick task 260817-ssc)', () => {
         description="d"
         href="/daily"
       >
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- plain <a> is deliberate here to simulate an arbitrary caller-provided interactive child in this jsdom unit test, not a real page navigation */}
         <a href="/psalms/42">Sing psalm</a>
       </HomeCard>
     )

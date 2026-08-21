@@ -1,18 +1,28 @@
 export const dynamic = 'force-dynamic'
 import { Home, Library, CalendarDays, Music2, Church } from "lucide-react"
 import { fetchAllDailyReadings } from "@/db/queries/daily"
+import { fetchPublishedPosts } from "@/db/queries/changelog"
 import { getDayOfYear } from "@/lib/daily"
 import { DailyTodayCard } from "@/components/DailyTodayCard"
 import { HomeCard } from "@/components/HomeCard"
+import { ChangelogBanner } from "@/components/ChangelogBanner"
+import { ExploreHighlights } from "@/components/ExploreHighlights"
 
 export default async function HomePage() {
-  const readings = await fetchAllDailyReadings()
+  const [readings, posts] = await Promise.all([
+    fetchAllDailyReadings(),
+    fetchPublishedPosts(),
+  ])
   const todayDay = getDayOfYear()
   const todayReading = readings.find((r) => r.dayNumber === todayDay) ?? null
+  const latestPost = posts[0] ?? null
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <section>
+        <div className="text-center mb-6">
+          <ChangelogBanner post={latestPost} />
+        </div>
         <div className="text-center max-w-3xl mx-auto mb-10">
           <h1 className="text-3xl sm:text-4xl font-bold">
             Helping CPRC Saints Sing the Psalms!
@@ -35,7 +45,9 @@ export default async function HomePage() {
             title="Explore"
             href="/explore"
             description="The psalms categorised in different ways. Are you struggling or thankful or joyful? Find a suitable psalm by mood, theme or topic."
-          />
+          >
+            <ExploreHighlights />
+          </HomeCard>
           <HomeCard
             icon={CalendarDays}
             title="Daily"
