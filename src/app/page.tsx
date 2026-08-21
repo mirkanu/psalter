@@ -33,7 +33,7 @@ export default async function HomePage() {
             Protestant Reformed Church, Ballymena.
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           <HomeCard
             icon={Home}
             title="Choose Psalm"
@@ -77,7 +77,7 @@ export default async function HomePage() {
             Tools to help precent psalms in public worship
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           <HomeCard
             icon={Music2}
             title="Tunes Database"
