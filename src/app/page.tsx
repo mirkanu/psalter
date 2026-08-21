@@ -3,7 +3,7 @@ import { Home, Library, CalendarDays, Music2, Church } from "lucide-react"
 import { fetchAllDailyReadings } from "@/db/queries/daily"
 import { fetchPublishedPosts } from "@/db/queries/changelog"
 import { getDayOfYear } from "@/lib/daily"
-import { DailyTodayCard } from "@/components/DailyTodayCard"
+import { TodayPsalmBadge } from "@/components/TodayPsalmBadge"
 import { HomeCard } from "@/components/HomeCard"
 import { ChangelogBanner } from "@/components/ChangelogBanner"
 import { ExploreHighlights } from "@/components/ExploreHighlights"
@@ -33,7 +33,7 @@ export default async function HomePage() {
             Protestant Reformed Church, Ballymena.
           </p>
         </div>
-        <div className="columns-1 md:columns-2 gap-6 [&>div]:mb-6 [&>div]:break-inside-avoid last:[&>div]:mb-0">
+        <div className="columns-1 md:columns-2 gap-x-6 [&>div]:mb-6 [&>div]:break-inside-avoid last:[&>div]:mb-0">
           <div>
             <HomeCard
               icon={Home}
@@ -57,12 +57,19 @@ export default async function HomePage() {
               icon={CalendarDays}
               title="Daily"
               href="/daily"
-              description="The Psalter divided into 365 days. Sing through the whole Psalter in one year!"
-            >
-              {todayReading && (
-                <DailyTodayCard reading={todayReading} todayDay={todayDay} />
-              )}
-            </HomeCard>
+              description={
+                <>
+                  The Psalter divided into 365 days. Sing through the whole
+                  Psalter in one year!{" "}
+                  {todayReading && (
+                    <>
+                      Today&apos;s Psalm:
+                      <TodayPsalmBadge reading={todayReading} />
+                    </>
+                  )}
+                </>
+              }
+            />
           </div>
           <div>
             <HomeCard
