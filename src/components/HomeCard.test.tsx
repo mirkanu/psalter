@@ -54,7 +54,7 @@ describe('HomeCard (quick task 260817-ssc)', () => {
     expect(anchor?.getAttribute('rel')).toContain('noopener')
   })
 
-  it('renders children when provided', () => {
+  it('renders children inside the same Card as the title (regression guard for the stretch bug)', () => {
     const { container } = render(
       <HomeCard
         icon={Home}
@@ -65,11 +65,27 @@ describe('HomeCard (quick task 260817-ssc)', () => {
         <span data-testid="daily-child">today content</span>
       </HomeCard>
     )
-    expect(container.querySelector('[data-testid="daily-child"]')).not.toBeNull()
-    expect(container.textContent).toContain('today content')
+    const card = container.querySelector('[data-slot="card"]')
+    expect(card).not.toBeNull()
+    expect(card?.textContent).toContain('Daily')
+    expect(card?.querySelector('[data-testid="daily-child"]')).not.toBeNull()
   })
 
-  it('does not nest a link inside the outer link when children are provided', () => {
+  it('renders exactly one Card element when children are provided', () => {
+    const { container } = render(
+      <HomeCard
+        icon={Home}
+        title="Daily"
+        description="d"
+        href="/daily"
+      >
+        <span data-testid="daily-child">today content</span>
+      </HomeCard>
+    )
+    expect(container.querySelectorAll('[data-slot="card"]').length).toBe(1)
+  })
+
+  it('does not nest an anchor inside another anchor when children contain their own link', () => {
     const { container } = render(
       <HomeCard
         icon={Home}
@@ -80,16 +96,7 @@ describe('HomeCard (quick task 260817-ssc)', () => {
         <a href="/psalms/42">Sing psalm</a>
       </HomeCard>
     )
-    // Find the outer wrapper element. If children are present, the outer is a <div>,
-    // and the only <a> directly inside it should be the link wrapping the card body
-    // — but the child <a> must NOT be nested inside that link.
-    const outerDiv = container.querySelector('div > div')
-    expect(outerDiv).not.toBeNull()
-    // The inner link wraps the header; the child <a> must be a sibling, not a child.
-    const outerLinkOrArea = outerDiv?.querySelector(':scope > a')
-    if (outerLinkOrArea) {
-      expect(outerLinkOrArea.querySelector('a')).toBeNull()
-    }
+    expect(container.querySelectorAll('a a').length).toBe(0)
   })
 
   it('wraps the entire card in a single link when no children are provided', () => {
