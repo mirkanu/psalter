@@ -11,7 +11,7 @@ import {
 interface HomeCardProps {
   icon: LucideIcon
   title: string
-  description: string
+  description: React.ReactNode
   href: string
   external?: boolean
   children?: React.ReactNode
@@ -25,7 +25,7 @@ function CardInner({
 }: {
   icon: LucideIcon
   title: string
-  description: string
+  description: React.ReactNode
   external?: boolean
 }) {
   return (
@@ -56,8 +56,8 @@ function CardInner({
  * provided, the header+description fragment is wrapped in a link that scopes
  * ONLY to that fragment (not the whole Card), and `children` render in their
  * own `CardContent` as a sibling of that link — both live inside the same
- * Card, so the caller's own interactive children (e.g. DailyTodayCard's "Sing
- * psalm" Link) never become nested anchors, while the card still shares one
+ * Card, so the caller's own interactive children (e.g. ExploreHighlights'
+ * category links) never become nested anchors, while the card still shares one
  * bordered surface with no interior void. When there are no children, the
  * entire Card surface is the link (maximum click target, previous behaviour).
  */
