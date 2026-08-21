@@ -33,38 +33,46 @@ export default async function HomePage() {
             Protestant Reformed Church, Ballymena.
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-          <HomeCard
-            icon={Home}
-            title="Choose Psalm"
-            href="/psalms"
-            description="Now you can sing the psalms more easily at home! Show lyrics and a suggested tune with embedded music for easy singing. Also includes study helps."
-          />
-          <HomeCard
-            icon={Library}
-            title="Explore"
-            href="/explore"
-            description="The psalms categorised in different ways. Are you struggling or thankful or joyful? Find a suitable psalm by mood, theme or topic."
-          >
-            <ExploreHighlights />
-          </HomeCard>
-          <HomeCard
-            icon={CalendarDays}
-            title="Daily"
-            href="/daily"
-            description="The Psalter divided into 365 days. Sing through the whole Psalter in one year!"
-          >
-            {todayReading && (
-              <DailyTodayCard reading={todayReading} todayDay={todayDay} />
-            )}
-          </HomeCard>
-          <HomeCard
-            icon={Music2}
-            title="Learn Tunes"
-            href="https://soundcloud.com/manuel-kuhs/sets/cprc-psalm-tunes"
-            external
-            description="Listen to a playlist containing almost all the tunes sung in the CPRC."
-          />
+        <div className="columns-1 md:columns-2 gap-6 [&>div]:mb-6 [&>div]:break-inside-avoid last:[&>div]:mb-0">
+          <div>
+            <HomeCard
+              icon={Home}
+              title="Choose Psalm"
+              href="/psalms"
+              description="Now you can sing the psalms more easily at home! Show lyrics and a suggested tune with embedded music for easy singing. Also includes study helps."
+            />
+          </div>
+          <div>
+            <HomeCard
+              icon={Library}
+              title="Explore"
+              href="/explore"
+              description="The psalms categorised in different ways. Are you struggling or thankful or joyful? Find a suitable psalm by mood, theme or topic."
+            >
+              <ExploreHighlights />
+            </HomeCard>
+          </div>
+          <div>
+            <HomeCard
+              icon={CalendarDays}
+              title="Daily"
+              href="/daily"
+              description="The Psalter divided into 365 days. Sing through the whole Psalter in one year!"
+            >
+              {todayReading && (
+                <DailyTodayCard reading={todayReading} todayDay={todayDay} />
+              )}
+            </HomeCard>
+          </div>
+          <div>
+            <HomeCard
+              icon={Music2}
+              title="Learn Tunes"
+              href="https://soundcloud.com/manuel-kuhs/sets/cprc-psalm-tunes"
+              external
+              description="Listen to a playlist containing almost all the tunes sung in the CPRC."
+            />
+          </div>
         </div>
       </section>
 
