@@ -39,7 +39,7 @@ export function DailyTodayCard({ reading, todayDay }: DailyTodayCardProps) {
         <time className="text-sm text-muted-foreground">{dateLabel}</time>
         <span className="text-xs text-muted-foreground">Day {todayDay}</span>
       </div>
-      <p className="text-[28px] font-semibold leading-tight text-foreground mt-2">{ref}</p>
+      <p className="text-2xl font-semibold leading-tight text-foreground mt-2">{ref}</p>
       {bibleTitle && (
         <p className="text-sm text-muted-foreground italic mt-1 truncate">{bibleTitle}</p>
       )}
