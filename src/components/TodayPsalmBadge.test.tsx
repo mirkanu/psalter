@@ -21,15 +21,19 @@ describe('TodayPsalmBadge (quick task 260821-p2y)', () => {
     expect(container.innerHTML).toBe('')
   })
 
-  it('renders the formatted psalm reference as a non-link badge', () => {
+  it('renders the formatted psalm reference as a link to /psalms/{id}', () => {
     const { container } = render(<TodayPsalmBadge reading={reading} />)
     expect(container.textContent).toContain('Psalm 92:9-15')
-    expect(container.querySelector('a')).toBeNull()
+    const anchor = container.querySelector('a')
+    expect(anchor).not.toBeNull()
+    expect(anchor?.getAttribute('href')).toBe('/psalms/92')
   })
 
-  it('matches the ExploreHighlights pill font size (text-xs)', () => {
+  it('matches the ExploreHighlights pill font size (text-xs) and border chrome', () => {
     const { container } = render(<TodayPsalmBadge reading={reading} />)
-    const badge = container.querySelector('span')
-    expect(badge?.className).toContain('text-xs')
+    const anchor = container.querySelector('a')
+    expect(anchor?.className).toContain('text-xs')
+    expect(anchor?.className).toContain('rounded-md')
+    expect(anchor?.className).toContain('border')
   })
 })
