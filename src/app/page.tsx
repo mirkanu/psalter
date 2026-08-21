@@ -33,7 +33,7 @@ export default async function HomePage() {
             Protestant Reformed Church, Ballymena.
           </p>
         </div>
-        <div className="columns-1 md:columns-2 gap-x-6 [&>div]:mb-6 [&>div]:break-inside-avoid last:[&>div]:mb-0">
+        <div className="columns-1 md:columns-2 gap-x-6 [&>div]:mb-6 [&>div]:break-inside-avoid">
           <div>
             <HomeCard
               icon={Home}
@@ -57,19 +57,10 @@ export default async function HomePage() {
               icon={CalendarDays}
               title="Daily"
               href="/daily"
-              description={
-                <>
-                  The Psalter divided into 365 days. Sing through the whole
-                  Psalter in one year!{" "}
-                  {todayReading && (
-                    <>
-                      Today&apos;s Psalm:
-                      <TodayPsalmBadge reading={todayReading} />
-                    </>
-                  )}
-                </>
-              }
-            />
+              description="The Psalter divided into 365 days. Sing through the whole Psalter in one year!"
+            >
+              {todayReading && <TodayPsalmBadge reading={todayReading} />}
+            </HomeCard>
           </div>
           <div>
             <HomeCard
