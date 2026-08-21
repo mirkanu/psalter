@@ -12,7 +12,7 @@ interface DailyTodayCardProps {
 export function DailyTodayCard({ reading, todayDay }: DailyTodayCardProps) {
   if (!reading) {
     return (
-      <div className="bg-muted border border-border rounded-lg border-l-4 border-l-primary p-6">
+      <div>
         <p className="text-muted-foreground">No psalm for today.</p>
       </div>
     )
@@ -34,7 +34,7 @@ export function DailyTodayCard({ reading, todayDay }: DailyTodayCardProps) {
   const bibleTitle = reading.psalm?.bibleTitle ?? ""
 
   return (
-    <div className="bg-muted border border-border rounded-lg border-l-4 border-l-primary p-6">
+    <div>
       <div className="flex items-center gap-2">
         <time className="text-sm text-muted-foreground">{dateLabel}</time>
         <span className="text-xs text-muted-foreground">Day {todayDay}</span>
