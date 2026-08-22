@@ -16,6 +16,18 @@ function makePsalm(verses: unknown[]): PsalmDetail {
   } as unknown as PsalmDetail
 }
 
+function makePsalmWithId(id: number): PsalmDetail {
+  return {
+    id,
+    haddingtonIntro: null,
+    verses: [],
+  } as unknown as PsalmDetail
+}
+
+function openXrefs() {
+  fireEvent.click(screen.getByText('Cross-References'))
+}
+
 describe('StudyContent cross-references section', () => {
   it('renders a linked badge when the topic id is in navesSlugMap', () => {
     const psalm = makePsalm([
@@ -30,6 +42,7 @@ describe('StudyContent cross-references section', () => {
     render(
       <StudyContent psalm={psalm} kjvVerses={psalm.verses} navesSlugMap={{ '5': 'praise' }} />,
     )
+    openXrefs()
     const link = screen.getByText('Praise').closest('a')
     expect(link).not.toBeNull()
     expect(link?.getAttribute('href')).toBe('/explore/naves/praise')
@@ -46,6 +59,7 @@ describe('StudyContent cross-references section', () => {
       },
     ])
     render(<StudyContent psalm={psalm} kjvVerses={psalm.verses} navesSlugMap={{}} />)
+    openXrefs()
     expect(screen.getByText('Obscure Topic').closest('a')).toBeNull()
   })
 
@@ -60,6 +74,7 @@ describe('StudyContent cross-references section', () => {
       },
     ])
     render(<StudyContent psalm={psalm} kjvVerses={psalm.verses} navesSlugMap={{}} />)
+    openXrefs()
     expect(screen.getByText('Justification')).toBeTruthy()
   })
 
@@ -83,6 +98,7 @@ describe('StudyContent cross-references section', () => {
     render(
       <StudyContent psalm={psalm} kjvVerses={psalm.verses} navesSlugMap={{ '5': 'praise' }} />,
     )
+    openXrefs()
     expect(screen.getByTestId('study-xref-verse-1')).toBeTruthy()
     expect(screen.queryByTestId('study-xref-verse-2')).toBeNull()
   })
@@ -99,6 +115,7 @@ describe('StudyContent cross-references section', () => {
     ])
     render(<StudyContent psalm={psalm} kjvVerses={psalm.verses} navesSlugMap={{}} />)
     expect(screen.queryByTestId('study-xref')).toBeNull()
+    expect(screen.queryByText('Cross-References')).toBeNull()
   })
 })
 
@@ -147,11 +164,69 @@ describe('StudyContent collapsible sections + KJV Text removal', () => {
     expect(screen.getByText('An introduction to this psalm.')).toBeTruthy()
   })
 
-  it('shows Cross-References badges immediately on first render with no click', () => {
+  it('shows the Cross-References trigger but not its badges on first render', () => {
     const psalm = makeFullPsalm()
     render(
       <StudyContent psalm={psalm} kjvVerses={psalm.verses} navesSlugMap={{ '5': 'praise' }} />,
     )
+    expect(screen.getByText('Cross-References')).toBeTruthy()
+    expect(screen.queryByText('Praise')).toBeNull()
+  })
+
+  it('reveals Cross-References badges after clicking the trigger', () => {
+    const psalm = makeFullPsalm()
+    render(
+      <StudyContent psalm={psalm} kjvVerses={psalm.verses} navesSlugMap={{ '5': 'praise' }} />,
+    )
+    openXrefs()
     expect(screen.getByText('Praise')).toBeTruthy()
+  })
+})
+
+describe('StudyContent external resource links', () => {
+  function openExternalResources() {
+    fireEvent.click(screen.getByText('External Resources'))
+  }
+
+  it('resolves the three external resource URLs for psalm 16 (exercises zero-padding)', () => {
+    const psalm = makePsalmWithId(16)
+    render(<StudyContent psalm={psalm} kjvVerses={psalm.verses} navesSlugMap={{}} />)
+    openExternalResources()
+    expect(
+      screen.getByText('SermonAudio — Psalm 16').closest('a')?.getAttribute('href'),
+    ).toBe('https://www.sermonaudio.com/gb/sermons/scripture/PSA/16?searchKeyword=%22protestant+reformed%22')
+    expect(
+      screen.getByText("Spurgeon's Commentary").closest('a')?.getAttribute('href'),
+    ).toBe('https://gracegems.org/Spurgeon/016.htm')
+    expect(screen.getByText('Relight.app').closest('a')?.getAttribute('href')).toBe(
+      'https://relight.app/bible/Ps.16',
+    )
+  })
+
+  it('resolves the three external resource URLs for psalm 150 (padStart no-op)', () => {
+    const psalm = makePsalmWithId(150)
+    render(<StudyContent psalm={psalm} kjvVerses={psalm.verses} navesSlugMap={{}} />)
+    openExternalResources()
+    expect(
+      screen.getByText('SermonAudio — Psalm 150').closest('a')?.getAttribute('href'),
+    ).toBe('https://www.sermonaudio.com/gb/sermons/scripture/PSA/150?searchKeyword=%22protestant+reformed%22')
+    expect(
+      screen.getByText("Spurgeon's Commentary").closest('a')?.getAttribute('href'),
+    ).toBe('https://gracegems.org/Spurgeon/150.htm')
+    expect(screen.getByText('Relight.app').closest('a')?.getAttribute('href')).toBe(
+      'https://relight.app/bible/Ps.150',
+    )
+  })
+
+  it('keeps target="_blank" and rel="noopener noreferrer" on all three anchors (T-sox-01)', () => {
+    const psalm = makePsalmWithId(23)
+    render(<StudyContent psalm={psalm} kjvVerses={psalm.verses} navesSlugMap={{}} />)
+    openExternalResources()
+    const labels = ['SermonAudio — Psalm 23', "Spurgeon's Commentary", 'Relight.app']
+    for (const label of labels) {
+      const anchor = screen.getByText(label).closest('a')
+      expect(anchor?.getAttribute('target')).toBe('_blank')
+      expect(anchor?.getAttribute('rel')).toBe('noopener noreferrer')
+    }
   })
 })
