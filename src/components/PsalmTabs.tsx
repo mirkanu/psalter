@@ -5,9 +5,12 @@ import Link from 'next/link'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import type { PsalmDetail } from '@/db/queries/psalms'
 import { dayOfYearToDate, formatOrdinalDate, formatPsalmRef, parseReadingDate } from '@/lib/daily'
+import { buildParallelRows } from '@/lib/parallel-verses'
+import type { StructuredLyrics } from '@/lib/lyrics-structured'
 
 // ── Shared collapsible section helper (Study tab) ────────────────────────────
 
@@ -173,18 +176,16 @@ function DaysContent({
   )
 }
 
-export function StudyContent({
-  psalm,
+export function StudyContent(props: {
+  psalm: PsalmDetail
   // Kept in the exported signature for backwards compatibility with existing
   // call sites (see task 3 plan note) — no longer rendered here now that the
-  // KJV Text section has moved to the Parallel tab.
-  kjvVerses: _kjvVerses,
-  navesSlugMap,
-}: {
-  psalm: PsalmDetail
+  // KJV Text section has moved to the Parallel tab. Intentionally not
+  // destructured below (unused).
   kjvVerses?: PsalmDetail['verses']
   navesSlugMap: Record<string, string>
 }) {
+  const { psalm, navesSlugMap } = props
   const xrefVerses = psalm.verses
     .filter((v) => v.verseNavesTopics.length > 0 || v.verseDoctrines.length > 0)
     .map((v) => {
@@ -327,15 +328,54 @@ function MessianicContent({
   )
 }
 
-function ParallelContent({
+export function ParallelContent({
+  structured,
   lyrics,
   kjvVerses,
 }: {
+  structured: StructuredLyrics | null
   lyrics: string | null
   kjvVerses: PsalmDetail['verses']
 }) {
+  const rows =
+    structured !== null
+      ? buildParallelRows(
+          structured,
+          kjvVerses.map((v) => ({ verseNumber: v.verseNumber, kjvText: v.kjvText })),
+        )
+      : []
+
+  if (structured !== null && rows.length > 0) {
+    return (
+      <Table data-testid="parallel-table">
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-14">Verse</TableHead>
+            <TableHead>Scottish Psalter</TableHead>
+            <TableHead>KJV</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((row) => (
+            <TableRow key={row.verseNumber ?? 'null'} data-testid="parallel-row">
+              <TableCell className="align-top font-mono text-xs tabular-nums text-muted-foreground">
+                {row.verseNumber ?? '—'}
+              </TableCell>
+              <TableCell className="align-top whitespace-pre-line text-sm leading-relaxed">
+                {row.psalterLines.join('\n')}
+              </TableCell>
+              <TableCell className="align-top text-sm leading-relaxed">
+                {row.kjvText ?? '—'}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    )
+  }
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6" data-testid="parallel-fallback">
       <div>
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
           Scottish Psalter
@@ -449,7 +489,11 @@ export function PsalmTabs({ psalm, primaryTune, activeVersionId, recommendedVers
         <MessianicContent messianic={messianic} />
       </TabsContent>
       <TabsContent value="parallel" className={pb}>
-        <ParallelContent lyrics={lyrics} kjvVerses={kjvVerses} />
+        <ParallelContent
+          structured={primaryVersion?.lyricsStructured ?? null}
+          lyrics={lyrics}
+          kjvVerses={kjvVerses}
+        />
       </TabsContent>
     </>
   )
