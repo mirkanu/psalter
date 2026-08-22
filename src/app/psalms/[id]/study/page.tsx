@@ -7,14 +7,12 @@ import { db } from '@/db'
 import { psalms, psalmVersions } from '@/db/schema'
 import { asc, eq } from 'drizzle-orm'
 import { fetchPsalmDetail } from '@/db/queries/psalms'
-import { fetchTunesByMeter, fetchPsalmVersionTuneTiers, enrichAlternateTunesToTuneRows, fetchTuneCount } from '@/db/queries/tunes'
+import { fetchNavesTopicsWithCounts } from '@/db/queries/explore'
 import { PsalmTabs } from '@/components/PsalmTabs'
 import { PsalmNav } from '@/components/PsalmNav'
 import { parseSlug, deriveVersionSlug, stripStar, slugToDisplayTitle } from '@/lib/psalm-slugs'
-import { deriveTuneJpgPages } from '@/lib/tune-jpg-urls'
-import { tuneNameToSlug } from '@/lib/tune-slug'
+import { buildNavesSlugMap } from '@/lib/naves-slugs'
 import { getPsalmNeighbors } from '@/lib/psalm-navigation'
-import { stripDoubleMeterSuffix } from '@/lib/meter-abbrev'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -109,30 +107,8 @@ export default async function PsalmStudyPage({ params }: PageProps) {
     }
   }
 
-  // stripDoubleMeterSuffix: see the matching note in src/app/psalms/[id]/page.tsx — a psalm
-  // version's meter can carry a trailing " D" that tunes.meter never does, so an un-stripped
-  // fetchTunesByMeter finds zero matches for any Double-meter psalm.
-  const primaryMeter = stripDoubleMeterSuffix(activeVersion?.meter ?? rawTune?.meter ?? null)
-  const rawAlternateTunes = primaryMeter ? await fetchTunesByMeter(primaryMeter) : []
-  // Phase 16 R3: enrich to full TuneRow shape so the Change Tune picker on the
-  // Study tab renders identically to /precent. See the matching note in
-  // src/app/psalms/[id]/page.tsx for the breakage list.
-  const alternateTunes = await enrichAlternateTunesToTuneRows(rawAlternateTunes)
-
-  const primaryTuneDerivedStaffUrl = primaryTune
-    ? (deriveTuneJpgPages(primaryTune.name).staffPages[0] ?? null)
-    : null
-  const primaryTuneDerivedSolfegeUrl = primaryTune
-    ? (deriveTuneJpgPages(primaryTune.name).solfegePages[0] ?? null)
-    : null
-
-  const tuneTiers = activeVersion
-    ? await fetchPsalmVersionTuneTiers(activeVersion.id)
-    : { recommendedTuneIds: [], backupTuneIds: [], historicalTuneIds: [] }
-  // 2026-08-17: alternateTunes above is already meter-scoped (fetchTunesByMeter), so its length
-  // isn't the true catalog size the Change Tune picker's count text needs — see TuneTable's
-  // totalTuneCount doc.
-  const totalTuneCount = await fetchTuneCount()
+  const navesTopicRows = await fetchNavesTopicsWithCounts()
+  const navesSlugMap = Object.fromEntries(buildNavesSlugMap(navesTopicRows))
 
   const displayTitle = slugToDisplayTitle(slug)
   const { prev, next } = await getPsalmNeighbors(slug)
@@ -165,14 +141,9 @@ export default async function PsalmStudyPage({ params }: PageProps) {
       <PsalmTabs
         psalm={psalm}
         primaryTune={primaryTune}
-        primaryTuneDerivedStaffUrl={primaryTuneDerivedStaffUrl}
-        primaryTuneDerivedSolfegeUrl={primaryTuneDerivedSolfegeUrl}
-        primaryTuneSlug={primaryTune ? tuneNameToSlug(primaryTune.name) : null}
-        alternateTunes={alternateTunes}
         activeVersionId={activeVersion?.id}
         recommendedVersionSlug={recommendedVersionSlug}
-        tuneTiers={tuneTiers}
-        totalTuneCount={totalTuneCount}
+        navesSlugMap={navesSlugMap}
       />
     </div>
   )
