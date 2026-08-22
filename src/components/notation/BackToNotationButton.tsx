@@ -8,11 +8,13 @@ interface BackToNotationButtonProps {
 }
 
 /**
- * Prominent "← Back to notation" button rendered above a JPG (legacy original
- * score or Solfège image) so users have an obvious affordance to return to the
- * live abcjs notation. Used in two places:
- *   - AbcPlayer's `renderAboveOriginal` slot when "Show original" is active
- *   - NotationRenderer's Solfège view above the Solfège JPG
+ * Prominent "← Back to notation" button rendered above a JPG (Solfège image)
+ * so users have an obvious affordance to return to the live abcjs notation.
+ *
+ * 260822-sou: the AbcPlayer `showOriginal` overlay usage was removed —
+ * GearPopover (singing view) and the tune page's control bar now own the
+ * Digital/Original-scan return path instead. The sole remaining use is
+ * NotationRenderer's `viewMode === 'solfege-split'` auto-fallback path.
  */
 export function BackToNotationButton({ onClick }: BackToNotationButtonProps) {
   return (
