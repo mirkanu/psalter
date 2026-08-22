@@ -239,13 +239,6 @@ interface AbcPlayerProps {
    */
   showOriginal?: boolean
   onShowOriginalChange?: (next: boolean) => void
-  /**
-   * Optional node rendered ABOVE the original JPG (e.g. a prominent
-   * "← Back to notation" button). Parent supplies this when it owns the
-   * showOriginal state so the back-action can do more than just toggle the
-   * local state (e.g. analytics, focus management).
-   */
-  renderAboveOriginal?: ReactNode
   /** When true, hides Play/Key/BPM/ShowOriginal controls (used in fullscreen mode). */
   hidePlayerControls?: boolean
   /**
@@ -303,7 +296,6 @@ export default function AbcPlayer({
   renderLyricsBelow,
   showOriginal: showOriginalProp,
   onShowOriginalChange,
-  renderAboveOriginal,
   hidePlayerControls = false,
   staffWidthFactor = 1,
   compactSplitMobile = false,
@@ -347,8 +339,11 @@ export default function AbcPlayer({
     },
     [isControlled, showOriginal, onShowOriginalChange],
   )
-  // Which JPEG to show when showOriginal=true
-  const [originalMode, setOriginalMode] = useState<'staff' | 'solfege'>(initialMode)
+  // Which JPEG to show when showOriginal=true. 260822-sou: the Staff/Solfège
+  // sub-toggle UI writer (setOriginalMode) was removed — GearPopover and the
+  // tune page each own their own Staff/Solfège control now — so this stays
+  // pinned at `initialMode` as the fallback preference.
+  const [originalMode] = useState<'staff' | 'solfege'>(initialMode)
   const [isPlaying, setIsPlaying] = useState(false)
   const [audioReady, setAudioReady] = useState(false)
   const [audioError, setAudioError] = useState<string | null>(null)
@@ -780,7 +775,6 @@ export default function AbcPlayer({
   }, [onPlaybackStop])
 
   const hasOriginal = !!(staffJpgUrl || solfegeJpgUrl)
-  const hasBothOriginals = !!(staffJpgUrl && solfegeJpgUrl)
   const originalSrc = originalMode === 'solfege' ? (solfegeJpgUrl ?? staffJpgUrl) : (staffJpgUrl ?? solfegeJpgUrl)
 
   return (
@@ -792,28 +786,6 @@ export default function AbcPlayer({
       {/* Notation area: SVG OR original JPEG */}
       {showOriginal ? (
         <div className="relative w-full space-y-2">
-          {renderAboveOriginal}
-          {/* Staff / Solfège sub-toggle — only when both are available */}
-          {hasBothOriginals && (
-            <div className="flex gap-1 justify-center">
-              <Button
-                variant={originalMode === 'staff' ? 'default' : 'outline'}
-                size="xs"
-                onClick={() => setOriginalMode('staff')}
-                aria-pressed={originalMode === 'staff'}
-              >
-                Staff
-              </Button>
-              <Button
-                variant={originalMode === 'solfege' ? 'default' : 'outline'}
-                size="xs"
-                onClick={() => setOriginalMode('solfege')}
-                aria-pressed={originalMode === 'solfege'}
-              >
-                Solfège
-              </Button>
-            </div>
-          )}
           {originalSrc ? (
             // R2-hosted JPG with unknown intrinsic dimensions — next/image
             // requires either width/height or fill+sized parent, which the

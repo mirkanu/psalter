@@ -1555,7 +1555,6 @@ export function NotationRenderer({
             renderLyricsBelow={isSplit ? undefined : lyricsBelow}
             showOriginal={showOriginal}
             onShowOriginalChange={setShowOriginal}
-            renderAboveOriginal={<BackToNotationButton onClick={() => setShowOriginal(false)} />}
             hidePlayerControls={isFullscreen || chromeless || tunePageMode}
             staffWidthFactor={staffWidthFactor}
             compactSplitMobile={compactSplitMobile}
