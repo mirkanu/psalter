@@ -1501,8 +1501,16 @@ export function NotationRenderer({
             abc={abcForView}
             scale={scale}
             tuneName={tuneName}
-            staffJpgUrl={scoreJpgUrl}
-            solfegeJpgUrl={solfegeJpgUrl}
+            // Quick task 260822-di9 (Rule 1 bug fix): `scoreJpgUrl`/`solfegeJpgUrl`
+            // are the raw tunes.score_jpg_url/solfege_jpg_url DB columns, which are
+            // NULL for every tune in the database — real scan availability lives in
+            // the server-derived `staffPages`/`solfegePages` arrays (deriveTuneJpgPages,
+            // filesystem scan), same signal `renderScannedPages` below already uses
+            // and the same one `solfegeSplitAvailable` in SingingView already checks.
+            // Without this, AbcPlayer's own `hasOriginal` gate was always false and
+            // "Show original" could never reveal an image for any tune.
+            staffJpgUrl={staffPages[0] ?? scoreJpgUrl}
+            solfegeJpgUrl={solfegePages[0] ?? solfegeJpgUrl}
             renderLyricsBelow={isSplit ? undefined : lyricsBelow}
             showOriginal={showOriginal}
             onShowOriginalChange={setShowOriginal}
