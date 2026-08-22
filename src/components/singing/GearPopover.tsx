@@ -14,6 +14,7 @@ import {
   BookOpen,
   HelpCircle,
   Settings,
+  ScanLine,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
@@ -45,6 +46,13 @@ interface Props {
   /** Opens the tune switcher sheet. Called when the user taps "Music Notes"
    *  with no active tune (260717-mwv item 2b). */
   onRequestTuneSelection: () => void
+  /** Whether a scanned score JPG exists for the active tune (staff or solfège).
+   *  Mirrors AbcPlayer's own `hasOriginal = !!(staffJpgUrl || solfegeJpgUrl)` gate.
+   *  When false the Score row is not rendered at all. */
+  originalScanAvailable: boolean
+  /** Whether the scanned original is currently shown in place of live abcjs. */
+  showOriginal: boolean
+  onShowOriginalChange: (next: boolean) => void
 }
 
 export function GearPopover({
@@ -61,6 +69,9 @@ export function GearPopover({
   staffInlineApproved,
   hasActiveTune,
   onRequestTuneSelection,
+  originalScanAvailable,
+  showOriginal,
+  onShowOriginalChange,
 }: Props) {
   const router = useRouter()
 
@@ -75,6 +86,16 @@ export function GearPopover({
   // rather than the native `disabled` attribute.
   const hasAnyNotation = staffAvailable || solfegeSplitAvailable
   const musicNotesBlocked = hasActiveTune && !hasAnyNotation
+
+  // The scan swap only does anything where live abcjs is what's rendering:
+  // staff / staff-split with the approval gate satisfied. In solfege-split the
+  // scan IS the render (NotationRenderer line 1547+), and in an unapproved
+  // staff-split the scan is already force-shown (forceStaffJpgFallback,
+  // NotationRenderer line 1468) — offering "Digital" there would hand back the
+  // very inline rendering MOBILE-08 blocks.
+  const scanAlreadyForced = isStaff && isSplit && !staffInlineApproved
+  const showScoreSourceRow =
+    isMusicNotes && isStaff && originalScanAvailable && !scanAlreadyForced
 
   const handleNotationChange = (notation: 'staff' | 'solfege') => {
     if (notation === 'staff' && !staffAvailable) {
@@ -300,6 +321,49 @@ export function GearPopover({
                 </button>
               </div>
             </div>
+
+            {/* Sub-toggle C: Score source (quick 260822-di9) — voluntary swap
+                between live abcjs and the scanned original JPG. Only shown
+                where the digital staff is what's actually rendering. */}
+            {showScoreSourceRow && (
+              <div role="radiogroup" aria-label="Score source" data-settings-sub="score-source">
+                <span className="text-xs text-muted-foreground">Score:</span>
+                <div className="flex items-center gap-1 mt-1">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={!showOriginal}
+                    aria-label="Digital"
+                    onClick={() => onShowOriginalChange(false)}
+                    className={[
+                      'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
+                      !showOriginal
+                        ? 'bg-foreground text-background'
+                        : 'text-muted-foreground hover:bg-muted',
+                    ].join(' ')}
+                  >
+                    <Music className="h-4 w-4" />
+                    <span className="text-xs font-medium">Digital</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={showOriginal}
+                    aria-label="Original scan"
+                    onClick={() => onShowOriginalChange(true)}
+                    className={[
+                      'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
+                      showOriginal
+                        ? 'bg-foreground text-background'
+                        : 'text-muted-foreground hover:bg-muted',
+                    ].join(' ')}
+                  >
+                    <ScanLine className="h-4 w-4" />
+                    <span className="text-xs font-medium">Original scan</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
 
