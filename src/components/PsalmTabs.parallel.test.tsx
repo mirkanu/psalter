@@ -34,7 +34,10 @@ describe('ParallelContent', () => {
     expect(screen.getByTestId('parallel-table')).toBeTruthy()
     const rows = screen.getAllByTestId('parallel-row')
     expect(rows.length).toBe(2)
-    expect(screen.getByText('The Lord is my shepherd\nI shall not want')).toBeTruthy()
+    // getByText normalises whitespace (collapses the pre-line newline to a
+    // space), so match on the normalised text content rather than the raw
+    // '\n'-joined string that the component actually renders.
+    expect(screen.getByText('The Lord is my shepherd I shall not want')).toBeTruthy()
     expect(screen.getByText('The LORD is my shepherd; I shall not want.')).toBeTruthy()
     expect(screen.getByText('He leadeth me beside the still waters.')).toBeTruthy()
   })
