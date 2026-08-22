@@ -54,8 +54,15 @@ export const fetchPsalmDetail = cache(async function fetchPsalmDetail(id: number
       sectionHeadings: { orderBy: (s, { asc }) => [asc(s.verseStart)] },
       messianicPsalms: true,
       dailyReadings: {
-        columns: { id: true, dayNumber: true, readingDate: true, notes: true },
-        limit: 1,
+        columns: {
+          id: true,
+          dayNumber: true,
+          readingDate: true,
+          notes: true,
+          startingVerse: true,
+          endingVerse: true,
+        },
+        orderBy: (d, { asc }) => [asc(d.dayNumber)],
       },
       psalmTopics: {
         with: { topic: { columns: { id: true, name: true, topicType: true } } },
