@@ -42,6 +42,33 @@ describe('ParallelContent', () => {
     expect(screen.getByText('He leadeth me beside the still waters.')).toBeTruthy()
   })
 
+  it('KJV cell wraps long prose instead of inheriting whitespace-nowrap', () => {
+    const structured: StructuredLyrics = [
+      { index: 0, lines: [{ text: 'The Lord is my shepherd', bibleVerseRef: 1 }] },
+    ]
+    const kjvVerses = makeKjvVerses([
+      { id: 1, verseNumber: 1, kjvText: 'The LORD is my shepherd; I shall not want.' },
+    ])
+    render(<ParallelContent structured={structured} lyrics={null} kjvVerses={kjvVerses} />)
+    const row = screen.getAllByTestId('parallel-row')[0]
+    const kjvCell = row.querySelectorAll('td')[2]
+    expect(kjvCell.className).toContain('whitespace-normal')
+    expect(kjvCell.className).not.toContain('whitespace-nowrap')
+  })
+
+  it('Scottish Psalter cell keeps whitespace-pre-line', () => {
+    const structured: StructuredLyrics = [
+      { index: 0, lines: [{ text: 'The Lord is my shepherd', bibleVerseRef: 1 }] },
+    ]
+    const kjvVerses = makeKjvVerses([
+      { id: 1, verseNumber: 1, kjvText: 'The LORD is my shepherd; I shall not want.' },
+    ])
+    render(<ParallelContent structured={structured} lyrics={null} kjvVerses={kjvVerses} />)
+    const row = screen.getAllByTestId('parallel-row')[0]
+    const psalterCell = row.querySelectorAll('td')[1]
+    expect(psalterCell.className).toContain('whitespace-pre-line')
+  })
+
   it('renders the legacy fallback (no table) when structured is null', () => {
     const kjvVerses = makeKjvVerses([{ id: 1, verseNumber: 1, kjvText: 'KJV text.' }])
     render(

@@ -363,7 +363,7 @@ export function ParallelContent({
               <TableCell className="align-top whitespace-pre-line text-sm leading-relaxed">
                 {row.psalterLines.join('\n')}
               </TableCell>
-              <TableCell className="align-top text-sm leading-relaxed">
+              <TableCell className="align-top whitespace-normal text-sm leading-relaxed">
                 {row.kjvText ?? '—'}
               </TableCell>
             </TableRow>
