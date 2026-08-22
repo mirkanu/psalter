@@ -175,6 +175,18 @@ export function SingingView({
   // ViewMode + baseSize state (owned here; passed controlled to NotationRenderer)
   const showLyrics = !!lyrics
   const [viewMode, setViewMode] = useState<ViewMode>('staff')
+  // Quick task 260822-di9: voluntary "view the original scan" swap. Separate
+  // from viewMode's staff-split/solfege-split states ON PURPOSE — those encode
+  // LAYOUT and, via shouldFallbackToSplit, the MOBILE-08 approval gate, which
+  // is a forced fallback, not a user preference. This boolean is the user's own
+  // choice to look at the scan of a tune whose digital rendering is working fine.
+  const [showOriginal, setShowOriginal] = useState(false)
+  const isStaffMode = viewMode === 'staff' || viewMode === 'staff-split'
+  // Leaving Staff (to Lyrics/Solfège) or switching tune invalidates the choice —
+  // the scan belongs to the tune and only renders in the staff branch.
+  useEffect(() => {
+    setShowOriginal(false)
+  }, [activeTune?.id, isStaffMode])
   // `baseSize` = solfège (inline) + both split-leaf modes (staff-split,
   // solfege-split); `lyricsBaseSize` = Lyrics Only, stored separately so
   // zooming one doesn't affect the other. `activeBaseSize` below picks
@@ -470,6 +482,10 @@ export function SingingView({
   // `notationBaseSize` instead — see computeNotationScale) so its A+/A−
   // controls are hidden rather than wired to either bucket.
   const activeBaseSize = viewMode === 'lyrics' ? lyricsBaseSize : baseSize
+  // Quick task 260822-di9: stanza pagination is meaningless while the scanned
+  // original is displayed (NotationRenderer's own pagination row already
+  // hides for exactly this reason — see its `showPagination` derivation).
+  const staffPaginationActive = viewMode === 'staff' && !showOriginal
 
   // Sheet open state
   const [psalmSelectorOpen, setPsalmSelectorOpen] = useState(false)
@@ -716,6 +732,16 @@ export function SingingView({
   const abc = activeTune?.abcNotation ?? ''
   const scoreJpgUrl = activeTune?.scoreJpgUrl ?? null
   const solfegeJpgUrl = activeTune?.solfegeJpgUrl ?? null
+  // Quick task 260822-di9 (Rule 1 bug fix): scoreJpgUrl/solfegeJpgUrl are the raw
+  // DB columns, which are NULL for every tune — mirror solfegeSplitAvailable's
+  // existing pattern (line above) of falling back to the server-derived page
+  // arrays, which is what NotationRenderer's AbcPlayer call site actually renders.
+  const originalScanAvailable = !!(
+    scoreJpgUrl ||
+    solfegeJpgUrl ||
+    activeStaffPages.length > 0 ||
+    activeSolfegePages.length > 0
+  )
   const tuneName = activeTune?.name ?? ''
   const youtubeUrl = activeTune?.youtubeUrl ?? null
   const soundcloudUrl = activeTune?.soundcloudUrl ?? null
@@ -1111,6 +1137,8 @@ export function SingingView({
             abc={abc}
             melismaPositions={activeTune?.melismaPositions ?? null}
             viewMode={viewMode}
+            showOriginal={showOriginal}
+            onShowOriginalChange={setShowOriginal}
             baseSize={activeBaseSize}
             onBaseSizeChange={handleBaseSizeChange}
             notationBaseSize={notationBaseSize}
@@ -1163,9 +1191,9 @@ export function SingingView({
       <GlassBottomBar
         baseSize={activeBaseSize}
         onBaseSizeChange={handleBaseSizeChange}
-        hideSizeControls={viewMode === 'staff'}
-        currentStanza={viewMode === 'staff' ? currentStanza : null}
-        totalStanzas={viewMode === 'staff' ? totalStanzas : null}
+        hideSizeControls={staffPaginationActive}
+        currentStanza={staffPaginationActive ? currentStanza : null}
+        totalStanzas={staffPaginationActive ? totalStanzas : null}
         onStanzaPrev={handleStanzaPrev}
         onStanzaNext={handleStanzaNext}
         isPlaying={isPlaying}
@@ -1189,6 +1217,9 @@ export function SingingView({
             staffInlineApproved={staffInlineApproved}
             hasActiveTune={!!activeTune}
             onRequestTuneSelection={handleRequestTuneSelection}
+            originalScanAvailable={originalScanAvailable}
+            showOriginal={showOriginal}
+            onShowOriginalChange={setShowOriginal}
           />
         }
       />
