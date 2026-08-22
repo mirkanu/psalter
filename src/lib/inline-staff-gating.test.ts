@@ -3,6 +3,7 @@ import {
   resolveStaffInlineApproved,
   computeInlineLayoutDisabled,
   shouldFallbackToSplit,
+  computeScanToggleVisible,
 } from './inline-staff-gating'
 
 describe('resolveStaffInlineApproved — MOBILE-08 explicit-approval gate', () => {
@@ -68,5 +69,103 @@ describe('shouldFallbackToSplit', () => {
 
   it('false when in solfege view (not the Staff branch)', () => {
     expect(shouldFallbackToSplit({ viewMode: 'solfege', staffInlineApproved: false })).toBe(false)
+  })
+})
+
+describe('computeScanToggleVisible (quick 260822-fgb)', () => {
+  it('true when tune page, staff, live abc, scan exists, approved', () => {
+    expect(
+      computeScanToggleVisible({
+        tunePageMode: true,
+        viewMode: 'staff',
+        hasAbc: true,
+        staffScanUrl: '/tunes/bangor-staff-0.jpg',
+        staffInlineApproved: true,
+      })
+    ).toBe(true)
+  })
+
+  it('false when no scan url', () => {
+    expect(
+      computeScanToggleVisible({
+        tunePageMode: true,
+        viewMode: 'staff',
+        hasAbc: true,
+        staffScanUrl: null,
+        staffInlineApproved: true,
+      })
+    ).toBe(false)
+  })
+
+  it('false when no abc (scan already force-shown via tunePageMode && !abc)', () => {
+    expect(
+      computeScanToggleVisible({
+        tunePageMode: true,
+        viewMode: 'staff',
+        hasAbc: false,
+        staffScanUrl: '/tunes/bangor-staff-0.jpg',
+        staffInlineApproved: true,
+      })
+    ).toBe(false)
+  })
+
+  it('false for staff-split with no abc', () => {
+    expect(
+      computeScanToggleVisible({
+        tunePageMode: true,
+        viewMode: 'staff-split',
+        hasAbc: false,
+        staffScanUrl: '/tunes/bangor-staff-0.jpg',
+        staffInlineApproved: true,
+      })
+    ).toBe(false)
+  })
+
+  it('false for solfege-split (the scan IS the render)', () => {
+    expect(
+      computeScanToggleVisible({
+        tunePageMode: true,
+        viewMode: 'solfege-split',
+        hasAbc: true,
+        staffScanUrl: '/tunes/bangor-staff-0.jpg',
+        staffInlineApproved: true,
+      })
+    ).toBe(false)
+  })
+
+  it('false for lyrics view', () => {
+    expect(
+      computeScanToggleVisible({
+        tunePageMode: true,
+        viewMode: 'lyrics',
+        hasAbc: true,
+        staffScanUrl: '/tunes/bangor-staff-0.jpg',
+        staffInlineApproved: true,
+      })
+    ).toBe(false)
+  })
+
+  it('false when not tune page mode (GearPopover owns that surface)', () => {
+    expect(
+      computeScanToggleVisible({
+        tunePageMode: false,
+        viewMode: 'staff',
+        hasAbc: true,
+        staffScanUrl: '/tunes/bangor-staff-0.jpg',
+        staffInlineApproved: true,
+      })
+    ).toBe(false)
+  })
+
+  it('false for staff-split with abc present but not approved', () => {
+    expect(
+      computeScanToggleVisible({
+        tunePageMode: true,
+        viewMode: 'staff-split',
+        hasAbc: true,
+        staffScanUrl: '/tunes/bangor-staff-0.jpg',
+        staffInlineApproved: false,
+      })
+    ).toBe(false)
   })
 })
