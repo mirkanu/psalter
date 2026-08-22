@@ -83,6 +83,15 @@ export interface NotationRendererProps {
   baseSize?: number
   onBaseSizeChange?: (size: number) => void
   /**
+   * When provided, NotationRenderer becomes controlled for showOriginal
+   * (the scanned-JPG-instead-of-live-abcjs swap implemented in AbcPlayer).
+   * Parent owns the state — see SingingView, which drives it from GearPopover.
+   * Only meaningful in staff / staff-split when the scan is not already being
+   * force-shown by the approval gate.
+   */
+  showOriginal?: boolean
+  onShowOriginalChange?: (next: boolean) => void
+  /**
    * Viewport-resize-driven notation size for chromeless inline Staff (SingingView's
    * existing 04.9.4-03 proportional-zoom heuristic), independent of the lyric-only
    * `baseSize` (which A+/A− drives). Ignored for all other view modes/callers.
@@ -266,6 +275,8 @@ export function NotationRenderer({
   viewMode: viewModeProp,
   baseSize: baseSizeProp,
   onBaseSizeChange,
+  showOriginal: showOriginalProp,
+  onShowOriginalChange,
   notationBaseSize,
   chromeless = false,
   tunePageMode = false,
@@ -397,7 +408,17 @@ export function NotationRenderer({
   // Lifted from AbcPlayer so NotationRenderer knows when the legacy JPG is
   // shown (and can therefore hide the stanza-pagination row, which is
   // meaningless when the image is displayed).
-  const [showOriginal, setShowOriginal] = useState(false)
+  const isShowOriginalControlled = showOriginalProp !== undefined
+  const [showOriginalInternal, setShowOriginalInternal] = useState(false)
+  const showOriginal = isShowOriginalControlled ? (showOriginalProp as boolean) : showOriginalInternal
+  const setShowOriginal = (next: boolean) => {
+    if (isShowOriginalControlled) {
+      onShowOriginalChange?.(next)
+    } else {
+      setShowOriginalInternal(next)
+      onShowOriginalChange?.(next)
+    }
+  }
   const isBaseSizeControlled = baseSizeProp !== undefined
   const [normalSize, setNormalSize] = useState<BaseSize>(() => {
     try {
