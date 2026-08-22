@@ -214,36 +214,35 @@ export function StudyContent(props: {
       )}
       {xrefVerses.length > 0 && (
         <section data-testid="study-xref">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-            Cross-References
-          </h2>
-          <div className="space-y-3">
-            {xrefVerses.map((v) => (
-              <div key={v.verseNumber} data-testid={`study-xref-verse-${v.verseNumber}`}>
-                <span className="text-xs text-muted-foreground font-mono mr-2">
-                  v.{v.verseNumber}
-                </span>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {v.topics.map((topic) => {
-                    const slug = navesSlugMap[String(topic.id)]
-                    const badge = <Badge variant="secondary">{topic.name}</Badge>
-                    return slug ? (
-                      <Link key={`topic-${topic.id}`} href={`/explore/naves/${slug}`}>
-                        {badge}
-                      </Link>
-                    ) : (
-                      <span key={`topic-${topic.id}`}>{badge}</span>
-                    )
-                  })}
-                  {v.doctrines.map((doctrine) => (
-                    <Badge key={`doctrine-${doctrine.id}`} variant="outline">
-                      {doctrine.name}
-                    </Badge>
-                  ))}
+          <CollapsibleSection title="Cross-References" defaultOpen={false}>
+            <div className="space-y-3 px-1 py-2">
+              {xrefVerses.map((v) => (
+                <div key={v.verseNumber} data-testid={`study-xref-verse-${v.verseNumber}`}>
+                  <span className="text-xs text-muted-foreground font-mono mr-2">
+                    v.{v.verseNumber}
+                  </span>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {v.topics.map((topic) => {
+                      const slug = navesSlugMap[String(topic.id)]
+                      const badge = <Badge variant="secondary">{topic.name}</Badge>
+                      return slug ? (
+                        <Link key={`topic-${topic.id}`} href={`/explore/naves/${slug}`}>
+                          {badge}
+                        </Link>
+                      ) : (
+                        <span key={`topic-${topic.id}`}>{badge}</span>
+                      )
+                    })}
+                    {v.doctrines.map((doctrine) => (
+                      <Badge key={`doctrine-${doctrine.id}`} variant="outline">
+                        {doctrine.name}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </CollapsibleSection>
         </section>
       )}
       <section>
@@ -251,7 +250,7 @@ export function StudyContent(props: {
           <ul className="space-y-1 text-sm px-1 py-2">
             <li>
               <a
-                href={`https://www.sermonaudio.com/search/?keyword=psalm+${psalm.id}&keywordtype=4`}
+                href={`https://www.sermonaudio.com/gb/sermons/scripture/PSA/${psalm.id}?searchKeyword=%22protestant+reformed%22`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
@@ -261,17 +260,17 @@ export function StudyContent(props: {
             </li>
             <li>
               <a
-                href={`https://www.spurgeon.org/resource-library/treasury-of-david/psalm-${psalm.id}/`}
+                href={`https://gracegems.org/Spurgeon/${String(psalm.id).padStart(3, '0')}.htm`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
               >
-                Spurgeon&apos;s Treasury of David
+                Spurgeon&apos;s Commentary
               </a>
             </li>
             <li>
               <a
-                href={`https://relight.app/psalm/${psalm.id}`}
+                href={`https://relight.app/bible/Ps.${psalm.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
@@ -364,7 +363,7 @@ export function ParallelContent({
               <TableCell className="align-top whitespace-pre-line text-sm leading-relaxed">
                 {row.psalterLines.join('\n')}
               </TableCell>
-              <TableCell className="align-top text-sm leading-relaxed">
+              <TableCell className="align-top whitespace-normal text-sm leading-relaxed">
                 {row.kjvText ?? '—'}
               </TableCell>
             </TableRow>
