@@ -4,8 +4,35 @@ import { useRef, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import type { PsalmDetail } from '@/db/queries/psalms'
 import { dayOfYearToDate, formatOrdinalDate, formatPsalmRef, parseReadingDate } from '@/lib/daily'
+
+// ── Shared collapsible section helper (Study tab) ────────────────────────────
+
+function CollapsibleSection({
+  title,
+  children,
+  defaultOpen = false,
+}: {
+  title: string
+  children: React.ReactNode
+  defaultOpen?: boolean
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="flex w-full items-center justify-between min-h-[44px] hover:bg-muted rounded-md px-1 py-2">
+        <span className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          {title}
+        </span>
+        {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+      </CollapsibleTrigger>
+      <CollapsibleContent>{children}</CollapsibleContent>
+    </Collapsible>
+  )
+}
 
 type TuneRow = NonNullable<
   PsalmDetail['psalmVersions'][number]['psalmVersionTunes'][number]['tune']
@@ -148,11 +175,14 @@ function DaysContent({
 
 export function StudyContent({
   psalm,
-  kjvVerses,
+  // Kept in the exported signature for backwards compatibility with existing
+  // call sites (see task 3 plan note) — no longer rendered here now that the
+  // KJV Text section has moved to the Parallel tab.
+  kjvVerses: _kjvVerses,
   navesSlugMap,
 }: {
   psalm: PsalmDetail
-  kjvVerses: PsalmDetail['verses']
+  kjvVerses?: PsalmDetail['verses']
   navesSlugMap: Record<string, string>
 }) {
   const xrefVerses = psalm.verses
@@ -174,12 +204,11 @@ export function StudyContent({
     <div className="space-y-6">
       {psalm.haddingtonIntro && (
         <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-            Haddington Introduction
-          </h2>
-          <p className="text-foreground leading-relaxed whitespace-pre-line">
-            {psalm.haddingtonIntro}
-          </p>
+          <CollapsibleSection title="Haddington Introduction" defaultOpen={false}>
+            <p className="text-foreground leading-relaxed whitespace-pre-line px-1 py-2">
+              {psalm.haddingtonIntro}
+            </p>
+          </CollapsibleSection>
         </section>
       )}
       {xrefVerses.length > 0 && (
@@ -216,59 +245,41 @@ export function StudyContent({
           </div>
         </section>
       )}
-      {kjvVerses.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-            KJV Text
-          </h2>
-          <div className="space-y-2">
-            {kjvVerses.map((v) => (
-              <p key={v.id} className="text-foreground leading-relaxed">
-                <span className="text-xs text-muted-foreground font-mono mr-2">
-                  {v.verseNumber}
-                </span>
-                {v.kjvText}
-              </p>
-            ))}
-          </div>
-        </section>
-      )}
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-          External Resources
-        </h2>
-        <ul className="space-y-1 text-sm">
-          <li>
-            <a
-              href={`https://www.sermonaudio.com/search/?keyword=psalm+${psalm.id}&keywordtype=4`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
-            >
-              SermonAudio — Psalm {psalm.id}
-            </a>
-          </li>
-          <li>
-            <a
-              href={`https://www.spurgeon.org/resource-library/treasury-of-david/psalm-${psalm.id}/`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
-            >
-              Spurgeon&apos;s Treasury of David
-            </a>
-          </li>
-          <li>
-            <a
-              href={`https://relight.app/psalm/${psalm.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
-            >
-              Relight.app
-            </a>
-          </li>
-        </ul>
+        <CollapsibleSection title="External Resources" defaultOpen={false}>
+          <ul className="space-y-1 text-sm px-1 py-2">
+            <li>
+              <a
+                href={`https://www.sermonaudio.com/search/?keyword=psalm+${psalm.id}&keywordtype=4`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
+              >
+                SermonAudio — Psalm {psalm.id}
+              </a>
+            </li>
+            <li>
+              <a
+                href={`https://www.spurgeon.org/resource-library/treasury-of-david/psalm-${psalm.id}/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
+              >
+                Spurgeon&apos;s Treasury of David
+              </a>
+            </li>
+            <li>
+              <a
+                href={`https://relight.app/psalm/${psalm.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
+              >
+                Relight.app
+              </a>
+            </li>
+          </ul>
+        </CollapsibleSection>
       </section>
     </div>
   )
