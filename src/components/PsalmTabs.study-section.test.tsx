@@ -32,7 +32,7 @@ describe('StudyContent cross-references section', () => {
     )
     const link = screen.getByText('Praise').closest('a')
     expect(link).not.toBeNull()
-    expect(link).toHaveAttribute('href', '/explore/naves/praise')
+    expect(link?.getAttribute('href')).toBe('/explore/naves/praise')
   })
 
   it('renders a bare badge (no anchor) when the topic id is NOT in navesSlugMap', () => {
@@ -60,7 +60,7 @@ describe('StudyContent cross-references section', () => {
       },
     ])
     render(<StudyContent psalm={psalm} kjvVerses={psalm.verses} navesSlugMap={{}} />)
-    expect(screen.getByText('Justification')).toBeInTheDocument()
+    expect(screen.getByText('Justification')).toBeTruthy()
   })
 
   it('omits a row for verses with neither topics nor doctrines', () => {
@@ -83,7 +83,7 @@ describe('StudyContent cross-references section', () => {
     render(
       <StudyContent psalm={psalm} kjvVerses={psalm.verses} navesSlugMap={{ '5': 'praise' }} />,
     )
-    expect(screen.getByTestId('study-xref-verse-1')).toBeInTheDocument()
+    expect(screen.getByTestId('study-xref-verse-1')).toBeTruthy()
     expect(screen.queryByTestId('study-xref-verse-2')).toBeNull()
   })
 
