@@ -1,19 +1,10 @@
 'use client'
 
 import { useRef, useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Pencil } from 'lucide-react'
-import { NotationRendererClient } from '@/components/notation/NotationRendererClient'
-import type { ViewMode } from '@/components/notation/NotationRenderer'
-import { TunePickerDialog } from '@/components/tune-picker/TunePickerDialog'
 import type { PsalmDetail } from '@/db/queries/psalms'
-import type { AlternateTune, EnrichedTuneRow, PsalmVersionTuneTiers } from '@/db/queries/tunes'
-import { sopranoOnly } from '@/lib/utils'
-import { buildNotationRendererProps } from '@/lib/notation-renderer-props'
 
 type TuneRow = NonNullable<
   PsalmDetail['psalmVersions'][number]['psalmVersionTunes'][number]['tune']
@@ -22,32 +13,10 @@ type TuneRow = NonNullable<
 interface PsalmTabsProps {
   psalm: PsalmDetail
   primaryTune: TuneRow | null
-  /** Filesystem-derived staff JPEG URL for the primary tune (DB column is NULL) */
-  primaryTuneDerivedStaffUrl?: string | null
-  /** Filesystem-derived solfège JPEG URL for the primary tune (DB column is NULL) */
-  primaryTuneDerivedSolfegeUrl?: string | null
-  /** Server-computed slug for primaryTune (raw DB rows have no slug field). */
-  primaryTuneSlug?: string | null
-  /**
-   * Phase 16 R3: union — page may pass either raw AlternateTune[] (legacy) or
-   * EnrichedTuneRow[] (enriched via enrichAlternateTunesToTuneRows). The
-   * TunePickerDialog already accepts the union; the only consumers of fields
-   * outside AlternateTune (id/length) are inside the dialog itself, which
-   * silently breaks on AlternateTune because fields like `recommendedPsalmIds`
-   * arrive as undefined. Pages that feed the picker should pass the enriched
-   * shape so the /precent and /psalms pickers render identically.
-   */
-  alternateTunes: readonly (AlternateTune | EnrichedTuneRow)[]
   activeVersionId?: number
   recommendedVersionSlug?: string | null
-  /** Per-psalm-version Backup/Historical tune ids for the Change Tune list (TUNE-04). */
-  tuneTiers?: PsalmVersionTuneTiers
-  /**
-   * 2026-08-17: true tune-catalog size — alternateTunes here is already meter-scoped (fetched via
-   * fetchTunesByMeter), so alternateTunes.length is NOT the total; see TuneTable's totalTuneCount
-   * doc for why that matters for the picker's "filtered from N" count.
-   */
-  totalTuneCount?: number
+  /** id -> explore slug, built server-side via buildNavesSlugMap; plain object crosses the RSC boundary. */
+  navesSlugMap: Record<string, string>
 }
 
 // ── Content section components (shared between mobile/desktop) ───────────────
@@ -142,13 +111,30 @@ function DaysContent({ dailyEntry }: { dailyEntry: PsalmDetail['dailyReadings'][
   )
 }
 
-function StudyContent({
+export function StudyContent({
   psalm,
   kjvVerses,
+  navesSlugMap,
 }: {
   psalm: PsalmDetail
   kjvVerses: PsalmDetail['verses']
+  navesSlugMap: Record<string, string>
 }) {
+  const xrefVerses = psalm.verses
+    .filter((v) => v.verseNavesTopics.length > 0 || v.verseDoctrines.length > 0)
+    .map((v) => {
+      const topics = v.verseNavesTopics
+        .map((vnt) => vnt.navesTopic)
+        .filter((t): t is NonNullable<typeof t> => !!t && !!t.name)
+      const doctrines = v.verseDoctrines
+        .map((vd) => vd.doctrine)
+        .filter((d): d is NonNullable<typeof d> => !!d && !!d.name)
+      const uniqueTopics = Array.from(new Map(topics.map((t) => [t.id, t])).values())
+      const uniqueDoctrines = Array.from(new Map(doctrines.map((d) => [d.id, d])).values())
+      return { verseNumber: v.verseNumber, topics: uniqueTopics, doctrines: uniqueDoctrines }
+    })
+    .filter((v) => v.topics.length > 0 || v.doctrines.length > 0)
+
   return (
     <div className="space-y-6">
       {psalm.haddingtonIntro && (
@@ -159,6 +145,40 @@ function StudyContent({
           <p className="text-foreground leading-relaxed whitespace-pre-line">
             {psalm.haddingtonIntro}
           </p>
+        </section>
+      )}
+      {xrefVerses.length > 0 && (
+        <section data-testid="study-xref">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+            Cross-References
+          </h2>
+          <div className="space-y-3">
+            {xrefVerses.map((v) => (
+              <div key={v.verseNumber} data-testid={`study-xref-verse-${v.verseNumber}`}>
+                <span className="text-xs text-muted-foreground font-mono mr-2">
+                  v.{v.verseNumber}
+                </span>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {v.topics.map((topic) => {
+                    const slug = navesSlugMap[String(topic.id)]
+                    const badge = <Badge variant="secondary">{topic.name}</Badge>
+                    return slug ? (
+                      <Link key={`topic-${topic.id}`} href={`/explore/naves/${slug}`}>
+                        {badge}
+                      </Link>
+                    ) : (
+                      <span key={`topic-${topic.id}`}>{badge}</span>
+                    )
+                  })}
+                  {v.doctrines.map((doctrine) => (
+                    <Badge key={`doctrine-${doctrine.id}`} variant="outline">
+                      {doctrine.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
       )}
       {kjvVerses.length > 0 && (
@@ -318,10 +338,9 @@ function ParallelContent({
   )
 }
 
-// ── Mobile tab labels ────────────────────────────────────────────────────────
+// ── Tab labels (shared between mobile/desktop) ─────────────────────────────
 
-const MOBILE_TABS = [
-  { value: 'sing', label: 'Sing' },
+const TABS = [
   { value: 'overview', label: 'Overview' },
   { value: '365days', label: '365 Days' },
   { value: 'study', label: 'Study' },
@@ -329,30 +348,12 @@ const MOBILE_TABS = [
   { value: 'parallel', label: 'Parallel' },
 ]
 
-const DESKTOP_TABS = MOBILE_TABS.filter((t) => t.value !== 'sing')
-
 // ── Main component ───────────────────────────────────────────────────────────
 
-export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, primaryTuneDerivedSolfegeUrl, primaryTuneSlug, alternateTunes, activeVersionId, recommendedVersionSlug, tuneTiers, totalTuneCount }: PsalmTabsProps) {
+export function PsalmTabs({ psalm, primaryTune, activeVersionId, recommendedVersionSlug, navesSlugMap }: PsalmTabsProps) {
   const mobileTabsRef = useRef<HTMLDivElement>(null)
-  const searchParams = useSearchParams()
-  const [noRecDialogOpen, setNoRecDialogOpen] = useState(false)
-  const [changeTuneOpen, setChangeTuneOpen] = useState(false)
-  // Tracks the active notation view mode so the desktop layout can switch
-  // between stacked (Staff/Solfège) and 2-column (Lyrics only).
-  const [notationViewMode, setNotationViewMode] = useState<ViewMode>('staff')
-  // Preserve the active desktop tab when the layout mode switches.
+  // Preserve the active desktop tab across renders.
   const [desktopTab, setDesktopTab] = useState('overview')
-
-  // Pre-select a tune when navigating from a tune page via ?tune={id}
-  const tuneParam = searchParams.get('tune')
-  const preselectedTune = tuneParam
-    ? alternateTunes.find((t) => String(t.id) === tuneParam) ?? null
-    : null
-  // Phase 16 R3: alternateTunes may be AlternateTune or EnrichedTuneRow — keep
-  // the override as the same union so we don't lose metadata when the user
-  // switches tunes mid-session.
-  const [overrideTune, setOverrideTune] = useState<AlternateTune | EnrichedTuneRow | null>(preselectedTune)
 
   useEffect(() => {
     if (mobileTabsRef.current) {
@@ -370,149 +371,18 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
     .slice()
     .sort((a, b) => (a.verseNumber ?? 0) - (b.verseNumber ?? 0))
   const lyrics = primaryVersion?.lyricsImportedRaw ?? null
-  const stanzas = (lyrics ?? '')
-    .split('\n\n')
-    .map((s) => s.trim().replace(/^(\d+)([A-Za-z])/, '$1 $2'))
-    .filter(Boolean)
 
-  // Derive active tune — override wins when set.
-  // For the primary tune, use filesystem-derived JPEG URLs (DB columns are NULL for all tunes).
-  const activeTune = overrideTune
-    ? {
-        id: overrideTune.id,
-        name: overrideTune.name,
-        slug: overrideTune.slug,
-        meter: overrideTune.meter,
-        abcNotation: sopranoOnly(overrideTune.abcSatb?.trim() || overrideTune.abcNotation || ''),
-        scoreJpgUrl: overrideTune.scoreJpgUrl,
-        solfegeJpgUrl: overrideTune.solfegeJpgUrl,
-        soundcloudUrl: overrideTune.soundcloudUrl,
-        youtubeUrl: overrideTune.youtubeUrl,
-        doubleLength: overrideTune.doubleLength ?? false,
-        solfegeOcrText: overrideTune.solfegeOcrText ?? null,
-        precentingComment: null,
-      }
-    : primaryTune
-      ? {
-          ...primaryTune,
-          slug: primaryTuneSlug ?? String(primaryTune.id),
-          scoreJpgUrl: primaryTuneDerivedStaffUrl ?? primaryTune.scoreJpgUrl,
-          solfegeJpgUrl: primaryTuneDerivedSolfegeUrl ?? primaryTune.solfegeJpgUrl,
-        }
-      : null
-
-  const makeSingPanel = (stickyScoreMode: boolean, mobileStickyScore: boolean = false) => (
-    <div className={stickyScoreMode ? 'flex flex-col h-full' : 'space-y-4'}>
-      {recommendedVersionSlug && (
-        <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 px-3 py-2.5 text-sm flex-shrink-0">
-          <Link
-            href={`/psalms/${recommendedVersionSlug}`}
-            className="font-semibold underline underline-offset-2 text-amber-900 dark:text-amber-200 hover:no-underline"
-          >
-            Psalm {recommendedVersionSlug}
-          </Link>
-          <span className="text-amber-800 dark:text-amber-300"> is recommended instead</span>
-        </div>
-      )}
-      {activeTune ? (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-medium text-foreground">
-              Tune{activeTune.meter ? ` (${activeTune.meter})` : ''}:
-            </span>
-            <Link
-              href={`/tunes/${activeTune.slug}`}
-              className="text-sm font-medium text-foreground underline underline-offset-2 hover:no-underline"
-            >
-              {activeTune.name ?? 'Tune'}
-            </Link>
-            {alternateTunes.length > 0 && (
-              <Button
-                variant="default"
-                size="xs"
-                onClick={() => setChangeTuneOpen(true)}
-                aria-label="Change tune"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-            )}
-          </div>
-          <NotationRendererClient
-            {...buildNotationRendererProps(
-              {
-                abcNotation: activeTune.abcNotation ?? null,
-                abcSatb: (activeTune as { abcSatb?: string | null }).abcSatb ?? null,
-                name: activeTune.name ?? null,
-                meter: activeTune.meter ?? null,
-                phraseShapeOverride: (activeTune as { phraseShapeOverride?: number[] | null }).phraseShapeOverride ?? null,
-                doubleLength: activeTune.doubleLength ?? false,
-                solfegeOcrText: (activeTune as { solfegeOcrText?: string | null }).solfegeOcrText ?? null,
-                scoreJpgUrl: activeTune.scoreJpgUrl ?? null,
-                solfegeJpgUrl: activeTune.solfegeJpgUrl ?? null,
-              },
-              {
-                lyrics: lyrics ?? '',
-                stanzaMeter: primaryVersion?.meter ?? null,
-                lyricsStructured: primaryVersion?.lyricsStructured ?? null,
-              },
-              { onViewModeChange: setNotationViewMode },
-            )}
-          />
-          <TunePickerDialog
-            open={changeTuneOpen}
-            onClose={() => setChangeTuneOpen(false)}
-            currentTuneId={activeTune.id}
-            tunes={alternateTunes}
-            tuneTiers={tuneTiers}
-            psalmMeter={primaryTune?.meter ?? null}
-            psalmId={psalm.id}
-            useTable
-            totalTuneCount={totalTuneCount}
-            onSelect={(tune) => { setOverrideTune(tune); setChangeTuneOpen(false) }}
-          />
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground">Tune: no recommendation</span>
-            {alternateTunes.length > 0 && (
-              <Button
-                variant="default"
-                size="xs"
-                onClick={() => setNoRecDialogOpen(true)}
-                aria-label="Select tune"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-            )}
-          </div>
-          {stanzas.length > 0 ? (
-            <div className="space-y-4 py-2">
-              {stanzas.map((stanza, i) => (
-                <p key={i} className="text-foreground leading-relaxed whitespace-pre-line text-base">
-                  {stanza}
-                </p>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground italic">No lyrics available.</p>
-          )}
-          <TunePickerDialog
-            open={noRecDialogOpen}
-            onClose={() => setNoRecDialogOpen(false)}
-            currentTuneId={null}
-            tunes={alternateTunes}
-            tuneTiers={tuneTiers}
-            psalmMeter={primaryTune?.meter ?? null}
-            psalmId={psalm.id}
-            useTable
-            totalTuneCount={totalTuneCount}
-            onSelect={(tune) => { setOverrideTune(tune); setNoRecDialogOpen(false) }}
-          />
-        </div>
-      )}
+  const recommendedBanner = recommendedVersionSlug ? (
+    <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 px-3 py-2.5 text-sm">
+      <Link
+        href={`/psalms/${recommendedVersionSlug}`}
+        className="font-semibold underline underline-offset-2 text-amber-900 dark:text-amber-200 hover:no-underline"
+      >
+        Psalm {recommendedVersionSlug}
+      </Link>
+      <span className="text-amber-800 dark:text-amber-300"> is recommended instead</span>
     </div>
-  )
+  ) : null
 
   const sharedTabContents = (pb: string) => (
     <>
@@ -523,7 +393,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
         <DaysContent dailyEntry={dailyEntry} />
       </TabsContent>
       <TabsContent value="study" className={pb}>
-        <StudyContent psalm={psalm} kjvVerses={kjvVerses} />
+        <StudyContent psalm={psalm} kjvVerses={kjvVerses} navesSlugMap={navesSlugMap} />
       </TabsContent>
       <TabsContent value="messianic" className={pb}>
         <MessianicContent messianic={messianic} />
@@ -537,8 +407,9 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
   return (
     <>
       {/* ══ MOBILE LAYOUT (< md) ════════════════════════════════════════════ */}
-      <div className="md:hidden">
-        <Tabs defaultValue="sing">
+      <div className="md:hidden space-y-4">
+        {recommendedBanner}
+        <Tabs defaultValue="overview">
           {/* Top scrollable tab list — horizontal scroll only */}
           <div
             ref={mobileTabsRef}
@@ -548,7 +419,7 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
             }}
           >
             <TabsList className="flex h-auto gap-0 bg-transparent p-0 w-max border-b border-border">
-              {MOBILE_TABS.map(({ value, label }) => (
+              {TABS.map(({ value, label }) => (
                 <TabsTrigger
                   key={value}
                   value={value}
@@ -561,58 +432,30 @@ export function PsalmTabs({ psalm, primaryTune, primaryTuneDerivedStaffUrl, prim
           </div>
           <div className="h-4 bg-background" />
 
-          <TabsContent value="sing" className="pb-4">
-            {makeSingPanel(false, true)}
-          </TabsContent>
           {sharedTabContents('pb-4')}
         </Tabs>
       </div>
 
       {/* ══ DESKTOP / LANDSCAPE LAYOUT (≥ md) ══════════════════════════════ */}
-      {/* Stacked layout when notation (Staff/Solfège) is active — notation
-          spans full width at top, tabs scroll below. Reverts to the original
-          2-column sticky layout when Lyrics-only mode is active. */}
-      {notationViewMode !== 'lyrics' ? (
-        <div className="hidden md:block space-y-8">
-          <div>{makeSingPanel(false)}</div>
-          <div>
-            <Tabs value={desktopTab} onValueChange={setDesktopTab}>
-              <TabsList className="flex flex-wrap h-auto gap-0 mb-6 bg-transparent p-0 border-b border-border">
-                {DESKTOP_TABS.map(({ value, label }) => (
-                  <TabsTrigger
-                    key={value}
-                    value={value}
-                    className="rounded-none border-b-[3px] border-b-transparent -mb-px data-[active]:border-b-foreground data-[active]:bg-transparent data-[active]:text-foreground"
-                  >
-                    {label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              {sharedTabContents('')}
-            </Tabs>
-          </div>
+      <div className="hidden md:block space-y-8">
+        {recommendedBanner}
+        <div>
+          <Tabs value={desktopTab} onValueChange={setDesktopTab}>
+            <TabsList className="flex flex-wrap h-auto gap-0 mb-6 bg-transparent p-0 border-b border-border">
+              {TABS.map(({ value, label }) => (
+                <TabsTrigger
+                  key={value}
+                  value={value}
+                  className="rounded-none border-b-[3px] border-b-transparent -mb-px data-[active]:border-b-foreground data-[active]:bg-transparent data-[active]:text-foreground"
+                >
+                  {label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            {sharedTabContents('')}
+          </Tabs>
         </div>
-      ) : (
-        <div className="hidden md:grid md:grid-cols-2 gap-8 sticky top-14 h-[calc(100vh-3.5rem)] overflow-hidden">
-          <div className="flex flex-col h-full overflow-hidden pb-8">{makeSingPanel(true)}</div>
-          <div className="overflow-y-auto h-full pb-8">
-            <Tabs value={desktopTab} onValueChange={setDesktopTab}>
-              <TabsList className="flex flex-wrap h-auto gap-0 mb-6 bg-transparent p-0 border-b border-border">
-                {DESKTOP_TABS.map(({ value, label }) => (
-                  <TabsTrigger
-                    key={value}
-                    value={value}
-                    className="rounded-none border-b-[3px] border-b-transparent -mb-px data-[active]:border-b-foreground data-[active]:bg-transparent data-[active]:text-foreground"
-                  >
-                    {label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              {sharedTabContents('')}
-            </Tabs>
-          </div>
-        </div>
-      )}
+      </div>
     </>
   )
 }
