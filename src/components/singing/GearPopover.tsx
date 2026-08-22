@@ -93,9 +93,17 @@ export function GearPopover({
   // staff-split the scan is already force-shown (forceStaffJpgFallback,
   // NotationRenderer line 1468) — offering "Digital" there would hand back the
   // very inline rendering MOBILE-08 blocks.
+  //
+  // Quick 260822-fgb: the swap is offered ONLY in Split-Leaf layout, where the
+  // score panel is a standalone column. In Inline layout the staff is
+  // interleaved with the `w:` lyric lines, and substituting a flat scan there
+  // would break the lyric-to-note pairing the Inline view exists to provide.
+  // With `isSplit` required, `!scanAlreadyForced` reduces to
+  // `staffInlineApproved === true` — both clauses are kept anyway, since each
+  // documents a distinct rule and `scanAlreadyForced` is referenced above.
   const scanAlreadyForced = isStaff && isSplit && !staffInlineApproved
   const showScoreSourceRow =
-    isMusicNotes && isStaff && originalScanAvailable && !scanAlreadyForced
+    isMusicNotes && isStaff && isSplit && originalScanAvailable && !scanAlreadyForced
 
   const handleNotationChange = (notation: 'staff' | 'solfege') => {
     if (notation === 'staff' && !staffAvailable) {

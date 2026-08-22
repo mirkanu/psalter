@@ -16,7 +16,7 @@ function renderGearPopover(overrides: Partial<React.ComponentProps<typeof GearPo
   const defaultProps: React.ComponentProps<typeof GearPopover> = {
     open: true,
     onOpenChange: vi.fn(),
-    viewMode: 'staff' as ViewMode,
+    viewMode: 'staff-split' as ViewMode,
     onViewModeChange: vi.fn(),
     studyHref: '/study',
     onRestartTour: vi.fn(),
@@ -35,14 +35,23 @@ function renderGearPopover(overrides: Partial<React.ComponentProps<typeof GearPo
 }
 
 describe('GearPopover — Score: Digital / Original scan row (quick 260822-di9)', () => {
-  it('shows the Score row with two radios when staff is rendering digitally and a scan exists', () => {
-    renderGearPopover({ viewMode: 'staff', originalScanAvailable: true, showOriginal: false })
+  it('shows the Score row with two radios when staff is rendering digitally (Split-Leaf) and a scan exists', () => {
+    renderGearPopover({ viewMode: 'staff-split', originalScanAvailable: true, showOriginal: false })
     const group = document.querySelector('[data-settings-sub="score-source"]')
     expect(group).toBeTruthy()
     const digital = screen.getByRole('radio', { name: 'Digital' })
     const original = screen.getByRole('radio', { name: 'Original scan' })
     expect(digital.getAttribute('aria-checked')).toBe('true')
     expect(original.getAttribute('aria-checked')).toBe('false')
+  })
+
+  it('is absent in INLINE Staff layout (quick 260822-fgb)', () => {
+    renderGearPopover({
+      viewMode: 'staff',
+      staffInlineApproved: true,
+      originalScanAvailable: true,
+    })
+    expect(document.querySelector('[data-settings-sub="score-source"]')).toBeNull()
   })
 
   it('clicking Original scan calls onShowOriginalChange(true) exactly once', () => {
