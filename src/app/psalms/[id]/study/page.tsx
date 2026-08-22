@@ -136,7 +136,7 @@ export default async function PsalmStudyPage({ params }: PageProps) {
           <h1 className="text-2xl md:text-4xl font-bold text-foreground">
             Psalm {displayTitle} — Study
           </h1>
-          <PsalmNav prev={prev} next={next} />
+          <PsalmNav prev={prev} next={next} suffix="/study" />
         </div>
         {psalm.bibleTitle && (
           <p className="text-sm md:text-base text-muted-foreground mt-3">

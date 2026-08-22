@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight, List } from 'lucide-react'
@@ -11,6 +11,8 @@ import { cn } from '@/lib/utils'
 interface PsalmNavProps {
   prev: string | null
   next: string | null
+  /** Appended after the psalm slug, e.g. '/study'. Defaults to '' (singing view). */
+  suffix?: string
 }
 
 function isEditableTarget(el: Element | null): boolean {
@@ -21,8 +23,9 @@ function isEditableTarget(el: Element | null): boolean {
   return false
 }
 
-export function PsalmNav({ prev, next }: PsalmNavProps) {
+export function PsalmNav({ prev, next, suffix = '' }: PsalmNavProps) {
   const router = useRouter()
+  const hrefFor = useCallback((slug: string) => `/psalms/${slug}${suffix}`, [suffix])
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -30,14 +33,14 @@ export function PsalmNav({ prev, next }: PsalmNavProps) {
       if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
       if (isEditableTarget(document.activeElement)) return
       if (e.key === 'ArrowLeft' && prev) {
-        router.push(`/psalms/${prev}`)
+        router.push(hrefFor(prev))
       } else if (e.key === 'ArrowRight' && next) {
-        router.push(`/psalms/${next}`)
+        router.push(hrefFor(next))
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [prev, next, router])
+  }, [prev, next, router, hrefFor])
 
   const prevLabel = prev ? slugToDisplayTitle(prev) : ''
   const nextLabel = next ? slugToDisplayTitle(next) : ''
@@ -51,7 +54,7 @@ export function PsalmNav({ prev, next }: PsalmNavProps) {
   // ----- PREV -----
   const prevMobile = prev ? (
     <Link
-      href={`/psalms/${prev}`}
+      href={hrefFor(prev)}
       rel="prev"
       aria-label={`Previous psalm (Ps ${prevLabel})`}
       className={cn(
@@ -78,7 +81,7 @@ export function PsalmNav({ prev, next }: PsalmNavProps) {
 
   const prevDesktop = prev ? (
     <Link
-      href={`/psalms/${prev}`}
+      href={hrefFor(prev)}
       rel="prev"
       aria-label={`Previous psalm (Ps ${prevLabel})`}
       className={cn(
@@ -122,7 +125,7 @@ export function PsalmNav({ prev, next }: PsalmNavProps) {
   // ----- NEXT -----
   const nextMobile = next ? (
     <Link
-      href={`/psalms/${next}`}
+      href={hrefFor(next)}
       rel="next"
       aria-label={`Next psalm (Ps ${nextLabel})`}
       className={cn(
@@ -149,7 +152,7 @@ export function PsalmNav({ prev, next }: PsalmNavProps) {
 
   const nextDesktop = next ? (
     <Link
-      href={`/psalms/${next}`}
+      href={hrefFor(next)}
       rel="next"
       aria-label={`Next psalm (Ps ${nextLabel})`}
       className={cn(
