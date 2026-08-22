@@ -42,6 +42,7 @@ import { expectedSyllablesByLine } from '@/lib/meter-syllable-shape'
 import { detectRepeatedPitchContinuations } from '@/lib/detect-repeated-pitch-continuations'
 import { computeNotationScale } from '@/lib/notation-scale'
 import { isMeterMismatch } from '@/lib/meter-mismatch'
+import { computeScanToggleVisible } from '@/lib/inline-staff-gating'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -881,6 +882,40 @@ export function NotationRenderer({
 
   const divider = <div className="h-6 w-px bg-border" aria-hidden />
 
+  // Quick 260822-fgb: tune-page-only Digital / Original scan swap. /psalms/[id] and
+  // /precent/[id]/sing/[pos] get this from GearPopover instead (quick 260822-di9);
+  // the tune page never renders GearPopover, and AbcPlayer's own control is hidden
+  // here by hidePlayerControls={… || tunePageMode} (line ~1518).
+  const tuneStaffScanUrl = staffPages[0] ?? scoreJpgUrl
+  const showTuneScanToggle = computeScanToggleVisible({
+    tunePageMode,
+    viewMode,
+    hasAbc: Boolean(abc.trim()),
+    staffScanUrl: tuneStaffScanUrl,
+    staffInlineApproved,
+  })
+
+  const scanToggleGroup = showTuneScanToggle ? (
+    <div className="flex items-center gap-1" data-tune-scan-toggle role="group" aria-label="Score source">
+      <Button
+        variant={!showOriginal ? 'default' : 'outline'}
+        size="xs"
+        onClick={() => setShowOriginal(false)}
+        aria-pressed={!showOriginal}
+      >
+        Digital
+      </Button>
+      <Button
+        variant={showOriginal ? 'default' : 'outline'}
+        size="xs"
+        onClick={() => setShowOriginal(true)}
+        aria-pressed={showOriginal}
+      >
+        Original scan
+      </Button>
+    </div>
+  ) : null
+
   const controlBar = (
     <div className="flex flex-wrap items-center gap-2">
       {/* 2026-08-16 (Phase 16 R3): tunePageMode keeps the view-mode toggle
@@ -889,6 +924,12 @@ export function NotationRenderer({
       {!tunePageMode && sizeGroup}
       {!tunePageMode && divider}
       {viewGroup}
+      {scanToggleGroup && (
+        <>
+          {divider}
+          {scanToggleGroup}
+        </>
+      )}
       {!tunePageMode && showPagination && (
         <>
           {divider}
