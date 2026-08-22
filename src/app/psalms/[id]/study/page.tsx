@@ -7,11 +7,12 @@ import { db } from '@/db'
 import { psalms, psalmVersions } from '@/db/schema'
 import { asc, eq } from 'drizzle-orm'
 import { fetchPsalmDetail } from '@/db/queries/psalms'
-import { fetchNavesTopicsWithCounts } from '@/db/queries/explore'
+import { fetchNavesTopicsWithCounts, fetchAllTopicsWithCounts } from '@/db/queries/explore'
 import { PsalmTabs } from '@/components/PsalmTabs'
 import { PsalmNav } from '@/components/PsalmNav'
 import { parseSlug, deriveVersionSlug, stripStar, slugToDisplayTitle } from '@/lib/psalm-slugs'
 import { buildNavesSlugMap } from '@/lib/naves-slugs'
+import { buildTopicSlugMap } from '@/lib/topic-slugs'
 import { getPsalmNeighbors } from '@/lib/psalm-navigation'
 
 interface PageProps {
@@ -110,6 +111,11 @@ export default async function PsalmStudyPage({ params }: PageProps) {
   const navesTopicRows = await fetchNavesTopicsWithCounts()
   const navesSlugMap = Object.fromEntries(buildNavesSlugMap(navesTopicRows))
 
+  const topicRows = await fetchAllTopicsWithCounts()
+  const topicSlugMap = Object.fromEntries(
+    buildTopicSlugMap(topicRows.filter((t): t is typeof t & { name: string } => t.name !== null)),
+  )
+
   const displayTitle = slugToDisplayTitle(slug)
   const { prev, next } = await getPsalmNeighbors(slug)
 
@@ -144,6 +150,7 @@ export default async function PsalmStudyPage({ params }: PageProps) {
         activeVersionId={activeVersion?.id}
         recommendedVersionSlug={recommendedVersionSlug}
         navesSlugMap={navesSlugMap}
+        topicSlugMap={topicSlugMap}
       />
     </div>
   )
