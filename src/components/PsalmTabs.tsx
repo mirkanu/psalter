@@ -4,7 +4,38 @@ import { useRef, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import type { PsalmDetail } from '@/db/queries/psalms'
+import { dayOfYearToDate, formatOrdinalDate, formatPsalmRef, parseReadingDate } from '@/lib/daily'
+import { buildParallelRows } from '@/lib/parallel-verses'
+import type { StructuredLyrics } from '@/lib/lyrics-structured'
+
+// ── Shared collapsible section helper (Study tab) ────────────────────────────
+
+function CollapsibleSection({
+  title,
+  children,
+  defaultOpen = false,
+}: {
+  title: string
+  children: React.ReactNode
+  defaultOpen?: boolean
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="flex w-full items-center justify-between min-h-[44px] hover:bg-muted rounded-md px-1 py-2">
+        <span className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          {title}
+        </span>
+        {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+      </CollapsibleTrigger>
+      <CollapsibleContent>{children}</CollapsibleContent>
+    </Collapsible>
+  )
+}
 
 type TuneRow = NonNullable<
   PsalmDetail['psalmVersions'][number]['psalmVersionTunes'][number]['tune']
@@ -17,6 +48,8 @@ interface PsalmTabsProps {
   recommendedVersionSlug?: string | null
   /** id -> explore slug, built server-side via buildNavesSlugMap; plain object crosses the RSC boundary. */
   navesSlugMap: Record<string, string>
+  /** topic id -> /explore/topics/{slug}, built server-side via buildTopicSlugMap; plain object crosses the RSC boundary. */
+  topicSlugMap: Record<string, string>
 }
 
 // ── Content section components (shared between mobile/desktop) ───────────────
@@ -25,10 +58,12 @@ function OverviewContent({
   psalm,
   primaryTune,
   primaryVersion,
+  topicSlugMap,
 }: {
   psalm: PsalmDetail
   primaryTune: TuneRow | null
   primaryVersion: PsalmDetail['psalmVersions'][number] | null
+  topicSlugMap: Record<string, string>
 }) {
   return (
     <div className="space-y-6">
@@ -40,7 +75,13 @@ function OverviewContent({
         )}
         {psalm.author && (
           <p className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">Author:</span> {psalm.author}
+            <span className="font-medium text-foreground">Author:</span>{' '}
+            <Link
+              href="/explore?tab=authors"
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              {psalm.author}
+            </Link>
           </p>
         )}
         {primaryVersion?.meter && (
@@ -80,11 +121,23 @@ function OverviewContent({
             Categories
           </h3>
           <div className="flex flex-wrap gap-2">
-            {psalm.psalmTopics.map((pt) => (
-              <Badge key={pt.topic.id} variant="secondary">
-                {pt.topic.name}
-              </Badge>
-            ))}
+            {psalm.psalmTopics.map((pt) => {
+              const slug = topicSlugMap[String(pt.topic.id)]
+              const badge = <Badge variant="secondary">{pt.topic.name}</Badge>
+              return slug ? (
+                <Link
+                  key={pt.topic.id}
+                  href={`/explore/topics/${slug}`}
+                  data-testid="overview-category"
+                >
+                  {badge}
+                </Link>
+              ) : (
+                <span key={pt.topic.id} data-testid="overview-category">
+                  {badge}
+                </span>
+              )
+            })}
           </div>
         </div>
       )}
@@ -92,34 +145,47 @@ function OverviewContent({
   )
 }
 
-function DaysContent({ dailyEntry }: { dailyEntry: PsalmDetail['dailyReadings'][number] | null }) {
-  if (!dailyEntry) {
+function DaysContent({
+  entries,
+  psalmId,
+}: {
+  entries: PsalmDetail['dailyReadings']
+  psalmId: number
+}) {
+  if (entries.length === 0) {
     return <p className="text-muted-foreground italic">No reading plan entry for this psalm.</p>
   }
   return (
-    <div className="space-y-2">
-      <p className="text-foreground">
-        <span className="font-medium">Day {dailyEntry.dayNumber}</span>
-        {dailyEntry.readingDate && (
-          <span className="text-muted-foreground ml-2">— {dailyEntry.readingDate}</span>
-        )}
-      </p>
-      {dailyEntry.notes && (
-        <p className="text-sm text-muted-foreground">{dailyEntry.notes}</p>
-      )}
+    <div className="space-y-4" data-testid="days-entries">
+      {entries.map((entry) => {
+        const parsed = entry.readingDate ? parseReadingDate(entry.readingDate) : null
+        const displayDate = formatOrdinalDate(parsed ?? dayOfYearToDate(entry.dayNumber))
+        return (
+          <div key={entry.id} className="space-y-1" data-testid="days-entry">
+            <p className="text-foreground">
+              <span className="font-medium">{displayDate}</span>
+              <span className="text-muted-foreground ml-2">
+                {formatPsalmRef(psalmId, entry.startingVerse, entry.endingVerse, true)}
+              </span>
+            </p>
+            {entry.notes && <p className="text-sm text-muted-foreground">{entry.notes}</p>}
+          </div>
+        )
+      })}
     </div>
   )
 }
 
-export function StudyContent({
-  psalm,
-  kjvVerses,
-  navesSlugMap,
-}: {
+export function StudyContent(props: {
   psalm: PsalmDetail
-  kjvVerses: PsalmDetail['verses']
+  // Kept in the exported signature for backwards compatibility with existing
+  // call sites (see task 3 plan note) — no longer rendered here now that the
+  // KJV Text section has moved to the Parallel tab. Intentionally not
+  // destructured below (unused).
+  kjvVerses?: PsalmDetail['verses']
   navesSlugMap: Record<string, string>
 }) {
+  const { psalm, navesSlugMap } = props
   const xrefVerses = psalm.verses
     .filter((v) => v.verseNavesTopics.length > 0 || v.verseDoctrines.length > 0)
     .map((v) => {
@@ -139,12 +205,11 @@ export function StudyContent({
     <div className="space-y-6">
       {psalm.haddingtonIntro && (
         <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-            Haddington Introduction
-          </h2>
-          <p className="text-foreground leading-relaxed whitespace-pre-line">
-            {psalm.haddingtonIntro}
-          </p>
+          <CollapsibleSection title="Haddington Introduction" defaultOpen={false}>
+            <p className="text-foreground leading-relaxed whitespace-pre-line px-1 py-2">
+              {psalm.haddingtonIntro}
+            </p>
+          </CollapsibleSection>
         </section>
       )}
       {xrefVerses.length > 0 && (
@@ -181,59 +246,41 @@ export function StudyContent({
           </div>
         </section>
       )}
-      {kjvVerses.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-            KJV Text
-          </h2>
-          <div className="space-y-2">
-            {kjvVerses.map((v) => (
-              <p key={v.id} className="text-foreground leading-relaxed">
-                <span className="text-xs text-muted-foreground font-mono mr-2">
-                  {v.verseNumber}
-                </span>
-                {v.kjvText}
-              </p>
-            ))}
-          </div>
-        </section>
-      )}
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-          External Resources
-        </h2>
-        <ul className="space-y-1 text-sm">
-          <li>
-            <a
-              href={`https://www.sermonaudio.com/search/?keyword=psalm+${psalm.id}&keywordtype=4`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
-            >
-              SermonAudio — Psalm {psalm.id}
-            </a>
-          </li>
-          <li>
-            <a
-              href={`https://www.spurgeon.org/resource-library/treasury-of-david/psalm-${psalm.id}/`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
-            >
-              Spurgeon&apos;s Treasury of David
-            </a>
-          </li>
-          <li>
-            <a
-              href={`https://relight.app/psalm/${psalm.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
-            >
-              Relight.app
-            </a>
-          </li>
-        </ul>
+        <CollapsibleSection title="External Resources" defaultOpen={false}>
+          <ul className="space-y-1 text-sm px-1 py-2">
+            <li>
+              <a
+                href={`https://www.sermonaudio.com/search/?keyword=psalm+${psalm.id}&keywordtype=4`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
+              >
+                SermonAudio — Psalm {psalm.id}
+              </a>
+            </li>
+            <li>
+              <a
+                href={`https://www.spurgeon.org/resource-library/treasury-of-david/psalm-${psalm.id}/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
+              >
+                Spurgeon&apos;s Treasury of David
+              </a>
+            </li>
+            <li>
+              <a
+                href={`https://relight.app/psalm/${psalm.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
+              >
+                Relight.app
+              </a>
+            </li>
+          </ul>
+        </CollapsibleSection>
       </section>
     </div>
   )
@@ -281,15 +328,54 @@ function MessianicContent({
   )
 }
 
-function ParallelContent({
+export function ParallelContent({
+  structured,
   lyrics,
   kjvVerses,
 }: {
+  structured: StructuredLyrics | null
   lyrics: string | null
   kjvVerses: PsalmDetail['verses']
 }) {
+  const rows =
+    structured !== null
+      ? buildParallelRows(
+          structured,
+          kjvVerses.map((v) => ({ verseNumber: v.verseNumber, kjvText: v.kjvText })),
+        )
+      : []
+
+  if (structured !== null && rows.length > 0) {
+    return (
+      <Table data-testid="parallel-table">
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-14">Verse</TableHead>
+            <TableHead>Scottish Psalter</TableHead>
+            <TableHead>KJV</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((row) => (
+            <TableRow key={row.verseNumber ?? 'null'} data-testid="parallel-row">
+              <TableCell className="align-top font-mono text-xs tabular-nums text-muted-foreground">
+                {row.verseNumber ?? '—'}
+              </TableCell>
+              <TableCell className="align-top whitespace-pre-line text-sm leading-relaxed">
+                {row.psalterLines.join('\n')}
+              </TableCell>
+              <TableCell className="align-top text-sm leading-relaxed">
+                {row.kjvText ?? '—'}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    )
+  }
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6" data-testid="parallel-fallback">
       <div>
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
           Scottish Psalter
@@ -350,7 +436,7 @@ const TABS = [
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export function PsalmTabs({ psalm, primaryTune, activeVersionId, recommendedVersionSlug, navesSlugMap }: PsalmTabsProps) {
+export function PsalmTabs({ psalm, primaryTune, activeVersionId, recommendedVersionSlug, navesSlugMap, topicSlugMap }: PsalmTabsProps) {
   const mobileTabsRef = useRef<HTMLDivElement>(null)
   // Preserve the active desktop tab across renders.
   const [desktopTab, setDesktopTab] = useState('overview')
@@ -365,7 +451,6 @@ export function PsalmTabs({ psalm, primaryTune, activeVersionId, recommendedVers
   const primaryVersion = activeVersionId
     ? (psalm.psalmVersions.find((v) => v.id === activeVersionId) ?? sortedVersions[0] ?? null)
     : (sortedVersions[0] ?? null)
-  const dailyEntry = psalm.dailyReadings?.[0] ?? null
   const messianic = psalm.messianicPsalms[0] ?? null
   const kjvVerses = psalm.verses
     .slice()
@@ -387,10 +472,15 @@ export function PsalmTabs({ psalm, primaryTune, activeVersionId, recommendedVers
   const sharedTabContents = (pb: string) => (
     <>
       <TabsContent value="overview" className={pb}>
-        <OverviewContent psalm={psalm} primaryTune={primaryTune} primaryVersion={primaryVersion} />
+        <OverviewContent
+          psalm={psalm}
+          primaryTune={primaryTune}
+          primaryVersion={primaryVersion}
+          topicSlugMap={topicSlugMap}
+        />
       </TabsContent>
       <TabsContent value="365days" className={pb}>
-        <DaysContent dailyEntry={dailyEntry} />
+        <DaysContent entries={psalm.dailyReadings ?? []} psalmId={psalm.id} />
       </TabsContent>
       <TabsContent value="study" className={pb}>
         <StudyContent psalm={psalm} kjvVerses={kjvVerses} navesSlugMap={navesSlugMap} />
@@ -399,7 +489,11 @@ export function PsalmTabs({ psalm, primaryTune, activeVersionId, recommendedVers
         <MessianicContent messianic={messianic} />
       </TabsContent>
       <TabsContent value="parallel" className={pb}>
-        <ParallelContent lyrics={lyrics} kjvVerses={kjvVerses} />
+        <ParallelContent
+          structured={primaryVersion?.lyricsStructured ?? null}
+          lyrics={lyrics}
+          kjvVerses={kjvVerses}
+        />
       </TabsContent>
     </>
   )

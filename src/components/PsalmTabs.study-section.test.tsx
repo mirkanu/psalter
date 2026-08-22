@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import { StudyContent } from './PsalmTabs'
 import type { PsalmDetail } from '@/db/queries/psalms'
 
@@ -99,5 +99,59 @@ describe('StudyContent cross-references section', () => {
     ])
     render(<StudyContent psalm={psalm} kjvVerses={psalm.verses} navesSlugMap={{}} />)
     expect(screen.queryByTestId('study-xref')).toBeNull()
+  })
+})
+
+describe('StudyContent collapsible sections + KJV Text removal', () => {
+  function makeFullPsalm(overrides: Partial<{ haddingtonIntro: string | null }> = {}) {
+    return {
+      id: 23,
+      haddingtonIntro: 'An introduction to this psalm.',
+      verses: [
+        {
+          id: 1,
+          verseNumber: 1,
+          kjvText: 'In the beginning...',
+          verseNavesTopics: [{ navesTopic: { id: 5, name: 'Praise' } }],
+          verseDoctrines: [],
+        },
+      ],
+      ...overrides,
+    } as unknown as PsalmDetail
+  }
+
+  it('renders no "KJV Text" heading even when kjvVerses is non-empty', () => {
+    const psalm = makeFullPsalm()
+    render(
+      <StudyContent psalm={psalm} kjvVerses={psalm.verses} navesSlugMap={{ '5': 'praise' }} />,
+    )
+    expect(screen.queryByText('KJV Text')).toBeNull()
+  })
+
+  it('shows the Haddington Introduction trigger but not its body on first render', () => {
+    const psalm = makeFullPsalm()
+    render(
+      <StudyContent psalm={psalm} kjvVerses={psalm.verses} navesSlugMap={{ '5': 'praise' }} />,
+    )
+    expect(screen.getByText('Haddington Introduction')).toBeTruthy()
+    expect(screen.queryByText('An introduction to this psalm.')).toBeNull()
+  })
+
+  it('reveals the Haddington Introduction body after clicking the trigger', () => {
+    const psalm = makeFullPsalm()
+    render(
+      <StudyContent psalm={psalm} kjvVerses={psalm.verses} navesSlugMap={{ '5': 'praise' }} />,
+    )
+    const trigger = screen.getByText('Haddington Introduction')
+    fireEvent.click(trigger)
+    expect(screen.getByText('An introduction to this psalm.')).toBeTruthy()
+  })
+
+  it('shows Cross-References badges immediately on first render with no click', () => {
+    const psalm = makeFullPsalm()
+    render(
+      <StudyContent psalm={psalm} kjvVerses={psalm.verses} navesSlugMap={{ '5': 'praise' }} />,
+    )
+    expect(screen.getByText('Praise')).toBeTruthy()
   })
 })
