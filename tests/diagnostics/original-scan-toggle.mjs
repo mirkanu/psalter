@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 /**
- * Diagnostic: prove the new "Score: Digital / Original scan" gear popover row
+ * Diagnostic: prove the "Score: Digital / Original scan" gear popover row
  * (quick task 260822-di9) swaps the live abcjs staff for the scanned JPG and
- * back, with no page navigation.
+ * back, with no page navigation, and that the legacy in-scan "Back to
+ * notation" button + Staff/Solfège sub-toggle (removed by quick task
+ * 260822-sou) no longer render above the scan image — the gear's "Digital"
+ * radio is now the ONLY return path.
  *
  * Uses the shared Playwright daemon (http://localhost:3099, see CLAUDE.md) —
  * NEVER spawns raw Chromium. The daemon's client.js is currently an empty
@@ -54,10 +57,24 @@ const NOTATION_SVG_SEL = '[role="img"][aria-label*="Music notation"] svg'
 // "Original scan" leaves it open). Blindly clicking the trigger again would
 // then CLOSE it instead of opening it, hanging any subsequent waitForSelector.
 // This snippet checks data-state first and only clicks when actually closed.
+//
+// Rule 3 fix (260822-sou Task 2): quick task 260822-fgb (already merged,
+// discovered live during this diagnostic's rewrite) gated the Score-source
+// row to Split-Leaf layout only (GearPopover.tsx showScoreSourceRow requires
+// `isSplit`) — it is NOT present in the default Inline layout SingingView
+// mounts with (`useState<ViewMode>('staff')`). The `[data-settings-sub]`
+// present unconditionally is `"layout"`, not `"score-source"`, so this
+// snippet waits on that instead, then switches to Split-Leaf (idempotent —
+// a no-op if already active) before any score-source assertion runs.
 const ENSURE_GEAR_OPEN = `
   const gearState = await page.locator('[data-singing-gear]').getAttribute('data-state')
   if (gearState !== 'open') {
     await page.locator('[data-singing-gear]').click()
+  }
+  await page.waitForSelector('[data-settings-sub="layout"]', { timeout: 5000 })
+  const splitLeafChecked = await page.locator('button[aria-label="Split-Leaf"]').getAttribute('aria-checked')
+  if (splitLeafChecked !== 'true') {
+    await page.locator('button[aria-label="Split-Leaf"]').click()
   }
   await page.waitForSelector('[data-settings-sub="score-source"]', { timeout: 5000 })
 `
@@ -98,56 +115,67 @@ async function main() {
     await page.locator('button[aria-label="Original scan"]').click()
     await page.waitForSelector('img[alt^="Original score"]', { timeout: 5000 })
     const imgVisible = await page.locator('img[alt^="Original score"]').first().isVisible()
-    const backVisible = await page.locator('[data-testid="back-to-notation"]').first().isVisible()
     const svgAfterSwap = await page.locator(${JSON.stringify(NOTATION_SVG_SEL)}).count()
 
-    return { digitalChecked, imgVisible, backVisible, svgAfterSwap, url: page.url() }
+    return { digitalChecked, imgVisible, svgAfterSwap, url: page.url() }
   `)
   record('gear opened, Score row visible', true)
   record('Digital radio initially checked', r2.digitalChecked === 'true', { digitalChecked: r2.digitalChecked })
   record('Original scan image visible after click', r2.imgVisible)
-  record('Back-to-notation button visible', r2.backVisible)
   record('abcjs svg gone after swap', r2.svgAfterSwap === 0, { svgAfterSwap: r2.svgAfterSwap })
   record('URL unchanged (no navigation)', r2.url === urlBeforeClick, { urlBeforeClick, urlAfterClick: r2.url })
 
-  // Job 3: click "Back to notation" — svg returns, scan image gone.
+  // Job 3: quick task 260822-sou removed AbcPlayer's own in-scan chrome (the
+  // "Back to notation" button and the Staff/Solfège sub-toggle) — the gear's
+  // Digital radio is now the ONLY return path. Assert zero buttons render
+  // above the scan image by walking DOM-order previous siblings of the
+  // image; this catches BOTH removed affordances in one assertion and is
+  // immune to whether the gear popover happens to be open.
   const r3 = await runPlaywright(`
-    await page.locator('[data-testid="back-to-notation"]').click()
-    await page.waitForSelector(${JSON.stringify(NOTATION_SVG_SEL)}, { timeout: 5000 })
-    const svgAfterBack = await page.locator(${JSON.stringify(NOTATION_SVG_SEL)}).count()
-    const imgAfterBack = await page.locator('img[alt^="Original score"]').count()
-    return { svgAfterBack, imgAfterBack }
+    const chromeAboveScan = await page.locator('img[alt^="Original score"]').first().evaluate((img) => {
+      let count = 0
+      let n = img.previousElementSibling
+      while (n) {
+        if (n.tagName === 'BUTTON') count += 1
+        count += n.querySelectorAll('button').length
+        n = n.previousElementSibling
+      }
+      return count
+    })
+    const backCount = await page.locator('[data-testid="back-to-notation"]').count()
+    return { chromeAboveScan, backCount }
   `)
-  record('svg returns after Back-to-notation click', r3.svgAfterBack > 0, { svgAfterBack: r3.svgAfterBack })
-  record('scan image gone after Back-to-notation click', r3.imgAfterBack === 0, { imgAfterBack: r3.imgAfterBack })
+  record('no buttons rendered above the scan image (back-button + Staff/Solfège sub-toggle removed)', r3.chromeAboveScan === 0, { chromeAboveScan: r3.chromeAboveScan })
+  record('back-to-notation button not present in scan view', r3.backCount === 0, { backCount: r3.backCount })
 
-  // Job 4: reopen gear, click Original scan again — proves the gear route
-  // into the scan works a second time (not just a one-shot effect).
-  // Split from Job 5 below: chaining two full popover-open+click round trips
-  // inside one daemon job proved flaky (Radix Popover open-state tracking
-  // when two toggles fire back-to-back with zero real-world delay between
-  // them) — separate HTTP round trips give the popover's own state machine
-  // time to settle between actions, matching how a real user interacts.
+  // Job 4: reopen gear, click the Digital radio — proves the gear's Digital
+  // radio (now the ONLY return path since 260822-sou) restores the live SVG.
   const r4 = await runPlaywright(`
+    ${ENSURE_GEAR_OPEN}
+    await page.locator('button[aria-label="Digital"]').click()
+    await page.waitForSelector(${JSON.stringify(NOTATION_SVG_SEL)}, { timeout: 5000 })
+    const svgAfterDigitalRadio = await page.locator(${JSON.stringify(NOTATION_SVG_SEL)}).count()
+    const imgAfterDigitalRadio = await page.locator('img[alt^="Original score"]').count()
+    return { svgAfterDigitalRadio, imgAfterDigitalRadio }
+  `)
+  record('svg returns after gear Digital radio click', r4.svgAfterDigitalRadio > 0, { svgAfterDigitalRadio: r4.svgAfterDigitalRadio })
+  record('scan image gone after gear Digital radio click', r4.imgAfterDigitalRadio === 0, { imgAfterDigitalRadio: r4.imgAfterDigitalRadio })
+
+  // Job 5: reopen gear, click Original scan again — proves the round trip
+  // works a second time (not just a one-shot effect). Split from Job 4:
+  // chaining two full popover-open+click round trips inside one daemon job
+  // proved flaky (Radix Popover open-state tracking when two toggles fire
+  // back-to-back with zero real-world delay between them) — separate HTTP
+  // round trips give the popover's own state machine time to settle between
+  // actions, matching how a real user interacts.
+  const r5 = await runPlaywright(`
     ${ENSURE_GEAR_OPEN}
     await page.locator('button[aria-label="Original scan"]').click()
     await page.waitForSelector('img[alt^="Original score"]', { timeout: 5000 })
     const imgVisibleAgain = await page.locator('img[alt^="Original score"]').first().isVisible()
     return { imgVisibleAgain }
   `)
-  record('Original scan reachable a second time via gear', r4.imgVisibleAgain)
-
-  // Job 5: reopen gear, click the Digital radio — proves the SECOND return
-  // path (distinct from Job 3's Back-to-notation button) also restores the
-  // live SVG.
-  const r5 = await runPlaywright(`
-    ${ENSURE_GEAR_OPEN}
-    await page.locator('button[aria-label="Digital"]').click()
-    await page.waitForSelector(${JSON.stringify(NOTATION_SVG_SEL)}, { timeout: 5000 })
-    const svgAfterDigitalRadio = await page.locator(${JSON.stringify(NOTATION_SVG_SEL)}).count()
-    return { svgAfterDigitalRadio }
-  `)
-  record('svg returns after gear Digital radio click', r5.svgAfterDigitalRadio > 0, { svgAfterDigitalRadio: r5.svgAfterDigitalRadio })
+  record('Original scan reachable a second time via gear', r5.imgVisibleAgain)
 
   let allPassed = true
   for (const step of steps) {
