@@ -27,6 +27,7 @@ export const psalms = pgTable('psalms', {
   airtableId: text('airtable_id').notNull().unique(),
   book: text('book'),                            // e.g. "1-41 (Bk 1)"
   bibleTitle: text('bible_title'),
+  nkjvTitle: text('nkjv_title'),                  // Airtable Psalms."Chapter Titles (NKJV)" (multipleLookupValues, first element)
   haddingtonIntro: text('haddington_intro'),
   kjvText: text('kjv_text'),
   author: text('author'),
