@@ -1,18 +1,24 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight, List } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 import { slugToDisplayTitle } from '@/lib/psalm-slugs'
 import { cn } from '@/lib/utils'
+import type { PsalmRow } from '@/components/PsalmListingGrid'
+import { PsalmPickerModalClient } from '@/components/PsalmPickerModalClient'
 
 interface PsalmNavProps {
   prev: string | null
   next: string | null
   /** Appended after the psalm slug, e.g. '/study'. Defaults to '' (singing view). */
   suffix?: string
+  /** When provided (non-empty), the mobile list icon opens the shared psalm
+   *  picker dialog in place instead of navigating to /psalms. Absent/undefined
+   *  keeps the legacy <Link href="/psalms"> behaviour — additive-only. */
+  psalms?: PsalmRow[]
 }
 
 function isEditableTarget(el: Element | null): boolean {
@@ -23,8 +29,9 @@ function isEditableTarget(el: Element | null): boolean {
   return false
 }
 
-export function PsalmNav({ prev, next, suffix = '' }: PsalmNavProps) {
+export function PsalmNav({ prev, next, suffix = '', psalms }: PsalmNavProps) {
   const router = useRouter()
+  const [pickerOpen, setPickerOpen] = useState(false)
   const hrefFor = useCallback((slug: string) => `/psalms/${slug}${suffix}`, [suffix])
 
   useEffect(() => {
@@ -109,7 +116,21 @@ export function PsalmNav({ prev, next, suffix = '' }: PsalmNavProps) {
   )
 
   // ----- LIST (mobile only) -----
-  const listMobile = (
+  const hasPsalms = !!psalms && psalms.length > 0
+  const listMobile = hasPsalms ? (
+    <button
+      type="button"
+      onClick={() => setPickerOpen(true)}
+      aria-label="All psalms"
+      data-testid="psalm-nav-picker"
+      className={cn(
+        buttonVariants({ variant: 'outline', size: 'icon-lg' }),
+        'md:hidden',
+      )}
+    >
+      <List />
+    </button>
+  ) : (
     <Link
       href="/psalms"
       aria-label="All psalms"
@@ -180,12 +201,22 @@ export function PsalmNav({ prev, next, suffix = '' }: PsalmNavProps) {
   )
 
   return (
-    <nav aria-label="Psalm navigation" className="flex shrink-0 items-center gap-2">
-      {prevMobile}
-      {prevDesktop}
-      {listMobile}
-      {nextMobile}
-      {nextDesktop}
-    </nav>
+    <>
+      <nav aria-label="Psalm navigation" className="flex shrink-0 items-center gap-2">
+        {prevMobile}
+        {prevDesktop}
+        {listMobile}
+        {nextMobile}
+        {nextDesktop}
+      </nav>
+      {hasPsalms && (
+        <PsalmPickerModalClient
+          open={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          psalms={psalms!}
+          onSelect={(p) => router.push(hrefFor(p.slug))}
+        />
+      )}
+    </>
   )
 }
