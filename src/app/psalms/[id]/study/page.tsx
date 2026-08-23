@@ -14,6 +14,7 @@ import { parseSlug, deriveVersionSlug, stripStar, slugToDisplayTitle } from '@/l
 import { buildNavesSlugMap } from '@/lib/naves-slugs'
 import { buildTopicSlugMap } from '@/lib/topic-slugs'
 import { getPsalmNeighbors } from '@/lib/psalm-navigation'
+import { parseVerseRange } from '@/lib/verse-range'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -66,6 +67,8 @@ export default async function PsalmStudyPage({ params }: PageProps) {
 
   const { psalmId, versionLetter, verseRange } = parsed
   if (!Number.isFinite(psalmId) || psalmId < 1 || psalmId > 150) notFound()
+
+  const activeVerseRange = parseVerseRange(verseRange)
 
   const psalm = await fetchPsalmDetail(psalmId)
   if (!psalm) notFound()
@@ -151,6 +154,7 @@ export default async function PsalmStudyPage({ params }: PageProps) {
         recommendedVersionSlug={recommendedVersionSlug}
         navesSlugMap={navesSlugMap}
         topicSlugMap={topicSlugMap}
+        activeVerseRange={activeVerseRange}
       />
     </div>
   )
