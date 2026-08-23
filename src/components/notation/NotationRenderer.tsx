@@ -630,7 +630,14 @@ export function NotationRenderer({
       ? 1
       : viewportW < 768 || isPhoneLandscapeForFit
       ? 0.55
-      : 0.85
+      // Quick task 260823-stretch: desktop/tablet SingingView staff mode.
+      // 0.85 was producing a noticeable right-edge gap because the viewBox
+      // came out narrower than the container (AbcPlayer handles the SVG
+      // anchoring + stretchlast to neutralise that gap, but widening the
+      // staff here too means more music per system and the gap shrinks
+      // faster). 0.95 still forces ≥3 systems on desktop viewports; tested
+      // against /psalms/9 in desktop Chrome via Playwright daemon.
+      : 0.95
     : 1
 
   // 260712-szw: mobile-only compact spacing + height-fit for split-leaf
