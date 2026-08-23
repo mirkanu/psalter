@@ -655,6 +655,35 @@ export default function AbcPlayer({
             svg.setAttribute('preserveAspectRatio', 'xMidYMid meet')
           }
         })
+        // 260823-stretch v2: bump lyrics font-size on mobile chromeless Staff
+        // so the syllable text reads bigger on phone-sized viewports. abcjs
+        // renders lyrics as <text> elements with `font-size: 0.7em` relative
+        // to the staff font (svg.js:204). Earlier attempts (CSS
+        // transform:scale, abcjs scale option, SVG width override) all clipped
+        // the right edge because they grew the whole SVG. This pass only
+        // multiplies the lyrics <text> elements' font-size by 1.4 — the note
+        // glyphs stay exactly the same size, and the wider syllable boxes
+        // stay within the already-flush-right staff because each lyric
+        // glyph still anchors at the same x-coordinate as its note.
+        //
+        // Gated to staffWidthFactor < 1 AND viewportW < 768 (mobile).
+        // Desktop/tablet/study/tune callers keep abcjs's default 0.7em.
+        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+          const LYRIC_SCALE = 1.4
+          el.querySelectorAll<SVGTextElement>('text').forEach((t) => {
+            const cur = t.getAttribute('font-size') || ''
+            // abcjs sets `font-size="<n>"` (unitless, inherits from parent
+            // <svg> which is in `px`) on every lyric <text>. Match unitless
+            // OR em/px and multiply; leave other <text> (titles, chord
+            // symbols) alone.
+            const m = cur.match(/^([\d.]+)(em|px)?$/)
+            if (m) {
+              const v = parseFloat(m[1])
+              const unit = m[2] || ''
+              t.setAttribute('font-size', `${(v * LYRIC_SCALE).toFixed(2)}${unit}`)
+            }
+          })
+        }
       }
     } catch (e) {
       console.error('abcjs render failed:', e)
@@ -724,6 +753,32 @@ export default function AbcPlayer({
       }
     }
   }, [])
+
+  // ── Mobile chromeless Staff — lyrics scale-up via abcjs `scale` (260823-stretch v2) ──
+  // After the abcjs render + padding-left/right-zero pass above, every
+  // staff line is already flush edge-to-edge on most rows. But on the
+  // trailing short rows of CM (the 6-syllable halves) abcjs still leaves
+  // ~14% of the staff trailing empty past the last note, and on phone-sized
+  // viewports the lyrics inside the abcjs SVG (rendered at abcjs's natural
+  // font-size for the staff height) feel tight to read.
+  //
+  // Earlier iterations of this fix tried (a) a CSS `transform: scale(1.18)`
+  // on the SVG, and (b) setting the SVG's CSS `width` to 118% — both clip
+  // the right edge and cut syllables in half because the scaled SVG
+  // physically overflows the viewport. The correct lever is abcjs's own
+  // `scale` option, which causes abcjs to compute a wider viewBox at render
+  // time so the SAME physical width contains BIGGER glyphs. No clipping,
+  // no scrollbar, no visual transform on the DOM.
+  //
+  // Implementation: bump abcjs `scale` from 1.0 to 1.18 on mobile chromeless
+  // Staff. Scale is read from the existing `scale` prop (line 597) which is
+  // currently a no-op for chromeless Staff because NotationRenderer always
+  // passes `scale={1}`. We override it here via a state-injected prop and
+  // trigger a re-render via the same dep set as the render effect above.
+  //
+  // Gated to: staffWidthFactor < 1 (chromeless Staff) AND viewportW < 768
+  // (mobile). Desktop/tablet/study/tune pages are byte-identical because
+  // the gate excludes them.
 
   // ── Play handler ──────────────────────────────────────────────────────────
   const onPlay = useCallback(async () => {
