@@ -19,6 +19,7 @@ import type { PsalmRow } from '@/components/PsalmListingGrid'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
 import { buildNotationRendererProps } from '@/lib/notation-renderer-props'
 import { setChromeHidden } from '@/lib/chrome-hidden-store'
+import { phrasesForMeter } from '@/lib/abc-phrase-meter-map'
 import { resolveStaffInlineApproved, shouldFallbackToSplit } from '@/lib/inline-staff-gating'
 import { isIOSDevice, isStandaloneDisplayMode, isPhoneDevice } from '@/lib/device'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
@@ -36,6 +37,12 @@ const STORAGE_LAST_MUSIC_MODE_KEY = 'psalter-score-mode-last-music'
 // size; Lyrics Only has its own — see `readStoredSize`/`activeBaseSize` below.
 const STORAGE_SIZE_KEY = 'psalter-staff-size'
 const STORAGE_LYRICS_SIZE_KEY = 'psalter-lyrics-size'
+// 2026-08-23 (row-count knob): upper bound on `rowDelta` for the Inline Staff
+// A+/A− knob. 8 lets the densest psalm (Ps 119, ~28 lines if split as 4
+// syllables per row, plus the melisma path adds overhead) subdivide a CM
+// stanza from 4 rows up to 12. Above 8 the rows become too sparse to be
+// musically readable.
+const MAX_ROW_DELTA = 8
 
 interface Props {
   psalm: PsalmDetail
@@ -193,6 +200,12 @@ export function SingingView({
   // whichever applies to the current viewMode.
   const [baseSize, setBaseSize] = useState<number>(14)
   const [lyricsBaseSize, setLyricsBaseSize] = useState<number>(14)
+  // 2026-08-23 (row-count knob): A+/A− in Inline Staff mode drives THIS state
+  // directly — it sets the row COUNT (added to the meter baseline) rather than
+  // font size. The dynamic lyric solver then picks the largest viable font
+  // per row. Meter baseline (e.g. 4 for CM/LM/SM) is enforced as the floor;
+  // A− disables when rowDelta hits 0. Other view modes ignore this state.
+  const [rowDelta, setRowDelta] = useState<number>(0)
   // 04.9.15-02: notationBaseSize is a SECOND, independent size state driving
   // ONLY the chromeless inline-Staff abcjs scale (via computeNotationScale).
   // It is seeded at the pre-existing inline-Staff mobile default (13, matches
@@ -468,13 +481,38 @@ export function SingingView({
   // resets referenceWidthRef — that ref belongs exclusively to the
   // notationBaseSize resize heuristic above, and a lyric-only A+/A− press
   // must not perturb the notation scale's resize reference.
-  const handleBaseSizeChange = useCallback((newSize: number) => {
+  // 2026-08-23 (row-count knob): in Inline Staff mode, A+/A− does NOT change
+  // font size at all — it increases/decreases `rowDelta`, which lifts the
+  // staff into additional sub-staves so each sub-stave has more horizontal
+  // room. The dynamic lyric solver then picks the largest font that fits.
+  // Other chromeless modes (Solfège, staff-split, solfege-split) still drive
+  // baseSize as before.
+  //
+  // GlassBottomBar sends `meterMin + rowDelta` (absolute total row count) —
+  // we convert to a delta by subtracting the meter minimum so the parent's
+  // `rowDelta` state tracks the OFFSET from baseline, not the total. This
+  // keeps NotationRenderer's `phraseSubdivisionsFor(i)` distribution logic
+  // (round-robin from the last phrase) operating on a clean delta.
+  const handleBaseSizeChange = useCallback((newValue: number) => {
     if (viewMode === 'lyrics') {
-      setLyricsBaseSize(newSize)
+      setLyricsBaseSize(newValue)
+    } else if (viewMode === 'staff') {
+      const min = phrasesForMeter(activeTune?.meter ?? null)
+      const maxTotal = min + MAX_ROW_DELTA
+      const clampedTotal = Math.max(min, Math.min(maxTotal, newValue))
+      setRowDelta(clampedTotal - min)
     } else {
-      setBaseSize(newSize)
+      setBaseSize(newValue)
     }
-  }, [viewMode])
+  }, [viewMode, activeTune?.meter])
+
+  // 2026-08-23 (row-count knob): snap rowDelta back to the meter baseline when
+  // leaving Inline Staff mode so the next entry into Staff starts from 0
+  // (otherwise the user could switch to Lyrics, then back to Staff, and find
+  // their prior A+ subdivision silently re-applied — confusing).
+  useEffect(() => {
+    if (viewMode !== 'staff' && rowDelta !== 0) setRowDelta(0)
+  }, [viewMode, rowDelta])
 
   // The size that drives A+/A− for the current view:
   //   - Lyrics Only: its own `lyricsBaseSize` bucket (separate from music so
@@ -1146,6 +1184,15 @@ export function SingingView({
             onShowOriginalChange={setShowOriginal}
             baseSize={activeBaseSize}
             onBaseSizeChange={handleBaseSizeChange}
+            // 2026-08-23 (row-count knob): parent-owned row count knob. Only
+            // meaningful in Inline Staff (`viewMode === 'staff'`) — NotationRenderer
+            // adds rowDelta to baseSubdivisions to compute phraseSubdivisions,
+            // and the dynamic solver picks the largest viable font per row.
+            // Other modes pass 0 (meter baseline) since the prop is only consulted
+            // when extraSubdivisions is read, which the non-staff path already
+            // gates. We pass it unconditionally here to keep the prop wiring
+            // simple; downstream gating is at the consume site.
+            rowDelta={rowDelta}
             notationBaseSize={notationBaseSize}
             chromeless={true}
             onStanzaChange={handleStanzaChange}
@@ -1194,8 +1241,19 @@ export function SingingView({
       />
 
       <GlassBottomBar
-        baseSize={activeBaseSize}
-        onBaseSizeChange={handleBaseSizeChange}
+        // 2026-08-23 (row-count knob): in Inline Staff, A+/A− drives the
+        // row count (meter baseline + rowDelta). For everything else, it
+        // still drives font size (lyric baseSize, or --staff-base-size
+        // CSS var in split-leaf modes).
+        value={
+          viewMode === 'staff'
+            ? phrasesForMeter(activeTune?.meter ?? null) + rowDelta
+            : activeBaseSize
+        }
+        onValueChange={handleBaseSizeChange}
+        step={viewMode === 'staff' ? 1 : undefined}
+        minValue={viewMode === 'staff' ? phrasesForMeter(activeTune?.meter ?? null) : undefined}
+        maxValue={viewMode === 'staff' ? phrasesForMeter(activeTune?.meter ?? null) + MAX_ROW_DELTA : undefined}
         // A+/A− controls now shown in all chromeless views (see comment on
         // `activeBaseSize` above) — Inline Staff uses them to shift the
         // lyric MIN/POST_BUMP window, other modes use them to drive the
