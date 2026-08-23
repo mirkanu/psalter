@@ -54,7 +54,7 @@ interface PsalmTabsProps {
 
 // ── Content section components (shared between mobile/desktop) ───────────────
 
-function OverviewContent({
+export function OverviewContent({
   psalm,
   primaryTune,
   primaryVersion,
@@ -73,6 +73,12 @@ function OverviewContent({
             <span className="font-medium text-foreground">Book:</span> {psalm.book}
           </p>
         )}
+        {psalm.nkjvTitle && (
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Suggested Title (NKJV):</span>{' '}
+            {psalm.nkjvTitle}
+          </p>
+        )}
         {psalm.author && (
           <p className="text-sm text-muted-foreground">
             <span className="font-medium text-foreground">Author:</span>{' '}
@@ -82,6 +88,11 @@ function OverviewContent({
             >
               {psalm.author}
             </Link>
+          </p>
+        )}
+        {psalm.occasion && (
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Occasion:</span> {psalm.occasion}
           </p>
         )}
         {primaryVersion?.meter && (
