@@ -54,7 +54,7 @@ interface PsalmTabsProps {
 
 // ── Content section components (shared between mobile/desktop) ───────────────
 
-function OverviewContent({
+export function OverviewContent({
   psalm,
   primaryTune,
   primaryVersion,
@@ -73,6 +73,12 @@ function OverviewContent({
             <span className="font-medium text-foreground">Book:</span> {psalm.book}
           </p>
         )}
+        {psalm.nkjvTitle && (
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Suggested Title (NKJV):</span>{' '}
+            {psalm.nkjvTitle}
+          </p>
+        )}
         {psalm.author && (
           <p className="text-sm text-muted-foreground">
             <span className="font-medium text-foreground">Author:</span>{' '}
@@ -82,6 +88,11 @@ function OverviewContent({
             >
               {psalm.author}
             </Link>
+          </p>
+        )}
+        {psalm.occasion && (
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Occasion:</span> {psalm.occasion}
           </p>
         )}
         {primaryVersion?.meter && (
@@ -145,33 +156,43 @@ function OverviewContent({
   )
 }
 
-function DaysContent({
+export function DaysContent({
   entries,
   psalmId,
 }: {
   entries: PsalmDetail['dailyReadings']
   psalmId: number
 }) {
-  if (entries.length === 0) {
-    return <p className="text-muted-foreground italic">No reading plan entry for this psalm.</p>
-  }
   return (
-    <div className="space-y-4" data-testid="days-entries">
-      {entries.map((entry) => {
-        const parsed = entry.readingDate ? parseReadingDate(entry.readingDate) : null
-        const displayDate = formatOrdinalDate(parsed ?? dayOfYearToDate(entry.dayNumber))
-        return (
-          <div key={entry.id} className="space-y-1" data-testid="days-entry">
-            <p className="text-foreground">
-              <span className="font-medium">{displayDate}</span>
-              <span className="text-muted-foreground ml-2">
-                {formatPsalmRef(psalmId, entry.startingVerse, entry.endingVerse, true)}
-              </span>
-            </p>
-            {entry.notes && <p className="text-sm text-muted-foreground">{entry.notes}</p>}
-          </div>
-        )
-      })}
+    <div className="space-y-4">
+      {entries.length === 0 ? (
+        <p className="text-muted-foreground italic">No reading plan entry for this psalm.</p>
+      ) : (
+        <div className="space-y-4" data-testid="days-entries">
+          {entries.map((entry) => {
+            const parsed = entry.readingDate ? parseReadingDate(entry.readingDate) : null
+            const displayDate = formatOrdinalDate(parsed ?? dayOfYearToDate(entry.dayNumber))
+            return (
+              <div key={entry.id} className="space-y-1" data-testid="days-entry">
+                <p className="text-foreground">
+                  <span className="font-medium">{displayDate}</span>
+                  <span className="text-muted-foreground ml-2">
+                    {formatPsalmRef(psalmId, entry.startingVerse, entry.endingVerse, true)}
+                  </span>
+                </p>
+                {entry.notes && <p className="text-sm text-muted-foreground">{entry.notes}</p>}
+              </div>
+            )
+          })}
+        </div>
+      )}
+      <Link
+        href="/daily"
+        className="inline-block text-sm text-blue-600 dark:text-blue-400 underline underline-offset-2"
+        data-testid="days-view-all"
+      >
+        View all 365 days →
+      </Link>
     </div>
   )
 }
@@ -255,7 +276,7 @@ export function StudyContent(props: {
                 rel="noopener noreferrer"
                 className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
               >
-                SermonAudio — Psalm {psalm.id}
+                PRCA Sermons
               </a>
             </li>
             <li>
@@ -275,7 +296,7 @@ export function StudyContent(props: {
                 rel="noopener noreferrer"
                 className="text-blue-600 dark:text-blue-400 underline underline-offset-2"
               >
-                Relight.app
+                Commentaries by Calvin, Henry, Geneva and more
               </a>
             </li>
           </ul>
@@ -285,44 +306,52 @@ export function StudyContent(props: {
   )
 }
 
-function MessianicContent({
+export function MessianicContent({
   messianic,
 }: {
   messianic: PsalmDetail['messianicPsalms'][number] | null
 }) {
-  if (!messianic) {
-    return (
-      <p className="text-muted-foreground italic">
-        No messianic data recorded for this psalm.
-      </p>
-    )
-  }
   return (
     <div className="space-y-6">
-      {messianic.classification && (
-        <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-            Classification
-          </h2>
-          <p className="text-foreground">{messianic.classification}</p>
-        </div>
+      {!messianic ? (
+        <p className="text-muted-foreground italic">
+          No messianic data recorded for this psalm.
+        </p>
+      ) : (
+        <>
+          {messianic.classification && (
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                Classification
+              </h2>
+              <p className="text-foreground">{messianic.classification}</p>
+            </div>
+          )}
+          {messianic.ntVerification && (
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                NT Verification
+              </h2>
+              <p className="text-foreground">{messianic.ntVerification}</p>
+            </div>
+          )}
+          {messianic.messianicVerses && (
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                Messianic Verses
+              </h2>
+              <p className="text-foreground">{messianic.messianicVerses}</p>
+            </div>
+          )}
+        </>
       )}
-      {messianic.ntVerification && (
-        <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-            NT Verification
-          </h2>
-          <p className="text-foreground">{messianic.ntVerification}</p>
-        </div>
-      )}
-      {messianic.messianicVerses && (
-        <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-            Messianic Verses
-          </h2>
-          <p className="text-foreground">{messianic.messianicVerses}</p>
-        </div>
-      )}
+      <Link
+        href="/explore?tab=messianic"
+        className="inline-block text-sm text-blue-600 dark:text-blue-400 underline underline-offset-2"
+        data-testid="messianic-view-all"
+      >
+        View all messianic psalms →
+      </Link>
     </div>
   )
 }
