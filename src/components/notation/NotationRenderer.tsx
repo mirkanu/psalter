@@ -739,9 +739,14 @@ export function NotationRenderer({
   // baseSize 18 → +1 sub-stave, 28 → +2 — only when overflow is actually
   // detected (sparse psalms like Ps 23 will never fire this). Gated to
   // viewMode 'staff' so Staff Split Leaf / Lyrics / Solfège ignore the
-  // signal. setState only mutates when desired ≠ current, avoiding the
-  // re-render → callback → re-render loop that would otherwise hit every
-  // time AbcPlayer's effect re-runs.
+  // signal.
+  //
+  // Monotonic UP only: setExtraSubdivisions never auto-decreases inside
+  // this callback. The falling-edge case (overflow resolved by adding
+  // sub-staves → setExtra(0) → re-render → overflow returns → loop) is
+  // avoided by skipping the reset here. The reset effect below clears
+  // extraSubdivisions when baseSize crosses below 18, so explicit A− back
+  // to baseline still snaps to the meter row count.
   const handleLyricOverflow = useCallback(
     (overflowAtMin: boolean) => {
       if (viewMode !== 'staff') return
@@ -750,7 +755,7 @@ export function NotationRenderer({
         if (baseSize >= 28) desired = 2
         else if (baseSize >= 18) desired = 1
       }
-      setExtraSubdivisions((cur) => (cur === desired ? cur : desired))
+      setExtraSubdivisions((cur) => (desired > cur ? desired : cur))
     },
     [baseSize, viewMode],
   )
