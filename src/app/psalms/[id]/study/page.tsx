@@ -14,7 +14,7 @@ import { parseSlug, deriveVersionSlug, stripStar, slugToDisplayTitle } from '@/l
 import { buildNavesSlugMap } from '@/lib/naves-slugs'
 import { buildTopicSlugMap } from '@/lib/topic-slugs'
 import { getPsalmNeighbors } from '@/lib/psalm-navigation'
-import { parseVerseRange } from '@/lib/verse-range'
+import { extractVerseRangeFromPsalterNumber } from '@/lib/verse-range'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -68,8 +68,6 @@ export default async function PsalmStudyPage({ params }: PageProps) {
   const { psalmId, versionLetter, verseRange } = parsed
   if (!Number.isFinite(psalmId) || psalmId < 1 || psalmId > 150) notFound()
 
-  const activeVerseRange = parseVerseRange(verseRange)
-
   const psalm = await fetchPsalmDetail(psalmId)
   if (!psalm) notFound()
 
@@ -92,6 +90,13 @@ export default async function PsalmStudyPage({ params }: PageProps) {
       sortedVersions[0] ??
       null
   }
+
+  // Derived from the RESOLVED activeVersion's own psalterNumber, not the raw
+  // URL slug — a bare "119" slug (no explicit range) still resolves
+  // activeVersion to a specific sub-division via the sortedVersions[0]
+  // fallback above, and that version's own psalterNumber is the only
+  // reliable source of "which verses are actually showing" in that case.
+  const activeVerseRange = extractVerseRangeFromPsalterNumber(activeVersion?.psalterNumber)
 
   const rawTune =
     activeVersion?.psalmVersionTunes.find((pvt) => pvt.isPrimary)?.tune ??

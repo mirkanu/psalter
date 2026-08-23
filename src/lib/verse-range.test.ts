@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { parseVerseRange, isVerseInRange, rangesOverlap } from './verse-range'
+import {
+  parseVerseRange,
+  isVerseInRange,
+  rangesOverlap,
+  extractVerseRangeFromPsalterNumber,
+} from './verse-range'
 
 describe('parseVerseRange', () => {
   it('parses a valid range', () => {
@@ -84,5 +89,31 @@ describe('rangesOverlap', () => {
 
   it('treats a missing start as equal to end', () => {
     expect(rangesOverlap(range, null, 24)).toBe(true)
+  })
+})
+
+describe('extractVerseRangeFromPsalterNumber', () => {
+  it('extracts a range from a Psalm 119 sub-division psalterNumber', () => {
+    expect(extractVerseRangeFromPsalterNumber('119:17-24 (3)')).toEqual({ start: 17, end: 24 })
+  })
+
+  it('extracts a range with no trailing parenthetical', () => {
+    expect(extractVerseRangeFromPsalterNumber('119:1-8')).toEqual({ start: 1, end: 8 })
+  })
+
+  it('returns null for a regular psalm psalterNumber (no colon-range)', () => {
+    expect(extractVerseRangeFromPsalterNumber('6 (First Version, Recommended)')).toBeNull()
+  })
+
+  it('returns null for null', () => {
+    expect(extractVerseRangeFromPsalterNumber(null)).toBeNull()
+  })
+
+  it('returns null for undefined', () => {
+    expect(extractVerseRangeFromPsalterNumber(undefined)).toBeNull()
+  })
+
+  it('returns null for empty string', () => {
+    expect(extractVerseRangeFromPsalterNumber('')).toBeNull()
   })
 })
