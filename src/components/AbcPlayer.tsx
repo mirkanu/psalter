@@ -750,6 +750,23 @@ export default function AbcPlayer({
           const newW = Math.max(1, rightX - vbX)
           const newH = Math.max(1, textBottom + descenderPad - vbY)
           svg.setAttribute('viewBox', `${vbX} ${vbY} ${newW} ${newH}`)
+          // 260823-padbottom-fix: abcjs sizes its mount div with the
+          // padding-bottom aspect-ratio trick (`padding-bottom: ${H/W}%`
+          // where H/W is the original viewBox aspect ratio). When we
+          // trim the viewBox above, the mount div's padding-bottom no
+          // longer matches the SVG's new intrinsic aspect ratio — so
+          // the SVG overflows the mount div and the BOTTOM gets clipped
+          // by the div's `overflow: hidden` (which abcjs also sets).
+          // Recompute padding-bottom here from the NEW viewBox so
+          // container height matches SVG height exactly. Without this,
+          // the trailing lyric lines (everything past the original
+          // aspect's height) disappear off the bottom.
+          const containerEl = svg.parentElement
+          if (containerEl) {
+            const containerStyle = containerEl.style
+            const newAspectPct = (newH / newW) * 100
+            containerStyle.paddingBottom = `${newAspectPct.toFixed(4)}%`
+          }
         })
         // 260823-stretch v3 (revised): UNIFORM per-row lyric shrink. The
         // first pass shrunk individual overlapping syllables — that left
@@ -792,14 +809,45 @@ export default function AbcPlayer({
               const ab = a.getBBox(), bb = b.getBBox()
               return ab.x - bb.x
             })
-            if (row.length < 2) return
-            const firstX = row[0].getBBox().x
-            const lastRight = row[row.length - 1].getBBox().x + row[row.length - 1].getBBox().width
-            const rowWidth = lastRight - firstX
-            if (rowWidth <= 0) return
-            const available = staffRight - firstX - 4 // 4-unit safety margin
-            if (rowWidth <= available || available <= 0) return
-            const ratio = Math.max(OVERLAP_FLOOR, available / rowWidth)
+            // Two checks for "would this row fit?":
+            //   (1) Per-pair syllable overlap — when text[i] and text[i+1]
+            //       have negative gap between them (e.g. "1The" and
+            //       "Lord's" in Ps23 v1 line 1), even total-row-width-fits
+            //       is not enough. Compute the ratio r needed for
+            //       text[i].width * r = (text[i+1].x - text[i].x), so the
+            //       i-th syllable JUST ends where the (i+1)-th begins.
+            //       Smallest such ratio is the row's required shrink.
+            //   (2) Total-row-width vs staff right — the row's last
+            //       syllable right edge must not exceed the trimmed staff
+            //       right. Ratio = (staffRight - firstX) / rowWidth.
+            // Take the SMALLER of the two — both must hold for no
+            // overlap AND no staff overflow.
+            let worstRatio = 1.0
+            const firstBB = row[0].getBBox()
+            const firstX = firstBB.x
+            for (let i = 0; i < row.length - 1; i++) {
+              const aBB = row[i].getBBox(), bBB = row[i + 1].getBBox()
+              const aRight = aBB.x + aBB.width
+              const bLeft = bBB.x
+              if (aRight > bLeft && aBB.width > 0) {
+                // Overlap — how much must text[i] shrink so its right edge
+                // lands exactly at text[i+1]'s left edge? r = gap / width.
+                // gap = (bLeft - aBB.x); can be negative (deep overlap).
+                const r = (bLeft - aBB.x) / aBB.width
+                if (r < worstRatio) worstRatio = r
+              }
+            }
+            const lastBB = row[row.length - 1].getBBox()
+            const rowWidth = lastBB.x + lastBB.width - firstX
+            if (rowWidth > 0) {
+              const available = staffRight - firstX - 4 // 4-unit safety margin
+              if (available > 0) {
+                const r = available / rowWidth
+                if (r < worstRatio) worstRatio = r
+              }
+            }
+            if (worstRatio >= 1.0) return // row already fits, no shrink
+            const ratio = Math.max(OVERLAP_FLOOR, worstRatio)
             row.forEach((t) => {
               const cur = parseFloat(t.getAttribute('font-size') || '17')
               if (cur <= 0) return
