@@ -530,12 +530,18 @@ export default function AbcPlayer({
   // otherwise silently kill playback when the user scrolls.
   const prevSynthInputsRef = useRef<{ abc: string; transpose: number; bpm: number } | null>(null)
 
-  // 2026-08-23 (conditional subdivision): tracks the last-reported
-  // overflow-at-MIN state so the onLyricOverflow callback only fires on
-  // state transitions (rising AND falling edges). The callback updates
-  // NotationRenderer's extraSubdivisions state, which re-runs this
-  // effect with a new abc — without the ref, we'd loop indefinitely.
-  const overflowReportedRef = useRef<boolean | null>(null)
+  // 2026-08-23 (conditional subdivision): tracks the last (baseSize,
+  // overflowAtMin) tuple we fired. Re-fires when EITHER changes. baseSize
+  // is part of the key so a stuck-at-true overflow at low baseSize doesn't
+  // shadow transitions caused by A+/A− shifting MIN/POST_BUMP. The callback
+  // updates NotationRenderer's extraSubdivisions state, which re-runs this
+  // effect with a new abc — without the ref, we'd loop indefinitely on the
+  // subdivision-resolved-overflow case (overflow=true → setExtra(1) →
+  // overflow=false → setExtra(0) → overflow=true → …).
+  const overflowReportedRef = useRef<{
+    baseSize: number
+    overflowAtMin: boolean
+  } | null>(null)
 
   // ── Render effect — reruns on abc / transpose / bpm / staffWidth changes ──
   useEffect(() => {
@@ -920,8 +926,22 @@ export default function AbcPlayer({
           const overflowAtMin =
             targetFont === MIN_LYRIC_FONT_PX &&
             globalRatio < MIN_LYRIC_FONT_PX / POST_BUMP_PX
-          if (overflowReportedRef.current !== overflowAtMin) {
-            overflowReportedRef.current = overflowAtMin
+          const prev = overflowReportedRef.current
+          // Fire when:
+          //   1. baseSize changed (A+/A−) — re-evaluate desired subdivisions
+          //   2. overflow RISING edge (false→true) at the same baseSize —
+          //      lyrics just became too cramped; let parent step up.
+          // SKIP falling edges (true→false at same baseSize) — that's the
+          // subdivisions-resolved-overflow case, and the parent callback
+          // is monotonic-up so we must not retrigger it (would loop).
+          const baseSizeChanged =
+            prev === null || prev.baseSize !== lyricBaseSize
+          const risingEdge = !prev?.overflowAtMin && overflowAtMin
+          if (baseSizeChanged || risingEdge) {
+            overflowReportedRef.current = {
+              baseSize: lyricBaseSize,
+              overflowAtMin,
+            }
             onLyricOverflow?.(overflowAtMin)
           }
           // PHASE 3 — re-pack rows vertically within each staff system.
