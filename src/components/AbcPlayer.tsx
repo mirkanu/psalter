@@ -684,6 +684,92 @@ export default function AbcPlayer({
             }
           })
         }
+        // 260823-stretch v3: auto-trim the SVG viewBox to the actual content
+        // bounds. Two wins in one pass:
+        //   (1) right edge — last note's X is the new viewBox right (closes
+        //       the trailing-staff band that calcHorizontalSpacing's
+        //       minSpace cap leaves past the last note)
+        //   (2) bottom edge — last lyric text's Y is the new viewBox bottom
+        //       (so the bigger 1.4× lyrics from the v2 pass above aren't
+        //       clipped by the original SVG bounds)
+        // Computed from the rendered bounding boxes of every visible path
+        // and text element; the viewBox attribute is replaced wholesale so
+        // both axes are trimmed/extended in a single write. Gated to the
+        // same `staffWidthFactor < 1` signal as the other chromeless
+        // inline-Staff passes; non-chromeless (factor=1) callers keep
+        // abcjs's default viewBox.
+        el.querySelectorAll<SVGSVGElement>('svg').forEach((svg) => {
+          const vb = svg.getAttribute('viewBox')
+          if (!vb) return
+          const [, , vbW, vbH] = vb.split(/\s+/).map(Number)
+          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+          svg.querySelectorAll<SVGGraphicsElement>('path, text').forEach((n) => {
+            // Use getBBox for SVG-native bounds (in viewBox coordinates) —
+            // getBoundingClientRect would give screen px which would
+            // mis-trim after a CSS scale. Skip elements with no width/height
+            // (whitespace-only text, invisible elements).
+            let bb: DOMRect
+            try { bb = n.getBBox() } catch { return }
+            if (bb.width <= 0 || bb.height <= 0) return
+            if (bb.x < minX) minX = bb.x
+            if (bb.y < minY) minY = bb.y
+            if (bb.x + bb.width > maxX) maxX = bb.x + bb.width
+            if (bb.y + bb.height > maxY) maxY = bb.y + bb.height
+          })
+          if (minX === Infinity || maxX === -Infinity) return
+          // Always set a fresh viewBox — the previous viewBox's minX/minY
+          // could be 0 even when content sits at e.g. x=68 (abcjs's default
+          // paddingleft). Read from computed content bounds, not from the
+          // old viewBox.
+          svg.setAttribute('viewBox', `${minX} ${minY} ${maxX - minX} ${maxY - minY}`)
+        })
+        // 260823-stretch v3: per-word overlap shrink (LAST RESORT). The 1.4×
+        // lyrics bump above plus #1+#2 should solve most cases, but in
+        // unusually dense single-line melismatic versifications
+        // ("Glorious things of thee are spoken") a syllable can still bleed
+        // into the next. This pass walks lyric <text> elements in document
+        // order within the same row, and if text[i].right > text[i+1].left,
+        // scales text[i]'s font-size down by the overlap ratio (capped at
+        // a 0.7 floor so words never become unreadable). Gated to
+        // `staffWidthFactor < 1` (same gate as the other chromeless passes)
+        // AND `viewportW < 768` (where the 1.4× bump applies — desktop
+        // lyrics are already at abcjs's natural size and don't overlap).
+        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+          const OVERLAP_FLOOR = 0.7
+          const texts = Array.from(el.querySelectorAll<SVGTextElement>('text'))
+          // Group by approximate Y (row). abcjs's lyric rows are ~50 viewBox
+          // units apart; bucket by Math.round(y / 50) so a 5-tolerance
+          // cluster is treated as one row.
+          const rowMap = new Map<number, SVGTextElement[]>()
+          texts.forEach((t) => {
+            let bb: DOMRect
+            try { bb = t.getBBox() } catch { return }
+            if (bb.width <= 0) return
+            const key = Math.round(bb.y / 50)
+            if (!rowMap.has(key)) rowMap.set(key, [])
+            rowMap.get(key)!.push(t)
+          })
+          rowMap.forEach((row) => {
+            row.sort((a, b) => {
+              const ab = a.getBBox(), bb = b.getBBox()
+              return ab.x - bb.x
+            })
+            for (let i = 0; i < row.length - 1; i++) {
+              const a = row[i], b = row[i + 1]
+              const aBB = a.getBBox(), bBB = b.getBBox()
+              const aRight = aBB.x + aBB.width
+              const bLeft = bBB.x
+              if (aRight <= bLeft) continue
+              const overlap = aRight - bLeft
+              const aWidth = aBB.width
+              if (aWidth <= 0) continue
+              const ratio = Math.max(OVERLAP_FLOOR, 1 - overlap / aWidth)
+              const cur = parseFloat(a.getAttribute('font-size') || '17')
+              if (cur <= 0) continue
+              a.setAttribute('font-size', `${(cur * ratio).toFixed(2)}`)
+            }
+          })
+        }
       }
     } catch (e) {
       console.error('abcjs render failed:', e)
