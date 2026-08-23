@@ -604,6 +604,15 @@ export default function AbcPlayer({
         // last-row-only stretch (removed 2026-08-17 to close the right-side
         // viewBox whitespace that last-row stretch was producing).
         expandToWidest,
+        // Quick task 260823-stretch: stretch the LAST line of every staff
+        // system fully to the staff edge (abcjs default is 0.8 = only stretch
+        // when ≤80% of the page width remains). Eliminates the
+        // "empty-staff-after-last-note" band on every system, which the
+        // previous left-anchored SVG layout was leaving visible on the
+        // right of each row in chromeless inline Staff. Gated to staffWidthFactor
+        // < 1 below so non-chromeless (factor=1) callers keep abcjs's default
+        // 0.8 behaviour.
+        stretchlast: staffWidthFactor < 1 ? 1.0 : 0.8,
       })
       visualObjRef.current = visualObjs?.[0] ?? null
       // MOBILE-04 (revised): shrink the clef/key-signature/time-signature
@@ -614,6 +623,26 @@ export default function AbcPlayer({
       // are untouched.
       if (staffWidthFactor < 1) {
         applyLeadingGlyphShrink(el)
+        // Quick task 260823-stretch: abcjs hard-codes every SVG's
+        // preserveAspectRatio to "xMinYMin meet" (see
+        // node_modules/abcjs/src/write/svg.js:36 — left+top anchored). When
+        // our staffWidthFactor < 1 makes the viewBox narrower than the
+        // container, content scales up but stays glued to the LEFT edge,
+        // producing an asymmetric right-side gutter that has no musical
+        // reason to exist (calcHorizontalSpacing already stretched the
+        // music to fill as much of staffwidth as the min-spacing cap
+        // allows — the empty band is just a layout anchor). Re-anchor to
+        // xMidYMid meet so the residual gap is split symmetrically L/R,
+        // and is much less visually load-bearing as a "wasted space"
+        // complaint. Gated to the same staffWidthFactor < 1 signal as the
+        // leading-glyph shrink above — non-chromeless (factor=1) callers
+        // are byte-identical because their viewBox already matches
+        // container width and the default xMinYMin meet produces no gap.
+        el.querySelectorAll<SVGSVGElement>('svg').forEach((svg) => {
+          if (svg.getAttribute('preserveAspectRatio') === 'xMinYMin meet') {
+            svg.setAttribute('preserveAspectRatio', 'xMidYMid meet')
+          }
+        })
       }
     } catch (e) {
       console.error('abcjs render failed:', e)
