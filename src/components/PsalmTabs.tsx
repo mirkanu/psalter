@@ -386,9 +386,9 @@ export function ParallelContent({
       <Table data-testid="parallel-table" className="table-fixed">
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[10%]">Verse</TableHead>
-            <TableHead className="w-[45%]">Scottish Psalter</TableHead>
-            <TableHead className="w-[45%]">KJV</TableHead>
+            <TableHead className="w-[10%] whitespace-normal text-center">Verse</TableHead>
+            <TableHead className="w-[45%] whitespace-normal text-center">Scottish Psalter</TableHead>
+            <TableHead className="w-[45%] whitespace-normal text-center">KJV</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
