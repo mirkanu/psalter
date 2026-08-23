@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -724,11 +725,41 @@ export function NotationRenderer({
   // systems on mobile instead of the 4 that /psalms/[id]'s Sing view (and
   // the 260716 fix above) already established as correct.
   const baseSubdivisions = !chromeless && !tunePageMode && viewportW < 480 ? 2 : 1
-  // 2026-08-23: extraSubdivisions removed (see comment block above). Kept as
-  // a const so downstream callers stay unchanged — phraseSubdivisions always
-  // equals baseSubdivisions now.
-  const extraSubdivisions = 0
+  // 2026-08-23 (conditional subdivision): extraSubdivisions is now state-
+  // driven by the Inline Staff dynamic solver's overflow-at-MIN signal
+  // (see handleLyricOverflow below). When A+ pushes MIN past what fits at
+  // the meter baseline, we step up extraSubdivisions so the staff breaks
+  // into more sub-staves and gives lyrics room. Thresholds (baseSize 18 →
+  // +1, 28 → +2) restore the prior UAT v7 logic but ONLY when overflow is
+  // actually detected — A+ on a sparse psalm does nothing.
+  const [extraSubdivisions, setExtraSubdivisions] = useState<number>(0)
   const phraseSubdivisions = baseSubdivisions + extraSubdivisions
+
+  // Overflow-at-MIN handler from Inline Staff's dynamic solver. Step-up at
+  // baseSize 18 → +1 sub-stave, 28 → +2 — only when overflow is actually
+  // detected (sparse psalms like Ps 23 will never fire this). Gated to
+  // viewMode 'staff' so Staff Split Leaf / Lyrics / Solfège ignore the
+  // signal. setState only mutates when desired ≠ current, avoiding the
+  // re-render → callback → re-render loop that would otherwise hit every
+  // time AbcPlayer's effect re-runs.
+  const handleLyricOverflow = useCallback(
+    (overflowAtMin: boolean) => {
+      if (viewMode !== 'staff') return
+      let desired = 0
+      if (overflowAtMin) {
+        if (baseSize >= 28) desired = 2
+        else if (baseSize >= 18) desired = 1
+      }
+      setExtraSubdivisions((cur) => (cur === desired ? cur : desired))
+    },
+    [baseSize, viewMode],
+  )
+  // A− crossing below 18: clear any prior subdivisions so the staff snaps
+  // back to the meter baseline (4 systems for CM). Without this, A+ A+
+  // A+ A− A− A− A− would leave extraSubdivisions=1 stranded.
+  useEffect(() => {
+    if (baseSize < 18) setExtraSubdivisions(0)
+  }, [baseSize])
 
   // ── w: lines for one phrase ────────────────────────────────────────────────
   // Plan 04.9.6-05: visibleCycles is canonical `Stanza[][]` (see useMemo
@@ -1571,6 +1602,11 @@ export function NotationRenderer({
             // Non-Inline-Staff modes also receive it (harmlessly — AbcPlayer
             // only consults it inside the mobile-gated dynamic solver).
             baseSize={baseSize}
+            // 2026-08-23 (conditional subdivision): signal back from
+            // AbcPlayer's dynamic solver when lyrics overflow at MIN, so
+            // we can step extraSubdivisions up. Gated to viewMode 'staff'
+            // inside handleLyricOverflow; harmless in other modes.
+            onLyricOverflow={handleLyricOverflow}
           />
         </div>
       )
