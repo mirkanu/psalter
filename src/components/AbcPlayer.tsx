@@ -263,29 +263,19 @@ interface AbcPlayerProps {
    */
   compactSplitMobile?: boolean
   /**
-   * 2026-08-23 Inline Staff A+/A− integration: drives the dynamic
-   * lyric-solver window (MIN_LYRIC_FONT_PX floor + POST_BUMP_PX start) in
-   * the mobile-gated vertical re-pack block below. Defaults to 14
-   * (today's hardcoded value) when not supplied so non-chromeless callers
-   * are byte-identical. Parent passes `baseSize` from NotationRenderer's
-   * existing state — same value the user-adjustable A+/A− buttons drive
-   * for the --staff-base-size CSS var, so one user action changes both
-   * the lyric font and the verse-text font consistently.
+   * Drives the dynamic lyric-solver window (MIN_LYRIC_FONT_PX floor +
+   * POST_BUMP_PX start) in the mobile-gated vertical re-pack block below.
+   * Defaults to 14 (the historical hardcoded value) when not supplied so
+   * non-chromeless callers are byte-identical.
+   *
+   * NOTE: in Inline Staff mode (chromeless + viewMode === 'staff') A+/A−
+   * no longer changes this value — it now drives extraSubdivisions
+   * (row count) in NotationRenderer instead, and the lyric font is
+   * auto-sized by the global solver per row. baseSize stays at the
+   * mobile default for that mode; this prop still feeds the MIN/POST_BUMP
+   * window for the dynamic solver.
    */
   baseSize?: number
-  /**
-   * 2026-08-23 (conditional subdivision): fires after the dynamic lyric
-   * solver runs, with `true` when the solver clamped `targetFont` to
-   * `MIN_LYRIC_FONT_PX` because `globalRatio` was too small to fit lyrics
-   * at the desired font in the current staff layout (i.e. even at the
-   * floor, lyrics would overlap). Fires `false` when overflow clears.
-   * AbcPlayer only fires this on state transitions (rising AND falling
-   * edges) via an internal ref — the parent can safely setState inside
-   * the handler without causing re-render loops. Used by NotationRenderer
-   * to bump `extraSubdivisions` when A+ pushes the floor past the staff's
-   * fitting capacity.
-   */
-  onLyricOverflow?: (overflowAtMin: boolean) => void
 }
 
 const STORAGE_BPM_KEY = 'psalter-bpm'
@@ -324,7 +314,6 @@ export default function AbcPlayer({
   staffWidthFactor = 1,
   compactSplitMobile = false,
   baseSize,
-  onLyricOverflow,
 }: AbcPlayerProps) {
   const baseKeySemitone = useMemo(() => parseKeyFromAbc(abc), [abc])
   const defaultBpm = useMemo(() => parseBpmFromAbc(abc), [abc])
@@ -529,19 +518,6 @@ export default function AbcPlayer({
   // iOS Safari's URL-bar collapse triggers a ≥8px viewport resize that would
   // otherwise silently kill playback when the user scrolls.
   const prevSynthInputsRef = useRef<{ abc: string; transpose: number; bpm: number } | null>(null)
-
-  // 2026-08-23 (conditional subdivision): tracks the last (baseSize,
-  // overflowAtMin) tuple we fired. Re-fires when EITHER changes. baseSize
-  // is part of the key so a stuck-at-true overflow at low baseSize doesn't
-  // shadow transitions caused by A+/A− shifting MIN/POST_BUMP. The callback
-  // updates NotationRenderer's extraSubdivisions state, which re-runs this
-  // effect with a new abc — without the ref, we'd loop indefinitely on the
-  // subdivision-resolved-overflow case (overflow=true → setExtra(1) →
-  // overflow=false → setExtra(0) → overflow=true → …).
-  const overflowReportedRef = useRef<{
-    baseSize: number
-    overflowAtMin: boolean
-  } | null>(null)
 
   // ── Render effect — reruns on abc / transpose / bpm / staffWidth changes ──
   useEffect(() => {
@@ -916,34 +892,6 @@ export default function AbcPlayer({
           texts.forEach((t) => {
             t.setAttribute('font-size', targetFont.toFixed(2))
           })
-          // 2026-08-23 (conditional subdivision): detect "overflow at MIN"
-          // — the solver clamped target at MIN because globalRatio was too
-          // small to fit lyrics in the current staff layout. Even at the
-          // floor, lyrics would overlap. Signal the parent so it can bump
-          // extraSubdivisions (and only on state transitions, to avoid the
-          // setState → re-render → setState loop that would otherwise hit
-          // every time this effect re-runs with a fresh abc).
-          const overflowAtMin =
-            targetFont === MIN_LYRIC_FONT_PX &&
-            globalRatio < MIN_LYRIC_FONT_PX / POST_BUMP_PX
-          const prev = overflowReportedRef.current
-          // Fire when:
-          //   1. baseSize changed (A+/A−) — re-evaluate desired subdivisions
-          //   2. overflow RISING edge (false→true) at the same baseSize —
-          //      lyrics just became too cramped; let parent step up.
-          // SKIP falling edges (true→false at same baseSize) — that's the
-          // subdivisions-resolved-overflow case, and the parent callback
-          // is monotonic-up so we must not retrigger it (would loop).
-          const baseSizeChanged =
-            prev === null || prev.baseSize !== lyricBaseSize
-          const risingEdge = !prev?.overflowAtMin && overflowAtMin
-          if (baseSizeChanged || risingEdge) {
-            overflowReportedRef.current = {
-              baseSize: lyricBaseSize,
-              overflowAtMin,
-            }
-            onLyricOverflow?.(overflowAtMin)
-          }
           // PHASE 3 — re-pack rows vertically within each staff system.
           // Group rows into systems by Y gap: rows within a system are
           // < 50 units apart; rows across systems are > 80 units apart.
@@ -985,7 +933,7 @@ export default function AbcPlayer({
       setAudioError('Could not render notation.')
       visualObjRef.current = null
     }
-  }, [abc, transpose, bpm, scale, showOriginal, stopAudio, staffWidth, staffWidthFactor, compactSplitMobile, baseSize, onLyricOverflow])
+  }, [abc, transpose, bpm, scale, showOriginal, stopAudio, staffWidth, staffWidthFactor, compactSplitMobile, baseSize])
 
   // ── Height-fit pass (260712-szw) ──────────────────────────────────────────
   // Mobile split-leaf only: the width-only responsive fit above (MOBILE-03)

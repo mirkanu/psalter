@@ -1,7 +1,6 @@
 'use client'
 
 import {
-  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -84,6 +83,15 @@ export interface NotationRendererProps {
    */
   baseSize?: number
   onBaseSizeChange?: (size: number) => void
+  /**
+   * 2026-08-23 (row-count knob): additional sub-staves beyond the meter
+   * baseline. A+/A− drives this directly in Inline Staff mode — 0 at
+   * meter-min (e.g. 4 for CM/LM/SM), +1 per A+ press. The dynamic lyric
+   * solver then picks the largest font that fits each row, so overflow
+   * cannot occur. When provided, parent owns the state; when omitted,
+   * defaults to 0 (meter baseline, no subdivision).
+   */
+  rowDelta?: number
   /**
    * When provided, NotationRenderer becomes controlled for showOriginal
    * (the scanned-JPG-instead-of-live-abcjs swap implemented in AbcPlayer).
@@ -280,6 +288,7 @@ export function NotationRenderer({
   showOriginal: showOriginalProp,
   onShowOriginalChange,
   notationBaseSize,
+  rowDelta: rowDeltaProp,
   chromeless = false,
   tunePageMode = false,
   onStanzaChange,
@@ -684,19 +693,6 @@ export function NotationRenderer({
   // music where the ABC source contains an explicit newline; staffwidth alone
   // does not split a single music-line.
   //
-  // 2026-08-23 (Inline Staff A+/A- refactor): the previous
-  // extraSubdivisions step-up on baseSize 18/28 was a workaround for the
-  // coupled baseSize/14 scale — A+ in chromeless Inline Staff was
-  // supposed to grow the notation, so the workaround subdivided phrases
-  // into more sub-staves to force the SVG taller. With A+/A- now driving
-  // ONLY the lyric MIN/POST_BUMP in Inline Staff (and ONLY the
-  // --staff-base-size CSS var in Staff Split Leaf / Lyrics Only), the
-  // staff should stay fixed at its viewport-driven scale — subdividing
-  // phrases on baseSize change was an unwanted coupling that incorrectly
-  // shrank Staff Split Leaf notation every time the user pressed A+ to
-  // enlarge lyrics. Removed entirely; baseSubdivisions (line 722) handles
-  // the narrow-screens forced-split separately and stays unchanged.
-  //
   // MOBILE-LYRIC-FIX: On narrow non-chromeless screens (< 480px), abcjs
   // internally wraps long phrases (e.g. 8-note CM lines across 2 bars)
   // when the staffwidth doesn't fit all notes in one row. When abcjs wraps
@@ -710,13 +706,7 @@ export function NotationRenderer({
   // §Body) actually specifies "4 staff systems like the reference
   // screenshot" for a CM tune — i.e. ONE system per phrase, matching the
   // phrase count. Forcing every phrase to split in half doubled that to 8
-  // systems, which is what the doc was trying to AVOID, not achieve. Tunes
-  // WITH DB melisma_positions already bypass this code entirely (separate
-  // branch above, never subdivides) and render cleanly at 1-system-per-phrase
-  // on mobile — proving the underlying abcjs wrap concern this rule guards
-  // against is not actually triggered by real CM/LM/SM phrase widths at
-  // mobile staffwidth. Verified broadly across meters/tunes with and without
-  // melisma data (see 260715-s7b SUMMARY) before removing.
+  // systems, which is what the doc was trying to AVOID, not achieve.
   // 2026-08-16 (Phase 16 R3 sign-off round 2): tunePageMode is excluded from
   // this forced-split rule too. The MOBILE-LYRIC-FIX concern above (w: lyrics
   // losing sync across an abcjs-internal wrap) cannot occur on the tune page
@@ -725,46 +715,35 @@ export function NotationRenderer({
   // systems on mobile instead of the 4 that /psalms/[id]'s Sing view (and
   // the 260716 fix above) already established as correct.
   const baseSubdivisions = !chromeless && !tunePageMode && viewportW < 480 ? 2 : 1
-  // 2026-08-23 (conditional subdivision): extraSubdivisions is now state-
-  // driven by the Inline Staff dynamic solver's overflow-at-MIN signal
-  // (see handleLyricOverflow below). When A+ pushes MIN past what fits at
-  // the meter baseline, we step up extraSubdivisions so the staff breaks
-  // into more sub-staves and gives lyrics room. Thresholds (baseSize 18 →
-  // +1, 28 → +2) restore the prior UAT v7 logic but ONLY when overflow is
-  // actually detected — A+ on a sparse psalm does nothing.
-  const [extraSubdivisions, setExtraSubdivisions] = useState<number>(0)
-  const phraseSubdivisions = baseSubdivisions + extraSubdivisions
-
-  // Overflow-at-MIN handler from Inline Staff's dynamic solver. Step-up at
-  // baseSize 18 → +1 sub-stave, 28 → +2 — only when overflow is actually
-  // detected (sparse psalms like Ps 23 will never fire this). Gated to
-  // viewMode 'staff' so Staff Split Leaf / Lyrics / Solfège ignore the
-  // signal.
+  // 2026-08-23 (row-count knob): in Inline Staff mode, A+/A− drives
+  // `rowDelta` (parent-controlled) which is added to baseSubdivisions
+  // to determine total sub-staves per phrase. The dynamic lyric solver
+  // picks the largest font that fits each row automatically — overflow
+  // cannot occur because the user is choosing row count, not font size.
+  // Outside Inline Staff (Staff Split Leaf, Lyrics, Solfège, tune page),
+  // rowDelta stays at 0 so notation scale is unaffected.
+  const extraSubdivisions = rowDeltaProp ?? 0
+  // 2026-08-23 (row-count knob, distribution step): distribute the user-
+  // requested extra rows (rowDelta) ACROSS phrases so that the TOTAL row
+  // count = meterMin + rowDelta (where meterMin = phrasesForMeter(tuneMeter)).
+  // For CM (meterMin=4), rowDelta=1 → total 5: one phrase gets +1 (whichever
+  // falls out of the round-robin), the rest stay at base. Distribution is
+  // round-robin from the LAST phrase — climactic lines (Ps 23's "I shall
+  // dwell") tend to be denser and benefit most from extra room.
   //
-  // Monotonic UP only: setExtraSubdivisions never auto-decreases inside
-  // this callback. The falling-edge case (overflow resolved by adding
-  // sub-staves → setExtra(0) → re-render → overflow returns → loop) is
-  // avoided by skipping the reset here. The reset effect below clears
-  // extraSubdivisions when baseSize crosses below 18, so explicit A− back
-  // to baseline still snaps to the meter row count.
-  const handleLyricOverflow = useCallback(
-    (overflowAtMin: boolean) => {
-      if (viewMode !== 'staff') return
-      let desired = 0
-      if (overflowAtMin) {
-        if (baseSize >= 28) desired = 2
-        else if (baseSize >= 18) desired = 1
-      }
-      setExtraSubdivisions((cur) => (desired > cur ? desired : cur))
-    },
-    [baseSize, viewMode],
-  )
-  // A− crossing below 18: clear any prior subdivisions so the staff snaps
-  // back to the meter baseline (4 systems for CM). Without this, A+ A+
-  // A+ A− A− A− A− would leave extraSubdivisions=1 stranded.
-  useEffect(() => {
-    if (baseSize < 18) setExtraSubdivisions(0)
-  }, [baseSize])
+  // Fallback when the meter is unknown: 1 (no round-robin possible, so
+  // every phrase gets all the extra — fine for the small/unknown-meter case
+  // since the user will see N*phraseSubdivisions rows and can reason about
+  // it from the total).
+  const meterMinForDistribution = phrasesForMeter(tuneMeter ?? null)
+  function phraseSubdivisionsFor(i: number): number {
+    if (meterMinForDistribution <= 1) {
+      return baseSubdivisions + extraSubdivisions
+    }
+    const reverseIdx = meterMinForDistribution - 1 - i
+    const isLastPhrases = reverseIdx >= 0 && reverseIdx < extraSubdivisions
+    return baseSubdivisions + (isLastPhrases ? 1 : 0)
+  }
 
   // ── w: lines for one phrase ────────────────────────────────────────────────
   // Plan 04.9.6-05: visibleCycles is canonical `Stanza[][]` (see useMemo
@@ -1208,6 +1187,22 @@ export function NotationRenderer({
           .join('\n')
           .trim()
 
+        // 2026-08-23 (row-count knob): when A+/A− subdivides a melisma phrase,
+        // mirror the non-melisma path's splitMusicIntoSubLines strategy.
+        // Computed once per phrase, BEFORE the cycle loop, so it's available
+        // for every cycle's emit step. phraseSubdivisions drives target count
+        // (baseSubdivisions + parent rowDelta). When 1 we keep the original
+        // "single staff + full w: line" render path verbatim.
+        const melismaTargetSubdivisions = phraseSubdivisionsFor(i)
+        const melismaMusicSubLines = melismaTargetSubdivisions > 1
+          ? splitMusicIntoSubLines(cleanedBodyForPositions, melismaTargetSubdivisions)
+          : [cleanedBodyForPositions]
+        const melismaActualSubdivisions = melismaMusicSubLines.length
+        // Per-sub-staff note-head counts — drives weighted syllable split.
+        const melismaSubNoteCounts = melismaActualSubdivisions > 1
+          ? melismaMusicSubLines.map((m) => countNoteHeads(m))
+          : []
+
         // T-04.9.12-07: skip positions branch when noteCount=0 (defensive).
         if (noteCount > 0) {
           const cycleWLinesGrid = wLinesForPhrase(i)
@@ -1244,12 +1239,65 @@ export function NotationRenderer({
             }
 
             const wLine = wTokens.length > 0 ? `w: ${wTokens.join(' ')}` : null
-            if (cycleIdx === 0) {
-              // Push music lines once (for cycle 0 only).
-              for (const line of cleanedBodyForPositions.split('\n')) parts.push(line)
-            }
-            if (wLine) {
-              parts.push(wLine)
+
+            // 2026-08-23 (row-count knob): chunk the w: token stream across
+            // the N sub-staves, weighting by each sub-line's note-head count
+            // (same strategy as the non-melisma path). Then enforce the
+            // melisma-stick-together rule: if a chunk boundary falls inside
+            // a melisma group (`_` run), pull it forward so the whole group
+            // stays in one chunk. We do this for each cycle independently
+            // since `wTokens` is rebuilt per cycle from the cycle's lyrics.
+            if (cycleIdx === 0 && melismaActualSubdivisions > 1) {
+              // Subdivided render: push one music line + one w: line per
+              // sub-staff. Done inside the cycle-0 branch because music
+              // body is identical across cycles — only the lyrics differ.
+              const baseChunks = splitWLineByNoteCounts(
+                wTokens.length > 0 ? wTokens.join(' ') : '',
+                melismaSubNoteCounts,
+              )
+              // Melisma-stick-together: walk chunk boundaries. If a chunk
+              // starts with `_` AND the previous chunk ended with `_`, the
+              // melisma was split — pull tokens from the start of the next
+              // chunk until the boundary sits between two non-melisma
+              // tokens. The LAST chunk always absorbs everything (per
+              // splitWLineByNoteCounts contract), so its tail is safe.
+              const adjustedChunks: string[][] = []
+              const chunkTokenLists = baseChunks.map((c) =>
+                c.trim() === '' ? [] : c.trim().split(/\s+/).filter(Boolean),
+              )
+              for (let c = 0; c < chunkTokenLists.length; c++) {
+                if (c === 0) {
+                  adjustedChunks.push(chunkTokenLists[c])
+                  continue
+                }
+                const cur = chunkTokenLists[c].slice()
+                // If previous chunk ends mid-melisma (last token was `_`),
+                // pull from `cur` until we land on a non-`_` token (the
+                // melisma's first non-held note), then put the pulled `_`
+                // tokens back onto the END of the previous chunk.
+                const prev = adjustedChunks[c - 1]
+                while (cur.length > 0 && cur[0] === '_' && prev.length > 0 && prev[prev.length - 1] === '_') {
+                  prev.push(cur.shift()!)
+                }
+                adjustedChunks.push(cur)
+              }
+              const finalChunks = adjustedChunks.map((tl) => tl.join(' '))
+              for (let sub = 0; sub < melismaMusicSubLines.length; sub++) {
+                parts.push(melismaMusicSubLines[sub])
+                if (!showLyrics) continue
+                const chunk = finalChunks[sub]
+                if (!chunk || !chunk.trim()) continue
+                parts.push(`w: ${padWLineToNoteCount(chunk, melismaMusicSubLines[sub])}`)
+              }
+            } else {
+              // Single-sub-staff render (no subdivision): original code path.
+              if (cycleIdx === 0) {
+                // Push music lines once (for cycle 0 only).
+                for (const line of cleanedBodyForPositions.split('\n')) parts.push(line)
+              }
+              if (wLine) {
+                parts.push(wLine)
+              }
             }
           }
           continue
@@ -1284,6 +1332,15 @@ export function NotationRenderer({
         .join('\n')
         .trim()
 
+      // 2026-08-23 (row-count knob): when A+/A− subdivides a melisma phrase,
+      // mirror the non-melisma path's splitMusicIntoSubLines +
+      // splitWLineByNoteCounts strategy. The split lines are pre-computed
+      // ABOVE this loop (see melismaMusicSubLines / melismaSubNoteCounts
+      // near cleanedBodyForPositions). Melismas must stay together — if a
+      // candidate chunk boundary would land inside a melisma group (`_`
+      // continuation), pull the boundary forward to keep the whole group
+      // in one chunk (whichever chunk contains its FIRST `_`).
+
       // RENDER-07b (Phase 4.9.7 Plan 03): wLines is one string[] per visible
       // cycle. Inner array length = linesPerPhrase. Cross-stanza alignment
       // guarantee: same meter → identical inner length across all cycles.
@@ -1301,7 +1358,7 @@ export function NotationRenderer({
       // the metrical-line count exceeds the music's natural subdivision
       // count so every w: line lands under its OWN music slice — no
       // proportional splitting.
-      const naturalSubdivisions = phraseSubdivisions
+      const naturalSubdivisions = phraseSubdivisionsFor(i)
       const targetSubdivisions = Math.max(naturalSubdivisions, linesPerPhrase || 1)
       const musicSubLines = splitMusicIntoSubLines(cleanedBody, targetSubdivisions)
       const actualSubdivisions = musicSubLines.length
@@ -1364,7 +1421,7 @@ export function NotationRenderer({
   // defeat the memo; its own inputs are all listed explicitly below.
   const unifiedAbc = useMemo(
     () => buildUnifiedAbc(abc),
-    [abc, phraseShapeOverride, visibleCycles, tuneMeter, showLyrics, phraseSubdivisions, chromeless, solfegeVoices, melismaPositions, renderWLineUnderStaff],
+    [abc, phraseShapeOverride, visibleCycles, tuneMeter, showLyrics, extraSubdivisions, baseSubdivisions, chromeless, solfegeVoices, melismaPositions, renderWLineUnderStaff],
   )
 
   // Split-leaf staff view needs ABC without inline w: lyrics (lyrics render in separate column).
@@ -1602,16 +1659,11 @@ export function NotationRenderer({
             hidePlayerControls={isFullscreen || chromeless || tunePageMode}
             staffWidthFactor={staffWidthFactor}
             compactSplitMobile={compactSplitMobile}
-            // 2026-08-23 Inline Staff A+/A− integration: baseSize drives
-            // AbcPlayer's dynamic lyric solver (MIN/POST_BUMP window).
-            // Non-Inline-Staff modes also receive it (harmlessly — AbcPlayer
-            // only consults it inside the mobile-gated dynamic solver).
+            // baseSize drives AbcPlayer's dynamic lyric solver
+            // (MIN/POST_BUMP window) in the chromeless mobile path. In
+            // Inline Staff mode this stays at the mobile default — A+/A−
+            // now drives extraSubdivisions (row count) instead of font.
             baseSize={baseSize}
-            // 2026-08-23 (conditional subdivision): signal back from
-            // AbcPlayer's dynamic solver when lyrics overflow at MIN, so
-            // we can step extraSubdivisions up. Gated to viewMode 'staff'
-            // inside handleLyricOverflow; harmless in other modes.
-            onLyricOverflow={handleLyricOverflow}
           />
         </div>
       )

@@ -5,8 +5,17 @@ import { cn } from '@/lib/utils'
 import { MAX_SIZE, SIZE_STEP } from '@/components/notation/NotationRenderer'
 
 interface Props {
-  baseSize: number
-  onBaseSizeChange: (size: number) => void
+  /** Current value of the A−/A+ knob. Semantic (font pixels or row count)
+   *  is decided by the parent — the bar just renders the buttons. */
+  value: number
+  /** Called with the new absolute value after A−/A+ press. */
+  onValueChange: (newValue: number) => void
+  /** Step size for A−/A+ (default SIZE_STEP=2 for font, 1 for row count). */
+  step?: number
+  /** Minimum value — A− disabled when value ≤ minValue. */
+  minValue?: number
+  /** Maximum value — A+ disabled when value ≥ maxValue. */
+  maxValue?: number
   /** 1-indexed current stanza/cycle page; null when unknown */
   currentStanza: number | null
   /** total stanza/cycle pages; null when unknown */
@@ -34,8 +43,11 @@ interface Props {
  * (rendered via the `gear` slot) to keep the bottom bar narrow on mobile (375px).
  */
 export function GlassBottomBar({
-  baseSize,
-  onBaseSizeChange,
+  value,
+  onValueChange,
+  step = SIZE_STEP,
+  minValue = 8,
+  maxValue = MAX_SIZE,
   currentStanza,
   totalStanzas,
   onStanzaPrev,
@@ -94,8 +106,8 @@ export function GlassBottomBar({
           <button
             type="button"
             aria-label="Decrease size"
-            onClick={() => onBaseSizeChange(Math.max(8, baseSize - SIZE_STEP))}
-            disabled={baseSize <= 8}
+            onClick={() => onValueChange(Math.max(minValue, value - step))}
+            disabled={value <= minValue}
             className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
           >
             A−
@@ -103,8 +115,8 @@ export function GlassBottomBar({
           <button
             type="button"
             aria-label="Increase size"
-            onClick={() => onBaseSizeChange(Math.min(MAX_SIZE, baseSize + SIZE_STEP))}
-            disabled={baseSize >= MAX_SIZE}
+            onClick={() => onValueChange(Math.min(maxValue, value + step))}
+            disabled={value >= maxValue}
             className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
           >
             A+
