@@ -11,6 +11,7 @@ import type { PsalmDetail } from '@/db/queries/psalms'
 import { dayOfYearToDate, formatOrdinalDate, formatPsalmRef, parseReadingDate } from '@/lib/daily'
 import { buildParallelRows } from '@/lib/parallel-verses'
 import type { StructuredLyrics } from '@/lib/lyrics-structured'
+import { isVerseInRange, rangesOverlap, type VerseRange } from '@/lib/verse-range'
 
 // ── Shared collapsible section helper (Study tab) ────────────────────────────
 
@@ -50,6 +51,9 @@ interface PsalmTabsProps {
   navesSlugMap: Record<string, string>
   /** topic id -> /explore/topics/{slug}, built server-side via buildTopicSlugMap; plain object crosses the RSC boundary. */
   topicSlugMap: Record<string, string>
+  /** Active Psalm-119 sub-division range (e.g. slug "119-17-24"). Null/absent for
+   *  normal single-range psalms — filtering is strictly opt-in. */
+  activeVerseRange?: VerseRange | null
 }
 
 // ── Content section components (shared between mobile/desktop) ───────────────
@@ -205,10 +209,14 @@ export function StudyContent(props: {
   // destructured below (unused).
   kjvVerses?: PsalmDetail['verses']
   navesSlugMap: Record<string, string>
+  /** Active Psalm-119 sub-division range. Null/absent shows every verse's
+   *  cross-references — filtering is strictly opt-in. */
+  activeVerseRange?: VerseRange | null
 }) {
-  const { psalm, navesSlugMap } = props
+  const { psalm, navesSlugMap, activeVerseRange } = props
   const xrefVerses = psalm.verses
     .filter((v) => v.verseNavesTopics.length > 0 || v.verseDoctrines.length > 0)
+    .filter((v) => !activeVerseRange || isVerseInRange(v.verseNumber, activeVerseRange))
     .map((v) => {
       const topics = v.verseNavesTopics
         .map((vnt) => vnt.navesTopic)
@@ -464,7 +472,7 @@ const TABS = [
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export function PsalmTabs({ psalm, primaryTune, activeVersionId, recommendedVersionSlug, navesSlugMap, topicSlugMap }: PsalmTabsProps) {
+export function PsalmTabs({ psalm, primaryTune, activeVersionId, recommendedVersionSlug, navesSlugMap, topicSlugMap, activeVerseRange }: PsalmTabsProps) {
   const mobileTabsRef = useRef<HTMLDivElement>(null)
   // Preserve the active desktop tab across renders.
   const [desktopTab, setDesktopTab] = useState('overview')
@@ -483,6 +491,10 @@ export function PsalmTabs({ psalm, primaryTune, activeVersionId, recommendedVers
   const kjvVerses = psalm.verses
     .slice()
     .sort((a, b) => (a.verseNumber ?? 0) - (b.verseNumber ?? 0))
+    .filter((v) => !activeVerseRange || isVerseInRange(v.verseNumber, activeVerseRange))
+  const dailyEntries = (psalm.dailyReadings ?? []).filter(
+    (e) => !activeVerseRange || rangesOverlap(activeVerseRange, e.startingVerse, e.endingVerse),
+  )
   const lyrics = primaryVersion?.lyricsImportedRaw ?? null
 
   const recommendedBanner = recommendedVersionSlug ? (
@@ -508,10 +520,15 @@ export function PsalmTabs({ psalm, primaryTune, activeVersionId, recommendedVers
         />
       </TabsContent>
       <TabsContent value="365days" className={pb}>
-        <DaysContent entries={psalm.dailyReadings ?? []} psalmId={psalm.id} />
+        <DaysContent entries={dailyEntries} psalmId={psalm.id} />
       </TabsContent>
       <TabsContent value="study" className={pb}>
-        <StudyContent psalm={psalm} kjvVerses={kjvVerses} navesSlugMap={navesSlugMap} />
+        <StudyContent
+          psalm={psalm}
+          kjvVerses={kjvVerses}
+          navesSlugMap={navesSlugMap}
+          activeVerseRange={activeVerseRange}
+        />
       </TabsContent>
       <TabsContent value="messianic" className={pb}>
         <MessianicContent messianic={messianic} />

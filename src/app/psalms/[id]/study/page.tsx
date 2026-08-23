@@ -6,7 +6,7 @@ import type { Metadata } from 'next'
 import { db } from '@/db'
 import { psalms, psalmVersions } from '@/db/schema'
 import { asc, eq } from 'drizzle-orm'
-import { fetchPsalmDetail } from '@/db/queries/psalms'
+import { fetchPsalmDetail, fetchPsalmListRows } from '@/db/queries/psalms'
 import { fetchNavesTopicsWithCounts, fetchAllTopicsWithCounts } from '@/db/queries/explore'
 import { PsalmTabs } from '@/components/PsalmTabs'
 import { PsalmNav } from '@/components/PsalmNav'
@@ -14,6 +14,7 @@ import { parseSlug, deriveVersionSlug, stripStar, slugToDisplayTitle } from '@/l
 import { buildNavesSlugMap } from '@/lib/naves-slugs'
 import { buildTopicSlugMap } from '@/lib/topic-slugs'
 import { getPsalmNeighbors } from '@/lib/psalm-navigation'
+import { parseVerseRange } from '@/lib/verse-range'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -67,6 +68,8 @@ export default async function PsalmStudyPage({ params }: PageProps) {
   const { psalmId, versionLetter, verseRange } = parsed
   if (!Number.isFinite(psalmId) || psalmId < 1 || psalmId > 150) notFound()
 
+  const activeVerseRange = parseVerseRange(verseRange)
+
   const psalm = await fetchPsalmDetail(psalmId)
   if (!psalm) notFound()
 
@@ -118,6 +121,7 @@ export default async function PsalmStudyPage({ params }: PageProps) {
 
   const displayTitle = slugToDisplayTitle(slug)
   const { prev, next } = await getPsalmNeighbors(slug)
+  const psalmListRows = await fetchPsalmListRows()
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
@@ -136,7 +140,7 @@ export default async function PsalmStudyPage({ params }: PageProps) {
           <h1 className="text-2xl md:text-4xl font-bold text-foreground">
             Psalm {displayTitle} — Study
           </h1>
-          <PsalmNav prev={prev} next={next} suffix="/study" />
+          <PsalmNav prev={prev} next={next} suffix="/study" psalms={psalmListRows} />
         </div>
         {psalm.bibleTitle && (
           <p className="text-sm md:text-base text-muted-foreground mt-3">
@@ -151,6 +155,7 @@ export default async function PsalmStudyPage({ params }: PageProps) {
         recommendedVersionSlug={recommendedVersionSlug}
         navesSlugMap={navesSlugMap}
         topicSlugMap={topicSlugMap}
+        activeVerseRange={activeVerseRange}
       />
     </div>
   )
