@@ -193,14 +193,14 @@ describe('StudyContent external resource links', () => {
     render(<StudyContent psalm={psalm} kjvVerses={psalm.verses} navesSlugMap={{}} />)
     openExternalResources()
     expect(
-      screen.getByText('SermonAudio — Psalm 16').closest('a')?.getAttribute('href'),
+      screen.getByText('PRCA Sermons').closest('a')?.getAttribute('href'),
     ).toBe('https://www.sermonaudio.com/gb/sermons/scripture/PSA/16?searchKeyword=%22protestant+reformed%22')
     expect(
       screen.getByText("Spurgeon's Commentary").closest('a')?.getAttribute('href'),
     ).toBe('https://gracegems.org/Spurgeon/016.htm')
-    expect(screen.getByText('Relight.app').closest('a')?.getAttribute('href')).toBe(
-      'https://relight.app/bible/Ps.16',
-    )
+    expect(
+      screen.getByText('Commentaries by Calvin, Henry, Geneva and more').closest('a')?.getAttribute('href'),
+    ).toBe('https://relight.app/bible/Ps.16')
   })
 
   it('resolves the three external resource URLs for psalm 150 (padStart no-op)', () => {
@@ -208,21 +208,25 @@ describe('StudyContent external resource links', () => {
     render(<StudyContent psalm={psalm} kjvVerses={psalm.verses} navesSlugMap={{}} />)
     openExternalResources()
     expect(
-      screen.getByText('SermonAudio — Psalm 150').closest('a')?.getAttribute('href'),
+      screen.getByText('PRCA Sermons').closest('a')?.getAttribute('href'),
     ).toBe('https://www.sermonaudio.com/gb/sermons/scripture/PSA/150?searchKeyword=%22protestant+reformed%22')
     expect(
       screen.getByText("Spurgeon's Commentary").closest('a')?.getAttribute('href'),
     ).toBe('https://gracegems.org/Spurgeon/150.htm')
-    expect(screen.getByText('Relight.app').closest('a')?.getAttribute('href')).toBe(
-      'https://relight.app/bible/Ps.150',
-    )
+    expect(
+      screen.getByText('Commentaries by Calvin, Henry, Geneva and more').closest('a')?.getAttribute('href'),
+    ).toBe('https://relight.app/bible/Ps.150')
   })
 
   it('keeps target="_blank" and rel="noopener noreferrer" on all three anchors (T-sox-01)', () => {
     const psalm = makePsalmWithId(23)
     render(<StudyContent psalm={psalm} kjvVerses={psalm.verses} navesSlugMap={{}} />)
     openExternalResources()
-    const labels = ['SermonAudio — Psalm 23', "Spurgeon's Commentary", 'Relight.app']
+    const labels = [
+      'PRCA Sermons',
+      "Spurgeon's Commentary",
+      'Commentaries by Calvin, Henry, Geneva and more',
+    ]
     for (const label of labels) {
       const anchor = screen.getByText(label).closest('a')
       expect(anchor?.getAttribute('target')).toBe('_blank')
