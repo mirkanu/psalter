@@ -768,34 +768,54 @@ export default function AbcPlayer({
             containerStyle.paddingBottom = `${newAspectPct.toFixed(4)}%`
           }
         })
-        // 260823-stretch v3 (revised): UNIFORM per-row lyric shrink. The
-        // first pass shrunk individual overlapping syllables — that left
-        // a jagged baseline (a long "the" at 1.4× next to a short "is"
-        // at 0.7×). The cleaner approach: walk each lyric row, sum every
-        // syllable's measured width, and if the row would overflow the
-        // available staff width, scale the whole row's font-size
-        // uniformly so the row JUST fits. Single visual change,
-        // consistent rhythm, no per-word disturbance. Floor at 0.7× so
-        // words never become unreadable. Gated to `staffWidthFactor < 1`
-        // AND `viewportW < 768` (where the 1.4× bump applies).
+        // 260823-stretch v4 (global font solver + vertical re-pack):
+        //
+        //   PHASE 1 — BUMP (already done above): every lyric <text> gets
+        //   a 1.4× font-size multiplier as the STARTING font.
+        //
+        //   PHASE 2 — GLOBAL FONT SOLVER: instead of letting each row
+        //   shrink independently (which produced jagged baselines —
+        //   row 1 at 23.8px next to row 7 at 18px), compute the WORST
+        //   shrink any single row requires and apply that ONE ratio
+        //   to every row uniformly. Single font-size across the whole
+        //   staff = consistent rhythm.
+        //
+        //   The per-row "what's the max font that fits?" check uses two
+        //   tests:
+        //     (a) per-pair syllable overlap (text[i].right vs text[i+1].x)
+        //     (b) row-overflow against staff right edge
+        //   Take the smallest ratio across ALL rows → that's the
+        //   global ratio. Floor at 14 px so dense psalms stay readable.
+        //
+        //   PHASE 3 — VERTICAL RE-PACK: abcjs lays out lyric rows at a
+        //   fixed ~20-unit vertical pitch regardless of font size. When
+        //   the font shrinks (say to 18 px), the visual gap between
+        //   rows stays the same — small text in big gaps. Re-pack rows
+        //   within each staff system so rowSpacing = fontSize × 1.1
+        //   (close to natural line-height). Bold tighter packing when
+        //   font shrinks, looser when it grows. Per-system (rows of
+        //   different stanzas are not re-packed across staff lines).
+        //
+        // Gated to staffWidthFactor < 1 AND viewportW < 768 (mobile
+        // chromeless Staff only — same gate as the 1.4× bump).
+        const MIN_LYRIC_FONT_PX = 14
         if (typeof window !== 'undefined' && window.innerWidth < 768) {
-          const OVERLAP_FLOOR = 0.7
           const texts = Array.from(el.querySelectorAll<SVGTextElement>('text'))
-          // Group by approximate Y (row). abcjs's lyric rows are ~50
-          // viewBox units apart; bucket by Math.round(y / 50).
+          // Group texts into rows by approximate Y. abcjs places lyrics
+          // in <text> elements at consistent Y positions; same row =
+          // same Y bucket.
           const rowMap = new Map<number, SVGTextElement[]>()
           texts.forEach((t) => {
             let bb: DOMRect
             try { bb = t.getBBox() } catch { return }
             if (bb.width <= 0) return
-            const key = Math.round(bb.y / 50)
+            const key = Math.round(bb.y / 5) * 5 // 5-unit bucket tolerance
             if (!rowMap.has(key)) rowMap.set(key, [])
             rowMap.get(key)!.push(t)
           })
-          // Available width = leftmost path[data-name] X (the trimmed
-          // staff right edge from the pass above). Use the rightmost
-          // path[data-name] = furthest-right musical glyph = where the
-          // row must end by.
+          // Staff right = rightmost path[data-name] (real musical glyph
+          // only — staff-line paths are excluded so the trim doesn't
+          // bleed in).
           let staffRight = -Infinity
           el.querySelectorAll<SVGPathElement>('path[data-name]').forEach((p) => {
             let bb: DOMRect
@@ -804,54 +824,75 @@ export default function AbcPlayer({
             const r = bb.x + bb.width
             if (r > staffRight) staffRight = r
           })
+          // Worst-case ratio across all rows. Each row contributes the
+          // SMALLEST ratio that satisfies its per-pair-overlap and
+          // staff-overflow constraints.
+          let globalRatio = 1.0
           rowMap.forEach((row) => {
-            row.sort((a, b) => {
-              const ab = a.getBBox(), bb = b.getBBox()
-              return ab.x - bb.x
-            })
-            // Two checks for "would this row fit?":
-            //   (1) Per-pair syllable overlap — when text[i] and text[i+1]
-            //       have negative gap between them (e.g. "1The" and
-            //       "Lord's" in Ps23 v1 line 1), even total-row-width-fits
-            //       is not enough. Compute the ratio r needed for
-            //       text[i].width * r = (text[i+1].x - text[i].x), so the
-            //       i-th syllable JUST ends where the (i+1)-th begins.
-            //       Smallest such ratio is the row's required shrink.
-            //   (2) Total-row-width vs staff right — the row's last
-            //       syllable right edge must not exceed the trimmed staff
-            //       right. Ratio = (staffRight - firstX) / rowWidth.
-            // Take the SMALLER of the two — both must hold for no
-            // overlap AND no staff overflow.
+            row.sort((a, b) => a.getBBox().x - b.getBBox().x)
             let worstRatio = 1.0
-            const firstBB = row[0].getBBox()
-            const firstX = firstBB.x
             for (let i = 0; i < row.length - 1; i++) {
               const aBB = row[i].getBBox(), bBB = row[i + 1].getBBox()
               const aRight = aBB.x + aBB.width
               const bLeft = bBB.x
               if (aRight > bLeft && aBB.width > 0) {
-                // Overlap — how much must text[i] shrink so its right edge
-                // lands exactly at text[i+1]'s left edge? r = gap / width.
-                // gap = (bLeft - aBB.x); can be negative (deep overlap).
                 const r = (bLeft - aBB.x) / aBB.width
                 if (r < worstRatio) worstRatio = r
               }
             }
-            const lastBB = row[row.length - 1].getBBox()
-            const rowWidth = lastBB.x + lastBB.width - firstX
-            if (rowWidth > 0) {
-              const available = staffRight - firstX - 4 // 4-unit safety margin
+            if (row.length > 0) {
+              const firstX = row[0].getBBox().x
+              const lastBB = row[row.length - 1].getBBox()
+              const available = staffRight - firstX - 4
               if (available > 0) {
-                const r = available / rowWidth
+                const r = available / (lastBB.x + lastBB.width - firstX)
                 if (r < worstRatio) worstRatio = r
               }
             }
-            if (worstRatio >= 1.0) return // row already fits, no shrink
-            const ratio = Math.max(OVERLAP_FLOOR, worstRatio)
-            row.forEach((t) => {
-              const cur = parseFloat(t.getAttribute('font-size') || '17')
-              if (cur <= 0) return
-              t.setAttribute('font-size', `${(cur * ratio).toFixed(2)}`)
+            if (worstRatio < globalRatio) globalRatio = worstRatio
+          })
+          // Compute the absolute target font size from the global ratio.
+          // abcjs's pre-bump lyric font is 12 px (0.7em of staff 17 px
+          // font); the bump above already multiplied it 1.4× → 16.8 px.
+          // So apply globalRatio on top of 16.8, then floor at MIN_LYRIC.
+          const POST_BUMP_PX = 16.8
+          const targetFont = Math.max(MIN_LYRIC_FONT_PX, POST_BUMP_PX * globalRatio)
+          // Apply targetFont UNIFORMLY to every lyric <text>.
+          texts.forEach((t) => {
+            t.setAttribute('font-size', targetFont.toFixed(2))
+          })
+          // PHASE 3 — re-pack rows vertically within each staff system.
+          // Group rows into systems by Y gap: rows within a system are
+          // < 50 units apart; rows across systems are > 80 units apart.
+          const sortedRowEntries = Array.from(rowMap.entries())
+            .sort((a, b) => a[1][0].getBBox().y - b[1][0].getBBox().y)
+          const systems: Array<Array<SVGTextElement[]>> = []
+          let currentSys: Array<SVGTextElement[]> = []
+          let lastY = -Infinity
+          sortedRowEntries.forEach(([_, row]) => {
+            const y = row[0].getBBox().y
+            if (y - lastY > 50 && currentSys.length > 0) {
+              systems.push(currentSys)
+              currentSys = []
+            }
+            currentSys.push(row)
+            lastY = y
+          })
+          if (currentSys.length > 0) systems.push(currentSys)
+          // Pack each system's rows from the first row's current Y,
+          // spacing each row by targetFont × 1.1 (≈ natural line-height
+          // — tight enough that descenders just touch ascenders, no
+          // floating-pad feel).
+          const rowSpacing = targetFont * 1.1
+          systems.forEach((sysRows) => {
+            if (sysRows.length === 0) return
+            const firstY = sysRows[0][0].getBBox().y
+            let nextY = firstY
+            sysRows.forEach((row, idx) => {
+              row.forEach((t) => {
+                t.setAttribute('y', nextY.toFixed(2))
+              })
+              if (idx < sysRows.length - 1) nextY += rowSpacing
             })
           })
         }
