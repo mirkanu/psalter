@@ -613,6 +613,18 @@ export default function AbcPlayer({
         // < 1 below so non-chromeless (factor=1) callers keep abcjs's default
         // 0.8 behaviour.
         stretchlast: staffWidthFactor < 1 ? 1.0 : 0.8,
+        // Quick task 260823-stretch (follow-up): zero out the abcjs default
+        // `paddingleft` of 68 (renderer.js:71 — `setPaddingVariable(this, 'left',
+        // 'leftmargin', 68, 15)`). abcjs reserves that 68px of leading
+        // whitespace on every line as a layout margin for the title/subtitle
+        // area; on chromeless inline Staff we render no titles, so the first
+        // note can sit flush at the left edge of the staff. Symmetric with
+        // the right edge (where the previous stretchlast=1.0 already pinned
+        // the last note flush right). Gated to staffWidthFactor < 1 so the
+        // non-chromeless paths (study / tunes — factor=1) keep the 68px
+        // gutter that their centered title text actually uses.
+        paddingleft: staffWidthFactor < 1 ? 0 : undefined,
+        paddingright: staffWidthFactor < 1 ? 0 : undefined,
       })
       visualObjRef.current = visualObjs?.[0] ?? null
       // MOBILE-04 (revised): shrink the clef/key-signature/time-signature
