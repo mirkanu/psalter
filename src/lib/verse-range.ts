@@ -60,3 +60,26 @@ export function rangesOverlap(
   }
   return start <= range.end && end >= range.start
 }
+
+const PSALTER_NUMBER_RANGE_RE = /\d+:(\d+-\d+)/
+
+/**
+ * Extracts a Psalm-119 sub-division's own verse range straight from its
+ * psalterNumber (e.g. "119:17-24 (3)" → { start: 17, end: 24 }), instead of
+ * the URL slug. This is the single source of truth for "which verses does
+ * the currently active version cover" — it works identically whether the
+ * slug explicitly named a range ("119-17-24") or the page fell back to
+ * sortedVersions[0] for a bare "119" slug, since both paths resolve to a
+ * specific psalmVersions row with its own psalterNumber. Regular
+ * (non-119) psalms have no colon-range in their psalterNumber (e.g.
+ * "6 (First Version, Recommended)"), so this correctly returns null and
+ * scoping stays opt-in.
+ */
+export function extractVerseRangeFromPsalterNumber(
+  psalterNumber: string | null | undefined,
+): VerseRange | null {
+  if (!psalterNumber) return null
+  const match = psalterNumber.match(PSALTER_NUMBER_RANGE_RE)
+  if (!match) return null
+  return parseVerseRange(match[1])
+}
