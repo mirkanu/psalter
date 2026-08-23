@@ -476,11 +476,16 @@ export function SingingView({
     }
   }, [viewMode])
 
-  // The size that actually applies to the current view — Lyrics Only reads/
-  // writes its own bucket, everything else (solfège inline + both split-leaf
-  // modes) shares `baseSize`. Inline Staff ignores this entirely (driven by
-  // `notationBaseSize` instead — see computeNotationScale) so its A+/A−
-  // controls are hidden rather than wired to either bucket.
+  // The size that drives A+/A− for the current view:
+  //   - Lyrics Only: its own `lyricsBaseSize` bucket (separate from music so
+  //     users can tune each independently).
+  //   - Everything else (Inline Staff, Solfège, both split-leaf modes):
+  //     shares `baseSize`. A+/A− drives the lyric MIN/POST_BUMP window in
+  //     Inline Staff (via AbcPlayer's dynamic solver) and the
+  //     --staff-base-size CSS var in the other modes (via NotationRenderer).
+  // The notation scale itself stays decoupled — computeNotationScale reads
+  // `notationBaseSize` (viewport-resize-driven) for chromeless inline Staff,
+  // so A+/A− only resizes text, never the staff glyphs.
   const activeBaseSize = viewMode === 'lyrics' ? lyricsBaseSize : baseSize
   // Quick task 260822-di9: stanza pagination is meaningless while the scanned
   // original is displayed (NotationRenderer's own pagination row already
@@ -1191,7 +1196,10 @@ export function SingingView({
       <GlassBottomBar
         baseSize={activeBaseSize}
         onBaseSizeChange={handleBaseSizeChange}
-        hideSizeControls={staffPaginationActive}
+        // A+/A− controls now shown in all chromeless views (see comment on
+        // `activeBaseSize` above) — Inline Staff uses them to shift the
+        // lyric MIN/POST_BUMP window, other modes use them to drive the
+        // --staff-base-size CSS var.
         currentStanza={staffPaginationActive ? currentStanza : null}
         totalStanzas={staffPaginationActive ? totalStanzas : null}
         onStanzaPrev={handleStanzaPrev}

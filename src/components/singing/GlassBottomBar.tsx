@@ -22,9 +22,6 @@ interface Props {
   /** Task 3 (04.9.14-01): scroll-hide navigation. When true, slides down and
    *  fades out; scrolling back up restores it. */
   hidden?: boolean
-  /** Inline Staff ignores `baseSize` (scale is driven by viewport-resize
-   *  instead — see computeNotationScale), so A-/A+ have no effect there. */
-  hideSizeControls?: boolean
 }
 
 /**
@@ -48,7 +45,6 @@ export function GlassBottomBar({
   onGearOpen,
   gear,
   hidden = false,
-  hideSizeControls = false,
 }: Props) {
   const showStanza =
     currentStanza != null && totalStanzas != null && currentStanza > 0 && totalStanzas > 1
@@ -87,32 +83,28 @@ export function GlassBottomBar({
       aria-label="Psalm view controls"
     >
       <div className="max-w-4xl mx-auto flex items-center gap-1 px-2 h-11 md:h-13">
-        {/* Left: A-/A+ — hidden in Inline Staff, where they have no effect.
-           Kept in the DOM (invisible + disabled, not removed) so the centre
-           stanza indicator's flex box keeps the exact same width either way
-           — removing this block entirely made the indicator visually
-           off-centre (it was only ever centred WITHIN its own flex-1 box,
-           which shrank without this block reserving space on the left). */}
-        <div
-          aria-hidden={hideSizeControls}
-          className={cn('flex items-center shrink-0', hideSizeControls && 'invisible')}
-        >
+        {/* Left: A−/A+. Always visible in the chromeless SingingView now
+           (2026-08-23 Inline Staff A+/A− refactor) — drives the lyric
+           MIN/POST_BUMP window in Inline Staff and the --staff-base-size
+           CSS var in the other chromeless modes. Kept as a fixed-width
+           flex group so the centre stanza indicator stays centred when
+           the bar reflows (the original layout reason for keeping this
+           block in the DOM regardless of visibility). */}
+        <div className="flex items-center shrink-0">
           <button
             type="button"
-            tabIndex={hideSizeControls ? -1 : undefined}
             aria-label="Decrease size"
             onClick={() => onBaseSizeChange(Math.max(8, baseSize - SIZE_STEP))}
-            disabled={hideSizeControls || baseSize <= 8}
+            disabled={baseSize <= 8}
             className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
           >
             A−
           </button>
           <button
             type="button"
-            tabIndex={hideSizeControls ? -1 : undefined}
             aria-label="Increase size"
             onClick={() => onBaseSizeChange(Math.min(MAX_SIZE, baseSize + SIZE_STEP))}
-            disabled={hideSizeControls || baseSize >= MAX_SIZE}
+            disabled={baseSize >= MAX_SIZE}
             className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
           >
             A+

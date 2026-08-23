@@ -262,6 +262,17 @@ interface AbcPlayerProps {
    * inline Solfège, and split-leaf Solfège are all unaffected).
    */
   compactSplitMobile?: boolean
+  /**
+   * 2026-08-23 Inline Staff A+/A− integration: drives the dynamic
+   * lyric-solver window (MIN_LYRIC_FONT_PX floor + POST_BUMP_PX start) in
+   * the mobile-gated vertical re-pack block below. Defaults to 14
+   * (today's hardcoded value) when not supplied so non-chromeless callers
+   * are byte-identical. Parent passes `baseSize` from NotationRenderer's
+   * existing state — same value the user-adjustable A+/A− buttons drive
+   * for the --staff-base-size CSS var, so one user action changes both
+   * the lyric font and the verse-text font consistently.
+   */
+  baseSize?: number
 }
 
 const STORAGE_BPM_KEY = 'psalter-bpm'
@@ -299,6 +310,7 @@ export default function AbcPlayer({
   hidePlayerControls = false,
   staffWidthFactor = 1,
   compactSplitMobile = false,
+  baseSize,
 }: AbcPlayerProps) {
   const baseKeySemitone = useMemo(() => parseKeyFromAbc(abc), [abc])
   const defaultBpm = useMemo(() => parseBpmFromAbc(abc), [abc])
@@ -785,7 +797,8 @@ export default function AbcPlayer({
         //     (a) per-pair syllable overlap (text[i].right vs text[i+1].x)
         //     (b) row-overflow against staff right edge
         //   Take the smallest ratio across ALL rows → that's the
-        //   global ratio. Floor at 14 px so dense psalms stay readable.
+        //   global ratio. Floor at MIN_LYRIC_FONT_PX so dense psalms
+        //   stay readable (derived from baseSize — see below).
         //
         //   PHASE 3 — VERTICAL RE-PACK: abcjs lays out lyric rows at a
         //   fixed ~20-unit vertical pitch regardless of font size. When
@@ -798,7 +811,20 @@ export default function AbcPlayer({
         //
         // Gated to staffWidthFactor < 1 AND viewportW < 768 (mobile
         // chromeless Staff only — same gate as the 1.4× bump).
-        const MIN_LYRIC_FONT_PX = 14
+        //
+        // 2026-08-23 Inline Staff A+/A− integration: the MIN floor and
+        // POST_BUMP start are now derived from `baseSize` (the same value
+        // the user-adjustable A+/A− buttons drive for the
+        // --staff-base-size CSS var) instead of hardcoded constants.
+        // Default 14 when not supplied preserves v4 behaviour exactly.
+        // Linear mapping:
+        //   baseSize 14 (default) → MIN 14, POST_BUMP 16.8 (today's v4)
+        //   baseSize 16 (A+ once) → MIN 16, POST_BUMP 19.2 (easier read)
+        //   baseSize 12 (A− once) → MIN 12, POST_BUMP 14.4 (more density)
+        // MIN floor at 10 px so an aggressive A− can't make lyrics
+        // unreadable.
+        const lyricBaseSize = baseSize ?? 14
+        const MIN_LYRIC_FONT_PX = Math.max(10, lyricBaseSize)
         if (typeof window !== 'undefined' && window.innerWidth < 768) {
           const texts = Array.from(el.querySelectorAll<SVGTextElement>('text'))
           // Group texts into rows by approximate Y. abcjs places lyrics
@@ -853,9 +879,11 @@ export default function AbcPlayer({
           })
           // Compute the absolute target font size from the global ratio.
           // abcjs's pre-bump lyric font is 12 px (0.7em of staff 17 px
-          // font); the bump above already multiplied it 1.4× → 16.8 px.
-          // So apply globalRatio on top of 16.8, then floor at MIN_LYRIC.
-          const POST_BUMP_PX = 16.8
+          // font); the bump above multiplied it 1.4× → lyricBaseSize ×
+          // 1.2 (where 1.2 = 1.4 × 0.857 — same ratio as the v4 hardcoded
+          // 16.8/14, just expressed against baseSize so it scales with
+          // A+/A−). Apply globalRatio on top, then floor at MIN_LYRIC.
+          const POST_BUMP_PX = lyricBaseSize * 1.2
           const targetFont = Math.max(MIN_LYRIC_FONT_PX, POST_BUMP_PX * globalRatio)
           // Apply targetFont UNIFORMLY to every lyric <text>.
           texts.forEach((t) => {
@@ -902,7 +930,7 @@ export default function AbcPlayer({
       setAudioError('Could not render notation.')
       visualObjRef.current = null
     }
-  }, [abc, transpose, bpm, scale, showOriginal, stopAudio, staffWidth, staffWidthFactor, compactSplitMobile])
+  }, [abc, transpose, bpm, scale, showOriginal, stopAudio, staffWidth, staffWidthFactor, compactSplitMobile, baseSize])
 
   // ── Height-fit pass (260712-szw) ──────────────────────────────────────────
   // Mobile split-leaf only: the width-only responsive fit above (MOBILE-03)
@@ -949,7 +977,7 @@ export default function AbcPlayer({
     el.style.transform = `scale(${fitScale})`
     wrap.style.height = `${slotHeight}px`
     wrap.style.overflow = 'hidden'
-  }, [abc, transpose, bpm, scale, showOriginal, staffWidth, staffWidthFactor, compactSplitMobile, slotHeight])
+  }, [abc, transpose, bpm, scale, showOriginal, staffWidth, staffWidthFactor, compactSplitMobile, slotHeight, baseSize])
 
   // ── Cleanup on unmount ────────────────────────────────────────────────────
   useEffect(() => {
