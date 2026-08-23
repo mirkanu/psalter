@@ -383,12 +383,12 @@ export function ParallelContent({
 
   if (structured !== null && rows.length > 0) {
     return (
-      <Table data-testid="parallel-table">
+      <Table data-testid="parallel-table" className="table-fixed">
         <TableHeader>
           <TableRow>
-            <TableHead className="w-14">Verse</TableHead>
-            <TableHead>Scottish Psalter</TableHead>
-            <TableHead>KJV</TableHead>
+            <TableHead className="w-[10%]">Verse</TableHead>
+            <TableHead className="w-[45%]">Scottish Psalter</TableHead>
+            <TableHead className="w-[45%]">KJV</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
