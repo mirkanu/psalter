@@ -683,14 +683,18 @@ export function NotationRenderer({
   // music where the ABC source contains an explicit newline; staffwidth alone
   // does not split a single music-line.
   //
-  // UAT v7 bug-fix Bug-2 (mobile A+ no-op): on dense mobile content abcjs
-  // hits a structural minimum width quickly, so staffwidth-modulation in
-  // AbcPlayer cannot make notation visibly grow. We additionally increase
-  // subdivisions as the user presses A+ so each phrase splits into more
-  // sub-staves — each sub-stave has fewer notes, can be laid out wider per
-  // note, and the resulting viewBox grows taller relative to its width,
-  // making the SVG visibly TALLER on the canvas. Threshold-based to avoid
-  // re-flow on every single press: divisions step at baseSize 18 and 28.
+  // 2026-08-23 (Inline Staff A+/A- refactor): the previous
+  // extraSubdivisions step-up on baseSize 18/28 was a workaround for the
+  // coupled baseSize/14 scale — A+ in chromeless Inline Staff was
+  // supposed to grow the notation, so the workaround subdivided phrases
+  // into more sub-staves to force the SVG taller. With A+/A- now driving
+  // ONLY the lyric MIN/POST_BUMP in Inline Staff (and ONLY the
+  // --staff-base-size CSS var in Staff Split Leaf / Lyrics Only), the
+  // staff should stay fixed at its viewport-driven scale — subdividing
+  // phrases on baseSize change was an unwanted coupling that incorrectly
+  // shrank Staff Split Leaf notation every time the user pressed A+ to
+  // enlarge lyrics. Removed entirely; baseSubdivisions (line 722) handles
+  // the narrow-screens forced-split separately and stays unchanged.
   //
   // MOBILE-LYRIC-FIX: On narrow non-chromeless screens (< 480px), abcjs
   // internally wraps long phrases (e.g. 8-note CM lines across 2 bars)
@@ -720,13 +724,10 @@ export function NotationRenderer({
   // systems on mobile instead of the 4 that /psalms/[id]'s Sing view (and
   // the 260716 fix above) already established as correct.
   const baseSubdivisions = !chromeless && !tunePageMode && viewportW < 480 ? 2 : 1
-  const extraSubdivisions = chromeless
-    ? baseSize >= 28
-      ? 2
-      : baseSize >= 18
-      ? 1
-      : 0
-    : 0
+  // 2026-08-23: extraSubdivisions removed (see comment block above). Kept as
+  // a const so downstream callers stay unchanged — phraseSubdivisions always
+  // equals baseSubdivisions now.
+  const extraSubdivisions = 0
   const phraseSubdivisions = baseSubdivisions + extraSubdivisions
 
   // ── w: lines for one phrase ────────────────────────────────────────────────
@@ -1565,6 +1566,11 @@ export function NotationRenderer({
             hidePlayerControls={isFullscreen || chromeless || tunePageMode}
             staffWidthFactor={staffWidthFactor}
             compactSplitMobile={compactSplitMobile}
+            // 2026-08-23 Inline Staff A+/A− integration: baseSize drives
+            // AbcPlayer's dynamic lyric solver (MIN/POST_BUMP window).
+            // Non-Inline-Staff modes also receive it (harmlessly — AbcPlayer
+            // only consults it inside the mobile-gated dynamic solver).
+            baseSize={baseSize}
           />
         </div>
       )
