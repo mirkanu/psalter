@@ -736,13 +736,24 @@ export function NotationRenderer({
   // since the user will see N*phraseSubdivisions rows and can reason about
   // it from the total).
   const meterMinForDistribution = phrasesForMeter(tuneMeter ?? null)
+  // Distribute extraSubdivisions across phrases:
+  //   - base = extraSubdivisions / meterMin (every phrase gets this many)
+  //   - remainder = extraSubdivisions % meterMin (last `remainder` phrases
+  //     get one more — round-robin from the LAST phrase)
+  // Total rows = meterMin × (baseSubdivisions + extraSubdivisions/meterMin)
+  //             + remainder  =  meterMin × baseSubdivisions + extraSubdivisions
+  //             =  meterMin + extraSubdivisions  ✓ (matches the user's mental model)
+  // When meterMin=1 (unknown meter or single-phrase case): all extra
+  // lands on the one phrase.
   function phraseSubdivisionsFor(i: number): number {
     if (meterMinForDistribution <= 1) {
       return baseSubdivisions + extraSubdivisions
     }
+    const baseExtra = Math.floor(extraSubdivisions / meterMinForDistribution)
+    const remainder = extraSubdivisions % meterMinForDistribution
     const reverseIdx = meterMinForDistribution - 1 - i
-    const isLastPhrases = reverseIdx >= 0 && reverseIdx < extraSubdivisions
-    return baseSubdivisions + (isLastPhrases ? 1 : 0)
+    const isLastPhrases = reverseIdx >= 0 && reverseIdx < remainder
+    return baseSubdivisions + baseExtra + (isLastPhrases ? 1 : 0)
   }
 
   // ── w: lines for one phrase ────────────────────────────────────────────────
