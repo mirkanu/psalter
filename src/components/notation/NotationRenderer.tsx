@@ -1416,6 +1416,18 @@ export function NotationRenderer({
           // minimum gap and AbcPlayer's row-spacing repack handles the rest.
           parts.push('%%staffsep 14')
         }
+        // 2026-08-24 (row-count knob, full-width rows): when A+ has split
+        // a phrase into multiple sub-staves, each sub-staff has fewer
+        // measures and would otherwise render at natural width leaving
+        // empty staff lines on the right. Inject `%%stretchlast` per
+        // sub-staff so the last measure of each one stretches to fill the
+        // staff width — notes (and their tied lyrics) spread out to the
+        // full row. Gated to Inline Staff + actualSubdivisions>1 so
+        // unsplit callers (tune page, study, fullscreen) keep their
+        // existing layout untouched.
+        if (actualSubdivisions > 1 && viewMode === 'staff') {
+          parts.push('%%stretchlast')
+        }
         parts.push(musicSubLines[sub])
         if (!showLyrics) continue
         for (const cycleLines of wLines) {
