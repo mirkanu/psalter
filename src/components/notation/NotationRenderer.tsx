@@ -669,10 +669,19 @@ export function NotationRenderer({
   // split-leaf) && <768px so desktop and non-chromeless callers (/tunes/[id],
   // /study) stay byte-identical; inline/split-leaf Solfège (JPG-based, sized
   // separately) are unaffected.
+  //
+  // 260824-rowscroll: bypass height-fit-scale when rowDelta > 0. The user has
+  // explicitly asked for MORE rows via A+ — those rows should render at
+  // natural size and the viewarea should scroll, not silently shrink the SVG
+  // to fit and hide the overflow. This is what re-enables vertical scroll on
+  // mobile after A+ presses (SingingView's rowCountBypass already sets
+  // `overflow-y: auto` inline, but the height-fit-scale would otherwise make
+  // scrollHeight == clientHeight, leaving nothing to scroll).
   const compactSplitMobile =
     chromeless &&
     (viewportW < 768 || isPhoneLandscapeForFit) &&
-    (viewMode === 'staff' || viewMode === 'staff-split')
+    (viewMode === 'staff' || viewMode === 'staff-split') &&
+    (rowDeltaProp ?? 0) === 0
 
   // 04.9.15.1-03 checkpoint fix: reserve top (portrait + landscape) / bottom
   // (landscape only) breathing room around inline (non-split) Staff on
