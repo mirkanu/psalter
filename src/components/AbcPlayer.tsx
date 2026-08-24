@@ -201,6 +201,112 @@ function applyLeadingGlyphShrink(containerEl: HTMLElement): void {
   })
 }
 
+// STAFF-LINE-EXTEND: extend every staff's right edge to match the SVG viewBox
+// width. abcjs's `expandToWidest` only equalizes widths within a SINGLE
+// system (a `\n`-separated line), so when Inline Staff emits N separate
+// phrases as N systems, the LAST system (which often has fewer notes after
+// the flatten path balanced syllables, or simply fewer natural measures
+// before any flatten) renders its staff lines only as far as its music
+// reaches — leaving a visibly truncated staff on the right. Direct SVG
+// getBBox inspection confirmed: with expandToWidest=true + stretchlast=1.0,
+// staves 0-2 draw to viewBox.right (900) but stave 3 stops at 466. We
+// append additional staff-line segments from each stave's current right
+// edge to the SVG's viewBox-right, so every stave spans the full width.
+function extendStaffLines(containerEl: HTMLElement): void {
+  containerEl.querySelectorAll<SVGSVGElement>('svg').forEach((svg) => {
+    const vbStr = svg.getAttribute('viewBox')
+    if (!vbStr) return
+    const vbParts = vbStr.split(/\s+/).map(Number)
+    if (vbParts.length !== 4 || !isFinite(vbParts[2])) return
+    const vbX = vbParts[0]
+    const vbW = vbParts[2]
+    const targetRight = vbX + vbW
+    // Find staff-line paths: thin (h < 3), wide (>100), filled rectangles
+    const staffLinePaths: SVGPathElement[] = []
+    svg.querySelectorAll<SVGPathElement>('path').forEach((p) => {
+      let bb: DOMRect
+      try { bb = p.getBBox() } catch { return }
+      if (bb.height < 3 && bb.width > 100) staffLinePaths.push(p)
+    })
+    if (staffLinePaths.length === 0) return
+    // Group staff-line paths by approximate Y (a stave = 5 lines, ~7 units apart)
+    const byY = new Map<number, SVGPathElement[]>()
+    staffLinePaths.forEach((p) => {
+      let bb: DOMRect
+      try { bb = p.getBBox() } catch { return }
+      const key = Math.round(bb.y)
+      if (!byY.has(key)) byY.set(key, [])
+      byY.get(key)!.push(p)
+    })
+    const sortedYs = Array.from(byY.keys()).sort((a, b) => a - b)
+    if (sortedYs.length === 0) return
+    // Group consecutive Ys (within 10 units) into staves
+    const staves: SVGPathElement[][] = []
+    let cur: SVGPathElement[] = []
+    let lastY = -Infinity
+    sortedYs.forEach((y) => {
+      if (y - lastY > 10) {
+        if (cur.length > 0) staves.push(cur)
+        cur = []
+      }
+      byY.get(y)!.forEach((p) => cur.push(p))
+      lastY = y
+    })
+    if (cur.length > 0) staves.push(cur)
+    // For each stave, find its rightmost edge and append extension segments
+    // to bring it to targetRight. Skip if already at full width.
+    const svgNS = 'http://www.w3.org/2000/svg'
+    staves.forEach((stavePaths) => {
+      let maxRight = -Infinity
+      let topY = Infinity
+      let bottomY = -Infinity
+      let stroke = '#000000'
+      let strokeWidth = 1
+      stavePaths.forEach((p) => {
+        let bb: DOMRect
+        try { bb = p.getBBox() } catch { return }
+        const r = bb.x + bb.width
+        if (r > maxRight) maxRight = r
+        if (bb.y < topY) topY = bb.y
+        if (bb.y + bb.height > bottomY) bottomY = bb.y + bb.height
+        // abcjs draws staff lines with stroke="none" + fill="currentColor";
+        // copy the FILL (not the stroke) so the extension is visible.
+        const f = p.getAttribute('fill')
+        if (f) stroke = f
+        const sw = p.getAttribute('stroke-width')
+        if (sw) strokeWidth = parseFloat(sw) || 1
+      })
+      if (maxRight < 0 || maxRight >= targetRight - 0.5) return
+      // Reuse the existing path's stroke colour/width by copying attrs.
+      // Append a new path that extends from maxRight to targetRight at the
+      // same y/height as the topmost existing line.
+      const samplePath = stavePaths[0]
+      if (!samplePath) return
+      // abcjs draws a stave as 5 separate thin (h≈0.7) staff-line rects at
+      // slightly different Ys. We need to extend ALL 5 lines, not just one.
+      // Find each line's Y from the stavePaths we collected, draw a rect
+      // from (maxRight, line.y) to (targetRight, line.y + line.h).
+      const svgNS = 'http://www.w3.org/2000/svg'
+      stavePaths.forEach((p) => {
+        let bb: DOMRect
+        try { bb = p.getBBox() } catch { return }
+        // Only extend lines whose right edge sits at maxRight (the rightmost
+        // extension target — same for all 5 lines of one stave).
+        if (Math.round(bb.x + bb.width) !== Math.round(maxRight)) return
+        const ext = document.createElementNS(svgNS, 'path')
+        const extH = bb.height
+        ext.setAttribute(
+          'd',
+          `M ${maxRight.toFixed(2)} ${bb.y.toFixed(2)} L ${targetRight.toFixed(2)} ${bb.y.toFixed(2)} L ${targetRight.toFixed(2)} ${(bb.y + extH).toFixed(2)} L ${maxRight.toFixed(2)} ${(bb.y + extH).toFixed(2)} z`,
+        )
+        ext.setAttribute('stroke', 'none')
+        ext.setAttribute('fill', stroke)
+        p.parentNode?.appendChild(ext)
+      })
+    })
+  })
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface AbcPlayerProps {
@@ -607,12 +713,15 @@ export default function AbcPlayer({
       // row needs more than the initial target, it reruns layout for EVERY
       // row using that wider natural width as the new shared target, so all
       // non-last rows converge to the SAME width instead of each compressing
-      // to its own floor. Gated to the chromeless inline (non-split) case via
-      // the same staffWidthFactor < 1 signal used above (split-leaf's factor
-      // is already 1 per 260712-kov; non-chromeless desktop defaults to 1) —
-      // no new abcjs `format` key invented, this is an existing top-level
-      // renderAbc option.
-      const expandToWidest = staffWidthFactor < 1
+      // to its own floor. 2026-08-24: enabled unconditionally — AbcPlayer
+      // is only invoked for staff rendering (split-leaf paths render the
+      // scanned JPG via renderScannedPages instead), so the previous
+      // chromeless-only gate was leaving non-chromeless desktop Inline
+      // Staff (e.g. /psalms/[id] on a 1920px monitor) with rows of
+      // unequal widths — each row compressed to its own natural floor
+      // because expandToWidest never unified them. With it on, every row
+      // shares the same target width.
+      const expandToWidest = true
       // 260712-szw: mobile split-leaf only — compact vertical spacing via
       // %% ABC directive prepend (see injectCompactSpacingDirectives; abcjs's
       // JS-level `format` option does not honor topmargin/botmargin/
@@ -637,12 +746,12 @@ export default function AbcPlayer({
         // Quick task 260823-stretch: stretch the LAST line of every staff
         // system fully to the staff edge (abcjs default is 0.8 = only stretch
         // when ≤80% of the page width remains). Eliminates the
-        // "empty-staff-after-last-note" band on every system, which the
-        // previous left-anchored SVG layout was leaving visible on the
-        // right of each row in chromeless inline Staff. Gated to staffWidthFactor
-        // < 1 below so non-chromeless (factor=1) callers keep abcjs's default
-        // 0.8 behaviour.
-        stretchlast: staffWidthFactor < 1 ? 1.0 : 0.8,
+        // "empty-staff-after-last-note" band on every system. 2026-08-24:
+        // unconditional 1.0 — same rationale as expandToWidest above.
+        // AbcPlayer is staff-only, so the previous chromeless-only gate was
+        // leaving desktop non-chromeless Inline Staff with half-width last
+        // rows.
+        stretchlast: 1.0,
         // Quick task 260823-stretch (follow-up): zero out the abcjs default
         // `paddingleft` of 68 (renderer.js:71 — `setPaddingVariable(this, 'left',
         // 'leftmargin', 68, 15)`). abcjs reserves that 68px of leading
@@ -966,6 +1075,10 @@ export default function AbcPlayer({
           })
         }
       }
+      // STAFF-LINE-EXTEND: unconditionally stretch every staff's right edge
+      // to the SVG viewBox width (covers desktop half-width last row when
+      // abcjs's expandToWidest fails to bridge separately-emitted systems).
+      extendStaffLines(el)
     } catch (e) {
       console.error('abcjs render failed:', e)
       setAudioError('Could not render notation.')
