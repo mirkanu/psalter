@@ -1,8 +1,8 @@
 // Split a phrase body into N sub-staves at measure boundaries.
 //
-// Music body is split on `|` into measures, then re-grouped into N chunks.
-// Each chunk becomes its own newline-separated music line, which abcjs
-// renders as a separate staff system.
+// Music body is split on `|` into measures (via tokenizeMeasures), then
+// re-grouped into N chunks. Each chunk becomes its own newline-separated music
+// line, which abcjs renders as a separate staff system.
 //
 // Trailing-bar normalisation (Quick 260601-i5d):
 // abcjs 6.6.3 synth scopes explicit accidentals (`^`, `_`, `=`) to the next
@@ -18,24 +18,11 @@
 //
 // See `.planning/debug/contemplation-sharps-as-naturals.md` for the full
 // root-cause analysis.
+import { tokenizeMeasures } from './tokenizeMeasures'
+
 export function splitMusicIntoSubLines(body: string, n: number): string[] {
   if (n <= 1) return [body]
-  // Tokenize on the bar `|` — keep the bars attached to the preceding measure.
-  const segs = body.split(/(\|)/).filter((s) => s.length > 0)
-  // Re-pair tokens so each measure includes its trailing bar.
-  const measures: string[] = []
-  let acc = ''
-  for (const s of segs) {
-    acc += s
-    if (s === '|') {
-      measures.push(acc.trim())
-      acc = ''
-    }
-  }
-  if (acc.trim()) measures.push(acc.trim())
-  const realMeasures = measures
-    .filter((m) => m && m !== '|')
-    .filter((m) => !/^\s*[zxZ]\d*\s*$/.test(m)) // exclude bare rest pseudo-bars (z2 trailing rest bug)
+  const realMeasures = tokenizeMeasures(body)
   if (realMeasures.length < 2) return [body]
   const per = Math.max(1, Math.ceil(realMeasures.length / n))
   const lines: string[] = []
