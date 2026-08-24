@@ -926,11 +926,14 @@ export function SingingView({
           return
         }
         if (rowCountBypass) {
-          // Let the region's natural overflow rule apply (auto-scroll). We
-          // also mark anyNeedsScroll=true so the chrome-stays-visible path
-          // below runs on the very first measurement (not just after the
-          // user scrolls). The ResizeObserver keeps firing for live
-          // re-renders, but we don't toggle overflow back to 'hidden'.
+          // 2026-08-24 (row-count knob scroll fix): the CSS for this region
+          // sets overflow:hidden to enforce the mobile no-scroll rule. We
+          // must explicitly override to overflow-y:auto so the user can
+          // actually scroll the now-larger staff. We also mark
+          // anyNeedsScroll=true so the chrome-stays-visible path below
+          // runs on the very first measurement (not just after the user
+          // scrolls).
+          el.style.overflowY = 'auto'
           anyNeedsScroll = true
           return
         }
