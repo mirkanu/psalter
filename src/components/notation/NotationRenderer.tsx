@@ -736,24 +736,25 @@ export function NotationRenderer({
   // since the user will see N*phraseSubdivisions rows and can reason about
   // it from the total).
   const meterMinForDistribution = phrasesForMeter(tuneMeter ?? null)
-  // Distribute extraSubdivisions across phrases:
-  //   - base = extraSubdivisions / meterMin (every phrase gets this many)
-  //   - remainder = extraSubdivisions % meterMin (last `remainder` phrases
-  //     get one more — round-robin from the LAST phrase)
-  // Total rows = meterMin × (baseSubdivisions + extraSubdivisions/meterMin)
-  //             + remainder  =  meterMin × baseSubdivisions + extraSubdivisions
-  //             =  meterMin + extraSubdivisions  ✓ (matches the user's mental model)
-  // When meterMin=1 (unknown meter or single-phrase case): all extra
-  // lands on the one phrase.
+  // 2026-08-24: distribute extraSubdivisions UNIFORMLY across phrases so the
+  // user sees equal-width sub-staves (and therefore equal font sizes when
+  // the dynamic solver runs). Each phrase gets:
+  //   baseSubdivisions + floor(extraSubdivisions / meterMin)
+  //   + (i < extraSubdivisions % meterMin ? 1 : 0)
+  // Total rows = meterMin × baseSubdivisions + extraSubdivisions
+  //            = meterMin + extraSubdivisions  (when baseSubdivisions=1)
+  // The first N phrases get the +1 from the remainder (not the last) so the
+  // top of the staff (which is typically the higher / less-climactic lines)
+  // absorbs the extra room first — easier to scan visually since the dense
+  // climactic lines stay at full natural width below.
   function phraseSubdivisionsFor(i: number): number {
     if (meterMinForDistribution <= 1) {
       return baseSubdivisions + extraSubdivisions
     }
     const baseExtra = Math.floor(extraSubdivisions / meterMinForDistribution)
     const remainder = extraSubdivisions % meterMinForDistribution
-    const reverseIdx = meterMinForDistribution - 1 - i
-    const isLastPhrases = reverseIdx >= 0 && reverseIdx < remainder
-    return baseSubdivisions + baseExtra + (isLastPhrases ? 1 : 0)
+    const isFirstPhrases = i < remainder
+    return baseSubdivisions + baseExtra + (isFirstPhrases ? 1 : 0)
   }
 
   // ── w: lines for one phrase ────────────────────────────────────────────────
@@ -1294,6 +1295,11 @@ export function NotationRenderer({
               }
               const finalChunks = adjustedChunks.map((tl) => tl.join(' '))
               for (let sub = 0; sub < melismaMusicSubLines.length; sub++) {
+                // 2026-08-24 (padding fix — see non-melisma path above for
+                // the full rationale). Same rule: inject `%%staffsep` before
+                // every sub-staff after the first so down-facing bars
+                // don't overlap the lyric line beneath.
+                if (sub > 0) parts.push('%%staffsep 14')
                 parts.push(melismaMusicSubLines[sub])
                 if (!showLyrics) continue
                 const chunk = finalChunks[sub]
@@ -1392,6 +1398,24 @@ export function NotationRenderer({
         : []
 
       for (let sub = 0; sub < actualSubdivisions; sub++) {
+        // 2026-08-24 (row-count knob, padding fix): when A+ has split the
+        // staff into multiple sub-staves, the lyric line below each one
+        // sits very close to the staff above — close enough that
+        // down-facing note stems / barlines can overlap the lyric text.
+        // Inject an `%%staffsep` directive BEFORE each sub-staff (after
+        // the first) — abcjs applies it to control the gap above the
+        // staff it precedes. So the directive between sub 0's w: line and
+        // sub 1's music widens the gap exactly where sub 0's lyrics sit.
+        // We also inject one before sub 0 to widen the gap between this
+        // phrase's first sub-staff and the previous phrase's last
+        // sub-staff — same problem at the phrase boundary.
+        if (actualSubdivisions > 1 && sub > 0) {
+          // 14 px clears 8th-note stems + bar lines at the default staff
+          // glyph size; the dynamic solver may bump the lyric font larger
+          // (which is what the user wants), in which case this is a fixed
+          // minimum gap and AbcPlayer's row-spacing repack handles the rest.
+          parts.push('%%staffsep 14')
+        }
         parts.push(musicSubLines[sub])
         if (!showLyrics) continue
         for (const cycleLines of wLines) {
@@ -1675,6 +1699,13 @@ export function NotationRenderer({
             // Inline Staff mode this stays at the mobile default — A+/A−
             // now drives extraSubdivisions (row count) instead of font.
             baseSize={baseSize}
+            // 2026-08-24: when rowDelta > 0, AbcPlayer's solver removes the
+            // POST_BUMP_PX cap and grows font proportionally with the extra
+            // horizontal room. meterPhraseCount drives the growth factor
+            // (so each extra row yields ~40% more font size relative to the
+            // current meter baseline).
+            rowDelta={extraSubdivisions}
+            meterPhraseCount={meterMinForDistribution}
           />
         </div>
       )

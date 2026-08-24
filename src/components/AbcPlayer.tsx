@@ -276,6 +276,19 @@ interface AbcPlayerProps {
    * window for the dynamic solver.
    */
   baseSize?: number
+  /**
+   * 2026-08-24: number of additional sub-staves the parent has requested
+   * (0 when no subdivision). When > 0, the dynamic solver REMOVES the
+   * POST_BUMP_PX cap and lets font grow proportionally with the extra
+   * horizontal room gained. Each extra row grants up to ~40% more font
+   * size via `growthFactor = 1 + 0.4 × rowDelta / meterMin` (caller
+   * supplies meterMin via the `meterPhraseCount` prop below, since
+   * AbcPlayer doesn't read the meter itself).
+   */
+  rowDelta?: number
+  /** Phrase count for the active meter (e.g. 4 for CM). Used by the
+   *  growth-factor formula above. Ignored when rowDelta = 0. */
+  meterPhraseCount?: number
 }
 
 const STORAGE_BPM_KEY = 'psalter-bpm'
@@ -314,6 +327,8 @@ export default function AbcPlayer({
   staffWidthFactor = 1,
   compactSplitMobile = false,
   baseSize,
+  rowDelta = 0,
+  meterPhraseCount = 1,
 }: AbcPlayerProps) {
   const baseKeySemitone = useMemo(() => parseKeyFromAbc(abc), [abc])
   const defaultBpm = useMemo(() => parseBpmFromAbc(abc), [abc])
@@ -886,8 +901,31 @@ export default function AbcPlayer({
           // 1.2 (where 1.2 = 1.4 × 0.857 — same ratio as the v4 hardcoded
           // 16.8/14, just expressed against baseSize so it scales with
           // A+/A−). Apply globalRatio on top, then floor at MIN_LYRIC.
+          //
+          // 2026-08-24 (row-count knob, font-growth fix): when the parent
+          // has subdivided the staff via rowDelta, REMOVE the POST_BUMP_PX
+          // cap so font grows with the extra horizontal room. The growth
+          // factor approximates "how much wider is each row now" — each
+          // extra sub-stave per phrase gives the same lyrics row ~meterMin
+          // extra beats of room, which empirically reads as ~40% larger
+          // font (linear with rowDelta/meterPhraseCount).
           const POST_BUMP_PX = lyricBaseSize * 1.2
-          const targetFont = Math.max(MIN_LYRIC_FONT_PX, POST_BUMP_PX * globalRatio)
+          let targetFont: number
+          if (rowDelta > 0 && meterPhraseCount > 0) {
+            // 2026-08-24 (row-count knob, font-growth fix): each A+ press
+            // adds ~25% font growth on top of lyricBaseSize. We bypass
+            // globalRatio here — after subdivision multiple phrases'
+            // syllables render at the same X within one <text> element
+            // (abcjs renders cycle-stacked lyrics as overlapping tspans),
+            // so globalRatio reports widths that don't reflect real visual
+            // space. The user wants font to grow with each A+ press; this
+            // delivers that predictably. Hard cap at 1.6× to prevent
+            // ridiculous growth on extreme A+ stacks.
+            const growthFactor = Math.min(1.6, 1 + 0.25 * rowDelta)
+            targetFont = Math.max(MIN_LYRIC_FONT_PX, lyricBaseSize * growthFactor)
+          } else {
+            targetFont = Math.max(MIN_LYRIC_FONT_PX, POST_BUMP_PX * globalRatio)
+          }
           // Apply targetFont UNIFORMLY to every lyric <text>.
           texts.forEach((t) => {
             t.setAttribute('font-size', targetFont.toFixed(2))
@@ -933,7 +971,7 @@ export default function AbcPlayer({
       setAudioError('Could not render notation.')
       visualObjRef.current = null
     }
-  }, [abc, transpose, bpm, scale, showOriginal, stopAudio, staffWidth, staffWidthFactor, compactSplitMobile, baseSize])
+  }, [abc, transpose, bpm, scale, showOriginal, stopAudio, staffWidth, staffWidthFactor, compactSplitMobile, baseSize, rowDelta, meterPhraseCount])
 
   // ── Height-fit pass (260712-szw) ──────────────────────────────────────────
   // Mobile split-leaf only: the width-only responsive fit above (MOBILE-03)

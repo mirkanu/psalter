@@ -891,6 +891,14 @@ export function SingingView({
     function applyScrollGate() {
       const candidates = main!.querySelectorAll<HTMLElement>(selector)
       let anyNeedsScroll = false
+      // 2026-08-24 (row-count knob): when the user has subdivided the
+      // staff via A+/A−, the staff is now LARGER than the viewport — the
+      // mobile no-scroll rule must be DISABLED so the user can scroll
+      // vertically through the enlarged rows. We bypass the fits-viewport
+      // gate (don't force overflow:hidden) and keep the chrome visible
+      // (don't auto-hide on scroll-down) so the user always has access to
+      // A− to step back if they want to fit on screen again.
+      const rowCountBypass = viewMode === 'staff' && rowDelta > 0
       candidates.forEach((el) => {
         if (!observedEls.has(el)) {
           observedEls.add(el)
@@ -915,6 +923,15 @@ export function SingingView({
           // Desktop: never touch overflow — this mobile-only feature simply
           // doesn't apply; leave the existing CSS classes in control.
           el.style.overflowY = ''
+          return
+        }
+        if (rowCountBypass) {
+          // Let the region's natural overflow rule apply (auto-scroll). We
+          // also mark anyNeedsScroll=true so the chrome-stays-visible path
+          // below runs on the very first measurement (not just after the
+          // user scrolls). The ResizeObserver keeps firing for live
+          // re-renders, but we don't toggle overflow back to 'hidden'.
+          anyNeedsScroll = true
           return
         }
         const fits = el.scrollHeight <= el.clientHeight + SCROLL_FIT_TOLERANCE
@@ -944,6 +961,18 @@ export function SingingView({
       // device rotates back to portrait (see phoneLandscapeChromeHide above).
       if (phoneLandscapeChromeHide) return
       if (!mql.matches) return
+      // 2026-08-24 (row-count knob): with A+/A− the staff is now larger
+      // than the viewport — disable the scroll-driven chrome auto-hide so
+      // the user always has access to A− to step back. We still record the
+      // scroll position for the rowDelta change trigger but don't toggle
+      // any of the hidden flags.
+      if (viewMode === 'staff' && rowDelta > 0) {
+        const el = e.target as HTMLElement | null
+        if (el && typeof el.scrollTop === 'number') {
+          lastByEl.set(el, el.scrollTop)
+        }
+        return
+      }
       const el = e.target as HTMLElement | null
       if (!el || typeof el.scrollTop !== 'number') return
       const maxTop = Math.max(0, el.scrollHeight - el.clientHeight)
@@ -988,7 +1017,7 @@ export function SingingView({
       settleTimers.forEach(clearTimeout)
       observedEls.forEach((el) => { el.style.overflowY = '' })
     }
-  }, [activeTune?.id, viewMode, phoneLandscapeChromeHide])
+  }, [activeTune?.id, viewMode, phoneLandscapeChromeHide, rowDelta])
 
   // Quick task 260712-kd1 (bug b fix): drive the shared chrome-hidden store
   // from the top-bar hidden flag so the root-layout SiteHeader hides together
