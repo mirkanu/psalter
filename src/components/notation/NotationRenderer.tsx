@@ -36,7 +36,9 @@ import {
 import type { Stanza, StructuredLyrics } from '@/lib/lyrics-structured'
 import { phrasesForMeter } from '@/lib/abc-phrase-meter-map'
 import { splitMusicIntoSubLines } from './splitMusicIntoSubLines'
+import { tokenizeMeasures } from './tokenizeMeasures'
 import { splitWLineByNoteCounts } from './splitWLineByNoteCounts'
+import { distributeMeasuresToSubstaffs, type MeasureEntry } from '@/lib/distribute-measures-to-substaffs'
 import { forceMatchMeterShape } from '@/lib/force-match-meter-shape'
 import { expectedSyllablesByLine } from '@/lib/meter-syllable-shape'
 import { detectRepeatedPitchContinuations } from '@/lib/detect-repeated-pitch-continuations'
@@ -1149,7 +1151,31 @@ export function NotationRenderer({
       }
     }
 
-    for (const i of localVisiblePhraseIndices) {
+    // 2026-08-24 (Inline Staff, flatten path): when A+ has been pressed, the
+    // per-phrase sub-staff model produces structurally uneven syllable
+    // distribution because meter phrases have inherently different syllable
+    // counts (CM phrases are typically 8/6/8/6 or similar). With
+    // rowDelta=N+M we want N+M rows of roughly equal syllables, not N+M
+    // arbitrary phrase slices.
+    //
+    // The flatten path treats the whole tune as a single measure stream and
+    // uses an LPT scheduler to distribute measures across the requested N+M
+    // sub-staves, balancing syllable counts. Default (rowDelta=0) is
+    // UNCHANGED — N sub-staves = N phrases, full phrase per sub-staff.
+    //
+    // Gating:
+    //   - rowDelta > 0              (only subdivide on user request)
+    //   - viewMode === 'staff'      (Inline Staff only)
+    //   - melismaPositions === null (melisma branch owns its own subdivision)
+    //   - no phraseShapeOverride    (one metrical line per phrase)
+    //   - no doubled-length         (single-line per phrase is the trivial case)
+    const flattenMode =
+      extraSubdivisions > 0 &&
+      viewMode === 'staff' &&
+      (phraseShapeOverride == null || phraseShapeOverride.length === 0) &&
+      !doubleLength
+
+    if (!flattenMode) for (const i of localVisiblePhraseIndices) {
       // For repeated-last-line tunes (phraseShapeOverride has more entries than
       // ABC phrases), indices beyond T reuse the last ABC phrase's music.
       const phraseBody = (localSplit.phrases[Math.min(i, localSplit.phrases.length - 1)] ?? '').trim()
@@ -1464,6 +1490,200 @@ export function NotationRenderer({
         }
       }
     }
+
+    // ── Flatten path: rowDelta > 0 + Inline Staff ──────────────────────────
+    // See the `flattenMode` block above for the activation gates. When active,
+    // we treat the whole tune as a single measure stream and LPT-distribute
+    // measures across (meterMin + rowDelta) sub-staves balanced by syllable
+    // count. This is the fix for the per-phrase model's structural inability
+    // to equalize syllable distribution (CM phrases 8/6/8/6 cannot be evenly
+    // divided into 5 rows).
+    if (flattenMode) {
+      const flattenSubStaffCount = meterMinForDistribution + extraSubdivisions
+
+      // Per-phrase preprocessing: clean body, tokenize measures, count notes,
+      // extract per-cycle syllable tokens aligned to measures via note-position
+      // cumulative offsets. Each cycle has its own syllable stream — we run
+      // wLineForSyllables once per cycle per phrase to get the same token list
+      // the per-phrase path would emit, just split across measures here.
+      interface FlatPhraseData {
+        phraseIdx: number
+        measures: string[]
+        noteCounts: number[]
+        cycleTokenLists: string[][]  // [cycleIdx][tokenIdx]
+      }
+
+      const flattenPhraseData: FlatPhraseData[] = []
+      for (const i of localVisiblePhraseIndices) {
+        const phraseBody = (localSplit.phrases[Math.min(i, localSplit.phrases.length - 1)] ?? '').trim()
+        if (!phraseBody) continue
+        // Clean body: strip w: lines, merge consecutive music lines into one
+        // (same logic as the standard branch's cleanedBody at lines 1334-1350).
+        const phraseLines = phraseBody.split('\n')
+        const cleanedBody = phraseLines
+          .filter((l) => !/^w:/.test(l.trim()))
+          .reduce<string[]>((acc, line) => {
+            if (/^\s*[A-Za-z]:/.test(line)) {
+              acc.push(line)
+            } else if (acc.length > 0 && !/^\s*[A-Za-z]:/.test(acc[acc.length - 1])) {
+              acc[acc.length - 1] += ' ' + line.trim()
+            } else {
+              acc.push(line)
+            }
+            return acc
+          }, [])
+          .join('\n')
+          .trim()
+        if (!cleanedBody) continue
+        const measures = tokenizeMeasures(cleanedBody)
+        if (measures.length === 0) continue
+        const noteCounts = measures.map(countNoteHeads)
+
+        // Per-cycle w: line tokens. Pull from wLinesForPhrase(i) which already
+        // returns one string[] per visible cycle (length = linesPerPhrase).
+        // We only run this for single-line-per-phrase (the flatten gate
+        // enforces this), so we read cycleLines[0] — the one metrical line.
+        //
+        // When melismaPositions is populated for this phrase, we follow the
+        // existing melisma branch's algorithm (Phase 04.9.12): build a token
+        // list of syllable + `_` markers, with `_` at the melisma note
+        // positions. The `_` tokens carry 0 syllable weight for LPT balancing
+        // (we filter them out when computing the balance weight below).
+        const emitWLines = renderWLineUnderStaff ?? showLyrics
+        const cycleTokenLists: string[][] = []
+        if (emitWLines) {
+          const phraseIdx = Math.min(i, localSplit.phrases.length - 1)
+          const phrasePositions = melismaPositions?.[phraseIdx]
+          const wLines = wLinesForPhrase(i)
+          for (let c = 0; c < wLines.length; c++) {
+            const cycleLines = wLines[c] ?? []
+            const text = cycleLines[0] ?? ''
+            if (!text || !text.trim()) {
+              cycleTokenLists.push([])
+              continue
+            }
+            if (phrasePositions != null) {
+              // Melisma branch: syllable tokens at non-melisma note positions,
+              // `_` at melisma positions.
+              const syllableTokens = syllabifyForAbc(text).split(/\s+/).filter(Boolean)
+              const noteCount = countNoteHeads(cleanedBody)
+              const nonMelismaSlots = Math.max(0, noteCount - phrasePositions.length)
+              // Force-fit syllables to nonMelismaSlots (same as melisma branch).
+              const fitted = forceMatchMeterShape([syllableTokens], [nonMelismaSlots])
+              const fittedTokens = fitted.fixed[0] ?? syllableTokens
+              const posSet = new Set(phrasePositions)
+              const wTokens: string[] = []
+              let tIdx = 0
+              for (let noteIdx = 0; noteIdx < noteCount; noteIdx++) {
+                if (posSet.has(noteIdx)) {
+                  wTokens.push('_')
+                } else if (tIdx < fittedTokens.length) {
+                  wTokens.push(fittedTokens[tIdx] ?? '')
+                  tIdx++
+                }
+              }
+              while (tIdx < fittedTokens.length) {
+                wTokens.push(fittedTokens[tIdx] ?? '')
+                tIdx++
+              }
+              cycleTokenLists.push(wTokens)
+            } else {
+              // No melismas: use wLineForSyllables (handles deficit-reconcile
+              // and meter-shape force-fit).
+              const tokens = wLineForSyllables(text, phraseIdx, cleanedBody, phraseIdx)
+                .split(/\s+/)
+                .filter(Boolean)
+              cycleTokenLists.push(tokens)
+            }
+          }
+        }
+
+        flattenPhraseData.push({
+          phraseIdx: Math.min(i, localSplit.phrases.length - 1),
+          measures,
+          noteCounts,
+          cycleTokenLists,
+        })
+      }
+
+      // Build measure entries — one per (phrase, measure). Each carries the
+      // music text, note count, and per-cycle syllable tokens aligned via
+      // cumulative note-position offsets within the phrase.
+      const flattenMeasureEntries: MeasureEntry[] = []
+      for (const pd of flattenPhraseData) {
+        // For each cycle, build a per-cycle token cursor.
+        const cycleCursors: number[] = pd.cycleTokenLists.map(() => 0)
+        for (let m = 0; m < pd.measures.length; m++) {
+          const noteCount = pd.noteCounts[m] ?? 0
+          // Per-cycle tokens for this measure. Note: the cycle chosen for LPT
+          // balance is irrelevant — we use cycle 0's token count to weight
+          // the measure in the scheduler, then concatenate per-cycle tokens
+          // for emission. When cycle 0 is empty but cycle 1 has tokens, the
+          // measure is still assigned (zero weight) and other cycles emit
+          // their own tokens below.
+          const cycleTokens: string[][] = []
+          for (let c = 0; c < pd.cycleTokenLists.length; c++) {
+            const tokens = pd.cycleTokenLists[c] ?? []
+            const cursor = cycleCursors[c] ?? 0
+            const end = Math.min(cursor + noteCount, tokens.length)
+            cycleTokens.push(tokens.slice(cursor, end))
+            cycleCursors[c] = end
+          }
+          // LPT weight (cycle 0 token count, excluding `_` melisma markers) drives
+          // distributeMeasuresToSubstaffs. The cycle 0 token list is kept in
+          // syllableTokens for that scheduler; full per-cycle data lives in
+          // perCycleTokens for emission.
+          const cycle0 = cycleTokens[0] ?? []
+          const syllableCount = cycle0.filter((t) => t !== '_').length
+          flattenMeasureEntries.push({
+            phraseIdx: pd.phraseIdx,
+            measureIdx: m,
+            musicText: pd.measures[m] ?? '',
+            noteCount,
+            perCycleTokens: cycleTokens,
+            syllableTokens: cycle0,
+            syllableCount: syllableCount || noteCount || 1,
+          })
+        }
+      }
+
+      // LPT distribute. distributeMeasuresToSubstaffs uses each entry's
+      // syllableTokens.length (cycle 0) for the make-span decision.
+      const substaffs = distributeMeasuresToSubstaffs(flattenMeasureEntries, flattenSubStaffCount)
+
+      // Emit. For each substaff: %%staffsep 30 between sub-staves (sub > 0),
+      // %%stretchlast gated to Inline Staff, then music line and one w: line
+      // per visible cycle.
+      for (let s = 0; s < substaffs.length; s++) {
+        const sub = substaffs[s] ?? []
+        if (sub.length === 0) continue
+        if (s > 0) parts.push('%%staffsep 30')
+        if (viewMode === 'staff') parts.push('%%stretchlast')
+        const musicLine = sub.map((e) => e.musicText).join(' ')
+        // Ensure trailing `|` for abcjs synth accidental-scope reset (same
+        // normalisation as splitMusicIntoSubLines, lines 36-47).
+        const musicNormalized = /\|\s*$/.test(musicLine) ? musicLine : `${musicLine} |`
+        parts.push(musicNormalized)
+
+        const emitWLines = renderWLineUnderStaff ?? showLyrics
+        if (!emitWLines) continue
+
+        // One w: line per visible cycle. For each cycle, concatenate the
+        // substaff's measures' per-cycle tokens in measure order.
+        const cycleCount = flattenPhraseData[0]?.cycleTokenLists.length ?? 0
+        for (let c = 0; c < cycleCount; c++) {
+          const tokens: string[] = []
+          for (const entry of sub) {
+            const cycleTokens = entry.perCycleTokens[c] ?? []
+            for (const t of cycleTokens) tokens.push(t)
+          }
+          if (tokens.length === 0) continue
+          const wLine = tokens.join(' ')
+          parts.push(`w: ${padWLineToNoteCount(wLine, musicNormalized)}`)
+        }
+      }
+    }
+
     return parts.join('\n')
   }
   // wLinesForPhrase depends on visibleCycles, captured by closure.
