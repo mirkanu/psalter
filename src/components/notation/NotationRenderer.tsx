@@ -1410,11 +1410,15 @@ export function NotationRenderer({
         // phrase's first sub-staff and the previous phrase's last
         // sub-staff — same problem at the phrase boundary.
         if (actualSubdivisions > 1 && sub > 0) {
-          // 14 px clears 8th-note stems + bar lines at the default staff
-          // glyph size; the dynamic solver may bump the lyric font larger
-          // (which is what the user wants), in which case this is a fixed
-          // minimum gap and AbcPlayer's row-spacing repack handles the rest.
-          parts.push('%%staffsep 14')
+          // 2026-08-24 (padding fix v2): the lyric line that follows each
+          // sub-staff sits at a fixed offset below the staff bottom — it
+          // does NOT scale with staffsep. To guarantee the lyric top
+          // clears the staff lines + any down-facing note stems even at
+          // the max A+ font (20.8 px), the gap between consecutive
+          // sub-staves must exceed the lyric font height. 30 px covers
+          // 20.8 px font (top-of-cap ~16 px) + 8 px stem clearance + 6 px
+          // breathing room.
+          parts.push('%%staffsep 30')
         }
         // 2026-08-24 (row-count knob, full-width rows): when A+ has split
         // a phrase into multiple sub-staves, each sub-staff has fewer
