@@ -1446,16 +1446,17 @@ export function NotationRenderer({
           // breathing room.
           parts.push('%%staffsep 30')
         }
-        // 2026-08-24 (row-count knob, full-width rows): when A+ has split
-        // a phrase into multiple sub-staves, each sub-staff has fewer
-        // measures and would otherwise render at natural width leaving
-        // empty staff lines on the right. Inject `%%stretchlast` per
-        // sub-staff so the last measure of each one stretches to fill the
-        // staff width — notes (and their tied lyrics) spread out to the
-        // full row. Gated to Inline Staff + actualSubdivisions>1 so
-        // unsplit callers (tune page, study, fullscreen) keep their
-        // existing layout untouched.
-        if (actualSubdivisions > 1 && viewMode === 'staff') {
+        // 2026-08-24 (row-count knob, full-width rows): inject `%%stretchlast`
+        // before each sub-staff so the last measure of each one stretches to
+        // fill the staff width — notes (and their tied lyrics) spread out to
+        // the full row. 2026-08-24 (v2): applied unconditionally for
+        // viewMode='staff', not just when subdivided. Without it, the LAST
+        // phrase of a tune (which often has fewer notes than the earlier
+        // phrases) renders a half-width staff at desktop /psalms/[id]
+        // because there's no earlier sub-staff to push the staffsep and the
+        // last measure's natural width is the only thing governing row
+        // length. Gated to viewMode === 'staff' (not other render modes).
+        if (viewMode === 'staff') {
           parts.push('%%stretchlast')
         }
         parts.push(musicSubLines[sub])
@@ -1654,10 +1655,18 @@ export function NotationRenderer({
       // Emit. For each substaff: %%staffsep 30 between sub-staves (sub > 0),
       // %%stretchlast gated to Inline Staff, then music line and one w: line
       // per visible cycle.
+      // 2026-08-24 (lyric-overlap fix v2): abcjs's `%%staffsep` widens the
+      // gap above the staff it precedes, which also widens the gap below
+      // that staff (the staff's bounding box grows, so the w: line below
+      // sits further down). Inject before the FIRST substaff too — without
+      // this, the first substaff's lyric clips the note stems above it when
+      // A+ has grown the font, because there's no preceding staff to push
+      // the staffsep down. 30 was tuned for the 20.8 px max font at A+8
+      // (16.8 px cap + 8 px stem + 6 px breathing room).
+      parts.push('%%staffsep 30')
       for (let s = 0; s < substaffs.length; s++) {
         const sub = substaffs[s] ?? []
         if (sub.length === 0) continue
-        if (s > 0) parts.push('%%staffsep 30')
         if (viewMode === 'staff') parts.push('%%stretchlast')
         const musicLine = sub.map((e) => e.musicText).join(' ')
         // Ensure trailing `|` for abcjs synth accidental-scope reset (same
