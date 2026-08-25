@@ -300,35 +300,77 @@ function wrapMelismaSlurs(musicLine: string, melismaContinuations: number[]): st
   }
   if (notes.length === 0) return musicLine
   const continuations = new Set(melismaContinuations)
+  // 260825-ps21 v2: walk the string token-by-token instead of splicing
+  // (...) into the original positions. The previous splice approach
+  // produced empty `()` groups when an open and close landed at the same
+  // character offset (close of one note = start of the next adjacent
+  // note) — the `(` got inserted before the just-inserted `)`, giving
+  // `e'2)(f'` instead of `e'2)(f'`. Walking the tokens in order avoids
+  // the offset-shift bug entirely.
+  //
   // A slur opens at note n if n is NOT a continuation AND the next note
   // is. A slur closes at note n if n is a continuation AND the next note
   // is NOT (or n is the last note).
-  const opensAt = new Set<number>()
-  const closesAt = new Set<number>()
+  let result = ''
+  let inSlur = false
   for (let i = 0; i < notes.length; i++) {
+    const note = notes[i]!
+    // Copy everything from the previous note's end up to this note's start.
+    if (i === 0) {
+      result += musicLine.slice(0, note.index)
+    } else {
+      result += musicLine.slice(notes[i - 1]!.index + notes[i - 1]!.text.length, note.index)
+    }
     const isContinuation = continuations.has(i)
     const nextIsContinuation = i + 1 < notes.length && continuations.has(i + 1)
-    if (!isContinuation && nextIsContinuation) opensAt.add(i)
-    if (isContinuation && !nextIsContinuation) closesAt.add(i)
+    // Open: we're entering a slur.
+    if (!isContinuation && nextIsContinuation && !inSlur) {
+      result += '('
+      inSlur = true
+    }
+    result += note.text
+    // Close: we're leaving a slur.
+    if (isContinuation && !nextIsContinuation && inSlur) {
+      result += ')'
+      inSlur = false
+    }
   }
-  if (opensAt.size === 0) return musicLine
-  let result = musicLine
-  const edits: { pos: number; text: string }[] = []
-  closesAt.forEach((closeIdx) => {
-    const note = notes[closeIdx]
-    if (!note) return
-    edits.push({ pos: note.index + note.text.length, text: ')' })
-  })
-  opensAt.forEach((openIdx) => {
-    const note = notes[openIdx]
-    if (!note) return
-    edits.push({ pos: note.index, text: '(' })
-  })
-  edits.sort((a, b) => b.pos - a.pos)
-  for (const edit of edits) {
-    result = result.slice(0, edit.pos) + edit.text + result.slice(edit.pos)
+  // Append any trailing content (barlines, whitespace) after the last note.
+  if (notes.length > 0) {
+    const last = notes[notes.length - 1]!
+    result += musicLine.slice(last.index + last.text.length)
   }
   return result
+}
+
+// 260825-slur-flatten: same logic as wrapMelismaSlurs but operates on an
+// array of abc note tokens (the form the flatten path produces after
+// per-note LPT). Each token is checked against a predicate so callers
+// from different paths can supply their own continuation logic — e.g.
+// the flatten path keys continuations on the note's WITHIN-PHRASE index,
+// not its position in the sub-staff.
+function wrapMelismaSlursFromTokens(
+  tokens: string[],
+  isContinuation: (subStaffIdx: number) => boolean,
+  separator: string = ' ',
+): string {
+  if (tokens.length === 0) return ''
+  const parts: string[] = []
+  let inSlur = false
+  for (let i = 0; i < tokens.length; i++) {
+    const isCont = isContinuation(i)
+    const nextIsCont = i + 1 < tokens.length && isContinuation(i + 1)
+    if (!isCont && nextIsCont && !inSlur) {
+      parts.push('(')
+      inSlur = true
+    }
+    parts.push(tokens[i]!)
+    if (isCont && !nextIsCont && inSlur) {
+      parts.push(')')
+      inSlur = false
+    }
+  }
+  return parts.join(separator)
 }
 
 export function NotationRenderer({
@@ -1787,6 +1829,12 @@ export function NotationRenderer({
       type NoteEntry = {
         abcToken: string
         perCycleTokens: string[]
+        // 260825-slur-flatten: index of this note WITHIN its source phrase.
+        // melismaPositions[i] is keyed on within-phrase indices, so we need
+        // to translate from sub-staff position → within-phrase position to
+        // decide which notes are continuations when wrapping slur groups.
+        phraseIdx: number
+        withinPhraseIdx: number
       }
       const allNoteEntries: NoteEntry[] = []
       // ABC note token regex: optional accidental (^_=) + note letter (A-G/a-g
@@ -1797,7 +1845,19 @@ export function NotationRenderer({
       // individually. Anchored at note-letter boundaries so octave marks
       // and durations get captured as part of the preceding note.
       const NOTE_REGEX = /(?:[\^_=]?[A-Ga-gzZ][',]*\d*(?:\/\d+)?)/g
-      for (const phraseEntries of phraseMeasureEntries) {
+      // 260825-slur-flatten: build per-phrase continuation sets ONCE so the
+      // emit loop can do an O(1) membership test per note.
+      const perPhraseContinuationSets: Set<number>[] = flattenPhraseData.map((pd) => {
+        const arr = melismaPositions?.[pd.phraseIdx] ?? []
+        return new Set(arr)
+      })
+      // Walk phraseMeasureEntries per-phrase so we can track the
+      // within-phrase running note index for each note token — needed to
+      // look up melismaPositions[phraseIdx] (which is keyed on within-phrase
+      // 0-based note indices).
+      for (let pi = 0; pi < phraseMeasureEntries.length; pi++) {
+        const phraseEntries = phraseMeasureEntries[pi]!
+        let cumNoteIdx = 0
         for (const me of phraseEntries) {
           const noteTokens = me.musicText.match(NOTE_REGEX) ?? []
           for (let i = 0; i < noteTokens.length; i++) {
@@ -1808,14 +1868,32 @@ export function NotationRenderer({
               const cycleToks = me.perCycleTokens[c] ?? []
               perCycleTokens.push(cycleToks[i] ?? '_')
             }
-            allNoteEntries.push({ abcToken: noteToken, perCycleTokens })
+            allNoteEntries.push({
+              abcToken: noteToken,
+              perCycleTokens,
+              phraseIdx: me.phraseIdx,
+              withinPhraseIdx: cumNoteIdx + i,
+            })
           }
+          cumNoteIdx += me.noteCount
         }
       }
 
       // Walk the flat note list once. Each note contributes either 1
       // syllable (real token) or 0 (`_` melisma). Close a chunk when
       // cumulative syllables reach (chunkIndex + 1) × targetPer.
+      //
+      // Melisma-stick-together rule (260825-slur-flatten): a chunk boundary
+      // is NEVER allowed to fall inside a melisma group. If the candidate
+      // boundary sits between a melisma syllable-start note and its first
+      // continuation (or between two continuations), we keep accumulating
+      // until the melisma closes. Otherwise abcjs gets an open `(` on one
+      // sub-staff and its `)` on the next — malformed and silently drops
+      // the slur arc.
+      const noteIsContinuation: boolean[] = allNoteEntries.map((n) => {
+        const set = perPhraseContinuationSets[n.phraseIdx] ?? null
+        return set != null && set.has(n.withinPhraseIdx)
+      })
       const sylPerNote: number[] = allNoteEntries.map((n) => {
         const tok = n.perCycleTokens[0] ?? '_'
         return tok && tok !== '_' ? 1 : 0
@@ -1830,13 +1908,16 @@ export function NotationRenderer({
         curChunk.push(note)
         curSyl += sylPerNote[i] ?? 0
         const chunkEnd = (noteChunks.length + 1) * targetPerNote
+        const wouldSplitMelisma = i < allNoteEntries.length - 1 && (noteIsContinuation[i] || noteIsContinuation[i + 1])
         // Close chunk i when cumulative syllables reach target, but not on
-        // the very last note (would orphan the tail into an empty chunk).
+        // the very last note (would orphan the tail into an empty chunk)
+        // and not inside a melisma group (would split the slur group).
         if (
           noteChunks.length < flattenSubStaffCount - 1 &&
           curSyl >= chunkEnd &&
           curChunk.length > 0 &&
-          i < allNoteEntries.length - 1
+          i < allNoteEntries.length - 1 &&
+          !wouldSplitMelisma
         ) {
           noteChunks.push(curChunk)
           curChunk = []
@@ -1857,7 +1938,19 @@ export function NotationRenderer({
         parts.push('%%staffsep 30')
         if (viewMode === 'staff') parts.push('%%stretchlast')
 
-        const musicLine = chunk.map((n) => n.abcToken).join(' ').trim()
+        // 260825-slur-flatten: wrap melisma groups in (...) so abcjs draws a
+        // proper slur arc on each sub-staff. Per-note continuation is
+        // decided by looking up melismaPositions[phraseIdx] using the note's
+        // WITHIN-PHRASE index (not its position in the sub-staff — those are
+        // different after per-note LPT reorders the stream).
+        const tokens = chunk.map((n) => n.abcToken)
+        const isContinuation = (subIdx: number): boolean => {
+          const note = chunk[subIdx]
+          if (!note) return false
+          const set = perPhraseContinuationSets[note.phraseIdx] ?? null
+          return set != null && set.has(note.withinPhraseIdx)
+        }
+        const musicLine = wrapMelismaSlursFromTokens(tokens, isContinuation, ' ').trim()
         if (!musicLine) continue
         parts.push(musicLine)
 
