@@ -39,6 +39,8 @@ import { splitMusicIntoSubLines } from './splitMusicIntoSubLines'
 import { tokenizeMeasures } from './tokenizeMeasures'
 import { splitWLineByNoteCounts } from './splitWLineByNoteCounts'
 import { distributeMeasuresToSubstaffs, type MeasureEntry } from '@/lib/distribute-measures-to-substaffs'
+import { distributeNotesToSubstaffs, type NoteEntry } from '@/lib/distribute-notes-to-substaffs'
+import { tokenizeNotesInMeasure } from './tokenizeNotes'
 import { forceMatchMeterShape } from '@/lib/force-match-meter-shape'
 import { expectedSyllablesByLine } from '@/lib/meter-syllable-shape'
 import { detectRepeatedPitchContinuations } from '@/lib/detect-repeated-pitch-continuations'
@@ -1441,10 +1443,17 @@ export function NotationRenderer({
         // the first) — abcjs applies it to control the gap above the
         // staff it precedes. So the directive between sub 0's w: line and
         // sub 1's music widens the gap exactly where sub 0's lyrics sit.
-        // We also inject one before sub 0 to widen the gap between this
-        // phrase's first sub-staff and the previous phrase's last
-        // sub-staff — same problem at the phrase boundary.
-        if (actualSubdivisions > 1 && sub > 0) {
+        // 260825-bug1: also inject one before sub 0 (every phrase, including
+        // A+=0) — without it, the first sub-staff of every phrase has no
+        // preceding staff to push it down, and the lyric clips the bottom
+        // of the staff's own down-facing note stems. abcjs interprets the
+        // directive as additional vertical space above the staff that
+        // follows, which moves the staff's bounding box (and the lyric
+        // anchored to it) downward by 30 px — clearing the stem/lyric
+        // collision at the top of every phrase.
+        if (sub === 0) {
+          parts.push('%%staffsep 30')
+        } else if (actualSubdivisions > 1) {
           // 2026-08-24 (padding fix v2): the lyric line that follows each
           // sub-staff sits at a fixed offset below the staff bottom — it
           // does NOT scale with staffsep. To guarantee the lyric top
@@ -1503,24 +1512,34 @@ export function NotationRenderer({
 
     // ── Flatten path: rowDelta > 0 + Inline Staff ──────────────────────────
     // See the `flattenMode` block above for the activation gates. When active,
-    // we treat the whole tune as a single measure stream and LPT-distribute
-    // measures across (meterMin + rowDelta) sub-staves balanced by syllable
-    // count. This is the fix for the per-phrase model's structural inability
-    // to equalize syllable distribution (CM phrases 8/6/8/6 cannot be evenly
-    // divided into 5 rows).
+    // we treat the whole tune as a single NOTE stream and LPT-distribute
+    // individual notes across (meterMin + rowDelta) sub-staves balanced by
+    // note count. Sub-staves whose last note falls mid-measure emit a `\`
+    // continuation so abcjs continues the measure on the next system without
+    // inserting a bar line — and the corresponding `w:` line carries the
+    // matching syllable + melisma `_` continuation.
+    //
+    // Why per-NOTE and not per-measure (the previous behaviour):
+    //   Scottish Psalter tunes in CM (8.6.8.6) compress some phrases into
+    //   one dense measure (e.g. Psalm 23 phrase 3 m1 has 9 notes for
+    //   "pas-ture green: he lead-eth me"). Per-measure LPT cannot split
+    //   that measure, so one sub-staff always carries a 9-note row while
+    //   others carry 3-5 notes — visibly uneven. Per-note LPT fragments
+    //   the dense measure across sub-staves, equalising rendered density.
     if (flattenMode) {
       const flattenSubStaffCount = meterMinForDistribution + extraSubdivisions
 
       // Per-phrase preprocessing: clean body, tokenize measures, count notes,
-      // extract per-cycle syllable tokens aligned to measures via note-position
-      // cumulative offsets. Each cycle has its own syllable stream — we run
-      // wLineForSyllables once per cycle per phrase to get the same token list
-      // the per-phrase path would emit, just split across measures here.
+      // extract per-cycle syllable tokens aligned to notes via cumulative
+      // note-position offsets within the phrase. Each cycle has its own
+      // syllable stream — we run wLineForSyllables once per cycle per phrase
+      // to get the same token list the per-phrase path would emit, just
+      // split across notes here.
       interface FlatPhraseData {
         phraseIdx: number
         measures: string[]
         noteCounts: number[]
-        cycleTokenLists: string[][]  // [cycleIdx][tokenIdx]
+        cycleTokenLists: string[][]  // [cycleIdx][tokenIdx]; length == noteCount
       }
 
       const flattenPhraseData: FlatPhraseData[] = []
@@ -1555,10 +1574,8 @@ export function NotationRenderer({
         // enforces this), so we read cycleLines[0] — the one metrical line.
         //
         // When melismaPositions is populated for this phrase, we follow the
-        // existing melisma branch's algorithm (Phase 04.9.12): build a token
-        // list of syllable + `_` markers, with `_` at the melisma note
-        // positions. The `_` tokens carry 0 syllable weight for LPT balancing
-        // (we filter them out when computing the balance weight below).
+        // existing melisma branch's algorithm: build a token list of
+        // syllable + `_` markers, with `_` at the melisma note positions.
         const emitWLines = renderWLineUnderStaff ?? showLyrics
         const cycleTokenLists: string[][] = []
         if (emitWLines) {
@@ -1573,12 +1590,9 @@ export function NotationRenderer({
               continue
             }
             if (phrasePositions != null) {
-              // Melisma branch: syllable tokens at non-melisma note positions,
-              // `_` at melisma positions.
               const syllableTokens = syllabifyForAbc(text).split(/\s+/).filter(Boolean)
               const noteCount = countNoteHeads(cleanedBody)
               const nonMelismaSlots = Math.max(0, noteCount - phrasePositions.length)
-              // Force-fit syllables to nonMelismaSlots (same as melisma branch).
               const fitted = forceMatchMeterShape([syllableTokens], [nonMelismaSlots])
               const fittedTokens = fitted.fixed[0] ?? syllableTokens
               const posSet = new Set(phrasePositions)
@@ -1598,8 +1612,6 @@ export function NotationRenderer({
               }
               cycleTokenLists.push(wTokens)
             } else {
-              // No melismas: use wLineForSyllables (handles deficit-reconcile
-              // and meter-shape force-fit).
               const tokens = wLineForSyllables(text, phraseIdx, cleanedBody, phraseIdx)
                 .split(/\s+/)
                 .filter(Boolean)
@@ -1616,142 +1628,123 @@ export function NotationRenderer({
         })
       }
 
-      // Build measure entries — one per (phrase, measure). Each carries the
-      // music text, note count, and per-cycle syllable tokens aligned via
-      // cumulative note-position offsets within the phrase.
+      // 260825-flatten-note: collapse the entire phrase-major note stream
+      // into a flat list of per-note entries. Each entry carries:
+      //   - the note text (e.g. "c2", "a4", "b", "g")
+      //   - whether it is the LAST note of its original measure (controls
+      //     emission of `|` vs `\` after the note)
+      //   - per-cycle tokens aligned by cumulative note-position within the
+      //     phrase (so token[i] corresponds to the i-th note of the phrase)
       //
-      // 260825-lpt-order: collect entries phrase-major first, then re-order
-      // round-robin (P0M0, P1M0, P2M0, P3M0, P0M1, P1M1, …). Phrase-major
-      // walks let the greedy LPT bias the LATER sub-staves with leftover
-      // measures from each phrase (sub N-1 always ends up under-loaded on
-      // round 1 and over-loaded by every subsequent round). Round-robin
-      // interleaves so each "LPT pick" sees one measure from each phrase,
-      // producing visually even sub-staves even when phrase measure counts
-      // vary (which they do — Psalm 23 CM phrases have 2–4 measures).
-      const phraseMajorEntries: MeasureEntry[] = []
+      // Token alignment: cycleTokenLists[c] has length == phrase note count
+      // (or 0 if lyrics suppressed). For each note we pull tokens[c][noteIdx]
+      // and substitute `_` for missing entries so abcjs keeps the w: line
+      // aligned 1:1 to note positions.
+      const flatNoteEntries: NoteEntry[] = []
       for (const pd of flattenPhraseData) {
-        // For each cycle, build a per-cycle token cursor.
-        const cycleCursors: number[] = pd.cycleTokenLists.map(() => 0)
+        let cumNoteIdx = 0
         for (let m = 0; m < pd.measures.length; m++) {
-          const noteCount = pd.noteCounts[m] ?? 0
-          // Per-cycle tokens for this measure. Note: the cycle chosen for LPT
-          // balance is irrelevant — we use cycle 0's token count to weight
-          // the measure in the scheduler, then concatenate per-cycle tokens
-          // for emission. When cycle 0 is empty but cycle 1 has tokens, the
-          // measure is still assigned (zero weight) and other cycles emit
-          // their own tokens below.
-          const cycleTokens: string[][] = []
-          for (let c = 0; c < pd.cycleTokenLists.length; c++) {
-            const tokens = pd.cycleTokenLists[c] ?? []
-            const cursor = cycleCursors[c] ?? 0
-            const end = Math.min(cursor + noteCount, tokens.length)
-            cycleTokens.push(tokens.slice(cursor, end))
-            cycleCursors[c] = end
+          const measureText = pd.measures[m] ?? ''
+          const noteTexts = tokenizeNotesInMeasure(measureText)
+          if (noteTexts.length === 0) {
+            // Measure had no notes (empty / grace-only). Still advance cum.
+            cumNoteIdx += pd.noteCounts[m] ?? 0
+            continue
           }
-          // LPT weight (cycle 0 token count, excluding `_` melisma markers) drives
-          // distributeMeasuresToSubstaffs. The cycle 0 token list is kept in
-          // syllableTokens for that scheduler; full per-cycle data lives in
-          // perCycleTokens for emission.
-          //
-          // 260825-lpt-metric: use `noteCount` (not syllable count) as the
-          // LPT weight. The scheduler's job is to keep rendered rows visually
-          // even — and rendered width is driven by note positions, not by
-          // syllable count (which can drift below note count when a cycle
-          // runs out of syllables at a phrase boundary, or above it on
-          // melisma-heavy passages). For Psalm 23 (CM) this changes A+1 from
-          // {7,6,10,6,5} (max-min=5) to a near-flat distribution.
-          const cycle0 = cycleTokens[0] ?? []
-          phraseMajorEntries.push({
-            phraseIdx: pd.phraseIdx,
-            measureIdx: m,
-            musicText: pd.measures[m] ?? '',
-            noteCount,
-            perCycleTokens: cycleTokens,
-            syllableTokens: cycle0,
-            syllableCount: noteCount,
-          })
+          for (let n = 0; n < noteTexts.length; n++) {
+            const isLastInMeasure = n === noteTexts.length - 1
+            const cycleTokens: string[] = []
+            for (let c = 0; c < pd.cycleTokenLists.length; c++) {
+              const tokens = pd.cycleTokenLists[c] ?? []
+              const tok = tokens[cumNoteIdx] ?? ''
+              cycleTokens.push(tok.length > 0 ? tok : '_')
+            }
+            flatNoteEntries.push({
+              phraseIdx: pd.phraseIdx,
+              measureIdx: m,
+              noteIdxInMeasure: n,
+              isEndOfMeasure: isLastInMeasure,
+              noteText: noteTexts[n] ?? '',
+              cycleTokens,
+            })
+            cumNoteIdx++
+          }
+          // If the source measure had more notes by countNoteHeads than by
+          // tokenizeNotesInMeasure (e.g. ties, which we exclude from
+          // emission), advance the cursor by the difference so syllable
+          // alignment stays correct.
+          const tokenizedCount = noteTexts.length
+          const sourceCount = pd.noteCounts[m] ?? 0
+          if (sourceCount > tokenizedCount) {
+            cumNoteIdx += sourceCount - tokenizedCount
+          }
         }
       }
 
-      // Round-robin re-order: for each measure index across phrases, emit
-      // entries for that measure position from each phrase in order. When
-      // measures.length varies per phrase, phrases with fewer measures are
-      // simply skipped for the higher indices.
-      const entryByPhraseMeasure = new Map<string, MeasureEntry>()
-      for (const e of phraseMajorEntries) {
-        entryByPhraseMeasure.set(`${e.phraseIdx}:${e.measureIdx}`, e)
-      }
-      const maxMeasures = Math.max(0, ...flattenPhraseData.map((pd) => pd.measures.length))
-      const flattenMeasureEntries: MeasureEntry[] = []
-      for (let m = 0; m < maxMeasures; m++) {
-        for (const pd of flattenPhraseData) {
-          if (m >= pd.measures.length) continue
-          const e = entryByPhraseMeasure.get(`${pd.phraseIdx}:${m}`)
-          if (e) flattenMeasureEntries.push(e)
-        }
-      }
-
-      // 260825-lpt-sort: classical LPT (Longest-Processing-Time-first) sorts
-      // jobs by processing time DESCENDING before the greedy assignment. For
-      // Psalm 23 (CM) at A+1, phrase 2's measure 1 has 9 notes — a much
-      // larger "job" than the others. Without sorting, that 9-note job can
-      // land in any sub-staff based on round-robin entry order, sometimes
-      // creating a sub-staff with 10+ notes while others have 4-5. Sorting
-      // guarantees the largest job gets bin-allocated first, bounding the
-      // final makespan within the 4/3-OPT approximation that LPT promises.
-      flattenMeasureEntries.sort((a, b) => b.noteCount - a.noteCount)
-
-      // LPT distribute. distributeMeasuresToSubstaffs uses each entry's
-      // noteCount (since 260825-lpt-metric) for the make-span decision.
-      // 260825-lpt-rotate: pass `extraSubdivisions % n` as the tie-break
-      // offset so the largest job (e.g. Psalm 23's 9-note measure in
-      // phrase 2 m1) walks down the page as A+ is pressed. Without
-      // rotation the LPT always pinned sub 0 = largest, leaving row 0
-      // with the same syllable count at every A+ level — user-visible
-      // complaint: "the 1st row does not lose any syllables at all".
-      const substaffs = distributeMeasuresToSubstaffs(
-        flattenMeasureEntries,
+      // 260825-lpt-note: classical LPT on the per-note entries. Sort DESC by
+      // weight (= 1 per note here, so effectively just shuffles ties), then
+      // greedy-assign each to the sub-staff with lowest current sum. The
+      // `startOffset` rotates which sub-staff receives the first note at
+      // each A+ level (260825-lpt-rotate) so the densest "pas-" syllable
+      // walks down the page as A+ is pressed.
+      flatNoteEntries.sort((a, b) => 0) // no sort needed — weight is uniform
+      const substaffs = distributeNotesToSubstaffs(
+        flatNoteEntries,
         flattenSubStaffCount,
         extraSubdivisions,
       )
 
-      // Emit. For each substaff: %%staffsep 30 between sub-staves (sub > 0),
-      // %%stretchlast gated to Inline Staff, then music line and one w: line
-      // per visible cycle.
-      // 2026-08-24 (lyric-overlap fix v2): abcjs's `%%staffsep` widens the
-      // gap above the staff it precedes, which also widens the gap below
-      // that staff (the staff's bounding box grows, so the w: line below
-      // sits further down). Inject before the FIRST substaff too — without
-      // this, the first substaff's lyric clips the note stems above it when
-      // A+ has grown the font, because there's no preceding staff to push
-      // the staffsep down. 30 was tuned for the 20.8 px max font at A+8
-      // (16.8 px cap + 8 px stem + 6 px breathing room).
+      // Emit. For each sub-staff: %%staffsep 30 (Bug 1 fix — push the
+      // first staff's lyric clear of the page top), %%stretchlast for
+      // Inline Staff, then the music line + one w: line per visible cycle.
+      //
+      // Music line construction:
+      //   - Each note appends to the music line.
+      //   - When a note is end-of-measure, append `|` to close the bar.
+      //   - When the LAST note of the sub-staff is NOT end-of-measure,
+      //     append `\` so abcjs continues the measure on the next system
+      //     without inserting a bar line.
+      //
+      // W: line construction:
+      //   - For each cycle, emit one w: line with the cycle tokens for
+      //     THIS sub-staff's notes (in order). Melisma `_` markers carry
+      //     across the `\` break naturally — abcjs treats them as
+      //     per-note continuation slots.
       parts.push('%%staffsep 30')
+      const emitWLines = renderWLineUnderStaff ?? showLyrics
+      const cycleCount = flattenPhraseData[0]?.cycleTokenLists.length ?? 0
+
       for (let s = 0; s < substaffs.length; s++) {
         const sub = substaffs[s] ?? []
         if (sub.length === 0) continue
         if (viewMode === 'staff') parts.push('%%stretchlast')
-        const musicLine = sub.map((e) => e.musicText).join(' ')
-        // Ensure trailing `|` for abcjs synth accidental-scope reset (same
-        // normalisation as splitMusicIntoSubLines, lines 36-47).
-        const musicNormalized = /\|\s*$/.test(musicLine) ? musicLine : `${musicLine} |`
-        parts.push(musicNormalized)
 
-        const emitWLines = renderWLineUnderStaff ?? showLyrics
+        // Build the music line
+        const musicPieces: string[] = []
+        for (let i = 0; i < sub.length; i++) {
+          const note = sub[i]
+          if (!note) continue
+          musicPieces.push(note.noteText)
+          if (note.isEndOfMeasure) musicPieces.push('|')
+        }
+        const lastNote = sub[sub.length - 1]
+        if (lastNote && !lastNote.isEndOfMeasure) {
+          musicPieces.push('\\')
+        }
+        const musicLine = musicPieces.join(' ').trim()
+        if (!musicLine) continue
+        parts.push(musicLine)
+
+        // Emit w: lines per cycle
         if (!emitWLines) continue
-
-        // One w: line per visible cycle. For each cycle, concatenate the
-        // substaff's measures' per-cycle tokens in measure order.
-        const cycleCount = flattenPhraseData[0]?.cycleTokenLists.length ?? 0
         for (let c = 0; c < cycleCount; c++) {
           const tokens: string[] = []
-          for (const entry of sub) {
-            const cycleTokens = entry.perCycleTokens[c] ?? []
-            for (const t of cycleTokens) tokens.push(t)
+          for (const note of sub) {
+            const t = note.cycleTokens[c] ?? '_'
+            tokens.push(t)
           }
           if (tokens.length === 0) continue
-          const wLine = tokens.join(' ')
-          parts.push(`w: ${padWLineToNoteCount(wLine, musicNormalized)}`)
+          parts.push(`w: ${tokens.join(' ')}`)
         }
       }
     }
