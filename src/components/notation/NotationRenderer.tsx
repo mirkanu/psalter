@@ -370,6 +370,14 @@ function wrapMelismaSlursFromTokens(
       inSlur = false
     }
   }
+  // 260825-slur-close-end: if the last note of the chunk is a continuation
+  // (melisma group runs off the end of this sub-staff), close `)` at the end.
+  // Without this, abcjs draws an unclosed slur as a tie — wide arc spanning
+  // the whole sub-staff — which is the "massive melisma arc" regression.
+  if (inSlur) {
+    parts.push(')')
+    inSlur = false
+  }
   return parts.join(separator)
 }
 
@@ -1975,11 +1983,13 @@ export function NotationRenderer({
         }
         let musicLine = wrapMelismaSlursFromTokens(tokens, isContinuation, ' ').trim()
         // 260825-slur-flatten split: if the previous chunk ended with a
-        // continuation note (cross-chunk melisma split), close `)` at the
-        // end of THIS chunk and reopen `(` at the start — abcjs draws two
-        // clean arcs instead of one giant spanning arc.
+        // continuation note (cross-chunk melisma split), the slur opened in
+        // the previous chunk was closed at its end by wrapMelismaSlursFromTokens.
+        // Reopen it at the start of THIS chunk so the melisma arc continues
+        // on this sub-staff. The matching close happens naturally when the
+        // current chunk's continuation chain ends.
         if (boundaryHadContinuation[s]) {
-          musicLine = '(' + musicLine + ')'
+          musicLine = '(' + musicLine
         }
         if (!musicLine) continue
         parts.push(musicLine)
