@@ -1056,6 +1056,8 @@ export default function AbcPlayer({
             targetFont = Math.max(MIN_LYRIC_FONT_PX, maxFitFromOverlap)
           }
           // Apply targetFont UNIFORMLY to every lyric <text>.
+          // eslint-disable-next-line no-console
+          console.log('[AbcPlayer font-solver] baseSize=' + baseSize + ' rowDelta=' + rowDelta + ' POST_BUMP_PX=' + POST_BUMP_PX + ' globalRatio=' + globalRatio.toFixed(3) + ' targetFont=' + targetFont.toFixed(2) + ' texts=' + texts.length)
           texts.forEach((t) => {
             t.setAttribute('font-size', targetFont.toFixed(2))
           })
