@@ -1982,15 +1982,23 @@ export function NotationRenderer({
           return set != null && set.has(note.withinPhraseIdx)
         }
         let musicLine = wrapMelismaSlursFromTokens(tokens, isContinuation, ' ').trim()
-        // 260825-slur-flatten split: if the previous chunk ended with a
-        // continuation note (cross-chunk melisma split), the slur opened in
-        // the previous chunk was closed at its end by wrapMelismaSlursFromTokens.
-        // Reopen it at the start of THIS chunk so the melisma arc continues
-        // on this sub-staff. The matching close happens naturally when the
-        // current chunk's continuation chain ends.
-        if (boundaryHadContinuation[s]) {
-          musicLine = '(' + musicLine
-        }
+        // 260825-slur-flatten split: deliberately do NOT reopen the slur
+        // here when the previous chunk ended with a continuation. abcjs
+        // renders any slur whose `)` lands at a line edge as a filled
+        // tie ellipse (see node_modules/abcjs/src/write/draw/tie.js line
+        // 37-38: `if (!params.anchor1 || !params.anchor2) isTie = true`).
+        // That tie spans the whole sub-staff width (~220px at A+1) and
+        // looks like a huge arc — exactly the regression the user reported.
+        //
+        // The trade-off: cross-system melisma continuations lose their
+        // slur arc on the receiving sub-staff. Intra-system groups still
+        // render correctly. The arc that the user sees at A+1 is the
+        // PROPER intra-system slur — that one is bounded and clean.
+        //
+        // The boundaryHadContinuation flag is still computed (it could be
+        // used for a future per-note-position slur split), but no wrap is
+        // emitted here to avoid the line-edge tie artifact.
+        void boundaryHadContinuation
         if (!musicLine) continue
         parts.push(musicLine)
 
