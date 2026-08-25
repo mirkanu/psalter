@@ -1619,7 +1619,16 @@ export function NotationRenderer({
       // Build measure entries — one per (phrase, measure). Each carries the
       // music text, note count, and per-cycle syllable tokens aligned via
       // cumulative note-position offsets within the phrase.
-      const flattenMeasureEntries: MeasureEntry[] = []
+      //
+      // 260825-lpt-order: collect entries phrase-major first, then re-order
+      // round-robin (P0M0, P1M0, P2M0, P3M0, P0M1, P1M1, …). Phrase-major
+      // walks let the greedy LPT bias the LATER sub-staves with leftover
+      // measures from each phrase (sub N-1 always ends up under-loaded on
+      // round 1 and over-loaded by every subsequent round). Round-robin
+      // interleaves so each "LPT pick" sees one measure from each phrase,
+      // producing visually even sub-staves even when phrase measure counts
+      // vary (which they do — Psalm 23 CM phrases have 2–4 measures).
+      const phraseMajorEntries: MeasureEntry[] = []
       for (const pd of flattenPhraseData) {
         // For each cycle, build a per-cycle token cursor.
         const cycleCursors: number[] = pd.cycleTokenLists.map(() => 0)
@@ -1652,7 +1661,7 @@ export function NotationRenderer({
           // melisma-heavy passages). For Psalm 23 (CM) this changes A+1 from
           // {7,6,10,6,5} (max-min=5) to a near-flat distribution.
           const cycle0 = cycleTokens[0] ?? []
-          flattenMeasureEntries.push({
+          phraseMajorEntries.push({
             phraseIdx: pd.phraseIdx,
             measureIdx: m,
             musicText: pd.measures[m] ?? '',
@@ -1664,8 +1673,26 @@ export function NotationRenderer({
         }
       }
 
+      // Round-robin re-order: for each measure index across phrases, emit
+      // entries for that measure position from each phrase in order. When
+      // measures.length varies per phrase, phrases with fewer measures are
+      // simply skipped for the higher indices.
+      const entryByPhraseMeasure = new Map<string, MeasureEntry>()
+      for (const e of phraseMajorEntries) {
+        entryByPhraseMeasure.set(`${e.phraseIdx}:${e.measureIdx}`, e)
+      }
+      const maxMeasures = Math.max(0, ...flattenPhraseData.map((pd) => pd.measures.length))
+      const flattenMeasureEntries: MeasureEntry[] = []
+      for (let m = 0; m < maxMeasures; m++) {
+        for (const pd of flattenPhraseData) {
+          if (m >= pd.measures.length) continue
+          const e = entryByPhraseMeasure.get(`${pd.phraseIdx}:${m}`)
+          if (e) flattenMeasureEntries.push(e)
+        }
+      }
+
       // LPT distribute. distributeMeasuresToSubstaffs uses each entry's
-      // syllableTokens.length (cycle 0) for the make-span decision.
+      // noteCount (since 260825-lpt-metric) for the make-span decision.
       const substaffs = distributeMeasuresToSubstaffs(flattenMeasureEntries, flattenSubStaffCount)
 
       // Emit. For each substaff: %%staffsep 30 between sub-staves (sub > 0),
