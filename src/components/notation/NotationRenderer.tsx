@@ -1946,7 +1946,13 @@ export function NotationRenderer({
         const chunk = noteChunks[s] ?? []
         if (chunk.length === 0) continue
         parts.push('%%staffsep 30')
-        if (viewMode === 'staff') parts.push('%%stretchlast')
+        // NOTE: %%stretchlast is intentionally NOT emitted here. abcjs draws
+        // a curved tie path under each short sub-staff to "stretch" the
+        // visual row width, which looks identical to a slur arc to the user
+        // and is the source of the "massive melisma arc on the final line"
+        // regression at A+ zoom. The flatten path's LPT-balanced note
+        // distribution already produces rows that fill the available width
+        // for typical tunes, so the stretchlast artifact is pure noise.
 
         // 260825-slur-flatten: wrap melisma groups in (...) so abcjs draws a
         // proper slur arc on each sub-staff. Per-note continuation is
