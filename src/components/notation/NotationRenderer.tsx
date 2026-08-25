@@ -371,11 +371,27 @@ function wrapMelismaSlursFromTokens(
     }
   }
   // 260825-slur-close-end: if the last note of the chunk is a continuation
-  // (melisma group runs off the end of this sub-staff), close `)` at the end.
-  // Without this, abcjs draws an unclosed slur as a tie — wide arc spanning
-  // the whole sub-staff — which is the "massive melisma arc" regression.
+  // (melisma group runs off the end of this sub-staff), DO NOT close the
+  // slur here — abcjs interprets `)` at end-of-line as an unmatched edge
+  // and renders it as a wide tie ellipse (abcjs/src/write/draw/tie.js
+  // line 37-38). Suppress the slur-open at the LAST note of any chunk to
+  // prevent that artifact. Trade-off: cross-chunk melisma groups lose
+  // their trailing slur arc on the receiving sub-staff. Intra-chunk
+  // groups still render correctly (the small, clean arcs the user sees).
+  //
+  // We achieve this by STRIPPING the trailing open `(` if no close `)`
+  // ever fires. Walk the output parts in reverse to find the last `(`,
+  // and if there is no matching `)` between it and the end, drop it.
   if (inSlur) {
-    parts.push(')')
+    // Strip the trailing unmatched `(` instead of adding a closing `)`.
+    let openIdx = -1
+    for (let i = parts.length - 1; i >= 0; i--) {
+      if (parts[i] === ')') break
+      if (parts[i] === '(') { openIdx = i; break }
+    }
+    if (openIdx >= 0) {
+      parts.splice(openIdx, 1)
+    }
     inSlur = false
   }
   return parts.join(separator)
