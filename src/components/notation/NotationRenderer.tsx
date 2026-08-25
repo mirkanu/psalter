@@ -268,6 +268,69 @@ function isSolfegeMode(viewMode: ViewMode): boolean {
   return viewMode === 'solfege' || viewMode === 'solfege-split'
 }
 
+/**
+ * Phase 04.9.20 quick task 260825-slur: wrap melisma groups in (...) so
+ * abcjs draws a native slur arc. abcjs's slur parser (see
+ * node_modules/abcjs/src/parse/abc_parse_music.js:62-83) treats '(' before
+ * a note as slur-start and ')' after a note as slur-stop, and its drawer
+ * (write/draw/tie.js → drawArc) anchors the arc to the notehead's stem
+ * side rather than the notehead center — which is the correct musical
+ * position and matches the Hark! the Herald reference image.
+ *
+ * `melismaContinuations` are 0-based intra-phrase note indices of each
+ * melisma CONTINUATION (the second, third, ... note of a melisma). The
+ * first note of each melisma is the one immediately preceding the
+ * continuation. For a melisma spanning notes 2,3,4, continuations = [3,4]
+ * and the wrap emits `(n2 n3 n4)`.
+ *
+ * Walks the music line token-by-token with the same note-head regex used
+ * by the flatten path so octave marks and durations stay attached to
+ * their note. Inserts '(' before the syllable-start note and ')' after
+ * the last continuation note. NO-OP when continuations is empty (returns
+ * input unchanged so callers can pass unconditionally).
+ */
+function wrapMelismaSlurs(musicLine: string, melismaContinuations: number[]): string {
+  if (melismaContinuations.length === 0) return musicLine
+  const NOTE_RE = /(?:[\^_=]?[A-Ga-gzZ][',]*\d*(?:\/\d+)?)/g
+  type NoteMatch = { index: number; text: string }
+  const notes: NoteMatch[] = []
+  let m: RegExpExecArray | null
+  while ((m = NOTE_RE.exec(musicLine)) !== null) {
+    notes.push({ index: m.index, text: m[0] })
+  }
+  if (notes.length === 0) return musicLine
+  const continuations = new Set(melismaContinuations)
+  // A slur opens at note n if n is NOT a continuation AND the next note
+  // is. A slur closes at note n if n is a continuation AND the next note
+  // is NOT (or n is the last note).
+  const opensAt = new Set<number>()
+  const closesAt = new Set<number>()
+  for (let i = 0; i < notes.length; i++) {
+    const isContinuation = continuations.has(i)
+    const nextIsContinuation = i + 1 < notes.length && continuations.has(i + 1)
+    if (!isContinuation && nextIsContinuation) opensAt.add(i)
+    if (isContinuation && !nextIsContinuation) closesAt.add(i)
+  }
+  if (opensAt.size === 0) return musicLine
+  let result = musicLine
+  const edits: { pos: number; text: string }[] = []
+  closesAt.forEach((closeIdx) => {
+    const note = notes[closeIdx]
+    if (!note) return
+    edits.push({ pos: note.index + note.text.length, text: ')' })
+  })
+  opensAt.forEach((openIdx) => {
+    const note = notes[openIdx]
+    if (!note) return
+    edits.push({ pos: note.index, text: '(' })
+  })
+  edits.sort((a, b) => b.pos - a.pos)
+  for (const edit of edits) {
+    result = result.slice(0, edit.pos) + edit.text + result.slice(edit.pos)
+  }
+  return result
+}
+
 export function NotationRenderer({
   abc,
   lyrics,
@@ -1229,7 +1292,7 @@ export function NotationRenderer({
 
         // Build the cleaned phrase body (no w: lines, music lines merged).
         const phraseLines = phraseBody.split('\n')
-        const cleanedBodyForPositions = phraseLines
+        let cleanedBodyForPositions = phraseLines
           .filter((l) => !/^w:/.test(l.trim()))
           .reduce<string[]>((acc, line) => {
             if (/^\s*[A-Za-z]:/.test(line)) {
@@ -1243,6 +1306,22 @@ export function NotationRenderer({
           }, [])
           .join('\n')
           .trim()
+        // Phase 04.9.20 quick task 260825-slur: wrap melisma groups in
+        // (...) so abcjs draws a proper slur arc. Replaces the previous
+        // DOM-overlay approach (commit 1d477d6) which drew arcs that
+        // anchored at note CENTERS, producing arcs that look "stuck on"
+        // the noteheads. abcjs's native slur drawer anchors to the
+        // notehead's stem-side edge, which is the correct musical
+        // position. melismaPositions[i] gives continuation note indices
+        // (0-based in the per-phrase stream); group consecutive ones
+        // with the preceding syllable-start note and wrap in ().
+        const slurPositions = melismaPositions?.[i]
+        if (slurPositions && slurPositions.length > 0) {
+          cleanedBodyForPositions = wrapMelismaSlurs(
+            cleanedBodyForPositions,
+            slurPositions,
+          )
+        }
 
         // 2026-08-23 (row-count knob): when A+/A− subdivides a melisma phrase,
         // mirror the non-melisma path's splitMusicIntoSubLines strategy.
@@ -2054,13 +2133,6 @@ export function NotationRenderer({
             // current meter baseline).
             rowDelta={extraSubdivisions}
             meterPhraseCount={meterMinForDistribution}
-            // Phase 04.9.20 quick task 260825-slur: pass phrase-indexed
-            // melisma continuation indices so AbcPlayer's post-render pass
-            // can draw slur arcs above each melisma group. Already
-            // available in this component's closure (line ~168) and used
-            // by the w-line builder below. No-op when null (heuristic-only
-            // tunes) — see .planning/research/lyric-to-note-alignment.md.
-            melismaPositions={melismaPositions}
           />
         </div>
       )
