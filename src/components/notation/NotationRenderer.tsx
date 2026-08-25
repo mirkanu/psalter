@@ -2054,6 +2054,13 @@ export function NotationRenderer({
             // current meter baseline).
             rowDelta={extraSubdivisions}
             meterPhraseCount={meterMinForDistribution}
+            // Phase 04.9.20 quick task 260825-slur: pass phrase-indexed
+            // melisma continuation indices so AbcPlayer's post-render pass
+            // can draw slur arcs above each melisma group. Already
+            // available in this component's closure (line ~168) and used
+            // by the w-line builder below. No-op when null (heuristic-only
+            // tunes) — see .planning/research/lyric-to-note-alignment.md.
+            melismaPositions={melismaPositions}
           />
         </div>
       )
