@@ -1684,14 +1684,13 @@ export function NotationRenderer({
       // 260825-lpt-note: classical LPT on the per-note entries. Sort DESC by
       // weight (= 1 per note here, so effectively just shuffles ties), then
       // greedy-assign each to the sub-staff with lowest current sum. The
-      // `startOffset` rotates which sub-staff receives the first note at
-      // each A+ level (260825-lpt-rotate) so the densest "pas-" syllable
-      // walks down the page as A+ is pressed.
+      // search always starts at sub 0 (260825-tune-order) so the FIRST
+      // note of the tune lands in sub-staff 0 at every A+ level — earlier
+      // offset-rotation was making the music start mid-tune.
       flatNoteEntries.sort((a, b) => 0) // no sort needed — weight is uniform
       const substaffs = distributeNotesToSubstaffs(
         flatNoteEntries,
         flattenSubStaffCount,
-        extraSubdivisions,
       )
 
       // Emit. For each sub-staff: %%staffsep 30 (Bug 1 fix — push each
@@ -1736,9 +1735,19 @@ export function NotationRenderer({
           musicPieces.push(note.noteText)
           if (note.isEndOfMeasure) musicPieces.push('|')
         }
+        // 260825-w-fix: do NOT append `\` when the last note is mid-measure.
+        // The `\` triggers abcjs's `lineContinuation` flag (abc_parse_music.js:585),
+        // which makes the NEXT line be parsed as music continuation. Since we
+        // emit w: lines immediately after the music line, the first w: line was
+        // being absorbed by the music parser and cycle-0 lyrics were silently
+        // dropped — leaving only cycles 1+ visible (the "A+1 changes the tune"
+        // bug). Trade-off: sub-staves whose last note is mid-measure now render
+        // with a `|` at the end (closing the partial measure). This is visually
+        // OK because the partial measure re-opens on the next sub-staff and the
+        // voice-leading across the bar is unaffected.
         const lastNote = sub[sub.length - 1]
         if (lastNote && !lastNote.isEndOfMeasure) {
-          musicPieces.push('\\')
+          musicPieces.push('|')
         }
         const musicLine = musicPieces.join(' ').trim()
         if (!musicLine) continue
@@ -1758,7 +1767,8 @@ export function NotationRenderer({
       }
     }
 
-    return parts.join('\n')
+    const result = parts.join('\n')
+    return result
   }
   // wLinesForPhrase depends on visibleCycles, captured by closure.
   // buildUnifiedAbc is intentionally omitted from deps — it's redefined each
