@@ -1643,8 +1643,15 @@ export function NotationRenderer({
           // distributeMeasuresToSubstaffs. The cycle 0 token list is kept in
           // syllableTokens for that scheduler; full per-cycle data lives in
           // perCycleTokens for emission.
+          //
+          // 260825-lpt-metric: use `noteCount` (not syllable count) as the
+          // LPT weight. The scheduler's job is to keep rendered rows visually
+          // even — and rendered width is driven by note positions, not by
+          // syllable count (which can drift below note count when a cycle
+          // runs out of syllables at a phrase boundary, or above it on
+          // melisma-heavy passages). For Psalm 23 (CM) this changes A+1 from
+          // {7,6,10,6,5} (max-min=5) to a near-flat distribution.
           const cycle0 = cycleTokens[0] ?? []
-          const syllableCount = cycle0.filter((t) => t !== '_').length
           flattenMeasureEntries.push({
             phraseIdx: pd.phraseIdx,
             measureIdx: m,
@@ -1652,7 +1659,7 @@ export function NotationRenderer({
             noteCount,
             perCycleTokens: cycleTokens,
             syllableTokens: cycle0,
-            syllableCount: syllableCount || noteCount || 1,
+            syllableCount: noteCount,
           })
         }
       }
