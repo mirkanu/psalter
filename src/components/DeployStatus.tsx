@@ -64,6 +64,15 @@ export function DeployStatus() {
 
   const [info, setInfo] = useState<DeployInfo | null>(null)
   const [, setTick] = useState(0)
+  // Cache-buster: a random per-mount id added to the URL. Each new tab
+  // mount (or hard refresh) gets a fresh URL, so the browser cannot serve
+  // a stale /api/deploy-info response from a previous deploy's cache.
+  // Within the same tab session the URL is stable, so 304-Not-Modified
+  // still works for the 60s ticks. Complements the API's
+  // `max-age=0, must-revalidate` header (which only affects NEW
+  // responses — already-cached stale ones would otherwise linger until
+  // their original max-age expires).
+  const [cacheBuster] = useState(() => Math.random().toString(36).slice(2, 10))
 
   useEffect(() => {
     if (!isAdmin) return
@@ -71,7 +80,7 @@ export function DeployStatus() {
 
     async function load() {
       try {
-        const res = await fetch('/api/deploy-info', { credentials: 'same-origin' })
+        const res = await fetch(`/api/deploy-info?v=${cacheBuster}`, { credentials: 'same-origin' })
         if (!res.ok) return
         const data = (await res.json()) as DeployInfo
         if (!cancelled) setInfo(data)
