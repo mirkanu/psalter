@@ -1691,6 +1691,16 @@ export function NotationRenderer({
         }
       }
 
+      // 260825-lpt-sort: classical LPT (Longest-Processing-Time-first) sorts
+      // jobs by processing time DESCENDING before the greedy assignment. For
+      // Psalm 23 (CM) at A+1, phrase 2's measure 1 has 9 notes — a much
+      // larger "job" than the others. Without sorting, that 9-note job can
+      // land in any sub-staff based on round-robin entry order, sometimes
+      // creating a sub-staff with 10+ notes while others have 4-5. Sorting
+      // guarantees the largest job gets bin-allocated first, bounding the
+      // final makespan within the 4/3-OPT approximation that LPT promises.
+      flattenMeasureEntries.sort((a, b) => b.noteCount - a.noteCount)
+
       // LPT distribute. distributeMeasuresToSubstaffs uses each entry's
       // noteCount (since 260825-lpt-metric) for the make-span decision.
       const substaffs = distributeMeasuresToSubstaffs(flattenMeasureEntries, flattenSubStaffCount)
