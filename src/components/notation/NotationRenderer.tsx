@@ -1710,19 +1710,17 @@ export function NotationRenderer({
         perCycleTokens: string[]
       }
       const allNoteEntries: NoteEntry[] = []
+      // ABC note token regex: optional accidental (^_=) + note letter (A-G/a-g
+      // or rest z/x) + optional octave marks (',) + optional duration digits
+      // optionally with /fraction. ABC often concatenates notes without
+      // whitespace (e.g. `c2a4bg` = 4 notes), so a split-on-whitespace
+      // approach silently drops notes. This regex matches each note head
+      // individually. Anchored at note-letter boundaries so octave marks
+      // and durations get captured as part of the preceding note.
+      const NOTE_REGEX = /(?:[\^_=]?[A-Ga-gzZ][',]*\d*(?:\/\d+)?)/g
       for (const phraseEntries of phraseMeasureEntries) {
         for (const me of phraseEntries) {
-          // Strip `|` and any other bar markers from the music text, then
-          // split on whitespace to get individual note tokens. ABC note
-          // tokens are space-separated; `|` sits at the end of each
-          // measure (from `tokenizeMeasures`).
-          const noteTokens = me.musicText
-            .split(/\s+/)
-            .map((t) => t.replace(/[|:]\d?/g, '').trim())
-            .filter(Boolean)
-          // 260825-debug
-          // eslint-disable-next-line no-console
-          console.log('[flattenNotes] measure p=' + me.phraseIdx + ' m=' + me.measureIdx + ' musicText=' + JSON.stringify(me.musicText) + ' noteTokens.length=' + noteTokens.length + ' perCycleTokens[0].length=' + (me.perCycleTokens[0]?.length ?? 0))
+          const noteTokens = me.musicText.match(NOTE_REGEX) ?? []
           for (let i = 0; i < noteTokens.length; i++) {
             const noteToken = noteTokens[i] ?? ''
             if (!noteToken) continue
