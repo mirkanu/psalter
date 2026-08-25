@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { FeedbackModal } from '@/components/FeedbackModal'
+import { DeployStatus } from '@/components/DeployStatus'
 
 export function SiteFooter() {
   const [open, setOpen] = useState<'about' | 'copyright' | 'feedback' | null>(null)
@@ -22,6 +23,10 @@ export function SiteFooter() {
             <button onClick={() => setOpen('copyright')} className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Copyright</button>
             <button onClick={() => setOpen('feedback')} className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Feedback</button>
             <a href="/changelog" className="text-sm text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Changelog</a>
+            {/* Admin-only deploy-status indicator. Renders nothing for
+                non-admin users (gated inside DeployStatus by useSession).
+                Hovering shows the full commit sha + subject for traceability. */}
+            <DeployStatus />
           </div>
           <a href="https://gsdlabs.dev" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Made by GSD Labs</a>
         </div>

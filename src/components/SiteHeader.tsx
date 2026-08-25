@@ -12,6 +12,7 @@ import { FeedbackModalClient } from '@/components/FeedbackModalClient'
 import { cn } from '@/lib/utils'
 import { useChromeHidden } from '@/lib/chrome-hidden-store'
 import { authClient } from '@/lib/auth-client'
+import { DeployStatus } from '@/components/DeployStatus'
 import Image from 'next/image'
 
 const navLinks = [
@@ -250,6 +251,13 @@ export function SiteHeader() {
                     >
                       Changelog
                     </SheetClose>
+                    {/* Admin-only "Deployed x ago" — same indicator as the
+                        desktop footer's DeployStatus, mirrored here so the
+                        mobile menu's footer block carries the admin info
+                        too. DeployStatus renders nothing for non-admins. */}
+                    <div className="px-3 py-2">
+                      <DeployStatus />
+                    </div>
                     {/* 260717-mwv checkpoint round 2 (item B): the singing
                        view (/psalms/[id]) is a fixed-height layout with no
                        page-level scroll, so SiteFooter's "Made by GSD Labs"

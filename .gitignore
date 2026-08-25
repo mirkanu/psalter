@@ -36,6 +36,11 @@ Thumbs.db
 # Script output (runtime-generated, can be large)
 scripts/output/*.json
 
+# Build-time deploy info — regenerated on every `npm run build` via
+# scripts/capture-deploy-info.ts (wired into `prebuild`). Committing it
+# would create a second modified file on every build for no value.
+data/deploy-info.json
+
 # UAT screenshots pushed to Telegram during verification plans (runtime-generated)
 .tmp-uat/
 
