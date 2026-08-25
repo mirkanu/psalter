@@ -1045,21 +1045,31 @@ export default function AbcPlayer({
           // (the largest font that still has every adjacent pair of
           // cycle-0 syllables non-overlapping) and use MIN(growth, maxFit)
           // as the target.
-          // 2026-08-25 (no-overlap font cap): the user wants the MAX font
-          // size that doesn't cause any adjacent cycle-0 syllable pair to
-          // overlap, at every zoom level. We use the per-pair ratio
-          // (`globalRatio` computed from cycle-0 tspan bboxes above) as
-          // the cap. The MIN_LYRIC_FONT_PX floor was a legibility guard
-          // for A−, but it now blocks the cap from working at A+1+ when
-          // the row count shrunk and the per-pair ratio demands a font
-          // smaller than the base — better small+legible than
-          // large+overlapping. Keep only a tiny absolute floor (6 px) to
-          // prevent absurdly tiny text on pathological inputs.
+          // 2026-08-25 (no-overlap font cap, legible default at A+0): the
+          // user wants the MAX font that doesn't cause any adjacent
+          // cycle-0 syllable pair to overlap, AT EACH ZOOM LEVEL ABOVE A+0.
+          // At A+0 (rowDelta === 0), each sub-staff = one phrase with the
+          // full row width — no overlap risk, so use the user's chosen
+          // baseSize directly. The overlap cap wrongly fires at A+0
+          // because the 1.4× LYRIC_SCALE bump (applied earlier in this
+          // function) inflates per-row bboxes past the staff width, making
+          // globalRatio ≈ 0.71 even when the un-bumped font fits
+          // comfortably. Removing that cap at A+0 restores the legible
+          // default. Keep a tiny absolute floor (6 px) as a safety net
+          // against pathological inputs.
           const ABSOLUTE_MIN_PX = 6
           const POST_BUMP_PX = lyricBaseSize * 1.2
           const maxFitFromOverlap = POST_BUMP_PX * globalRatio
           let targetFont: number
-          if (rowDelta > 0 && meterPhraseCount > 0) {
+          if (rowDelta === 0) {
+            // 260825-legible-default: at A+0 each sub-staff = one phrase with
+            // the full row width, so no overlap risk. Use the user's chosen
+            // baseSize directly — the overlap cap below is wrongly triggered
+            // here by the 1.4× LYRIC_SCALE bump inflating per-row bboxes
+            // past the (un-bumped) staff width, shrinking what should be a
+            // perfectly legible default.
+            targetFont = Math.max(ABSOLUTE_MIN_PX, lyricBaseSize)
+          } else if (rowDelta > 0 && meterPhraseCount > 0) {
             const growthFactor = Math.min(1.6, 1 + 0.25 * rowDelta)
             const wantedFont = lyricBaseSize * growthFactor
             targetFont = Math.max(ABSOLUTE_MIN_PX, Math.min(wantedFont, maxFitFromOverlap))
