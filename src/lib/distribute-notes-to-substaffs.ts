@@ -39,7 +39,6 @@ export interface NoteEntry {
 export function distributeNotesToSubstaffs(
   entries: NoteEntry[],
   targetSubstaffCount: number,
-  startOffset: number = 0,
 ): NoteEntry[][] {
   if (targetSubstaffCount <= 0) return []
   if (entries.length === 0) {
@@ -50,20 +49,19 @@ export function distributeNotesToSubstaffs(
   const n = Math.min(targetSubstaffCount, entries.length)
   const substaffs: NoteEntry[][] = Array.from({ length: n }, () => [])
   const sums: number[] = Array.from({ length: n }, () => 0)
-  // 260825-lpt-rotate: start the LPT search at `startOffset` so the largest
-  // job rotates through sub-staves as A+ is pressed (see the matching
-  // comment in distribute-measures-to-substaffs.ts for rationale).
-  const offset = ((startOffset % n) + n) % n
 
   for (const entry of entries) {
-    let minIdx = offset
-    let minSum = sums[offset] ?? Number.POSITIVE_INFINITY
+    // 260825-tune-order: always start the search at sub 0 so the FIRST
+    // note of the tune lands in sub-staff 0. The earlier 260825-lpt-rotate
+    // offset made the music start mid-tune at every A+ level because note
+    // 0 (the first note of verse 1) got routed to a higher sub-staff.
+    let minIdx = 0
+    let minSum = sums[0] ?? Number.POSITIVE_INFINITY
     for (let i = 1; i < n; i++) {
-      const idx = (offset + i) % n
-      const s = sums[idx] ?? Number.POSITIVE_INFINITY
+      const s = sums[i] ?? Number.POSITIVE_INFINITY
       if (s < minSum) {
         minSum = s
-        minIdx = idx
+        minIdx = i
       }
     }
     substaffs[minIdx]!.push(entry)
