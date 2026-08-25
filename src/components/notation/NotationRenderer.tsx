@@ -39,8 +39,6 @@ import { splitMusicIntoSubLines } from './splitMusicIntoSubLines'
 import { tokenizeMeasures } from './tokenizeMeasures'
 import { splitWLineByNoteCounts } from './splitWLineByNoteCounts'
 import { distributeMeasuresToSubstaffs, type MeasureEntry } from '@/lib/distribute-measures-to-substaffs'
-import { distributeNotesToSubstaffs, type NoteEntry } from '@/lib/distribute-notes-to-substaffs'
-import { tokenizeNotesInMeasure } from './tokenizeNotes'
 import { forceMatchMeterShape } from '@/lib/force-match-meter-shape'
 import { expectedSyllablesByLine } from '@/lib/meter-syllable-shape'
 import { detectRepeatedPitchContinuations } from '@/lib/detect-repeated-pitch-continuations'
@@ -1628,69 +1626,57 @@ export function NotationRenderer({
         })
       }
 
-      // 260825-flatten-note: collapse the entire phrase-major note stream
-      // into a flat list of per-note entries. Each entry carries:
-      //   - the note text (e.g. "c2", "a4", "b", "g")
-      //   - whether it is the LAST note of its original measure (controls
-      //     emission of `|` vs `\` after the note)
-      //   - per-cycle tokens aligned by cumulative note-position within the
-      //     phrase (so token[i] corresponds to the i-th note of the phrase)
+      // 260825-flatten-measure: build a flat list of per-measure entries.
+      // Each entry carries the WHOLE measure text (music) plus its slice of
+      // each cycle's syllable tokens (computed by cumulative-note-position
+      // alignment within the phrase). `distributeMeasuresToSubstaffs` then
+      // walks the measure list in order and assigns each measure WHOLE to
+      // the sub-staff whose current syllable sum is lowest. The result:
+      // every sub-staff gets a contiguous range of whole measures, the tune
+      // stays contiguous (no per-note sampling), and verse 1's first phrase
+      // lands in sub 0 as a unit.
       //
-      // Token alignment: cycleTokenLists[c] has length == phrase note count
-      // (or 0 if lyrics suppressed). For each note we pull tokens[c][noteIdx]
-      // and substitute `_` for missing entries so abcjs keeps the w: line
-      // aligned 1:1 to note positions.
-      const flatNoteEntries: NoteEntry[] = []
+      // This replaces the previous per-note LPT implementation, which sampled
+      // every Nth note (e.g. notes 0,5,10,15,20,25,30 at A+1) and made sub 0
+      // render a different tune than the default layout.
+      const measureEntries: MeasureEntry[] = []
       for (const pd of flattenPhraseData) {
         let cumNoteIdx = 0
         for (let m = 0; m < pd.measures.length; m++) {
-          const measureText = pd.measures[m] ?? ''
-          const noteTexts = tokenizeNotesInMeasure(measureText)
-          if (noteTexts.length === 0) {
-            // Measure had no notes (empty / grace-only). Still advance cum.
-            cumNoteIdx += pd.noteCounts[m] ?? 0
-            continue
-          }
-          for (let n = 0; n < noteTexts.length; n++) {
-            const isLastInMeasure = n === noteTexts.length - 1
-            const cycleTokens: string[] = []
-            for (let c = 0; c < pd.cycleTokenLists.length; c++) {
-              const tokens = pd.cycleTokenLists[c] ?? []
-              const tok = tokens[cumNoteIdx] ?? ''
-              cycleTokens.push(tok.length > 0 ? tok : '_')
+          const measureNoteCount = pd.noteCounts[m] ?? 0
+          const perCycleTokens: string[][] = []
+          for (let c = 0; c < pd.cycleTokenLists.length; c++) {
+            const tokens = pd.cycleTokenLists[c] ?? []
+            const slice: string[] = []
+            for (let k = 0; k < measureNoteCount; k++) {
+              const tok = tokens[cumNoteIdx + k] ?? ''
+              slice.push(tok.length > 0 ? tok : '_')
             }
-            flatNoteEntries.push({
-              phraseIdx: pd.phraseIdx,
-              measureIdx: m,
-              noteIdxInMeasure: n,
-              isEndOfMeasure: isLastInMeasure,
-              noteText: noteTexts[n] ?? '',
-              cycleTokens,
-            })
-            cumNoteIdx++
+            perCycleTokens.push(slice)
           }
-          // If the source measure had more notes by countNoteHeads than by
-          // tokenizeNotesInMeasure (e.g. ties, which we exclude from
-          // emission), advance the cursor by the difference so syllable
-          // alignment stays correct.
-          const tokenizedCount = noteTexts.length
-          const sourceCount = pd.noteCounts[m] ?? 0
-          if (sourceCount > tokenizedCount) {
-            cumNoteIdx += sourceCount - tokenizedCount
-          }
+          const syllableTokens = perCycleTokens[0] ?? []
+          const syllableCount = syllableTokens.filter((t) => t && t !== '_').length
+          measureEntries.push({
+            phraseIdx: pd.phraseIdx,
+            measureIdx: m,
+            musicText: pd.measures[m] ?? '',
+            noteCount: measureNoteCount,
+            perCycleTokens,
+            syllableTokens,
+            syllableCount,
+          })
+          cumNoteIdx += measureNoteCount
         }
       }
 
-      // 260825-lpt-note: classical LPT on the per-note entries. Sort DESC by
-      // weight (= 1 per note here, so effectively just shuffles ties), then
-      // greedy-assign each to the sub-staff with lowest current sum. The
-      // search always starts at sub 0 (260825-tune-order) so the FIRST
-      // note of the tune lands in sub-staff 0 at every A+ level — earlier
-      // offset-rotation was making the music start mid-tune.
-      flatNoteEntries.sort((a, b) => 0) // no sort needed — weight is uniform
-      const substaffs = distributeNotesToSubstaffs(
-        flatNoteEntries,
+      // 260825-lpt-measure: per-measure LPT. startOffset=0 so sub 0 always
+      // gets the first measure of the tune (the FIRST sub-staff must start at
+      // the beginning of the music — earlier per-note LPT with offset=0 was
+      // making the music start mid-tune because the LPT search rotated).
+      const substaffs = distributeMeasuresToSubstaffs(
+        measureEntries,
         flattenSubStaffCount,
+        0,
       )
 
       // Emit. For each sub-staff: %%staffsep 30 (Bug 1 fix — push each
@@ -1705,17 +1691,17 @@ export function NotationRenderer({
       // sub-staff (line 1454+1465), and we do the same here.
       //
       // Music line construction:
-      //   - Each note appends to the music line.
-      //   - When a note is end-of-measure, append `|` to close the bar.
-      //   - When the LAST note of the sub-staff is NOT end-of-measure,
-      //     append `\` so abcjs continues the measure on the next system
-      //     without inserting a bar line.
+      //   - Concatenate assigned measures' text (already ends in `|` from
+      //     `tokenizeMeasures`). No more per-note tokenization, no more
+      //     end-of-measure flag insertion, no more `\` escaping (per-measure
+      //     text is naturally abcjs-safe — `|` closes each bar, last measure's
+      //     trailing `|` is preserved).
       //
       // W: line construction:
-      //   - For each cycle, emit one w: line with the cycle tokens for
-      //     THIS sub-staff's notes (in order). Melisma `_` markers carry
-      //     across the `\` break naturally — abcjs treats them as
-      //     per-note continuation slots.
+      //   - For each cycle, concat the assigned measures' per-cycle tokens
+      //     in order, join with spaces. Melisma `_` markers stay attached to
+      //     their owning measure — the bar line does NOT break the melisma
+      //     under abcjs (a `_` simply marks the next note in the same voice).
       const emitWLines = renderWLineUnderStaff ?? showLyrics
       const cycleCount = flattenPhraseData[0]?.cycleTokenLists.length ?? 0
 
@@ -1727,29 +1713,7 @@ export function NotationRenderer({
         parts.push('%%staffsep 30')
         if (viewMode === 'staff') parts.push('%%stretchlast')
 
-        // Build the music line
-        const musicPieces: string[] = []
-        for (let i = 0; i < sub.length; i++) {
-          const note = sub[i]
-          if (!note) continue
-          musicPieces.push(note.noteText)
-          if (note.isEndOfMeasure) musicPieces.push('|')
-        }
-        // 260825-w-fix: do NOT append `\` when the last note is mid-measure.
-        // The `\` triggers abcjs's `lineContinuation` flag (abc_parse_music.js:585),
-        // which makes the NEXT line be parsed as music continuation. Since we
-        // emit w: lines immediately after the music line, the first w: line was
-        // being absorbed by the music parser and cycle-0 lyrics were silently
-        // dropped — leaving only cycles 1+ visible (the "A+1 changes the tune"
-        // bug). Trade-off: sub-staves whose last note is mid-measure now render
-        // with a `|` at the end (closing the partial measure). This is visually
-        // OK because the partial measure re-opens on the next sub-staff and the
-        // voice-leading across the bar is unaffected.
-        const lastNote = sub[sub.length - 1]
-        if (lastNote && !lastNote.isEndOfMeasure) {
-          musicPieces.push('|')
-        }
-        const musicLine = musicPieces.join(' ').trim()
+        const musicLine = sub.map((m) => m.musicText).join(' ').trim()
         if (!musicLine) continue
         parts.push(musicLine)
 
@@ -1757,9 +1721,9 @@ export function NotationRenderer({
         if (!emitWLines) continue
         for (let c = 0; c < cycleCount; c++) {
           const tokens: string[] = []
-          for (const note of sub) {
-            const t = note.cycleTokens[c] ?? '_'
-            tokens.push(t)
+          for (const m of sub) {
+            const t = m.perCycleTokens[c] ?? []
+            for (const tok of t) tokens.push(tok)
           }
           if (tokens.length === 0) continue
           parts.push(`w: ${tokens.join(' ')}`)
