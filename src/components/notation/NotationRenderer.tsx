@@ -38,7 +38,7 @@ import { phrasesForMeter } from '@/lib/abc-phrase-meter-map'
 import { splitMusicIntoSubLines } from './splitMusicIntoSubLines'
 import { tokenizeMeasures } from './tokenizeMeasures'
 import { splitWLineByNoteCounts } from './splitWLineByNoteCounts'
-import { splitContiguousBySyllables, type MeasureEntry } from '@/lib/distribute-measures-to-substaffs'
+import { type MeasureEntry } from '@/lib/distribute-measures-to-substaffs'
 import { forceMatchMeterShape } from '@/lib/force-match-meter-shape'
 import { expectedSyllablesByLine } from '@/lib/meter-syllable-shape'
 import { detectRepeatedPitchContinuations } from '@/lib/detect-repeated-pitch-continuations'
@@ -1681,59 +1681,112 @@ export function NotationRenderer({
         }
       }
 
-      // 260825-cross-phrase: when zooming, completely abandon phrase boundaries
-      // and treat all measures as ONE stream to distribute across
-      // `flattenSubStaffCount` sub-staves. At A+0 (no zoom) `flattenMode`
-      // is false and this whole branch is skipped — the per-phrase path
-      // keeps "one phrase per row" intact. Only on zoom do we redistribute
-      // syllables across all rows, accepting that rows may span phrase
-      // boundaries (the song is read top-to-bottom rather than phrase-by-
-      // phrase).
+      // 260825-cross-phrase-note: when zooming, completely abandon phrase
+      // boundaries AND measure boundaries. Tokenize each measure into
+      // individual notes, build ONE flat note stream across all phrases,
+      // and split that stream into N sub-staves by cumulative-syllable-
+      // count.
       //
-      // Algorithm: build a flat measure list (all phrases in source order),
-      // then `splitContiguousBySyllables` walks it once, accumulating
-      // syllable count and closing a sub-staff when the cumulative count
-      // reaches (chunkIndex + 1) × targetSyl. The last sub-staff absorbs
-      // whatever remains. Result: each sub-staff gets ~ totalSyl/N
-      // syllables (settling into ±1 of target depending on measure sizes).
-      const allMeasureEntries: MeasureEntry[] = []
-      for (const phraseEntries of phraseMeasureEntries) {
-        for (const e of phraseEntries) allMeasureEntries.push(e)
+      // Why per-note (not per-measure): measure-level splitting at A+1
+      // gives e.g. [10, 7, 10, 2, 5] notes per row for psalm 23 (each
+      // 2-measure phrase lands intact in one row, the 3-measure phrase 4
+      // gets split). The user wants ALL rows split so syllable counts
+      // come out roughly balanced (~5.6 syllables per row at A+1) — that
+      // requires finer-than-measure granularity.
+      //
+      // Music line for each row: notes joined by spaces, NO explicit `|`
+      // markers. abcjs auto-draws bar lines based on the `M:` meter header
+      // (e.g. CM = 4/4 → a bar every 4 quarter notes). When a row ends
+      // mid-bar the visual bar is partial, which is fine — the user is
+      // reading top-to-bottom and wants balanced row sizes, not strict
+      // per-row bar alignment.
+      //
+      // Melisma handling: each note carries its own per-cycle syllable
+      // token (one slot per note, `_` if melisma, syllable otherwise).
+      // Notes are never split across rows, so `_` continuation markers
+      // stay attached to the syllable they continue.
+      type NoteEntry = {
+        abcToken: string
+        perCycleTokens: string[]
       }
-      const substaffs = splitContiguousBySyllables(allMeasureEntries, flattenSubStaffCount)
+      const allNoteEntries: NoteEntry[] = []
+      for (const phraseEntries of phraseMeasureEntries) {
+        for (const me of phraseEntries) {
+          // Strip `|` and any other bar markers from the music text, then
+          // split on whitespace to get individual note tokens. ABC note
+          // tokens are space-separated; `|` sits at the end of each
+          // measure (from `tokenizeMeasures`).
+          const noteTokens = me.musicText
+            .split(/\s+/)
+            .map((t) => t.replace(/[|:]\d?/g, '').trim())
+            .filter(Boolean)
+          for (let i = 0; i < noteTokens.length; i++) {
+            const noteToken = noteTokens[i] ?? ''
+            if (!noteToken) continue
+            const perCycleTokens: string[] = []
+            for (let c = 0; c < me.perCycleTokens.length; c++) {
+              const cycleToks = me.perCycleTokens[c] ?? []
+              perCycleTokens.push(cycleToks[i] ?? '_')
+            }
+            allNoteEntries.push({ abcToken: noteToken, perCycleTokens })
+          }
+        }
+      }
 
-      // Emit. For each sub-staff: %%staffsep 30 (Bug 1 fix — push each
-      // staff's lyric clear of the staff above + the page top), %%stretchlast
-      // for Inline Staff, then the music line + one w: line per visible
-      // cycle.
-      //
-      // Music line: concatenate assigned measures' text (already ends in
-      // `|` from `tokenizeMeasures`) — naturally abcjs-safe, no escaping.
-      //
-      // W: line: for each cycle, concat the assigned measures' per-cycle
-      // tokens in order. Melisma `_` markers stay attached to their owning
-      // measure (abcjs doesn't break melismas on `|`).
+      // Walk the flat note list once. Each note contributes either 1
+      // syllable (real token) or 0 (`_` melisma). Close a chunk when
+      // cumulative syllables reach (chunkIndex + 1) × targetPer.
+      const sylPerNote: number[] = allNoteEntries.map((n) => {
+        const tok = n.perCycleTokens[0] ?? '_'
+        return tok && tok !== '_' ? 1 : 0
+      })
+      const totalSylNotes = sylPerNote.reduce((s, n) => s + n, 0)
+      const targetPerNote = totalSylNotes / flattenSubStaffCount
+      const noteChunks: NoteEntry[][] = []
+      let curChunk: NoteEntry[] = []
+      let curSyl = 0
+      for (let i = 0; i < allNoteEntries.length; i++) {
+        const note = allNoteEntries[i]!
+        curChunk.push(note)
+        curSyl += sylPerNote[i] ?? 0
+        const chunkEnd = (noteChunks.length + 1) * targetPerNote
+        // Close chunk i when cumulative syllables reach target, but not on
+        // the very last note (would orphan the tail into an empty chunk).
+        if (
+          noteChunks.length < flattenSubStaffCount - 1 &&
+          curSyl >= chunkEnd &&
+          curChunk.length > 0 &&
+          i < allNoteEntries.length - 1
+        ) {
+          noteChunks.push(curChunk)
+          curChunk = []
+        }
+      }
+      if (curChunk.length > 0) noteChunks.push(curChunk)
+      while (noteChunks.length < flattenSubStaffCount) noteChunks.push([])
+
+      // Emit. For each sub-staff: %%staffsep 30, %%stretchlast for Inline
+      // Staff, the music line (notes joined), and one w: line per visible
+      // cycle (per-note syllable tokens joined).
       const emitWLines = renderWLineUnderStaff ?? showLyrics
       const cycleCount = flattenPhraseData[0]?.cycleTokenLists.length ?? 0
 
-      for (let s = 0; s < substaffs.length; s++) {
-        const sub = substaffs[s] ?? []
-        if (sub.length === 0) continue
-        // 260825-bug1: inject `%%staffsep 30` before every sub-staff.
+      for (let s = 0; s < noteChunks.length; s++) {
+        const chunk = noteChunks[s] ?? []
+        if (chunk.length === 0) continue
         parts.push('%%staffsep 30')
         if (viewMode === 'staff') parts.push('%%stretchlast')
 
-        const musicLine = sub.map((m) => m.musicText).join(' ').trim()
+        const musicLine = chunk.map((n) => n.abcToken).join(' ').trim()
         if (!musicLine) continue
         parts.push(musicLine)
 
-        // Emit w: lines per cycle
         if (!emitWLines) continue
         for (let c = 0; c < cycleCount; c++) {
           const tokens: string[] = []
-          for (const m of sub) {
-            const t = m.perCycleTokens[c] ?? []
-            for (const tok of t) tokens.push(tok)
+          for (const n of chunk) {
+            const tok = n.perCycleTokens[c] ?? ''
+            if (tok) tokens.push(tok)
           }
           if (tokens.length === 0) continue
           parts.push(`w: ${tokens.join(' ')}`)
