@@ -307,110 +307,6 @@ function extendStaffLines(containerEl: HTMLElement): void {
   })
 }
 
-/**
- * MELISMA-SLURS (Phase 04.9.20 quick task 260825-slur): draws a curved slur
- * arc above each melisma group in the rendered notation. Without this pass,
- * abcjs renders multiple discrete noteheads sharing one syllable as visually
- * separate notes — the user reads them as a quick succession of syllables
- * rather than a single sustained vowel. The reference image (Hark! the
- * Herald Angels Sing, /uploads/e8686a32.png) shows the desired pattern: a
- * curved arc above the staff bridging the FIRST and LAST note of each
- * melisma group, while each syllable text stays anchored to its own note.
- *
- * `melismaPositions[phraseIdx]` is the 0-based intra-phrase note index of
- * each MELISMA CONTINUATION note (the second, third, etc. note of a melisma
- * group). The first note of each melisma is the note immediately preceding
- * the continuation. For each continuation `c` we draw a slur from the note
- * at `c-1` to the note at `c` — a single arc per continuation, even if the
- * melisma span is longer than 2 notes (then each adjacent pair gets its
- * own arc; visually they read as one continuous slur).
- *
- * Non-flatten mode (one row = one phrase): straightforward. Row k corresponds
- * to phrase k, so `melismaPositions[k]` gives the continuation indices within
- * that row's note sequence, 1:1 with the notehead count.
- *
- * Flatten mode (Inline Staff A+ zoom): each row is a CONTIGUOUS CHUNK of
- * measures from one or more phrases, so the row-level note count no longer
- * maps 1:1 to `melismaPositions[phraseIdx]`. We detect flatten mode by
- * counting `.abcjs-staff-wrapper` rows: more rows than phrases = flatten.
- * In flatten mode we DO NOT draw slurs in v1 — the next iteration can map
- * per-row measure chunks back to phrase-relative note offsets, but for now
- * we err on the side of correctness (no broken arcs over partial phrases).
- *
- * Skip if `melismaPositions` is null/undefined (heuristic detection only —
- * the data needed to draw an accurate slur is not present).
- */
-function applyMelismaSlurs(
-  containerEl: HTMLElement,
-  melismaPositions: number[][] | null | undefined,
-): void {
-  if (!melismaPositions || melismaPositions.length === 0) return
-  const SVG_NS = 'http://www.w3.org/2000/svg'
-  containerEl.querySelectorAll<SVGGElement>('.abcjs-staff-wrapper').forEach((row, rowIdx) => {
-    // Flatten-mode guard: row count > phrase count means this is the
-    // A+ sub-stave path, where note indices don't map 1:1 to any single
-    // phrase. Bail out for that row; non-flatten rows (one phrase per row)
-    // continue.
-    if (rowIdx >= melismaPositions.length) return
-    const continuations = melismaPositions[rowIdx]
-    if (!continuations || continuations.length === 0) return
-    const noteheads = row.querySelectorAll<SVGGElement>('[data-name="note"]')
-    if (noteheads.length === 0) return
-    // Staff top — slur arcs sit just above the staff. Get the staff path's
-    // bbox top y as the anchor; slur apex sits ~6 svg-units above it.
-    const staffEl = row.querySelector<SVGGraphicsElement>('.abcjs-staff')
-    if (!staffEl) return
-    let staffTop: number
-    try {
-      const bb = staffEl.getBBox()
-      staffTop = bb.y
-    } catch {
-      return
-    }
-    // Arc control offset: how far ABOVE the staff the slur apex sits. Scales
-    // with the note-pitch difference between the two melisma notes — for
-    // typical small intervals (2nd/3rd) the apex is ~5 svg-units up; for
-    // larger intervals we lift it proportionally so the arc never crosses
-    // either notehead. v1: fixed 5 units, matches the reference image.
-    const ARC_LIFT = 5
-    for (const c of continuations) {
-      if (c <= 0 || c >= noteheads.length) continue
-      const startNote = noteheads[c - 1]
-      const endNote = noteheads[c]
-      if (!startNote || !endNote) continue
-      const startPath = startNote.querySelector<SVGPathElement>('path')
-      const endPath = endNote.querySelector<SVGPathElement>('path')
-      if (!startPath || !endPath) continue
-      let x1: number, y1: number, x2: number, y2: number
-      try {
-        const p1 = startPath.getPointAtLength(0)
-        const p2 = endPath.getPointAtLength(0)
-        x1 = p1.x; y1 = p1.y; x2 = p2.x; y2 = p2.y
-      } catch { continue }
-      // Use the LEFT edge of each notehead bbox (path bbox is the notehead
-      // itself, so .x is the left edge). Arc goes from (x1, y1) to (x2, y2)
-      // with control point at midpoint x, lifted ARC_LIFT units above the
-      // staff top.
-      const midX = (x1 + x2) / 2
-      const ctrlY = staffTop - ARC_LIFT
-      const path = document.createElementNS(SVG_NS, 'path')
-      path.setAttribute(
-        'd',
-        `M ${x1.toFixed(2)} ${y1.toFixed(2)} Q ${midX.toFixed(2)} ${ctrlY.toFixed(2)} ${x2.toFixed(2)} ${y2.toFixed(2)}`,
-      )
-      path.setAttribute('stroke', 'currentColor')
-      path.setAttribute('stroke-width', '1')
-      path.setAttribute('fill', 'none')
-      path.setAttribute('stroke-linecap', 'round')
-      path.setAttribute('class', 'abcjs-melisma-slur')
-      // Append to the row so it sits above the staff in z-order. Using
-      // appendChild (not insertBefore) is fine — abcjs renders staff
-      // elements first within the row, so appended paths overlay them.
-      row.appendChild(path)
-    }
-  })
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface AbcPlayerProps {
@@ -499,16 +395,6 @@ interface AbcPlayerProps {
   /** Phrase count for the active meter (e.g. 4 for CM). Used by the
    *  growth-factor formula above. Ignored when rowDelta = 0. */
   meterPhraseCount?: number
-  /**
-   * Per-phrase melisma continuation note indices, used to draw slur arcs
-   * above the staff (Phase 04.9.20 quick task 260825-slur). `melismaPositions[k]`
-   * is the array of 0-based intra-phrase note indices that are melisma
-   * continuations for phrase k. When omitted/null, the slur overlay is
-   * a no-op (heuristic-detection-only tunes get no slurs — see
-   * .planning/research/lyric-to-note-alignment.md §9.1). Only applied in
-   * non-flatten mode (one phrase per row); flatten-mode rows bail out.
-   */
-  melismaPositions?: number[][] | null
 }
 
 const STORAGE_BPM_KEY = 'psalter-bpm'
@@ -549,7 +435,6 @@ export default function AbcPlayer({
   baseSize,
   rowDelta = 0,
   meterPhraseCount = 1,
-  melismaPositions = null,
 }: AbcPlayerProps) {
   const baseKeySemitone = useMemo(() => parseKeyFromAbc(abc), [abc])
   const defaultBpm = useMemo(() => parseBpmFromAbc(abc), [abc])
@@ -1217,11 +1102,11 @@ export default function AbcPlayer({
       // to the SVG viewBox width (covers desktop half-width last row when
       // abcjs's expandToWidest fails to bridge separately-emitted systems).
       extendStaffLines(el)
-      // MELISMA-SLURS (Phase 04.9.20 quick task 260825-slur): draw a curved
-      // slur arc above each melisma group so users can see which noteheads
-      // share a syllable. Phrase-indexed data passed in via the prop; no-op
-      // when the prop is null (heuristic-only tunes) or in flatten mode.
-      applyMelismaSlurs(el, melismaPositions)
+      // Melisma slurs are drawn natively by abcjs from (...) syntax in
+      // the music line — see NotationRenderer.wrapMelismaSlurs. No DOM
+      // pass needed here. (260825-slur v2: replaced applyMelismaSlurs,
+      // which drew arcs at note CENTERS and looked "stuck on" the
+      // noteheads; abcjs's drawArc anchors to the stem side instead.)
     } catch (e) {
       console.error('abcjs render failed:', e)
       setAudioError('Could not render notation.')
