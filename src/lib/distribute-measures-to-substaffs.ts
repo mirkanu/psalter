@@ -81,3 +81,43 @@ export function distributeMeasuresToSubstaffs(
   }
   return substaffs
 }
+
+/**
+ * Contiguous split: each chunk holds a consecutive slice of measures. Walks
+ * measures in order and distributes `ceil(len/n)` measures to each chunk in
+ * sequence. Guarantees that chunk[k] always contains measures that FOLLOW
+ * the measures in chunk[k-1] — no interleaving.
+ *
+ * Use when the consumer cares about preserving melody flow across a split
+ * (e.g. dividing one phrase across two sub-staves when A+ allocates an
+ * extra sub-staff to a phrase). Trades syllable balance for coherent pitch
+ * order. The LPT-based `distributeMeasuresToSubstaffs` interleaves measures
+ * across sub-staves by lowest-sum assignment, which is fine for balancing
+ * syllables across whole phrases (one phrase per sub-staff, melody already
+ * coherent within each phrase), but breaks when splitting a SINGLE phrase:
+ * LPT might assign phrase m0 and m2 to chunk A and phrase m1 to chunk B,
+ * producing a Frankenstein melody that skips the middle measure.
+ *
+ * Length-symmetric edge: when `targetChunks >= entries.length`, each
+ * measure gets its own chunk (and any extra chunks beyond the measure
+ * count get empty arrays, never reaching the renderer thanks to its
+ * empty-sub guard).
+ */
+export function splitContiguousByMeasures(
+  entries: MeasureEntry[],
+  targetChunks: number,
+): MeasureEntry[][] {
+  if (targetChunks <= 0) return []
+  if (entries.length === 0) {
+    return Array.from({ length: Math.max(targetChunks, 0) }, () => [])
+  }
+  if (targetChunks === 1) return [entries]
+
+  const chunkSize = Math.ceil(entries.length / targetChunks)
+  const chunks: MeasureEntry[][] = []
+  for (let i = 0; i < entries.length; i += chunkSize) {
+    chunks.push(entries.slice(i, i + chunkSize))
+  }
+  while (chunks.length < targetChunks) chunks.push([])
+  return chunks
+}

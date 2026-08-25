@@ -38,7 +38,7 @@ import { phrasesForMeter } from '@/lib/abc-phrase-meter-map'
 import { splitMusicIntoSubLines } from './splitMusicIntoSubLines'
 import { tokenizeMeasures } from './tokenizeMeasures'
 import { splitWLineByNoteCounts } from './splitWLineByNoteCounts'
-import { distributeMeasuresToSubstaffs, type MeasureEntry } from '@/lib/distribute-measures-to-substaffs'
+import { distributeMeasuresToSubstaffs, splitContiguousByMeasures, type MeasureEntry } from '@/lib/distribute-measures-to-substaffs'
 import { forceMatchMeterShape } from '@/lib/force-match-meter-shape'
 import { expectedSyllablesByLine } from '@/lib/meter-syllable-shape'
 import { detectRepeatedPitchContinuations } from '@/lib/detect-repeated-pitch-continuations'
@@ -1042,15 +1042,17 @@ export function NotationRenderer({
       .map((l) => (chromeless && /^V:/.test(l.trim()) ? l.replace(/\s*name="[^"]*"/g, '') : l))
       .join('\n')
     if (localSplit.phrases.length === 0) return cleanedHeader
-    // 260825-vocalspace: inject `%%vocalspace 3` globally to add ~4px gap
-    // above each sub-staff's lyric line (abcjs converts pts→px via
-    // `spacing.vocal = vocalspace * 4 / 3`). Fixes the 2.5px mobile
-    // stem-lyric overlap on the first note of every sub-staff, where
-    // there's no preceding staff to push the lyric down. Applies to every
-    // layout path (per-phrase, melisma, flatten) — pure-additive, default
-    // is 0, no visible desktop regression because desktop staff + lyric
-    // already dwarfs a 4px bump.
-    const parts: string[] = [cleanedHeader, '%%vocalspace 3']
+    // 260825-vocalspace: inject `%%vocalspace 5` globally to add ~5px gap
+    // above each sub-staff's lyric line. Empirically (psalter mobile 390x800)
+    // the gap math is closer to 1:1 than the abcjs source comment's 4/3
+    // ratio — `vocalspace 3` gave only +0.42px clearance at default zoom,
+    // tight enough that on real devices the stem and "The" lyric still
+    // appeared to touch. `vocalspace 5` pushes the lyric clearly below the
+    // stem on mobile (no visible desktop regression because desktop staff
+    // + lyric dwarfs the additional gap). Applies to every layout path
+    // (per-phrase, melisma, flatten). See
+    // [feedback-abcjs-vocalspace.md] for the empirical gap math.
+    const parts: string[] = [cleanedHeader, '%%vocalspace 5']
 
     // splitMusicIntoSubLines extracted to ./splitMusicIntoSubLines.ts
     // (Quick 260601-i5d): now appends trailing `|` to every emitted sub-line
@@ -1709,12 +1711,18 @@ export function NotationRenderer({
         }
       }
 
-      // Per-phrase LPT: each phrase's measures split into `subsPerPhrase[i]`
-      // contiguous chunks, balanced by syllable count. startOffset=0 keeps
-      // the FIRST chunk (the one containing the phrase's first measure)
-      // deterministic across re-renders so layout doesn't flicker.
+      // Per-phrase contiguous split: each phrase's measures are divided into
+      // `subsPerPhrase[i]` chunks in SEQUENCE — chunk k always contains the
+      // measures that follow chunk k-1. This preserves melody order within
+      // the split phrase. The previously-used `distributeMeasuresToSubstaffs`
+      // (LPT) interleaved measures across chunks (e.g. phrase 4 with 3
+      // measures → [[m0, m2], [m1]]), producing a Frankenstein tune that
+      // skipped the middle measure when emitted. LPT is great for balancing
+      // whole-phrase rows against each other (which is already done by the
+      // overflow allocator picking the longest phrase for extras), but wrong
+      // for dividing a SINGLE phrase.
       const phraseChunks: MeasureEntry[][][] = phraseMeasureEntries.map((entries, i) =>
-        distributeMeasuresToSubstaffs(entries, subsPerPhrase[i] ?? 0, 0),
+        splitContiguousByMeasures(entries, subsPerPhrase[i] ?? 0),
       )
 
       // Emit per phrase, per chunk — preserves "one phrase per sub-staff"
