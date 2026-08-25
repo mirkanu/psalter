@@ -1694,9 +1694,16 @@ export function NotationRenderer({
         extraSubdivisions,
       )
 
-      // Emit. For each sub-staff: %%staffsep 30 (Bug 1 fix — push the
-      // first staff's lyric clear of the page top), %%stretchlast for
-      // Inline Staff, then the music line + one w: line per visible cycle.
+      // Emit. For each sub-staff: %%staffsep 30 (Bug 1 fix — push each
+      // staff's lyric clear of the staff above + the page top), %%stretchlast
+      // for Inline Staff, then the music line + one w: line per visible cycle.
+      //
+      // abcjs's `%%staffsep` widens the gap between the staff it precedes
+      // and the NEXT staff. So for sub 0 it widens the gap above sub 0
+      // (clearing the page top — Bug 1 fix), and for sub N>0 it widens the
+      // gap between sub N-1 and sub N (clearing sub N-1's lyric). Both are
+      // needed; the per-phrase path injects `%%staffsep 30` BEFORE every
+      // sub-staff (line 1454+1465), and we do the same here.
       //
       // Music line construction:
       //   - Each note appends to the music line.
@@ -1710,13 +1717,15 @@ export function NotationRenderer({
       //     THIS sub-staff's notes (in order). Melisma `_` markers carry
       //     across the `\` break naturally — abcjs treats them as
       //     per-note continuation slots.
-      parts.push('%%staffsep 30')
       const emitWLines = renderWLineUnderStaff ?? showLyrics
       const cycleCount = flattenPhraseData[0]?.cycleTokenLists.length ?? 0
 
       for (let s = 0; s < substaffs.length; s++) {
         const sub = substaffs[s] ?? []
         if (sub.length === 0) continue
+        // 260825-bug1: inject `%%staffsep 30` before every sub-staff — Bug 1
+        // fix. Mirrors the per-phrase path's behaviour at lines 1454+1465.
+        parts.push('%%staffsep 30')
         if (viewMode === 'staff') parts.push('%%stretchlast')
 
         // Build the music line
