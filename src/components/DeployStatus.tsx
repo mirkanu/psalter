@@ -22,7 +22,13 @@ import { useEffect, useState } from 'react'
 import { authClient } from '@/lib/auth-client'
 
 interface DeployInfo {
+  /** Wall-clock time at build start (= when the running bundle was produced). */
   deployedAt: number | null
+  /** HEAD commit's author/committer time. Shown in the tooltip only —
+   *  the main label uses deployedAt, not this, so the indicator matches
+   *  when the running code went live rather than when the source was
+   *  last edited. */
+  commitTime?: number | null
   commit: string
   commitLong?: string
   message?: string
@@ -44,6 +50,11 @@ function formatRelative(ms: number): string {
   if (diffMonth < 12) return `${diffMonth} mo ago`
   const diffYear = Math.floor(diffDay / 365)
   return `${diffYear} yr${diffYear === 1 ? '' : 's'} ago`
+}
+
+function formatTimestamp(ms: number): string {
+  // ISO-like, but in UTC for unambiguous tooltip display.
+  return new Date(ms).toISOString().replace('T', ' ').slice(0, 16) + ' UTC'
 }
 
 export function DeployStatus() {
@@ -92,10 +103,21 @@ export function DeployStatus() {
       ? 'Deploy time unknown'
       : `Deployed ${formatRelative(info.deployedAt)}`
 
+  // Tooltip splits the two signals so the admin can see at a glance:
+  //   - WHEN the running code went live (deployedAt = build start)
+  //   - WHAT source the bundle is based on (commit + commitTime + message)
   const tooltip =
     info.deployedAt == null
       ? 'data/deploy-info.json missing — run npm run build'
-      : `${info.commitLong || info.commit} — ${info.message || '(no message)'}`
+      : [
+          `Built: ${formatTimestamp(info.deployedAt)}`,
+          `Commit: ${info.commitLong || info.commit}${
+            info.commitTime ? ` (${formatTimestamp(info.commitTime)})` : ''
+          }`,
+          info.message ? `Message: ${info.message}` : null,
+        ]
+          .filter(Boolean)
+          .join('\n')
 
   return (
     <span

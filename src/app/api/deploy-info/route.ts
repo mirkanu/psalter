@@ -20,7 +20,12 @@ import { NextResponse } from 'next/server'
 import { getAdminSessionOr401 } from '@/lib/admin-auth'
 
 interface DeployInfoFile {
+  /** Wall-clock time at build start (= when the running bundle was produced). */
   deployedAt: number
+  /** HEAD commit's author/committer time. Distinct from deployedAt so the
+   *  label reflects when the running code went live, not when the source
+   *  was last edited. */
+  commitTime: number
   commit: string
   commitLong: string
   message: string
@@ -46,6 +51,7 @@ export async function GET() {
     return NextResponse.json(
       {
         deployedAt: null,
+        commitTime: null,
         commit: 'unknown',
         commitLong: '',
         message: '',
