@@ -808,20 +808,15 @@ export default function AbcPlayer({
         // Gated to staffWidthFactor < 1 AND viewportW < 768 (mobile).
         // Desktop/tablet/study/tune callers keep abcjs's default 0.7em.
         if (typeof window !== 'undefined' && window.innerWidth < 768) {
-          const LYRIC_SCALE = 1.4
-          el.querySelectorAll<SVGTextElement>('text').forEach((t) => {
-            const cur = t.getAttribute('font-size') || ''
-            // abcjs sets `font-size="<n>"` (unitless, inherits from parent
-            // <svg> which is in `px`) on every lyric <text>. Match unitless
-            // OR em/px and multiply; leave other <text> (titles, chord
-            // symbols) alone.
-            const m = cur.match(/^([\d.]+)(em|px)?$/)
-            if (m) {
-              const v = parseFloat(m[1])
-              const unit = m[2] || ''
-              t.setAttribute('font-size', `${(v * LYRIC_SCALE).toFixed(2)}${unit}`)
-            }
-          })
+          // 2026-08-25: dropped the LYRIC_SCALE=1.4 bump. The dynamic solver
+          // (PHASE 2 below) now drives font size from `lyricBaseSize` (the
+          // user's chosen baseSize) directly at all zoom levels. The bump
+          // used to make syllables wider than the row could hold, which
+          // the cap then shrank to eliminate overlap — but the cap was
+          // reducing font below the legible default the user picked.
+          // Without the bump, abcjs renders at 0.7em (natural), and the
+          // solver scales up to fill the row until syllables touch.
+          void el // no-op
         }
         // 260823-stretch v3 (revised): auto-trim the SVG viewBox to the actual
         // content bounds, with two critical corrections vs the first pass:
