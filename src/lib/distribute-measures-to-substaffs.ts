@@ -121,3 +121,54 @@ export function splitContiguousByMeasures(
   while (chunks.length < targetChunks) chunks.push([])
   return chunks
 }
+
+/**
+ * Cross-phrase contiguous distribution by cumulative-syllable-target.
+ * Walks measures in order (preserving the global melody order so no row
+ * plays a Frankenstein slice), accumulating syllable count, and closes a
+ * chunk when the cumulative count reaches the per-chunk target (= total
+ * syllables ÷ target chunks).
+ *
+ * This intentionally breaks phrase boundaries: at A+1 with N > 1 phrases
+ * and N+zoom sub-staves we cannot keep "one phrase per row" AND stay
+ * within the sub-stave budget, so we distribute syllables evenly across
+ * all rows and let rows span phrase boundaries. The result: each row has
+ * roughly totalSyl/targetChunks syllables, the user reads top-to-bottom
+ * with each row showing ~ 1/targetChunks of the song.
+ *
+ * The last chunk is allowed to absorb whatever remains (it may be shorter
+ * than target if measures happen to run out near a boundary). Earlier
+ * chunks each get as close to `targetPer` syllables as the discrete
+ * measure sizes allow, settling into ±1 of target.
+ */
+export function splitContiguousBySyllables(
+  entries: MeasureEntry[],
+  targetChunks: number,
+): MeasureEntry[][] {
+  if (targetChunks <= 0) return []
+  if (entries.length === 0) {
+    return Array.from({ length: Math.max(targetChunks, 0) }, () => [])
+  }
+  if (targetChunks === 1) return [entries]
+
+  const totalSyl = entries.reduce((s, e) => s + e.syllableCount, 0)
+  const targetPer = totalSyl / targetChunks
+  const chunks: MeasureEntry[][] = []
+  let current: MeasureEntry[] = []
+  let cumSyl = 0
+  for (const e of entries) {
+    current.push(e)
+    cumSyl += e.syllableCount
+    // Close chunk i when cumulative syllables reach (i+1) × targetPer.
+    // Leave the last chunk to absorb whatever remains so we don't strand
+    // trailing measures in an empty slot.
+    const chunkEnd = (chunks.length + 1) * targetPer
+    if (chunks.length < targetChunks - 1 && cumSyl >= chunkEnd) {
+      chunks.push(current)
+      current = []
+    }
+  }
+  if (current.length > 0) chunks.push(current)
+  while (chunks.length < targetChunks) chunks.push([])
+  return chunks
+}

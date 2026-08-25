@@ -38,7 +38,7 @@ import { phrasesForMeter } from '@/lib/abc-phrase-meter-map'
 import { splitMusicIntoSubLines } from './splitMusicIntoSubLines'
 import { tokenizeMeasures } from './tokenizeMeasures'
 import { splitWLineByNoteCounts } from './splitWLineByNoteCounts'
-import { splitContiguousByMeasures, type MeasureEntry } from '@/lib/distribute-measures-to-substaffs'
+import { splitContiguousBySyllables, type MeasureEntry } from '@/lib/distribute-measures-to-substaffs'
 import { forceMatchMeterShape } from '@/lib/force-match-meter-shape'
 import { expectedSyllablesByLine } from '@/lib/meter-syllable-shape'
 import { detectRepeatedPitchContinuations } from '@/lib/detect-repeated-pitch-continuations'
@@ -1681,60 +1681,31 @@ export function NotationRenderer({
         }
       }
 
-      // 260825-phrase-bound: overflow allocation. Each phrase gets 1 sub-staff
-      // by default. Distribute the `extras = flattenSubStaffCount - phraseCount`
-      // additional sub-staves one-at-a-time to the phrase with the most
-      // measures (greedy by current measure count, ties broken by lower
-      // phrase index). When extras < 0 (A- N): drop from the end so each
-      // remaining phrase still gets one whole sub-staff instead of being
-      // fragmented by LPT.
-      const phraseCount = phraseMeasureEntries.length
-      const extras = flattenSubStaffCount - phraseCount
-      const subsPerPhrase: number[] = Array.from({ length: phraseCount }, () => 1)
-      if (extras >= 0) {
-        for (let k = 0; k < extras; k++) {
-          let maxIdx = 0
-          let maxVal = -1
-          for (let i = 0; i < phraseCount; i++) {
-            const len = phraseMeasureEntries[i]?.length ?? 0
-            if (len > maxVal) {
-              maxVal = len
-              maxIdx = i
-            }
-          }
-          subsPerPhrase[maxIdx] = (subsPerPhrase[maxIdx] ?? 1) + 1
-        }
-      } else {
-        // A- N: only the first `flattenSubStaffCount` phrases get a sub-staff.
-        for (let i = flattenSubStaffCount; i < phraseCount; i++) {
-          subsPerPhrase[i] = 0
-        }
-      }
-
-      // Per-phrase contiguous split: each phrase's measures are divided into
-      // `subsPerPhrase[i]` chunks in SEQUENCE — chunk k always contains the
-      // measures that follow chunk k-1. This preserves melody order within
-      // the split phrase. The previously-used `distributeMeasuresToSubstaffs`
-      // (LPT) interleaved measures across chunks (e.g. phrase 4 with 3
-      // measures → [[m0, m2], [m1]]), producing a Frankenstein tune that
-      // skipped the middle measure when emitted. LPT is great for balancing
-      // whole-phrase rows against each other (which is already done by the
-      // overflow allocator picking the longest phrase for extras), but wrong
-      // for dividing a SINGLE phrase.
-      const phraseChunks: MeasureEntry[][][] = phraseMeasureEntries.map((entries, i) =>
-        splitContiguousByMeasures(entries, subsPerPhrase[i] ?? 0),
-      )
-
-      // Emit per phrase, per chunk — preserves "one phrase per sub-staff"
-      // semantics. When A+ assigns extras, the receiving phrase contributes
-      // additional sub-staves immediately AFTER its first chunk, so the user
-      // reads the split phrase as a continuation (sub 1 follows sub 0 of
-      // the SAME phrase) rather than a Frankenstein of multiple phrases.
+      // 260825-cross-phrase: when zooming, completely abandon phrase boundaries
+      // and treat all measures as ONE stream to distribute across
+      // `flattenSubStaffCount` sub-staves. At A+0 (no zoom) `flattenMode`
+      // is false and this whole branch is skipped — the per-phrase path
+      // keeps "one phrase per row" intact. Only on zoom do we redistribute
+      // syllables across all rows, accepting that rows may span phrase
+      // boundaries (the song is read top-to-bottom rather than phrase-by-
+      // phrase).
       //
-      // For each emitted sub: %%staffsep 30 (Bug 1 fix — widens gap above
-      // the staff for both sub 0's page-top clearance and sub N>0's
-      // predecessor lyric clearance), %%stretchlast for Inline Staff, then
-      // the music line + one w: line per visible cycle.
+      // Algorithm: build a flat measure list (all phrases in source order),
+      // then `splitContiguousBySyllables` walks it once, accumulating
+      // syllable count and closing a sub-staff when the cumulative count
+      // reaches (chunkIndex + 1) × targetSyl. The last sub-staff absorbs
+      // whatever remains. Result: each sub-staff gets ~ totalSyl/N
+      // syllables (settling into ±1 of target depending on measure sizes).
+      const allMeasureEntries: MeasureEntry[] = []
+      for (const phraseEntries of phraseMeasureEntries) {
+        for (const e of phraseEntries) allMeasureEntries.push(e)
+      }
+      const substaffs = splitContiguousBySyllables(allMeasureEntries, flattenSubStaffCount)
+
+      // Emit. For each sub-staff: %%staffsep 30 (Bug 1 fix — push each
+      // staff's lyric clear of the staff above + the page top), %%stretchlast
+      // for Inline Staff, then the music line + one w: line per visible
+      // cycle.
       //
       // Music line: concatenate assigned measures' text (already ends in
       // `|` from `tokenizeMeasures`) — naturally abcjs-safe, no escaping.
@@ -1745,30 +1716,27 @@ export function NotationRenderer({
       const emitWLines = renderWLineUnderStaff ?? showLyrics
       const cycleCount = flattenPhraseData[0]?.cycleTokenLists.length ?? 0
 
-      for (let pi = 0; pi < phraseChunks.length; pi++) {
-        const chunks = phraseChunks[pi] ?? []
-        for (let ci = 0; ci < chunks.length; ci++) {
-          const sub = chunks[ci] ?? []
-          if (sub.length === 0) continue
-          // 260825-bug1: inject `%%staffsep 30` before every sub-staff.
-          parts.push('%%staffsep 30')
-          if (viewMode === 'staff') parts.push('%%stretchlast')
+      for (let s = 0; s < substaffs.length; s++) {
+        const sub = substaffs[s] ?? []
+        if (sub.length === 0) continue
+        // 260825-bug1: inject `%%staffsep 30` before every sub-staff.
+        parts.push('%%staffsep 30')
+        if (viewMode === 'staff') parts.push('%%stretchlast')
 
-          const musicLine = sub.map((m) => m.musicText).join(' ').trim()
-          if (!musicLine) continue
-          parts.push(musicLine)
+        const musicLine = sub.map((m) => m.musicText).join(' ').trim()
+        if (!musicLine) continue
+        parts.push(musicLine)
 
-          // Emit w: lines per cycle
-          if (!emitWLines) continue
-          for (let c = 0; c < cycleCount; c++) {
-            const tokens: string[] = []
-            for (const m of sub) {
-              const t = m.perCycleTokens[c] ?? []
-              for (const tok of t) tokens.push(tok)
-            }
-            if (tokens.length === 0) continue
-            parts.push(`w: ${tokens.join(' ')}`)
+        // Emit w: lines per cycle
+        if (!emitWLines) continue
+        for (let c = 0; c < cycleCount; c++) {
+          const tokens: string[] = []
+          for (const m of sub) {
+            const t = m.perCycleTokens[c] ?? []
+            for (const tok of t) tokens.push(tok)
           }
+          if (tokens.length === 0) continue
+          parts.push(`w: ${tokens.join(' ')}`)
         }
       }
     }
