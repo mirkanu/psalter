@@ -38,11 +38,14 @@ const STORAGE_LAST_MUSIC_MODE_KEY = 'psalter-score-mode-last-music'
 const STORAGE_SIZE_KEY = 'psalter-staff-size'
 const STORAGE_LYRICS_SIZE_KEY = 'psalter-lyrics-size'
 // 2026-08-23 (row-count knob): upper bound on `rowDelta` for the Inline Staff
-// A+/A− knob. 8 lets the densest psalm (Ps 119, ~28 lines if split as 4
-// syllables per row, plus the melisma path adds overhead) subdivide a CM
-// stanza from 4 rows up to 12. Above 8 the rows become too sparse to be
-// musically readable.
-const MAX_ROW_DELTA = 8
+// A+/A− knob. 3 lets a CM stanza subdivide from 4 rows (A+0) to 7 rows (A+3),
+// which is the most the dynamic solver can fill without leaving rows so sparse
+// that syllables look isolated. Above 3 the per-row lyric count drops below
+// ~3 syllables and the user reads "tiny islands of words" rather than phrases.
+// 2026-08-25: lowered from 8 → 3 per user feedback ("let's disable after
+// A+3"). Higher zoom levels produced unreadably small fonts even with the
+// no-overlap cap, because the per-pair gap is huge and the cap never fires.
+const MAX_ROW_DELTA = 3
 
 interface Props {
   psalm: PsalmDetail
