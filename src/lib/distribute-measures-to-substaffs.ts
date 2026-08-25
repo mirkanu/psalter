@@ -153,14 +153,6 @@ export function splitContiguousBySyllables(
 
   const totalSyl = entries.reduce((s, e) => s + e.syllableCount, 0)
   const targetPer = totalSyl / targetChunks
-  // 260825-debug
-  // eslint-disable-next-line no-console
-  console.log('[splitContiguousBySyllables] ' + JSON.stringify({
-    targetChunks,
-    entries: entries.map(e => ({ p: e.phraseIdx, m: e.measureIdx, n: e.noteCount, syl: e.syllableCount, tok: e.syllableTokens })),
-    totalSyl,
-    targetPer,
-  }))
   const chunks: MeasureEntry[][] = []
   let current: MeasureEntry[] = []
   let cumSyl = 0
@@ -178,9 +170,5 @@ export function splitContiguousBySyllables(
   }
   if (current.length > 0) chunks.push(current)
   while (chunks.length < targetChunks) chunks.push([])
-  // eslint-disable-next-line no-console
-  console.log('[splitContiguousBySyllables] result ' + JSON.stringify({
-    chunkSizes: chunks.map(c => ({ measures: c.length, syllables: c.reduce((s, e) => s + e.syllableCount, 0), notes: c.reduce((s, e) => s + e.noteCount, 0), phrases: c.map(e => `${e.phraseIdx}.${e.measureIdx}`) })),
-  }))
   return chunks
 }
