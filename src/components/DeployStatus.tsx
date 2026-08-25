@@ -11,9 +11,9 @@
 //
 // Refresh strategy: fetches on mount, then ticks every 60s so the
 // relative-time display stays fresh without a page reload. The API
-// itself sends `Cache-Control: private, max-age=86400`, so the network
-// request only fires when the cached response expires (or after the
-// tab is closed and reopened).
+// itself sends `Cache-Control: private, max-age=0, must-revalidate`, so
+// every fetch triggers a conditional GET (304 if unchanged, 200 after
+// a deploy). The 60s tick interval is the only rate-limiter.
 //
 // Tooltip: full commit sha + subject for traceability when the admin
 // is debugging "is the running code what I think it is".

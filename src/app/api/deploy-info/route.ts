@@ -68,10 +68,16 @@ export async function GET() {
 
   return NextResponse.json(info, {
     headers: {
-      // 1 day: deploys invalidate naturally because the API process
-      // restarts on every build, so the client's cache miss resolves
-      // to the fresh value within one day at worst.
-      'Cache-Control': 'private, max-age=86400',
+      // Always-fresh: the deploy-info JSON file changes on every deploy,
+      // but the browser cannot know that without revalidating. `private`
+      // excludes the CDN (Cloudflare Tunnel) from caching; `max-age=0,
+      // must-revalidate` forces the browser to send a conditional request
+      // (If-Modified-Since) on every fetch — the server returns 304 when
+      // unchanged, 200 with new JSON after a deploy. Avoids the 24h
+      // staleness window that a longer max-age would create (the old
+      // `private, max-age=86400` header made different tabs show different
+      // commits depending on what each had cached).
+      'Cache-Control': 'private, max-age=0, must-revalidate',
     },
   })
 }
