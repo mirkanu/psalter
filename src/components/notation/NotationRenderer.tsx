@@ -1883,17 +1883,14 @@ export function NotationRenderer({
       // syllable (real token) or 0 (`_` melisma). Close a chunk when
       // cumulative syllables reach (chunkIndex + 1) × targetPer.
       //
-      // Melisma-stick-together rule (260825-slur-flatten): a chunk boundary
-      // is NEVER allowed to fall inside a melisma group. If the candidate
-      // boundary sits between a melisma syllable-start note and its first
-      // continuation (or between two continuations), we keep accumulating
-      // until the melisma closes. Otherwise abcjs gets an open `(` on one
-      // sub-staff and its `)` on the next — malformed and silently drops
-      // the slur arc.
-      const noteIsContinuation: boolean[] = allNoteEntries.map((n) => {
-        const set = perPhraseContinuationSets[n.phraseIdx] ?? null
-        return set != null && set.has(n.withinPhraseIdx)
-      })
+      // Melisma stick-together (260825-slur-flatten v2): we DO NOT defer
+      // the chunk boundary when a melisma group straddles it. Doing so
+      // unbalances chunk sizes (some absorb entire melisma groups while
+      // others shrink to compensate) and produces slur arcs that span too
+      // many notes. Instead, after the LPT walk we close the slur with `)`
+      // at the end of the previous chunk and reopen with `(` at the start
+      // of the next — abcjs draws two clean arcs that visually look like
+      // one melisma group split across the system break.
       const sylPerNote: number[] = allNoteEntries.map((n) => {
         const tok = n.perCycleTokens[0] ?? '_'
         return tok && tok !== '_' ? 1 : 0
@@ -1908,16 +1905,13 @@ export function NotationRenderer({
         curChunk.push(note)
         curSyl += sylPerNote[i] ?? 0
         const chunkEnd = (noteChunks.length + 1) * targetPerNote
-        const wouldSplitMelisma = i < allNoteEntries.length - 1 && (noteIsContinuation[i] || noteIsContinuation[i + 1])
         // Close chunk i when cumulative syllables reach target, but not on
-        // the very last note (would orphan the tail into an empty chunk)
-        // and not inside a melisma group (would split the slur group).
+        // the very last note (would orphan the tail into an empty chunk).
         if (
           noteChunks.length < flattenSubStaffCount - 1 &&
           curSyl >= chunkEnd &&
           curChunk.length > 0 &&
-          i < allNoteEntries.length - 1 &&
-          !wouldSplitMelisma
+          i < allNoteEntries.length - 1
         ) {
           noteChunks.push(curChunk)
           curChunk = []
@@ -1931,6 +1925,22 @@ export function NotationRenderer({
       // cycle (per-note syllable tokens joined).
       const emitWLines = renderWLineUnderStaff ?? showLyrics
       const cycleCount = flattenPhraseData[0]?.cycleTokenLists.length ?? 0
+
+      // 260825-slur-flatten split: when a melisma group crosses a chunk
+      // boundary (one or more continuations landed in chunk s and the
+      // syllable-start note landed in chunk s-1), we want the slur arc to
+      // close at the END of chunk s-1 (so it doesn't draw across an
+      // empty/short tail) and reopen at the START of chunk s. abcjs slur
+      // syntax: unmatched `)` is silently ignored, so we MUST close and
+      // reopen to get two clean visual arcs instead of one giant arc.
+      const boundaryHadContinuation: boolean[] = noteChunks.map(() => false)
+      for (let s = 1; s < noteChunks.length; s++) {
+        const prev = noteChunks[s - 1] ?? []
+        if (prev.length === 0) continue
+        const lastPrev = prev[prev.length - 1]!
+        const lastSet = perPhraseContinuationSets[lastPrev.phraseIdx] ?? null
+        boundaryHadContinuation[s] = lastSet != null && lastSet.has(lastPrev.withinPhraseIdx)
+      }
 
       for (let s = 0; s < noteChunks.length; s++) {
         const chunk = noteChunks[s] ?? []
@@ -1950,7 +1960,14 @@ export function NotationRenderer({
           const set = perPhraseContinuationSets[note.phraseIdx] ?? null
           return set != null && set.has(note.withinPhraseIdx)
         }
-        const musicLine = wrapMelismaSlursFromTokens(tokens, isContinuation, ' ').trim()
+        let musicLine = wrapMelismaSlursFromTokens(tokens, isContinuation, ' ').trim()
+        // 260825-slur-flatten split: if the previous chunk ended with a
+        // continuation note (cross-chunk melisma split), close `)` at the
+        // end of THIS chunk and reopen `(` at the start — abcjs draws two
+        // clean arcs instead of one giant spanning arc.
+        if (boundaryHadContinuation[s]) {
+          musicLine = '(' + musicLine + ')'
+        }
         if (!musicLine) continue
         parts.push(musicLine)
 
