@@ -1720,6 +1720,9 @@ export function NotationRenderer({
             .split(/\s+/)
             .map((t) => t.replace(/[|:]\d?/g, '').trim())
             .filter(Boolean)
+          // 260825-debug
+          // eslint-disable-next-line no-console
+          console.log('[flattenNotes] measure p=' + me.phraseIdx + ' m=' + me.measureIdx + ' musicText=' + JSON.stringify(me.musicText) + ' noteTokens.length=' + noteTokens.length + ' perCycleTokens[0].length=' + (me.perCycleTokens[0]?.length ?? 0))
           for (let i = 0; i < noteTokens.length; i++) {
             const noteToken = noteTokens[i] ?? ''
             if (!noteToken) continue
