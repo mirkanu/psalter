@@ -1042,7 +1042,15 @@ export function NotationRenderer({
       .map((l) => (chromeless && /^V:/.test(l.trim()) ? l.replace(/\s*name="[^"]*"/g, '') : l))
       .join('\n')
     if (localSplit.phrases.length === 0) return cleanedHeader
-    const parts: string[] = [cleanedHeader]
+    // 260825-vocalspace: inject `%%vocalspace 3` globally to add ~4px gap
+    // above each sub-staff's lyric line (abcjs converts pts→px via
+    // `spacing.vocal = vocalspace * 4 / 3`). Fixes the 2.5px mobile
+    // stem-lyric overlap on the first note of every sub-staff, where
+    // there's no preceding staff to push the lyric down. Applies to every
+    // layout path (per-phrase, melisma, flatten) — pure-additive, default
+    // is 0, no visible desktop regression because desktop staff + lyric
+    // already dwarfs a 4px bump.
+    const parts: string[] = [cleanedHeader, '%%vocalspace 3']
 
     // splitMusicIntoSubLines extracted to ./splitMusicIntoSubLines.ts
     // (Quick 260601-i5d): now appends trailing `|` to every emitted sub-line
@@ -1626,21 +1634,23 @@ export function NotationRenderer({
         })
       }
 
-      // 260825-flatten-measure: build a flat list of per-measure entries.
-      // Each entry carries the WHOLE measure text (music) plus its slice of
-      // each cycle's syllable tokens (computed by cumulative-note-position
-      // alignment within the phrase). `distributeMeasuresToSubstaffs` then
-      // walks the measure list in order and assigns each measure WHOLE to
-      // the sub-staff whose current syllable sum is lowest. The result:
-      // every sub-staff gets a contiguous range of whole measures, the tune
-      // stays contiguous (no per-note sampling), and verse 1's first phrase
-      // lands in sub 0 as a unit.
+      // 260825-phrase-bound: build per-phrase measure entries. Each phrase's
+      // measures stay contiguous (no cross-phrase mixing on one sub-staff),
+      // so the user reads each sub-staff as one coherent phrase. Overflow
+      // distribution (`allocatePhraseSubs` below) decides how many sub-staves
+      // each phrase contributes; within a phrase, per-measure LPT balances
+      // syllable counts across the phrase's own chunks.
       //
-      // This replaces the previous per-note LPT implementation, which sampled
-      // every Nth note (e.g. notes 0,5,10,15,20,25,30 at A+1) and made sub 0
-      // render a different tune than the default layout.
-      const measureEntries: MeasureEntry[] = []
-      for (const pd of flattenPhraseData) {
+      // Replaces the previous across-all-measures LPT (260825-flatten-measure)
+      // which concatenated measure 0 of phrase 1 with measure 0 of phrase 4
+      // on sub 0 at A+1 — the user reported that as "the tune changes"
+      // because sub 0 contained a Frankenstein of two different phrases.
+      const phraseMeasureEntries: MeasureEntry[][] = Array.from(
+        { length: flattenPhraseData.length },
+        () => [],
+      )
+      for (let pi = 0; pi < flattenPhraseData.length; pi++) {
+        const pd = flattenPhraseData[pi]!
         let cumNoteIdx = 0
         for (let m = 0; m < pd.measures.length; m++) {
           const measureNoteCount = pd.noteCounts[m] ?? 0
@@ -1656,7 +1666,7 @@ export function NotationRenderer({
           }
           const syllableTokens = perCycleTokens[0] ?? []
           const syllableCount = syllableTokens.filter((t) => t && t !== '_').length
-          measureEntries.push({
+          phraseMeasureEntries[pi]!.push({
             phraseIdx: pd.phraseIdx,
             measureIdx: m,
             musicText: pd.measures[m] ?? '',
@@ -1669,64 +1679,88 @@ export function NotationRenderer({
         }
       }
 
-      // 260825-lpt-measure: per-measure LPT. startOffset=0 so sub 0 always
-      // gets the first measure of the tune (the FIRST sub-staff must start at
-      // the beginning of the music — earlier per-note LPT with offset=0 was
-      // making the music start mid-tune because the LPT search rotated).
-      const substaffs = distributeMeasuresToSubstaffs(
-        measureEntries,
-        flattenSubStaffCount,
-        0,
+      // 260825-phrase-bound: overflow allocation. Each phrase gets 1 sub-staff
+      // by default. Distribute the `extras = flattenSubStaffCount - phraseCount`
+      // additional sub-staves one-at-a-time to the phrase with the most
+      // measures (greedy by current measure count, ties broken by lower
+      // phrase index). When extras < 0 (A- N): drop from the end so each
+      // remaining phrase still gets one whole sub-staff instead of being
+      // fragmented by LPT.
+      const phraseCount = phraseMeasureEntries.length
+      const extras = flattenSubStaffCount - phraseCount
+      const subsPerPhrase: number[] = Array.from({ length: phraseCount }, () => 1)
+      if (extras >= 0) {
+        for (let k = 0; k < extras; k++) {
+          let maxIdx = 0
+          let maxVal = -1
+          for (let i = 0; i < phraseCount; i++) {
+            const len = phraseMeasureEntries[i]?.length ?? 0
+            if (len > maxVal) {
+              maxVal = len
+              maxIdx = i
+            }
+          }
+          subsPerPhrase[maxIdx] = (subsPerPhrase[maxIdx] ?? 1) + 1
+        }
+      } else {
+        // A- N: only the first `flattenSubStaffCount` phrases get a sub-staff.
+        for (let i = flattenSubStaffCount; i < phraseCount; i++) {
+          subsPerPhrase[i] = 0
+        }
+      }
+
+      // Per-phrase LPT: each phrase's measures split into `subsPerPhrase[i]`
+      // contiguous chunks, balanced by syllable count. startOffset=0 keeps
+      // the FIRST chunk (the one containing the phrase's first measure)
+      // deterministic across re-renders so layout doesn't flicker.
+      const phraseChunks: MeasureEntry[][][] = phraseMeasureEntries.map((entries, i) =>
+        distributeMeasuresToSubstaffs(entries, subsPerPhrase[i] ?? 0, 0),
       )
 
-      // Emit. For each sub-staff: %%staffsep 30 (Bug 1 fix — push each
-      // staff's lyric clear of the staff above + the page top), %%stretchlast
-      // for Inline Staff, then the music line + one w: line per visible cycle.
+      // Emit per phrase, per chunk — preserves "one phrase per sub-staff"
+      // semantics. When A+ assigns extras, the receiving phrase contributes
+      // additional sub-staves immediately AFTER its first chunk, so the user
+      // reads the split phrase as a continuation (sub 1 follows sub 0 of
+      // the SAME phrase) rather than a Frankenstein of multiple phrases.
       //
-      // abcjs's `%%staffsep` widens the gap between the staff it precedes
-      // and the NEXT staff. So for sub 0 it widens the gap above sub 0
-      // (clearing the page top — Bug 1 fix), and for sub N>0 it widens the
-      // gap between sub N-1 and sub N (clearing sub N-1's lyric). Both are
-      // needed; the per-phrase path injects `%%staffsep 30` BEFORE every
-      // sub-staff (line 1454+1465), and we do the same here.
+      // For each emitted sub: %%staffsep 30 (Bug 1 fix — widens gap above
+      // the staff for both sub 0's page-top clearance and sub N>0's
+      // predecessor lyric clearance), %%stretchlast for Inline Staff, then
+      // the music line + one w: line per visible cycle.
       //
-      // Music line construction:
-      //   - Concatenate assigned measures' text (already ends in `|` from
-      //     `tokenizeMeasures`). No more per-note tokenization, no more
-      //     end-of-measure flag insertion, no more `\` escaping (per-measure
-      //     text is naturally abcjs-safe — `|` closes each bar, last measure's
-      //     trailing `|` is preserved).
+      // Music line: concatenate assigned measures' text (already ends in
+      // `|` from `tokenizeMeasures`) — naturally abcjs-safe, no escaping.
       //
-      // W: line construction:
-      //   - For each cycle, concat the assigned measures' per-cycle tokens
-      //     in order, join with spaces. Melisma `_` markers stay attached to
-      //     their owning measure — the bar line does NOT break the melisma
-      //     under abcjs (a `_` simply marks the next note in the same voice).
+      // W: line: for each cycle, concat the assigned measures' per-cycle
+      // tokens in order. Melisma `_` markers stay attached to their owning
+      // measure (abcjs doesn't break melismas on `|`).
       const emitWLines = renderWLineUnderStaff ?? showLyrics
       const cycleCount = flattenPhraseData[0]?.cycleTokenLists.length ?? 0
 
-      for (let s = 0; s < substaffs.length; s++) {
-        const sub = substaffs[s] ?? []
-        if (sub.length === 0) continue
-        // 260825-bug1: inject `%%staffsep 30` before every sub-staff — Bug 1
-        // fix. Mirrors the per-phrase path's behaviour at lines 1454+1465.
-        parts.push('%%staffsep 30')
-        if (viewMode === 'staff') parts.push('%%stretchlast')
+      for (let pi = 0; pi < phraseChunks.length; pi++) {
+        const chunks = phraseChunks[pi] ?? []
+        for (let ci = 0; ci < chunks.length; ci++) {
+          const sub = chunks[ci] ?? []
+          if (sub.length === 0) continue
+          // 260825-bug1: inject `%%staffsep 30` before every sub-staff.
+          parts.push('%%staffsep 30')
+          if (viewMode === 'staff') parts.push('%%stretchlast')
 
-        const musicLine = sub.map((m) => m.musicText).join(' ').trim()
-        if (!musicLine) continue
-        parts.push(musicLine)
+          const musicLine = sub.map((m) => m.musicText).join(' ').trim()
+          if (!musicLine) continue
+          parts.push(musicLine)
 
-        // Emit w: lines per cycle
-        if (!emitWLines) continue
-        for (let c = 0; c < cycleCount; c++) {
-          const tokens: string[] = []
-          for (const m of sub) {
-            const t = m.perCycleTokens[c] ?? []
-            for (const tok of t) tokens.push(tok)
+          // Emit w: lines per cycle
+          if (!emitWLines) continue
+          for (let c = 0; c < cycleCount; c++) {
+            const tokens: string[] = []
+            for (const m of sub) {
+              const t = m.perCycleTokens[c] ?? []
+              for (const tok of t) tokens.push(tok)
+            }
+            if (tokens.length === 0) continue
+            parts.push(`w: ${tokens.join(' ')}`)
           }
-          if (tokens.length === 0) continue
-          parts.push(`w: ${tokens.join(' ')}`)
         }
       }
     }
