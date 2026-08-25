@@ -1959,7 +1959,14 @@ export function NotationRenderer({
         // decided by looking up melismaPositions[phraseIdx] using the note's
         // WITHIN-PHRASE index (not its position in the sub-staff — those are
         // different after per-note LPT reorders the stream).
-        const tokens = chunk.map((n) => n.abcToken)
+        // 260825-tie-strip: strip `-` (abcjs tie mark) from each note token
+        // so the LPT-driven re-segmentation doesn't drag a cross-system tie
+        // along — the resulting tie path renders as a wide arc spanning the
+        // whole sub-staff and looks identical to a slur to the user. We
+        // deliberately lose tie information here because the flatten path
+        // is a per-note redistribution where ties no longer make musical
+        // sense.
+        const tokens = chunk.map((n) => n.abcToken.replace(/-/g, ''))
         const isContinuation = (subIdx: number): boolean => {
           const note = chunk[subIdx]
           if (!note) return false
