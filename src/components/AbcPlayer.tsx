@@ -980,12 +980,38 @@ export default function AbcPlayer({
           // Worst-case ratio across all rows. Each row contributes the
           // SMALLEST ratio that satisfies its per-pair-overlap and
           // staff-overflow constraints.
+          //
+          // 2026-08-25: use the CYCLE-0 tspan bbox (first <tspan>) instead
+          // of the parent <text> bbox. Multi-cycle lyrics render as one
+          // <text> with multiple <tspan> children stacked vertically; the
+          // parent bbox width = widest cycle (which can be from a different
+          // verse), overcounting overlap and shrinking the font too much
+          // for the cycle-0 syllables the user actually reads. The first
+          // tspan's bbox is the cycle-0 syllable's true visual extent.
+          const firstTspanBBox = (t: SVGTextElement): DOMRect | null => {
+            const ts = t.querySelector('tspan')
+            if (ts) {
+              try {
+                const bb = ts.getBBox()
+                if (bb.width > 0) return bb
+              } catch { /* fall through */ }
+            }
+            try { return t.getBBox() } catch { return null }
+          }
           let globalRatio = 1.0
           rowMap.forEach((row) => {
-            row.sort((a, b) => a.getBBox().x - b.getBBox().x)
+            // Sort by cycle-0 tspan X (notes don't move with font size;
+            // tspans within one <text> share an X so the parent sort is
+            // equivalent here).
+            row.sort((a, b) => {
+              const aBB = firstTspanBBox(a) ?? a.getBBox()
+              const bBB = firstTspanBBox(b) ?? b.getBBox()
+              return aBB.x - bBB.x
+            })
             let worstRatio = 1.0
             for (let i = 0; i < row.length - 1; i++) {
-              const aBB = row[i].getBBox(), bBB = row[i + 1].getBBox()
+              const aBB = firstTspanBBox(row[i]!) ?? row[i]!.getBBox()
+              const bBB = firstTspanBBox(row[i + 1]!) ?? row[i + 1]!.getBBox()
               const aRight = aBB.x + aBB.width
               const bLeft = bBB.x
               if (aRight > bLeft && aBB.width > 0) {
@@ -994,11 +1020,11 @@ export default function AbcPlayer({
               }
             }
             if (row.length > 0) {
-              const firstX = row[0].getBBox().x
-              const lastBB = row[row.length - 1].getBBox()
+              const firstX = firstTspanBBox(row[0]!)?.x ?? row[0]!.getBBox().x
+              const lastTSBB = firstTspanBBox(row[row.length - 1]!) ?? row[row.length - 1]!.getBBox()
               const available = staffRight - firstX - 4
               if (available > 0) {
-                const r = available / (lastBB.x + lastBB.width - firstX)
+                const r = available / (lastTSBB.x + lastTSBB.width - firstX)
                 if (r < worstRatio) worstRatio = r
               }
             }
@@ -1011,29 +1037,23 @@ export default function AbcPlayer({
           // 16.8/14, just expressed against baseSize so it scales with
           // A+/A−). Apply globalRatio on top, then floor at MIN_LYRIC.
           //
-          // 2026-08-24 (row-count knob, font-growth fix): when the parent
-          // has subdivided the staff via rowDelta, REMOVE the POST_BUMP_PX
-          // cap so font grows with the extra horizontal room. The growth
-          // factor approximates "how much wider is each row now" — each
-          // extra sub-stave per phrase gives the same lyrics row ~meterMin
-          // extra beats of room, which empirically reads as ~40% larger
-          // font (linear with rowDelta/meterPhraseCount).
+          // 2026-08-25 (font-fit cap on growth): at rowDelta > 0, the
+          // user wants font to grow with each A+ press, but growth MUST
+          // be capped at the no-overlap maximum — otherwise "The" and
+          // "Lord's" run into each other at A+2 (verified: 21px →
+          // ~5.3px overlap). Compute maxFit = POST_BUMP_PX × globalRatio
+          // (the largest font that still has every adjacent pair of
+          // cycle-0 syllables non-overlapping) and use MIN(growth, maxFit)
+          // as the target.
           const POST_BUMP_PX = lyricBaseSize * 1.2
+          const maxFitFromOverlap = POST_BUMP_PX * globalRatio
           let targetFont: number
           if (rowDelta > 0 && meterPhraseCount > 0) {
-            // 2026-08-24 (row-count knob, font-growth fix): each A+ press
-            // adds ~25% font growth on top of lyricBaseSize. We bypass
-            // globalRatio here — after subdivision multiple phrases'
-            // syllables render at the same X within one <text> element
-            // (abcjs renders cycle-stacked lyrics as overlapping tspans),
-            // so globalRatio reports widths that don't reflect real visual
-            // space. The user wants font to grow with each A+ press; this
-            // delivers that predictably. Hard cap at 1.6× to prevent
-            // ridiculous growth on extreme A+ stacks.
             const growthFactor = Math.min(1.6, 1 + 0.25 * rowDelta)
-            targetFont = Math.max(MIN_LYRIC_FONT_PX, lyricBaseSize * growthFactor)
+            const wantedFont = lyricBaseSize * growthFactor
+            targetFont = Math.max(MIN_LYRIC_FONT_PX, Math.min(wantedFont, maxFitFromOverlap))
           } else {
-            targetFont = Math.max(MIN_LYRIC_FONT_PX, POST_BUMP_PX * globalRatio)
+            targetFont = Math.max(MIN_LYRIC_FONT_PX, maxFitFromOverlap)
           }
           // Apply targetFont UNIFORMLY to every lyric <text>.
           texts.forEach((t) => {
