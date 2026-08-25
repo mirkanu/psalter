@@ -101,7 +101,7 @@ export function DeployStatus() {
   const label =
     info.deployedAt == null
       ? 'Deploy time unknown'
-      : `Deployed ${formatRelative(info.deployedAt)}`
+      : `Deployed ${formatRelative(info.deployedAt)} · ${info.commit}`
 
   // Tooltip splits the two signals so the admin can see at a glance:
   //   - WHEN the running code went live (deployedAt = build start)
