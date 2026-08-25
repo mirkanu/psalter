@@ -36,6 +36,7 @@ export interface MeasureEntry {
 export function distributeMeasuresToSubstaffs(
   entries: MeasureEntry[],
   targetSubstaffCount: number,
+  startOffset: number = 0,
 ): MeasureEntry[][] {
   if (targetSubstaffCount <= 0) return []
   if (entries.length === 0) {
@@ -46,15 +47,28 @@ export function distributeMeasuresToSubstaffs(
   const n = Math.min(targetSubstaffCount, entries.length)
   const substaffs: MeasureEntry[][] = Array.from({ length: n }, () => [])
   const sums: number[] = Array.from({ length: n }, () => 0)
+  // 260825-lpt-rotate: `startOffset` is the sub-staff index the LPT search
+  // BEGINS from when scanning for the lowest-sum bin. Default 0 always
+  // pinned the largest job to sub 0 (and thus the 1st row kept the same
+  // irreducible "9-note" measure at every A+ level). Passing a per-call
+  // offset rotates which sub-staff receives the largest job, so as A+ is
+  // pressed repeatedly the 9-note measure walks down the page instead of
+  // staying in row 0 forever. Modulo'd into [0, n) so it's always valid.
+  const offset = ((startOffset % n) + n) % n
 
   for (const entry of entries) {
-    let minIdx = 0
-    let minSum = sums[0] ?? Number.POSITIVE_INFINITY
+    // Start search at `offset` so the FIRST tie-break (all sums equal at
+    // entry 0) picks sub `offset` instead of sub 0. After that, the search
+    // wraps cyclically — `(offset + i) % n` — so we still visit every
+    // sub-staff and pick the true minimum.
+    let minIdx = offset
+    let minSum = sums[offset] ?? Number.POSITIVE_INFINITY
     for (let i = 1; i < n; i++) {
-      const s = sums[i] ?? Number.POSITIVE_INFINITY
+      const idx = (offset + i) % n
+      const s = sums[idx] ?? Number.POSITIVE_INFINITY
       if (s < minSum) {
         minSum = s
-        minIdx = i
+        minIdx = idx
       }
     }
     substaffs[minIdx]!.push(entry)
