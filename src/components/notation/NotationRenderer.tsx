@@ -1743,16 +1743,6 @@ export function NotationRenderer({
       })
       const totalSylNotes = sylPerNote.reduce((s, n) => s + n, 0)
       const targetPerNote = totalSylNotes / flattenSubStaffCount
-      // 260825-debug
-      // eslint-disable-next-line no-console
-      console.log('[flattenNotes] ' + JSON.stringify({
-        flattenSubStaffCount,
-        noteCount: allNoteEntries.length,
-        noteSyls: sylPerNote,
-        noteTokens: allNoteEntries.map((n) => n.perCycleTokens[0] ?? '_'),
-        totalSylNotes,
-        targetPerNote,
-      }))
       const noteChunks: NoteEntry[][] = []
       let curChunk: NoteEntry[] = []
       let curSyl = 0
@@ -1775,18 +1765,6 @@ export function NotationRenderer({
       }
       if (curChunk.length > 0) noteChunks.push(curChunk)
       while (noteChunks.length < flattenSubStaffCount) noteChunks.push([])
-      // eslint-disable-next-line no-console
-      console.log('[flattenNotes] result ' + JSON.stringify({
-        chunkSizes: noteChunks.map((c) => ({
-          notes: c.length,
-          syllables: c.reduce((s, n) => {
-            const t = n.perCycleTokens[0] ?? '_'
-            return s + (t && t !== '_' ? 1 : 0)
-          }, 0),
-          firstToken: c[0]?.perCycleTokens[0] ?? '',
-          lastToken: c[c.length - 1]?.perCycleTokens[0] ?? '',
-        })),
-      }))
 
       // Emit. For each sub-staff: %%staffsep 30, %%stretchlast for Inline
       // Staff, the music line (notes joined), and one w: line per visible
