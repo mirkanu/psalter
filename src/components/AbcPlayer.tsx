@@ -1045,19 +1045,28 @@ export default function AbcPlayer({
           // (the largest font that still has every adjacent pair of
           // cycle-0 syllables non-overlapping) and use MIN(growth, maxFit)
           // as the target.
+          // 2026-08-25 (no-overlap font cap): the user wants the MAX font
+          // size that doesn't cause any adjacent cycle-0 syllable pair to
+          // overlap, at every zoom level. We use the per-pair ratio
+          // (`globalRatio` computed from cycle-0 tspan bboxes above) as
+          // the cap. The MIN_LYRIC_FONT_PX floor was a legibility guard
+          // for A−, but it now blocks the cap from working at A+1+ when
+          // the row count shrunk and the per-pair ratio demands a font
+          // smaller than the base — better small+legible than
+          // large+overlapping. Keep only a tiny absolute floor (6 px) to
+          // prevent absurdly tiny text on pathological inputs.
+          const ABSOLUTE_MIN_PX = 6
           const POST_BUMP_PX = lyricBaseSize * 1.2
           const maxFitFromOverlap = POST_BUMP_PX * globalRatio
           let targetFont: number
           if (rowDelta > 0 && meterPhraseCount > 0) {
             const growthFactor = Math.min(1.6, 1 + 0.25 * rowDelta)
             const wantedFont = lyricBaseSize * growthFactor
-            targetFont = Math.max(MIN_LYRIC_FONT_PX, Math.min(wantedFont, maxFitFromOverlap))
+            targetFont = Math.max(ABSOLUTE_MIN_PX, Math.min(wantedFont, maxFitFromOverlap))
           } else {
-            targetFont = Math.max(MIN_LYRIC_FONT_PX, maxFitFromOverlap)
+            targetFont = Math.max(ABSOLUTE_MIN_PX, maxFitFromOverlap)
           }
           // Apply targetFont UNIFORMLY to every lyric <text>.
-          // eslint-disable-next-line no-console
-          console.log('[AbcPlayer font-solver] baseSize=' + baseSize + ' rowDelta=' + rowDelta + ' POST_BUMP_PX=' + POST_BUMP_PX + ' globalRatio=' + globalRatio.toFixed(3) + ' targetFont=' + targetFont.toFixed(2) + ' texts=' + texts.length)
           texts.forEach((t) => {
             t.setAttribute('font-size', targetFont.toFixed(2))
           })
