@@ -1703,7 +1703,17 @@ export function NotationRenderer({
 
       // LPT distribute. distributeMeasuresToSubstaffs uses each entry's
       // noteCount (since 260825-lpt-metric) for the make-span decision.
-      const substaffs = distributeMeasuresToSubstaffs(flattenMeasureEntries, flattenSubStaffCount)
+      // 260825-lpt-rotate: pass `extraSubdivisions % n` as the tie-break
+      // offset so the largest job (e.g. Psalm 23's 9-note measure in
+      // phrase 2 m1) walks down the page as A+ is pressed. Without
+      // rotation the LPT always pinned sub 0 = largest, leaving row 0
+      // with the same syllable count at every A+ level — user-visible
+      // complaint: "the 1st row does not lose any syllables at all".
+      const substaffs = distributeMeasuresToSubstaffs(
+        flattenMeasureEntries,
+        flattenSubStaffCount,
+        extraSubdivisions,
+      )
 
       // Emit. For each substaff: %%staffsep 30 between sub-staves (sub > 0),
       // %%stretchlast gated to Inline Staff, then music line and one w: line
