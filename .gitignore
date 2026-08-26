@@ -40,6 +40,7 @@ scripts/output/*.json
 # scripts/capture-deploy-info.ts (wired into `prebuild`). Committing it
 # would create a second modified file on every build for no value.
 data/deploy-info.json
+src/generated/build-info.json
 
 # UAT screenshots pushed to Telegram during verification plans (runtime-generated)
 .tmp-uat/

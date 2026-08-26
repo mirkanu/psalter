@@ -20,6 +20,7 @@
 
 import { useEffect, useState } from 'react'
 import { authClient } from '@/lib/auth-client'
+import bundleBuildInfo from '@/generated/build-info.json'
 
 interface DeployInfo {
   /** Wall-clock time at build start (= when the running bundle was produced). */
@@ -74,6 +75,12 @@ export function DeployStatus() {
   // their original max-age expires).
   const [cacheBuster] = useState(() => Math.random().toString(36).slice(2, 10))
 
+  // The commit baked into the JS bundle this component was shipped in.
+  // Captured at build time by scripts/capture-deploy-info.ts. If this
+  // doesn't match what /api/deploy-info reports, the tab is running stale
+  // JS (the footer would otherwise lie about which build is live).
+  const bundleCommit = bundleBuildInfo.commit as string
+
   useEffect(() => {
     if (!isAdmin) return
     let cancelled = false
@@ -107,6 +114,14 @@ export function DeployStatus() {
 
   if (!isAdmin || !info) return null
 
+  // Stale-bundle detection: if the server reports a different commit than
+  // the one baked into this JS bundle, the tab is running an older build.
+  // This happens when the user reloads (soft refresh) instead of hard-
+  // refreshing — the browser keeps the old HTML + JS chunks while the
+  // server's deploy-info reflects the new deploy. Surface it loudly so
+  // the admin knows to hard-refresh before trusting what they see.
+  const isStale = info.commit && info.commit !== bundleCommit
+
   const label =
     info.deployedAt == null
       ? 'Deploy time unknown'
@@ -124,9 +139,27 @@ export function DeployStatus() {
             info.commitTime ? ` (${formatTimestamp(info.commitTime)})` : ''
           }`,
           info.message ? `Message: ${info.message}` : null,
+          isStale
+            ? `⚠ Stale JS bundle (this tab loaded ${bundleCommit}). Hard-refresh to load ${info.commit}.`
+            : null,
         ]
           .filter(Boolean)
           .join('\n')
+
+  if (isStale) {
+    return (
+      <button
+        type="button"
+        onClick={() => window.location.reload()}
+        className="text-xs font-mono tabular-nums text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 underline cursor-pointer"
+        title={tooltip}
+        data-deploy-status
+        data-stale="true"
+      >
+        ⚠ Stale build ({bundleCommit}) — server is on {info.commit}. Click to hard-refresh.
+      </button>
+    )
+  }
 
   return (
     <span
