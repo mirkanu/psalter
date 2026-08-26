@@ -931,8 +931,14 @@ export default function AbcPlayer({
         //   font shrinks, looser when it grows. Per-system (rows of
         //   different stanzas are not re-packed across staff lines).
         //
-        // Gated to staffWidthFactor < 1 AND viewportW < 768 (mobile
-        // chromeless Staff only — same gate as the 1.4× bump).
+        // Gated to staffWidthFactor < 1 (chromeless inline Staff) so
+        // desktop / wide-viewport users also get the auto-shrink when
+        // the row is tighter than abcjs's default font can fill. The
+        // previous `&& viewportW < 768` gate left wide-viewport tabs
+        // with overlap (default ~17 px lyrics on rows that couldn't
+        // fit them) while mobile users got the solver and ended up
+        // smaller — making two tabs on the same iPhone render
+        // differently depending on iOS Safari's per-tab viewport state.
         //
         // 2026-08-23 Inline Staff A+/A− integration: the MIN floor and
         // POST_BUMP start are now derived from `baseSize` (the same value
@@ -947,7 +953,7 @@ export default function AbcPlayer({
         // unreadable.
         const lyricBaseSize = baseSize ?? 14
         const MIN_LYRIC_FONT_PX = Math.max(10, lyricBaseSize)
-        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+        if (typeof window !== 'undefined') {
           const texts = Array.from(el.querySelectorAll<SVGTextElement>('text'))
           // Group texts into rows by approximate Y. abcjs places lyrics
           // in <text> elements at consistent Y positions; same row =
