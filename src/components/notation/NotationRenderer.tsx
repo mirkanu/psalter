@@ -1224,33 +1224,17 @@ export function NotationRenderer({
       .map((l) => (chromeless && /^V:/.test(l.trim()) ? l.replace(/\s*name="[^"]*"/g, '') : l))
       .join('\n')
     if (localSplit.phrases.length === 0) return cleanedHeader
-    // 260826-vocalspace: inject `%%vocalspace 10` to add ~13.33px gap above
-    // each sub-staff's lyric line. Empirical gap math (verified 2026-08-26
-    // via Playwright + standalone abcjs render at viewport 800x2000):
-    //   vs=0  → gap=13.27   baseline
-    //   vs=3  → gap=17.27   (+4.00)
-    //   vs=5  → gap=19.94   (+6.67)
-    //   vs=10 → gap=26.61   (+13.34)
-    //   vs=20 → gap=39.94   (+26.67)
-    //   vs=50 → gap=79.94   (+66.67)
-    // Ratio is exactly 4/3 (vocalspace N → +1.333*N px), matching
-    // abcjs renderer.js:168 (formatting.vocalspace * 4 / 3).
-    //
-    // Why 10 (not the earlier 5): on PS23 mobile (390x800), with vocalspace=5
-    // the staff-bottom → lyric-top gap was only 8.04px. The first note's
-    // stem extends 5.52px below the staff (stem-down quarter/eighth note),
-    // so effective stem-to-lyric clearance was 2.52px — the stem visibly
-    // touched "The" (user complaint, 260826). At A+1 the staff scales up
-    // to 31.2px and the stem extends 7.3px below, eating the gap entirely
-    // (0.9px actual overlap). Bumping to vocalspace=10 adds +6.67px to
-    // the base gap, giving ~14px staff-to-lyric clearance on default zoom
-    // and ~7px stem-to-lyric clearance after stem extension. Desktop
-    // layout absorbs the extra gap without visible regression because the
-    // staff + lyric dwarf the additional ~6px.
-    //
-    // Applies to every layout path (per-phrase, melisma, flatten).
-    // Related: [feedback-abcjs-vocalspace-gap-math].
-    const parts: string[] = [cleanedHeader, '%%vocalspace 10']
+    // 260825-vocalspace: inject `%%vocalspace 5` globally to add ~5px gap
+    // above each sub-staff's lyric line. Empirically (psalter mobile 390x800)
+    // the gap math is closer to 1:1 than the abcjs source comment's 4/3
+    // ratio — `vocalspace 3` gave only +0.42px clearance at default zoom,
+    // tight enough that on real devices the stem and "The" lyric still
+    // appeared to touch. `vocalspace 5` pushes the lyric clearly below the
+    // stem on mobile (no visible desktop regression because desktop staff
+    // + lyric dwarfs the additional gap). Applies to every layout path
+    // (per-phrase, melisma, flatten). See
+    // [feedback-abcjs-vocalspace.md] for the empirical gap math.
+    const parts: string[] = [cleanedHeader, '%%vocalspace 5']
 
     // splitMusicIntoSubLines extracted to ./splitMusicIntoSubLines.ts
     // (Quick 260601-i5d): now appends trailing `|` to every emitted sub-line
