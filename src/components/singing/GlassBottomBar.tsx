@@ -31,6 +31,12 @@ interface Props {
   /** Task 3 (04.9.14-01): scroll-hide navigation. When true, slides down and
    *  fades out; scrolling back up restores it. */
   hidden?: boolean
+  /** 2026-08-26: hide the A−/A+ buttons entirely. Staff-inline mode doesn't
+   *  support zoom — adding rows makes per-row lyrics smaller, not bigger, so
+   *  the controls are useless (and visually noisy) in that view. Center
+   *  stanza indicator and right-side buttons stay; only the leftmost
+   *  A−/A+ block is suppressed. */
+  hideZoom?: boolean
 }
 
 /**
@@ -57,6 +63,7 @@ export function GlassBottomBar({
   onGearOpen,
   gear,
   hidden = false,
+  hideZoom = false,
 }: Props) {
   const showStanza =
     currentStanza != null && totalStanzas != null && currentStanza > 0 && totalStanzas > 1
@@ -101,27 +108,32 @@ export function GlassBottomBar({
            CSS var in the other chromeless modes. Kept as a fixed-width
            flex group so the centre stanza indicator stays centred when
            the bar reflows (the original layout reason for keeping this
-           block in the DOM regardless of visibility). */}
-        <div className="flex items-center shrink-0">
-          <button
-            type="button"
-            aria-label="Decrease size"
-            onClick={() => onValueChange(Math.max(minValue, value - step))}
-            disabled={value <= minValue}
-            className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
-          >
-            A−
-          </button>
-          <button
-            type="button"
-            aria-label="Increase size"
-            onClick={() => onValueChange(Math.min(maxValue, value + step))}
-            disabled={value >= maxValue}
-            className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
-          >
-            A+
-          </button>
-        </div>
+           block in the DOM regardless of visibility). 2026-08-26: hidden
+           entirely in Staff-inline mode via `hideZoom` — pressing them
+           in staff-inline only subdivides rows (which makes per-row
+           lyrics smaller, not bigger), so the controls were noise. */}
+        {!hideZoom && (
+          <div className="flex items-center shrink-0">
+            <button
+              type="button"
+              aria-label="Decrease size"
+              onClick={() => onValueChange(Math.max(minValue, value - step))}
+              disabled={value <= minValue}
+              className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+            >
+              A−
+            </button>
+            <button
+              type="button"
+              aria-label="Increase size"
+              onClick={() => onValueChange(Math.min(maxValue, value + step))}
+              disabled={value >= maxValue}
+              className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+            >
+              A+
+            </button>
+          </div>
+        )}
 
         {/* Centre: stanzas indicator with prev/next nav (absorbs remaining space) */}
         <div className="flex-1 flex items-center justify-center min-w-0">

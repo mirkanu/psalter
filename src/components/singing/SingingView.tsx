@@ -201,7 +201,7 @@ export function SingingView({
   // solfege-split); `lyricsBaseSize` = Lyrics Only, stored separately so
   // zooming one doesn't affect the other. `activeBaseSize` below picks
   // whichever applies to the current viewMode.
-  const [baseSize, setBaseSize] = useState<number>(14)
+  const [baseSize, setBaseSize] = useState<number>(18)
   const [lyricsBaseSize, setLyricsBaseSize] = useState<number>(14)
   // 2026-08-23 (row-count knob): A+/A− in Inline Staff mode drives THIS state
   // directly — it sets the row COUNT (added to the meter baseline) rather than
@@ -1289,6 +1289,12 @@ export function SingingView({
         step={viewMode === 'staff' ? 1 : undefined}
         minValue={viewMode === 'staff' ? phrasesForMeter(activeTune?.meter ?? null) : undefined}
         maxValue={viewMode === 'staff' ? phrasesForMeter(activeTune?.meter ?? null) + MAX_ROW_DELTA : undefined}
+        // 2026-08-26: A+/A− buttons removed from Staff-inline view entirely —
+        // pressing them in staff-inline only subdivides rows (which makes
+        // per-row lyrics smaller, not bigger), so the controls were useless
+        // (and visually noisy) in that view. Center stanza indicator and
+        // right-side buttons stay.
+        hideZoom={viewMode === 'staff'}
         // A+/A− controls now shown in all chromeless views (see comment on
         // `activeBaseSize` above) — Inline Staff uses them to shift the
         // lyric MIN/POST_BUMP window, other modes use them to drive the
