@@ -1,0 +1,7 @@
+{
+  "tuneId": 134,
+  "preAbc": null,
+  "newAbcSha256": "6cf9d3a6e3a52f4596632ad5f36f3bc7134bf9f2ab96987102bdb16c80210a35",
+  "timestamp": "2026-08-26T17:17:10.270Z",
+  "syllableShapeNote": "SM shape expected [6,6,8,6] = 26 syllables; hard-coded [6,6,8,6] = 26 syllables. Diademata MusicXML has 1 slur pair (notes 19-20) → 1 melisma continuation. Total notes consumed = 27."
+}
