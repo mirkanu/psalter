@@ -509,24 +509,56 @@ export default function AbcPlayer({
   }, [])
 
   // Keep staffwidth in sync on viewport / container resize.
+  //
+  // iOS Safari quirk: a few ms after `useLayoutEffect` reports its initial
+  // clientWidth, Safari fires a ResizeObserver event with the FINAL settled
+  // width (usually larger by 6-12 px — the difference between pre- and
+  // post-safe-area / pre- and post-toolbar-shrink width). If we accept that
+  // event, the staff re-renders ~3% larger, producing the "private vs normal
+  // differ" symptom on iPhone (one tab gets the bigger render, the other
+  // doesn't — depending on whether the user opens the tab via initial load
+  // or via bfcache restore). iOS Private mode doesn't trigger this settling
+  // sequence, hence the visual difference between the two tabs.
+  //
+  // The fix: ignore ResizeObserver events for the first 1.5 seconds after
+  // mount. After the settle window, real user-initiated viewport changes
+  // (device rotation, split-view resizing) still propagate. The
+  // `settled` ref is intentionally mutable (not state) so reading it from
+  // the observer callback is synchronous and doesn't cause a re-render.
   useEffect(() => {
     const el = outerRef.current
     if (!el) return
+    const settled = { current: false }
+    const settleTimer = setTimeout(() => {
+      settled.current = true
+    }, 1500)
     const obs = new ResizeObserver(() => {
+      if (!settled.current) return
       const w = el.clientWidth
       if (w > 0 && Math.abs(w - staffWidth) >= 8) setStaffWidth(w)
     })
     obs.observe(el)
-    return () => obs.disconnect()
+    return () => {
+      obs.disconnect()
+      clearTimeout(settleTimer)
+    }
   }, [staffWidth])
 
   // iOS Safari: ResizeObserver does NOT reliably fire on URL-bar / orientation
   // transitions. Add explicit listeners with rAF debounce + ≥8px threshold.
+  // Same settle-window guard as above — the visualViewport can also fire a
+  // settling event in the first ~1.5s after load. Real orientation changes
+  // happen after settle, so this guard is invisible to the user.
   useEffect(() => {
     if (typeof window === 'undefined') return
     let raf = 0
     let timeoutId: ReturnType<typeof setTimeout> | undefined
+    const settled = { current: false }
+    const settleTimer = setTimeout(() => {
+      settled.current = true
+    }, 1500)
     const trigger = () => {
+      if (!settled.current) return
       cancelAnimationFrame(raf)
       raf = requestAnimationFrame(() => {
         const w = outerRef.current?.clientWidth ?? 0
@@ -542,6 +574,7 @@ export default function AbcPlayer({
     return () => {
       cancelAnimationFrame(raf)
       if (timeoutId) clearTimeout(timeoutId)
+      clearTimeout(settleTimer)
       window.removeEventListener('orientationchange', debounced)
       window.visualViewport?.removeEventListener('resize', debounced)
     }
