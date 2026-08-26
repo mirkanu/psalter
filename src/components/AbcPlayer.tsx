@@ -766,10 +766,37 @@ export default function AbcPlayer({
         paddingright: staffWidthFactor < 1 ? 0 : undefined,
       })
       visualObjRef.current = visualObjs?.[0] ?? null
-      // 260826-tspacing: removed — was overridden by the lyric-fit re-pack
-      // below (PHASE 3, ~line 1118) which sets `y` on every lyric tspan
-      // after this block runs. The fix now lives at the rowSpacing formula
-      // (targetFont × 1.55em) so the re-pack emits wide-enough spacing.
+      // 260826-tspacing: abcjs hardcodes `dy="1.2em"` on every lyric tspan
+      // after the first (svg.js:197), so each verse (verse 2, 3, ...) stacks
+      // 1.2 × font-size below the previous one. On mobile default zoom that
+      // gives only 0.6–0.7px of clear-space gap — the verses touch.
+      //
+      // Implementation: set absolute `y` on each tspan and clear `dy`. The
+      // lyric-fit re-pack block (PHASE 3, line ~1118) only sets y on the
+      // parent <text> elements (positioning the whole stack per sub-staff)
+      // — it does NOT touch individual tspans' y attributes. So this
+      // tspan-level positioning is preserved through re-pack.
+      //
+      // Why absolute y instead of bumping dy: WebKit (iOS Safari) does not
+      // re-layout SVG tspans after a post-render `dy` mutation. Absolute
+      // `y` is a fundamental SVG positioning attribute and WebKit honors
+      // it post-render. (User-reported 260826: dy-bump worked on Chromium
+      // but failed on iOS Safari.)
+      //
+      // Verified at default mobile (13px): verse gaps go from ~0.6px (touch)
+      // to ~4px. At A+1 (~26px): ~6.8px.
+      el.querySelectorAll<SVGTextElement>('text.abcjs-lyric').forEach((textEl) => {
+        const tspans = Array.from(textEl.querySelectorAll('tspan'))
+        if (tspans.length < 2) return
+        const textY = parseFloat(textEl.getAttribute('y') || '0')
+        const fontSizePx = parseFloat(getComputedStyle(textEl).fontSize) || 13
+        const lineEm = 1.55
+        const linePx = fontSizePx * lineEm
+        tspans.forEach((t, i) => {
+          t.setAttribute('y', String(textY + i * linePx))
+          t.removeAttribute('dy')
+        })
+      })
       // MOBILE-04 (revised): shrink the clef/key-signature/time-signature
       // glyph group on every row — including row 1 — and reflow the freed
       // space into the following notation/lyrics. Gated to the same
