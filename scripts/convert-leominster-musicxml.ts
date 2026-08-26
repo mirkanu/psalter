@@ -85,8 +85,8 @@ function parseMusicXml(xml: string): {
 }
 
 function fifthsToAbcKey(fifths: number): string {
-  const map: Record<number, string> = {
-    7: 'C#', 6: 'F#', 5: 'B', 4: 'E', 3: 'A', 2: 'D', 1: 'G', 0: 'C',
+  const map: Record<string, string> = {
+    '7': 'C#', '6': 'F#', '5': 'B', '4': 'E', '3': 'A', '2': 'D', '1': 'G', '0': 'C',
     '-1': 'F', '-2': 'Bb', '-3': 'Eb', '-4': 'Ab', '-5': 'Db', '-6': 'Gb', '-7': 'Cb',
   }
   return map[String(fifths)] ?? 'C'
