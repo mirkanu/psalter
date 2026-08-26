@@ -108,32 +108,35 @@ export function GlassBottomBar({
            CSS var in the other chromeless modes. Kept as a fixed-width
            flex group so the centre stanza indicator stays centred when
            the bar reflows (the original layout reason for keeping this
-           block in the DOM regardless of visibility). 2026-08-26: hidden
-           entirely in Staff-inline mode via `hideZoom` — pressing them
-           in staff-inline only subdivides rows (which makes per-row
-           lyrics smaller, not bigger), so the controls were noise. */}
-        {!hideZoom && (
-          <div className="flex items-center shrink-0">
-            <button
-              type="button"
-              aria-label="Decrease size"
-              onClick={() => onValueChange(Math.max(minValue, value - step))}
-              disabled={value <= minValue}
-              className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
-            >
-              A−
-            </button>
-            <button
-              type="button"
-              aria-label="Increase size"
-              onClick={() => onValueChange(Math.min(maxValue, value + step))}
-              disabled={value >= maxValue}
-              className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
-            >
-              A+
-            </button>
-          </div>
-        )}
+           block in the DOM regardless of visibility). 2026-08-26: in
+           Staff-inline mode (`hideZoom`) the buttons do nothing useful —
+           pressing them only subdivides rows, which makes per-row lyrics
+           smaller. We keep the block in the DOM at `visibility:hidden`
+           so its width still counterbalances the Play+Gear block on the
+           right and the Stanza indicator stays centred. `invisible`
+           removes children from hit-testing, focus order, and the
+           accessibility tree, so the buttons cannot be clicked, focused,
+           or announced. */}
+        <div className={cn('flex items-center shrink-0', hideZoom && 'invisible')}>
+          <button
+            type="button"
+            aria-label="Decrease size"
+            onClick={() => onValueChange(Math.max(minValue, value - step))}
+            disabled={value <= minValue}
+            className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+          >
+            A−
+          </button>
+          <button
+            type="button"
+            aria-label="Increase size"
+            onClick={() => onValueChange(Math.min(maxValue, value + step))}
+            disabled={value >= maxValue}
+            className="min-h-10 min-w-10 sm:min-w-11 inline-flex items-center justify-center text-base active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+          >
+            A+
+          </button>
+        </div>
 
         {/* Centre: stanzas indicator with prev/next nav (absorbs remaining space) */}
         <div className="flex-1 flex items-center justify-center min-w-0">
