@@ -38,7 +38,10 @@ import { phrasesForMeter } from '@/lib/abc-phrase-meter-map'
 import { splitMusicIntoSubLines } from './splitMusicIntoSubLines'
 import { tokenizeMeasures } from './tokenizeMeasures'
 import { splitWLineByNoteCounts } from './splitWLineByNoteCounts'
-import { type MeasureEntry } from '@/lib/distribute-measures-to-substaffs'
+import {
+  type MeasureEntry,
+  splitContiguousByMeasures,
+} from '@/lib/distribute-measures-to-substaffs'
 import { forceMatchMeterShape } from '@/lib/force-match-meter-shape'
 import { expectedSyllablesByLine } from '@/lib/meter-syllable-shape'
 import { detectRepeatedPitchContinuations } from '@/lib/detect-repeated-pitch-continuations'
@@ -408,6 +411,43 @@ function wrapMelismaSlursFromTokens(
     inSlur = false
   }
   return parts.join(separator)
+}
+
+// 260826-phrase-bound-overflow: when A+ has been pressed, distribute the
+// extra sub-staves (rows beyond phraseCount) to the longest phrases (by
+// measure count), ties broken by lower phrase index. Each phrase gets at
+// least one sub-staff; the longest phrases get extra rows proportionally to
+// how many measures they contain. Within each phrase, measures stay
+// CONTIGUOUS (no interleaving), preserving melody order across the split.
+function allocatePhraseSubs(
+  phraseData: ReadonlyArray<{ readonly measures: ReadonlyArray<unknown> }>,
+  totalSubs: number,
+): number[] {
+  const n = phraseData.length
+  if (n === 0) return []
+  if (totalSubs <= n) return Array.from({ length: n }, () => 1)
+  const subs: number[] = Array.from({ length: n }, () => 1)
+  const counts = phraseData.map((pd) => pd.measures.length)
+  let extras = totalSubs - n
+  while (extras > 0) {
+    // Greedy: pick the phrase with the most measures, ties broken by
+    // lower index. After every phrase has been bumped once the next pass
+    // starts picking again from the longest, so a long phrase can absorb
+    // multiple extras (e.g. a 6-measure phrase gets subs [3] at A+5 with
+    // 4 phrases while a 1-measure phrase stays at [1]).
+    let bestIdx = 0
+    let bestCount = counts[0] ?? 0
+    for (let i = 1; i < n; i++) {
+      const c = counts[i] ?? 0
+      if (c > bestCount) {
+        bestIdx = i
+        bestCount = c
+      }
+    }
+    subs[bestIdx] = (subs[bestIdx] ?? 1) + 1
+    extras--
+  }
+  return subs
 }
 
 export function NotationRenderer({
@@ -1855,204 +1895,75 @@ export function NotationRenderer({
         }
       }
 
-      // 260825-cross-phrase-note: when zooming, completely abandon phrase
-      // boundaries AND measure boundaries. Tokenize each measure into
-      // individual notes, build ONE flat note stream across all phrases,
-      // and split that stream into N sub-staves by cumulative-syllable-
-      // count.
+      // 260826-phrase-bound-flush: phrase-bound distribution with overflow
+      // split. Each phrase keeps its measures CONTIGUOUS (preserves melody
+      // order across the split) and gets `subsPerPhrase[i]` sub-staves.
+      // Extra sub-staves (rows beyond phraseCount at A+1+) are greedily
+      // assigned to the longest phrases by measure count, ties by lower
+      // phrase index. The final emission walks phrases in order, emitting
+      // each phrase's chunks sequentially — every sub-staff is either a
+      // full phrase or a contiguous slice of one phrase, never a mix.
       //
-      // Why per-note (not per-measure): measure-level splitting at A+1
-      // gives e.g. [10, 7, 10, 2, 5] notes per row for psalm 23 (each
-      // 2-measure phrase lands intact in one row, the 3-measure phrase 4
-      // gets split). The user wants ALL rows split so syllable counts
-      // come out roughly balanced (~5.6 syllables per row at A+1) — that
-      // requires finer-than-measure granularity.
+      // Replaces the per-note cross-phrase LPT (260825-cross-phrase-note):
+      // that algorithm interleaved individual notes from different phrases
+      // into the same sub-staff to balance syllable counts, but the user
+      // read the result as "the tune changes" because sub 0 ended with a
+      // tail of a different phrase's notes than it started with. PS23 at
+      // A+1 went from "I'll" (sub 0) → "notwant." (sub 1) → ... → "death's"
+      // (sub 0 still) → "darkvale," (sub 1). This violates musical
+      // coherence; the user explicitly rejected per-measure LPT in favour
+      // of contiguous phrase-bound allocation.
       //
-      // Music line for each row: notes joined by spaces, NO explicit `|`
-      // markers. abcjs auto-draws bar lines based on the `M:` meter header
-      // (e.g. CM = 4/4 → a bar every 4 quarter notes). When a row ends
-      // mid-bar the visual bar is partial, which is fine — the user is
-      // reading top-to-bottom and wants balanced row sizes, not strict
-      // per-row bar alignment.
+      // Within each chunk the `w:` line carries the per-cycle syllable
+      // tokens (already aligned to notes in `phraseMeasureEntries[pi]`),
+      // so melisma `_` continuations render as proper slur arcs inside
+      // the chunk. No explicit `(...)` slur-wrap is needed; abcjs draws
+      // them automatically from the `w:` melisma markers.
       //
-      // Melisma handling: each note carries its own per-cycle syllable
-      // token (one slot per note, `_` if melisma, syllable otherwise).
-      // Notes are never split across rows, so `_` continuation markers
-      // stay attached to the syllable they continue.
-      type NoteEntry = {
-        abcToken: string
-        perCycleTokens: string[]
-        // 260825-slur-flatten: index of this note WITHIN its source phrase.
-        // melismaPositions[i] is keyed on within-phrase indices, so we need
-        // to translate from sub-staff position → within-phrase position to
-        // decide which notes are continuations when wrapping slur groups.
-        phraseIdx: number
-        withinPhraseIdx: number
-      }
-      const allNoteEntries: NoteEntry[] = []
-      // ABC note token regex: optional accidental (^_=) + note letter (A-G/a-g
-      // or rest z/x) + optional octave marks (',) + optional duration digits
-      // optionally with /fraction. ABC often concatenates notes without
-      // whitespace (e.g. `c2a4bg` = 4 notes), so a split-on-whitespace
-      // approach silently drops notes. This regex matches each note head
-      // individually. Anchored at note-letter boundaries so octave marks
-      // and durations get captured as part of the preceding note.
-      const NOTE_REGEX = /(?:[\^_=]?[A-Ga-gzZ][',]*\d*(?:\/\d+)?)/g
-      // 260825-slur-flatten: build per-phrase continuation sets ONCE so the
-      // emit loop can do an O(1) membership test per note.
-      const perPhraseContinuationSets: Set<number>[] = flattenPhraseData.map((pd) => {
-        const arr = melismaPositions?.[pd.phraseIdx] ?? []
-        return new Set(arr)
-      })
-      // Walk phraseMeasureEntries per-phrase so we can track the
-      // within-phrase running note index for each note token — needed to
-      // look up melismaPositions[phraseIdx] (which is keyed on within-phrase
-      // 0-based note indices).
-      for (let pi = 0; pi < phraseMeasureEntries.length; pi++) {
-        const phraseEntries = phraseMeasureEntries[pi]!
-        let cumNoteIdx = 0
-        for (const me of phraseEntries) {
-          const noteTokens = me.musicText.match(NOTE_REGEX) ?? []
-          for (let i = 0; i < noteTokens.length; i++) {
-            const noteToken = noteTokens[i] ?? ''
-            if (!noteToken) continue
-            const perCycleTokens: string[] = []
-            for (let c = 0; c < me.perCycleTokens.length; c++) {
-              const cycleToks = me.perCycleTokens[c] ?? []
-              perCycleTokens.push(cycleToks[i] ?? '_')
-            }
-            allNoteEntries.push({
-              abcToken: noteToken,
-              perCycleTokens,
-              phraseIdx: me.phraseIdx,
-              withinPhraseIdx: cumNoteIdx + i,
-            })
-          }
-          cumNoteIdx += me.noteCount
-        }
+      // 260826-staffsep-flatten: use a wider %%staffsep (45 vs default 30)
+      // in flatten mode. High-note stems extend ~staff-height × 0.6 above
+      // the staff top, and at A+1 staff height is 31.2 px → stems can
+      // reach ~18 px above the staff. With staffsep=30 + the inherent gap
+      // between consecutive sub-staves, the previous sub-staff's last
+      // lyric row sometimes touched the next sub-staff's first-note stem.
+      // 45 px gives the previous lyric row clear airspace below the next
+      // sub-staff's stem peaks on mobile.
+      const subsPerPhrase = allocatePhraseSubs(flattenPhraseData, flattenSubStaffCount)
+      const orderedChunks: MeasureEntry[][] = []
+      for (let pi = 0; pi < flattenPhraseData.length; pi++) {
+        const phraseChunks = splitContiguousByMeasures(
+          phraseMeasureEntries[pi] ?? [],
+          subsPerPhrase[pi] ?? 1,
+        )
+        for (const chunk of phraseChunks) orderedChunks.push(chunk)
       }
 
-      // Walk the flat note list once. Each note contributes either 1
-      // syllable (real token) or 0 (`_` melisma). Close a chunk when
-      // cumulative syllables reach (chunkIndex + 1) × targetPer.
-      //
-      // Melisma stick-together (260825-slur-flatten v2): we DO NOT defer
-      // the chunk boundary when a melisma group straddles it. Doing so
-      // unbalances chunk sizes (some absorb entire melisma groups while
-      // others shrink to compensate) and produces slur arcs that span too
-      // many notes. Instead, after the LPT walk we close the slur with `)`
-      // at the end of the previous chunk and reopen with `(` at the start
-      // of the next — abcjs draws two clean arcs that visually look like
-      // one melisma group split across the system break.
-      const sylPerNote: number[] = allNoteEntries.map((n) => {
-        const tok = n.perCycleTokens[0] ?? '_'
-        return tok && tok !== '_' ? 1 : 0
-      })
-      const totalSylNotes = sylPerNote.reduce((s, n) => s + n, 0)
-      const targetPerNote = totalSylNotes / flattenSubStaffCount
-      const noteChunks: NoteEntry[][] = []
-      let curChunk: NoteEntry[] = []
-      let curSyl = 0
-      for (let i = 0; i < allNoteEntries.length; i++) {
-        const note = allNoteEntries[i]!
-        curChunk.push(note)
-        curSyl += sylPerNote[i] ?? 0
-        const chunkEnd = (noteChunks.length + 1) * targetPerNote
-        // Close chunk i when cumulative syllables reach target, but not on
-        // the very last note (would orphan the tail into an empty chunk).
-        if (
-          noteChunks.length < flattenSubStaffCount - 1 &&
-          curSyl >= chunkEnd &&
-          curChunk.length > 0 &&
-          i < allNoteEntries.length - 1
-        ) {
-          noteChunks.push(curChunk)
-          curChunk = []
-        }
-      }
-      if (curChunk.length > 0) noteChunks.push(curChunk)
-      while (noteChunks.length < flattenSubStaffCount) noteChunks.push([])
-
-      // Emit. For each sub-staff: %%staffsep 30, %%stretchlast for Inline
-      // Staff, the music line (notes joined), and one w: line per visible
-      // cycle (per-note syllable tokens joined).
-      const emitWLines = renderWLineUnderStaff ?? showLyrics
+      const emitWLinesFlat = renderWLineUnderStaff ?? showLyrics
       const cycleCount = flattenPhraseData[0]?.cycleTokenLists.length ?? 0
 
-      // 260825-slur-flatten split: when a melisma group crosses a chunk
-      // boundary (one or more continuations landed in chunk s and the
-      // syllable-start note landed in chunk s-1), we want the slur arc to
-      // close at the END of chunk s-1 (so it doesn't draw across an
-      // empty/short tail) and reopen at the START of chunk s. abcjs slur
-      // syntax: unmatched `)` is silently ignored, so we MUST close and
-      // reopen to get two clean visual arcs instead of one giant arc.
-      const boundaryHadContinuation: boolean[] = noteChunks.map(() => false)
-      for (let s = 1; s < noteChunks.length; s++) {
-        const prev = noteChunks[s - 1] ?? []
-        if (prev.length === 0) continue
-        const lastPrev = prev[prev.length - 1]!
-        const lastSet = perPhraseContinuationSets[lastPrev.phraseIdx] ?? null
-        boundaryHadContinuation[s] = lastSet != null && lastSet.has(lastPrev.withinPhraseIdx)
-      }
-
-      for (let s = 0; s < noteChunks.length; s++) {
-        const chunk = noteChunks[s] ?? []
+      for (const chunk of orderedChunks) {
         if (chunk.length === 0) continue
-        parts.push('%%staffsep 30')
-        // NOTE: %%stretchlast is intentionally NOT emitted here. abcjs draws
-        // a curved tie path under each short sub-staff to "stretch" the
-        // visual row width, which looks identical to a slur arc to the user
-        // and is the source of the "massive melisma arc on the final line"
-        // regression at A+ zoom. The flatten path's LPT-balanced note
-        // distribution already produces rows that fill the available width
-        // for typical tunes, so the stretchlast artifact is pure noise.
-
-        // 260825-slur-flatten: wrap melisma groups in (...) so abcjs draws a
-        // proper slur arc on each sub-staff. Per-note continuation is
-        // decided by looking up melismaPositions[phraseIdx] using the note's
-        // WITHIN-PHRASE index (not its position in the sub-staff — those are
-        // different after per-note LPT reorders the stream).
-        // 260825-tie-strip: strip `-` (abcjs tie mark) from each note token
-        // so the LPT-driven re-segmentation doesn't drag a cross-system tie
-        // along — the resulting tie path renders as a wide arc spanning the
-        // whole sub-staff and looks identical to a slur to the user. We
-        // deliberately lose tie information here because the flatten path
-        // is a per-note redistribution where ties no longer make musical
-        // sense.
-        const tokens = chunk.map((n) => n.abcToken.replace(/-/g, ''))
-        const isContinuation = (subIdx: number): boolean => {
-          const note = chunk[subIdx]
-          if (!note) return false
-          const set = perPhraseContinuationSets[note.phraseIdx] ?? null
-          return set != null && set.has(note.withinPhraseIdx)
+        parts.push('%%staffsep 45')
+        // 260826-tie-strip: same rationale as the previous per-note path —
+        // strip `-` (abcjs tie mark) so a leftover tie across the chunk
+        // boundary doesn't render as a wide cross-system arc. Phrase-
+        // bound contiguous measures rarely carry a mid-measure tie, but
+        // safer to strip than to risk the wide-arc regression.
+        const musicParts: string[] = []
+        for (const m of chunk) {
+          if (m.musicText) musicParts.push(m.musicText.replace(/-/g, ''))
         }
-        const musicLine = wrapMelismaSlursFromTokens(tokens, isContinuation, ' ').trim()
-        // 260825-slur-flatten split: deliberately do NOT reopen the slur
-        // here when the previous chunk ended with a continuation. abcjs
-        // renders any slur whose `)` lands at a line edge as a filled
-        // tie ellipse (see node_modules/abcjs/src/write/draw/tie.js line
-        // 37-38: `if (!params.anchor1 || !params.anchor2) isTie = true`).
-        // That tie spans the whole sub-staff width (~220px at A+1) and
-        // looks like a huge arc — exactly the regression the user reported.
-        //
-        // The trade-off: cross-system melisma continuations lose their
-        // slur arc on the receiving sub-staff. Intra-system groups still
-        // render correctly. The arc that the user sees at A+1 is the
-        // PROPER intra-system slur — that one is bounded and clean.
-        //
-        // The boundaryHadContinuation flag is still computed (it could be
-        // used for a future per-note-position slur split), but no wrap is
-        // emitted here to avoid the line-edge tie artifact.
-        void boundaryHadContinuation
+        const musicLine = musicParts.join(' ').trim()
         if (!musicLine) continue
         parts.push(musicLine)
 
-        if (!emitWLines) continue
+        if (!emitWLinesFlat) continue
         for (let c = 0; c < cycleCount; c++) {
           const tokens: string[] = []
-          for (const n of chunk) {
-            const tok = n.perCycleTokens[c] ?? ''
-            if (tok) tokens.push(tok)
+          for (const m of chunk) {
+            for (const t of m.perCycleTokens[c] ?? []) {
+              if (t) tokens.push(t)
+            }
           }
           if (tokens.length === 0) continue
           parts.push(`w: ${tokens.join(' ')}`)
