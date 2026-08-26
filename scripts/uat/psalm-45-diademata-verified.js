@@ -1,19 +1,15 @@
-// Wave 1 UAT for psalm 45 (Diademata, id 134) — runs AFTER Task 4 build+restart.
+// Wave 2 UAT for Diademata (tune id 134, SM, psalm 45) — runs AFTER Task 4 build+restart.
 // Uses shared Playwright WebKit daemon (port 3100) with iPhone13 viewport.
 // Primary target per project memory `feedback_mobile_priority_zero_overlap`.
-// Secondary check: Chromium daemon (port 3099) on Pixel5.
 //
-// IMPORTANT: This script does NOT trigger a build/restart. If Task 4 has not
-// run, the live page will not yet contain the lyric and the script reports
-// "page not yet deployed" + exits non-zero.
+// Test path: /tunes/diademata → click "Notation" tab → abcjs SVG should render.
 
-const fs = require('node:fs')
-const path = require('path')
+// Daemon wraps script as `new AsyncFunction('page', 'browser', job.script)` —
+// no `fs`, `process`, etc. in scope. Screenshots are saved relative to CWD.
 
 const UAT_URL = process.env.UAT_URL || 'https://psalter.gsdlabs.dev'
 const WK = process.env.PLAYWRIGHT_WEBKIT_DAEMON_URL || 'http://localhost:3100'
 const CHROMIUM = process.env.PLAYWRIGHT_DAEMON_URL || 'http://localhost:3099'
-const SHOTS_DIR = path.join(process.cwd(), 'scripts/uat/screenshots')
 
 const VIEWPORTS = [
   { daemonUrl: WK, device: 'iPhone 13', label: 'iphone13' },
@@ -43,55 +39,57 @@ async function verifyOnDevice(daemonUrl, deviceName, label) {
   }
 
   const script = `
-    const { webkit, chromium, devices } = require('playwright');
-    const engine = ${daemonUrl === WK ? "'webkit'" : "'chromium'"};
-    const launch = engine === 'webkit' ? webkit.launch : chromium.launch;
-    const browser = await launch();
+    const pw = await import('/usr/lib/node_modules/playwright/index.js');
+    const devices = pw.default.devices;
     const ctx = await browser.newContext({ ...devices['${deviceName}'] });
-    const page = await ctx.newPage();
+    const p = await ctx.newPage();
     try {
-      await page.goto('${UAT_URL}/psalms/45', { waitUntil: 'networkidle', timeout: 30000 });
-      await page.waitForTimeout(2000);
+      await p.goto('${UAT_URL}/tunes/diademata', { waitUntil: 'networkidle', timeout: 30000 });
+      await p.waitForTimeout(1500);
 
-      const svgCount = await page.locator('.abcjs-container svg').count();
-      if (svgCount === 0) {
-        return { ok: false, reason: 'no .abcjs-container svg found — page may not be deployed yet' };
-      }
-
-      const lineLayout = await page.evaluate(() => {
-        const svg = document.querySelector('.abcjs-container svg');
-        const all = Array.from(svg.querySelectorAll('text.abcjs-lyric'));
-        const byLine = new Map();
-        for (const t of all) {
-          const cls = t.getAttribute('class') || '';
-          const m = cls.match(/abcjs-l(\\d+)/);
-          if (!m) continue;
-          const li = Number(m[1]);
-          const arr = byLine.get(li) ?? [];
-          arr.push((t.textContent || '').trim());
-          byLine.set(li, arr);
-        }
-        return { lineCount: byLine.size, byLine: Object.fromEntries(byLine) };
+      const clicked = await p.evaluate(() => {
+        const all = Array.from(document.querySelectorAll('button, a, [role="tab"]'));
+        const btn = all.find(el => /notation/i.test(el.textContent || ''));
+        if (!btn) return null;
+        btn.click();
+        return btn.textContent.trim();
       });
+      if (!clicked) {
+        return { ok: false, reason: 'no Notation tab found on /tunes/diademata' };
+      }
+      await p.waitForTimeout(3000);
 
-      const line0Text = (lineLayout.byLine[0] || []).join(' ').toLowerCase();
-      const populatedCount0 = (lineLayout.byLine[0] || []).filter((t) => t.length > 0).length;
+      const info = await p.evaluate(() => {
+        const svg = document.querySelector('.abcjs-container svg');
+        if (!svg) return { error: 'no .abcjs-container svg after Notation click' };
+        const notes = svg.querySelectorAll('.abcjs-note path');
+        const staves = svg.querySelectorAll('.abcjs-staff');
+        const viewBox = svg.getAttribute('viewBox');
+        const titleText = document.querySelector('.abcjs-container')?.textContent?.substring(0, 80);
+        return {
+          noteCount: notes.length,
+          staffCount: staves.length,
+          viewBox,
+          titleText,
+        };
+      });
+      if (info.error) return { ok: false, reason: info.error };
 
-      fs.mkdirSync('${SHOTS_DIR}', { recursive: true });
-      await page.screenshot({ path: '${SHOTS_DIR}/psalm-45-diademata-verified-${label}.png', fullPage: false });
+      await p.screenshot({ path: 'scripts/uat/screenshots/psalm-45-diademata-verified-${label}.png', fullPage: false });
 
       return {
         ok: true,
-        line0Text,
-        populatedCount0,
-        lineCount: lineLayout.lineCount,
+        clickedTab: clicked,
+        noteCount: info.noteCount,
+        staffCount: info.staffCount,
+        viewBox: info.viewBox,
+        titleText: info.titleText,
       };
     } catch (err) {
       return { ok: false, reason: 'exception: ' + err.message };
     } finally {
-      await page.close();
+      await p.close();
       await ctx.close();
-      await browser.close();
     }
   `
 
@@ -109,25 +107,23 @@ async function main() {
         errors.push(`${vp.label}: ${result.reason}`)
         continue
       }
-      // Diademata phrase 1 = 6 syllables; look for "heart". Accept with/without
-      // hyphens (Diademata's syllabification may split differently).
-      const m = result.line0Text.match(/heart/i) || result.line0Text.match(/heartin/i)
-      if (!m) {
-        console.error(`FAIL [${vp.label}]: line 0 lyric missing "heart" — got: "${result.line0Text}"`)
-        errors.push(`${vp.label}: line 0 lyric mismatch`)
+      // Diademata SM has 26 syllables + 1 melisma continuation = 27 notes.
+      if (result.noteCount < 20) {
+        console.error(`FAIL [${vp.label}]: expected >= 20 notes (27 expected) — got ${result.noteCount}`)
+        errors.push(`${vp.label}: too few notes`)
         continue
       }
-      if (result.populatedCount0 < 4) {
-        console.error(`FAIL [${vp.label}]: expected >= 4 populated lyric tspans on line 0 — got ${result.populatedCount0}`)
-        errors.push(`${vp.label}: too few tspans`)
+      if (!result.viewBox) {
+        console.error(`FAIL [${vp.label}]: no viewBox on abcjs SVG`)
+        errors.push(`${vp.label}: missing viewBox`)
         continue
       }
-      if (result.lineCount < 4) {
-        console.error(`FAIL [${vp.label}]: expected >= 4 sub-staff lyric lines — got ${result.lineCount}`)
-        errors.push(`${vp.label}: too few lyric lines`)
+      if (!/diademata/i.test(result.titleText || '')) {
+        console.error(`FAIL [${vp.label}]: tune title missing "Diademata" — got: "${result.titleText}"`)
+        errors.push(`${vp.label}: title mismatch`)
         continue
       }
-      console.log(`PASS [${vp.label}]: line0="${result.line0Text}" populated=${result.populatedCount0} lines=${result.lineCount}`)
+      console.log(`PASS [${vp.label}]: tab="${result.clickedTab}" notes=${result.noteCount} staves=${result.staffCount} vb="${result.viewBox}"`)
     } catch (err) {
       console.error(`FAIL [${vp.label}]: ${err.message}`)
       errors.push(`${vp.label}: ${err.message}`)
@@ -139,7 +135,7 @@ async function main() {
     console.log(`FAIL — ${errors.length} viewport(s) failed`)
     process.exit(1)
   }
-  console.log('\nPASS — Psalm 45 verified w-line renders on iPhone13 and Pixel5')
+  console.log('\nPASS — Diademata abc_notation renders on iPhone13 and Pixel5')
   process.exit(0)
 }
 
