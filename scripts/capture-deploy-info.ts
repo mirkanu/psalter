@@ -67,11 +67,26 @@ const info: DeployInfo = {
   message: commitMessage,
 }
 
-const outPath = join(process.cwd(), 'data', 'deploy-info.json')
-mkdirSync(dirname(outPath), { recursive: true })
-writeFileSync(outPath, JSON.stringify(info, null, 2) + '\n', 'utf8')
+const serverOutPath = join(process.cwd(), 'data', 'deploy-info.json')
+mkdirSync(dirname(serverOutPath), { recursive: true })
+writeFileSync(serverOutPath, JSON.stringify(info, null, 2) + '\n', 'utf8')
 
-console.log(`[capture-deploy-info] wrote ${outPath}`)
+// Also write a client-importable copy so DeployStatus can detect when the
+// loaded JS bundle is older than the server's deploy-info. The client bundle
+// is hashed and immutable once built, so a stale tab holding an old bundle
+// would otherwise keep showing the previous commit in the footer even after
+// a new deploy — comparing the bundle's baked-in commit to what the server
+// reports reveals the mismatch and lets us warn the admin to hard-refresh.
+const clientOutPath = join(process.cwd(), 'src', 'generated', 'build-info.json')
+mkdirSync(dirname(clientOutPath), { recursive: true })
+writeFileSync(
+  clientOutPath,
+  JSON.stringify({ commit: commitShort, deployedAt: deployedAtMs }, null, 2) + '\n',
+  'utf8',
+)
+
+console.log(`[capture-deploy-info] wrote ${serverOutPath}`)
+console.log(`[capture-deploy-info] wrote ${clientOutPath}`)
 console.log(`  deployedAt: ${new Date(info.deployedAt).toISOString()}`)
 console.log(`  commitTime: ${info.commitTime ? new Date(info.commitTime).toISOString() : 'unknown'}`)
 console.log(`  commit:     ${info.commit}`)
