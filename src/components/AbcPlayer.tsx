@@ -766,6 +766,23 @@ export default function AbcPlayer({
         paddingright: staffWidthFactor < 1 ? 0 : undefined,
       })
       visualObjRef.current = visualObjs?.[0] ?? null
+      // 260826-tspacing: abcjs hardcodes `dy="1.2em"` on every lyric tspan
+      // after the first (svg.js:197), so each verse (verse 2, 3, ...) stacks
+      // 1.2 × font-size below the previous one. On mobile default zoom that's
+      // ~15.6px between verse centers, but the bounding boxes only have a
+      // 0.6–0.7px clear-space gap because the tspans' font-box (cap-height
+      // ~11px) almost fills the 1.2em line-box — visually the verses touch.
+      // Bumping dy from 1.2em → 1.55em adds ~0.35em ≈ 4.5px of clear space
+      // between verse lines at default zoom (and proportionally more at A+1
+      // where font scales up). Applied only to tspan children of abcjs
+      // lyric <text> elements so single-line titles/subtitles are
+      // untouched.
+      el.querySelectorAll<SVGTextElement>('text.abcjs-lyric tspan').forEach((t) => {
+        const cur = t.getAttribute('dy')
+        if (!cur || !/em\s*$/.test(cur)) return
+        const v = parseFloat(cur)
+        if (v <= 1.3) t.setAttribute('dy', '1.55em')
+      })
       // MOBILE-04 (revised): shrink the clef/key-signature/time-signature
       // glyph group on every row — including row 1 — and reflow the freed
       // space into the following notation/lyrics. Gated to the same
