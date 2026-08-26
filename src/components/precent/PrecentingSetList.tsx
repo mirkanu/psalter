@@ -78,10 +78,10 @@ export function PrecentingSetList({ sets }: Props) {
           >
             <TableCell className="font-medium">{smartDate(set.date)}</TableCell>
             <TableCell className="text-muted-foreground">{shortType(set.type)}</TableCell>
-            <TableCell className="text-muted-foreground text-sm">
+            <TableCell className="text-muted-foreground text-sm whitespace-normal break-words">
               {set.psalmIds.length > 0 ? set.psalmIds.join(', ') : '—'}
             </TableCell>
-            <TableCell className="text-right">
+            <TableCell className="text-right w-px">
               {set.psalmIds.length > 0 && (
                 <Link
                   href={`/precent/${set.id}/sing/1`}
