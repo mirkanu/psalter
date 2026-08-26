@@ -357,10 +357,23 @@ function wrapMelismaSlursFromTokens(
   if (tokens.length === 0) return ''
   const parts: string[] = []
   let inSlur = false
+  // 260826-chord-slur-skip: abcjs slur parser mishandles `( f' c' )` —
+  // it parses both `(` characters as slur opens (startSlur counter
+  // increments once for the outer `(`, but the close `)` then matches
+  // only one of them), leaving slur 8 unclosed. That open slur carries
+  // to the end of the staff as an abcjs-end-edge tie ellipse
+  // (abcjs/src/write/draw/tie.js line 37-38). Skip slur-wrap when the
+  // resulting group would be two bare-pitch tokens (no duration digit)
+  // that abcjs would re-parse as a chord-with-slur artifact.
+  const isBarePitch = (t: string): boolean => /^[A-Ga-gzZ][',]*$/.test(t)
   for (let i = 0; i < tokens.length; i++) {
     const isCont = isContinuation(i)
     const nextIsCont = i + 1 < tokens.length && isContinuation(i + 1)
-    if (!isCont && nextIsCont && !inSlur) {
+    const wouldWrapChord =
+      isBarePitch(tokens[i]!) &&
+      i + 1 < tokens.length &&
+      isBarePitch(tokens[i + 1]!)
+    if (!isCont && nextIsCont && !inSlur && !wouldWrapChord) {
       parts.push('(')
       inSlur = true
     }
@@ -1997,7 +2010,7 @@ export function NotationRenderer({
           const set = perPhraseContinuationSets[note.phraseIdx] ?? null
           return set != null && set.has(note.withinPhraseIdx)
         }
-        let musicLine = wrapMelismaSlursFromTokens(tokens, isContinuation, ' ').trim()
+        const musicLine = wrapMelismaSlursFromTokens(tokens, isContinuation, ' ').trim()
         // 260825-slur-flatten split: deliberately do NOT reopen the slur
         // here when the previous chunk ended with a continuation. abcjs
         // renders any slur whose `)` lands at a line edge as a filled
