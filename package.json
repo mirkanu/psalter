@@ -6,6 +6,7 @@
     "prebuild": "tsx scripts/capture-deploy-info.ts",
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "tsx scripts/capture-build-id.ts",
     "start": "next start",
     "lint": "eslint",
     "db:push": "drizzle-kit push",
