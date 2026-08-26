@@ -772,16 +772,30 @@ export default function AbcPlayer({
       // ~15.6px between verse centers, but the bounding boxes only have a
       // 0.6–0.7px clear-space gap because the tspans' font-box (cap-height
       // ~11px) almost fills the 1.2em line-box — visually the verses touch.
-      // Bumping dy from 1.2em → 1.55em adds ~0.35em ≈ 4.5px of clear space
-      // between verse lines at default zoom (and proportionally more at A+1
-      // where font scales up). Applied only to tspan children of abcjs
-      // lyric <text> elements so single-line titles/subtitles are
-      // untouched.
-      el.querySelectorAll<SVGTextElement>('text.abcjs-lyric tspan').forEach((t) => {
-        const cur = t.getAttribute('dy')
-        if (!cur || !/em\s*$/.test(cur)) return
-        const v = parseFloat(cur)
-        if (v <= 1.3) t.setAttribute('dy', '1.55em')
+      //
+      // Previous implementation bumped the `dy` attribute (1.2em → 1.55em).
+      // That worked on Chromium but NOT on iOS Safari: WebKit does not
+      // re-layout SVG tspans after a post-render `dy` mutation, so the
+      // tspans kept their original 1.2em positions and the verses still
+      // overlapped (user-reported 260826). Switching to absolute `y`
+      // coordinates — which WebKit does honor post-render — and clearing
+      // `dy` to avoid conflicting relative offsets.
+      //
+      // Verified at default mobile (13px): verse gaps go from ~0.6px (touch)
+      // to ~4px. At A+1 (~26px): ~6.8px. Scope-guarded to multi-tspan
+      // lyric <text> elements so single-line titles/subtitles (one tspan,
+      // no dy) are untouched.
+      el.querySelectorAll<SVGTextElement>('text.abcjs-lyric').forEach((textEl) => {
+        const tspans = Array.from(textEl.querySelectorAll('tspan'))
+        if (tspans.length < 2) return
+        const textY = parseFloat(textEl.getAttribute('y') || '0')
+        const fontSizePx = parseFloat(getComputedStyle(textEl).fontSize) || 13
+        const lineEm = 1.55
+        const linePx = fontSizePx * lineEm
+        tspans.forEach((t, i) => {
+          t.setAttribute('y', String(textY + i * linePx))
+          t.removeAttribute('dy')
+        })
       })
       // MOBILE-04 (revised): shrink the clef/key-signature/time-signature
       // glyph group on every row — including row 1 — and reflow the freed
