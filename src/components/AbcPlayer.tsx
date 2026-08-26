@@ -766,37 +766,10 @@ export default function AbcPlayer({
         paddingright: staffWidthFactor < 1 ? 0 : undefined,
       })
       visualObjRef.current = visualObjs?.[0] ?? null
-      // 260826-tspacing: abcjs hardcodes `dy="1.2em"` on every lyric tspan
-      // after the first (svg.js:197), so each verse (verse 2, 3, ...) stacks
-      // 1.2 × font-size below the previous one. On mobile default zoom that's
-      // ~15.6px between verse centers, but the bounding boxes only have a
-      // 0.6–0.7px clear-space gap because the tspans' font-box (cap-height
-      // ~11px) almost fills the 1.2em line-box — visually the verses touch.
-      //
-      // Previous implementation bumped the `dy` attribute (1.2em → 1.55em).
-      // That worked on Chromium but NOT on iOS Safari: WebKit does not
-      // re-layout SVG tspans after a post-render `dy` mutation, so the
-      // tspans kept their original 1.2em positions and the verses still
-      // overlapped (user-reported 260826). Switching to absolute `y`
-      // coordinates — which WebKit does honor post-render — and clearing
-      // `dy` to avoid conflicting relative offsets.
-      //
-      // Verified at default mobile (13px): verse gaps go from ~0.6px (touch)
-      // to ~4px. At A+1 (~26px): ~6.8px. Scope-guarded to multi-tspan
-      // lyric <text> elements so single-line titles/subtitles (one tspan,
-      // no dy) are untouched.
-      el.querySelectorAll<SVGTextElement>('text.abcjs-lyric').forEach((textEl) => {
-        const tspans = Array.from(textEl.querySelectorAll('tspan'))
-        if (tspans.length < 2) return
-        const textY = parseFloat(textEl.getAttribute('y') || '0')
-        const fontSizePx = parseFloat(getComputedStyle(textEl).fontSize) || 13
-        const lineEm = 1.55
-        const linePx = fontSizePx * lineEm
-        tspans.forEach((t, i) => {
-          t.setAttribute('y', String(textY + i * linePx))
-          t.removeAttribute('dy')
-        })
-      })
+      // 260826-tspacing: removed — was overridden by the lyric-fit re-pack
+      // below (PHASE 3, ~line 1118) which sets `y` on every lyric tspan
+      // after this block runs. The fix now lives at the rowSpacing formula
+      // (targetFont × 1.55em) so the re-pack emits wide-enough spacing.
       // MOBILE-04 (revised): shrink the clef/key-signature/time-signature
       // glyph group on every row — including row 1 — and reflow the freed
       // space into the following notation/lyrics. Gated to the same
@@ -1112,10 +1085,14 @@ export default function AbcPlayer({
           })
           if (currentSys.length > 0) systems.push(currentSys)
           // Pack each system's rows from the first row's current Y,
-          // spacing each row by targetFont × 1.1 (≈ natural line-height
-          // — tight enough that descenders just touch ascenders, no
-          // floating-pad feel).
-          const rowSpacing = targetFont * 1.1
+          // spacing each row by targetFont × 1.55 (≈ 1.55em line-height).
+          //
+          // 260826-rowspacing: was targetFont × 1.1 which gave verse gaps
+          // of only ~0.6–0.7px on mobile default zoom (verses touched).
+          // Bumped to 1.55 to give ~4px clear space on default zoom and
+          // ~7px at A+1, matching the verse-spacing requirement documented
+          // in feedback-abcjs-lyric-tspan-dy.
+          const rowSpacing = targetFont * 1.55
           systems.forEach((sysRows) => {
             if (sysRows.length === 0) return
             const firstY = sysRows[0][0].getBBox().y
