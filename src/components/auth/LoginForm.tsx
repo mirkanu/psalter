@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { authClient } from '@/lib/auth-client'
 
 export function LoginForm() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -29,7 +28,9 @@ export function LoginForm() {
       const raw = searchParams.get('callbackUrl') ?? '/precent'
       // RESEARCH Pitfall 6: only allow relative same-site paths (D-05)
       const destination = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/precent'
-      router.push(destination)
+      // Hard navigation, not router.push: the client router cache holds the
+      // pre-login RSC payload for /precent, which is its redirect back to /login.
+      window.location.assign(destination)
     })
   }
 
