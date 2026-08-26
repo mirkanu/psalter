@@ -29,6 +29,12 @@ interface DeployInfoFile {
   commit: string
   commitLong: string
   message: string
+  /** Next.js BUILD_ID for the running build. Written by scripts/capture-build-id.ts
+   *  as the postbuild step. Used by DeployStatus to detect a stale HTML
+   *  response (the SSR'd data-build-id attribute won't match this if the
+   *  browser cached the HTML from an earlier deploy). See plan at
+   *  /home/claude/.claude/plans/fluffy-juggling-blanket.md for the rationale. */
+  buildId?: string
 }
 
 export const dynamic = 'force-dynamic'
