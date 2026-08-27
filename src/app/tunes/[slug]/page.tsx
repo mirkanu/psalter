@@ -139,15 +139,16 @@ export default async function TunePage({ params }: PageProps) {
     // onViewModeChange is deliberately NOT passed here — an RSC cannot serialise a function
     // across the client boundary; TuneScoreSection attaches it.
     //
-    // 2026-08-16 (Phase 16 R3): the tune page is the tune ALONE — no lyrics, no
-    // melisma `_` marks. emitWLines inside NotationRenderer = renderWLineUnderStaff
-    // ?? showLyrics (line 1035 of NotationRenderer.tsx); passing both false here
-    // suppresses the synthetic w: lines that abcjs would otherwise render under
-    // each staff system. Users wanting the full sung view click into "Sing this
-    // tune" below the tabs and pick a psalm version.
+    // 2026-08-27 (revsion of Phase 16 R3): the tune page now renders melisma `_`
+    // marks AND native abcjs slur arcs above the staff (driven by tunes.melisma_positions
+    // + wrapMelismaSlurs inside NotationRenderer). showLyrics stays false so the
+    // actual lyric TEXT does not appear under the staff — only `_` continuation
+    // tokens at melisma positions and the slur arc above the held note. Users
+    // wanting the full sung view with words click into "Sing this tune" below
+    // the tabs and pick a psalm version.
     {
       showLyrics: false,
-      renderWLineUnderStaff: false,
+      renderWLineUnderStaff: true,
       fallbackTuneName: `Tune ${tune.id}`,
       // 2026-08-16 (Phase 16 R3, user sign-off): drops A+/A-, Stanza nav,
       // fullscreen icon, and the bottom Play/Key/BPM/Show-original bar.

@@ -222,7 +222,7 @@ interface OutToken {
   syl: string
 }
 
-function buildAbc(notes: MxNote[], fifths: number): string {
+function buildAbc(notes: MxNote[], fifths: number): { abc: string; melismaPositions: number[][] } {
   const keySig = fifthsToAbcKey(fifths)
   const DIVS_PER_QUARTER = 256
 
@@ -264,6 +264,7 @@ function buildAbc(notes: MxNote[], fifths: number): string {
   // Phrase chunks with trailing-continuation drain
   const chunks: string[] = []
   const wChunks: string[] = []
+  const melismaPositions: number[][] = []
 
   let noteStart = 0
   let syllablesInPhrase = 0
@@ -272,12 +273,17 @@ function buildAbc(notes: MxNote[], fifths: number): string {
   function closePhrase(endIdx: number) {
     const musicParts: string[] = []
     const wParts: string[] = []
+    const phraseMelisma: number[] = []
     for (let j = noteStart; j <= endIdx; j++) {
       musicParts.push(out[j].pitch + out[j].dur)
       wParts.push(out[j].syl)
+      if (out[j].syl === '_') {
+        phraseMelisma.push(j - noteStart)
+      }
     }
     chunks.push(musicParts.join(' '))
     wChunks.push(wParts.join(' '))
+    melismaPositions.push(phraseMelisma)
     noteStart = endIdx + 1
     syllablesInPhrase = 0
     phraseIdx++
@@ -311,7 +317,7 @@ function buildAbc(notes: MxNote[], fifths: number): string {
 
   const wLines = wChunks.map((p) => `w: ${p}`).join('\n')
 
-  return `X:1
+  const abc = `X:1
 T:Diademata
 M:C
 L:1/8
@@ -320,6 +326,8 @@ K:${keySig}
 ${body}
 ${wLines}
 `.trim() + '\n'
+
+  return { abc, melismaPositions }
 }
 
 // ── Rollback artifact ────────────────────────────────────────────────────────
@@ -327,6 +335,7 @@ ${wLines}
 interface Rollback {
   tuneId: number
   preAbc: string | null
+  preMelismaPositions: number[][] | null
   newAbcSha256: string
   timestamp: string
   syllableShapeNote: string
@@ -335,17 +344,21 @@ interface Rollback {
 async function captureRollback(
   sql: ReturnType<typeof postgres>,
   newAbc: string,
+  newMelisma: number[][] | null,
   shapeNote: string,
 ): Promise<Rollback> {
   const rows = await sql<
-    { abc_notation: string | null }[]
-  >`SELECT abc_notation FROM tunes WHERE id = ${TUNE_ID}`
+    { abc_notation: string | null; melisma_positions: number[][] | null }[]
+  >`SELECT abc_notation, melisma_positions FROM tunes WHERE id = ${TUNE_ID}`
   const preAbc = rows[0]?.abc_notation ?? null
+  const preMelismaPositions = rows[0]?.melisma_positions ?? null
   const sha = createHash('sha256').update(newAbc, 'utf8').digest('hex')
   const ts = new Date().toISOString()
   const rb: Rollback = {
     tuneId: TUNE_ID,
     preAbc,
+    preMelismaPositions,
+    newMelismaPositions: newMelisma,
     newAbcSha256: sha,
     timestamp: ts,
     syllableShapeNote: shapeNote,
@@ -368,8 +381,8 @@ async function main() {
   const { notes, fifths } = parseMusicXml(xml)
   console.log(`Parsed ${notes.length} voice=1 notes from Diademata MusicXML (fifths=${fifths})`)
 
-  // Build ABC
-  const abc = buildAbc(notes, fifths)
+  // Build ABC + melismaPositions
+  const { abc, melismaPositions } = buildAbc(notes, fifths)
 
   // Validate
   const parsed = abcjs.parseOnly(abc)
@@ -393,6 +406,7 @@ async function main() {
   console.log('\n--- Generated abc_notation ---')
   console.log(abc)
   console.log('--- end preview ---\n')
+  console.log(`melismaPositions: ${JSON.stringify(melismaPositions)}`)
 
   if (!APPLY) {
     console.log('DRY RUN — no DB write. Re-run with --apply to UPDATE.')
@@ -406,7 +420,7 @@ async function main() {
   }
 
   const sql = postgres(process.env.DATABASE_URL!)
-  const rb = await captureRollback(sql, abc, shapeNote)
+  const rb = await captureRollback(sql, abc, melismaPositions, shapeNote)
   console.log(
     `Rollback captured: preAbc=${rb.preAbc === null ? '(null)' : `(length ${rb.preAbc.length})`} newAbcSha256=${rb.newAbcSha256}`,
   )
@@ -414,7 +428,7 @@ async function main() {
   const db = drizzle(sql)
   const result = await db
     .update(tunes)
-    .set({ abcNotation: abc })
+    .set({ abcNotation: abc, melismaPositions: melismaPositions })
     .where(eq(tunes.id, TUNE_ID))
     .returning({ id: tunes.id })
 
@@ -426,7 +440,7 @@ async function main() {
   console.log(`Updated tune id=${result[0].id} (${result.length} row)`)
 
   await sql.end()
-  console.log('PASS — Diademata abc_notation applied to DB')
+  console.log('PASS — Diademata abc_notation + melisma_positions applied to DB')
 }
 
 main().catch((e) => {
