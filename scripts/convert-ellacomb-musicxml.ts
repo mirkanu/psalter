@@ -304,7 +304,32 @@ function buildAbc(
     )
   }
 
-  const deBoerTokens = applyDeBoer(abcNotes, allTokens)
+  // For double-length: only consume the FIRST cycle's notes from the MusicXML,
+  // then MIRROR the same notes (and their slur markup) for cycle 2. This
+  // guarantees both cycles have identical music AND identical slur pattern.
+  // The previous approach walked the full MusicXML twice and ended up with a
+  // different slur distribution in cycle 2 (MusicXML slur tags got consumed by
+  // cycle 1, leaving cycle 2 all-syllabic) AND truncated cycle 2's last phrase
+  // when the MusicXML ran out of notes.
+  let deBoerTokens: ReturnType<typeof applyDeBoer>
+  let notesToUse: MxNote[]
+  if (DOUBLE_LENGTH) {
+    const halfPoint = PHRASE_SYLLABLE_COUNTS_SINGLE.reduce((a, b) => a + b, 0)
+    const firstHalfSyls = allTokens.slice(0, halfPoint)
+    const secondHalfSyls = allTokens.slice(halfPoint)
+
+    // Probe: how many notes does the first cycle consume?
+    const probeTokens = applyDeBoer(abcNotes, firstHalfSyls)
+    const firstCycleNoteCount = probeTokens.length
+
+    notesToUse = abcNotes.slice(0, firstCycleNoteCount)
+    const firstCycleTokens = applyDeBoer(notesToUse, firstHalfSyls)
+    const secondCycleTokens = applyDeBoer(notesToUse, secondHalfSyls)
+    deBoerTokens = [...firstCycleTokens, ...secondCycleTokens]
+  } else {
+    deBoerTokens = applyDeBoer(abcNotes, allTokens)
+    notesToUse = abcNotes
+  }
 
   // Walk note indices in parallel: each deBoerToken has no abc string yet;
   // we need to map them back to the original note index for pitch/duration.
@@ -315,9 +340,17 @@ function buildAbc(
   let tIdx = 0
   // Divisions per quarter = 256 for Ellacomb (typical Hymnary Sibelius export).
   const DIVS_PER_QUARTER = 256
+  // For double-length mirror: cycle 2 wraps noteIdx back to 0 so cycle 2 music
+  // matches cycle 1 exactly. abcNotes is used (not notesToUse) because we need
+  // unbounded index access; the modulo wrap keeps cycle 2 within first cycle's
+  // note range.
+  const firstCycleNoteCount = notesToUse.length
 
-  while (tIdx < deBoerTokens.length && noteIdx2 < abcNotes.length) {
-    const n = abcNotes[noteIdx2]
+  while (tIdx < deBoerTokens.length) {
+    const noteIdx = DOUBLE_LENGTH
+      ? (tIdx < firstCycleNoteCount ? tIdx : tIdx - firstCycleNoteCount)
+      : noteIdx2
+    const n = abcNotes[noteIdx]
     const tk = deBoerTokens[tIdx]
     if (tk.syllable === '_') {
       // melisma continuation
@@ -328,7 +361,6 @@ function buildAbc(
         isCont: true,
       })
       tIdx++
-      noteIdx2++
     } else {
       out.push({
         pitch: pitchToAbc(n.step, n.alter, n.octave),
@@ -337,8 +369,8 @@ function buildAbc(
         isCont: false,
       })
       tIdx++
-      noteIdx2++
     }
+    noteIdx2++
   }
 
   // Build music body with PHRASE_BREAK markers.
