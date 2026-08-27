@@ -1,6 +1,26 @@
 {
   "tuneId": 18,
-  "preAbc": null,
-  "newAbcSha256": "fb48dbb6d30aa6ae3d9b12b06cf9f50e637251e92a353a62365a8bb46776c3b2",
-  "timestamp": "2026-08-26T17:14:57.280Z"
+  "preAbc": "X:1\nT:Ellacomb\nM:C\nL:1/8\nQ:1/4=84\nK:Ab\n_E2 _A2 G F _E2 _A2 C2 _D2 _E2\n\n% PHRASE_BREAK\n| _E2 F G _A2 _B2 _B2\n\n% PHRASE_BREAK\n| c6 _E2 _A2 G F _E2 _A2 C2 _D2\n\n% PHRASE_BREAK\n| _E2 _E2 F G _A2 _A2\nw: e- ter- nal Lord doth reign as _ king\nw: let all the peo- ple quake\nw: He sits be- tween the cher- u- bims _\nw: let earth be mov'd and shake\n",
+  "preMelismaPositions": null,
+  "newMelismaPositions": [
+    [
+      7
+    ],
+    [],
+    [
+      8
+    ],
+    [],
+    [],
+    [
+      1,
+      2
+    ],
+    [],
+    [
+      2
+    ]
+  ],
+  "newAbcSha256": "88fa2395093e84f5adc0851d0a85325619a0e8efa9b81622430818febb3457bb",
+  "timestamp": "2026-08-27T11:23:40.595Z"
 }
