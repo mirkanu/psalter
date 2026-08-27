@@ -39,6 +39,14 @@ const ROLLBACK_PATH = path.join(
   process.cwd(),
   'scripts/uat/baselines/leominster-abc-rollback.txt',
 )
+// 2026-08-27: Leominster MusicXML has 52 notes per "stanza" but those notes
+// correspond to a DIFFERENT hymn (Bonar's "Not What My Hand Hath Done" — see
+// file's <text> tags), not psalm 70 / psalm 25. Neither psalm 25 (23 syllables)
+// nor psalm 70 (27 syllables) maps to 52 notes. Drop double-length: use the
+// first 27 MusicXML notes (one SM stanza) against psalm 70's 27 syllables →
+// 4-phrase SM. `tunes.double_length` column stays true in DB; the runtime
+// stanza pairing handles cycle grouping independently.
+const DOUBLE_LENGTH = false
 
 const APPLY = process.argv.includes('--apply')
 
@@ -142,14 +150,17 @@ function durationToAbc(durationDivisions: number, divisionsPerQuarter: number): 
 // Phrase 1 = 7 syllables (CPRC "Lord haste me to deliver" — one extra "me" vs.
 // standard "Lord make haste to deliver"; user sing-test will confirm). Phrases
 // 2/3/4 = 6/8/6 syllables. Total = 27 syllables → 27 notes from MusicXML.
+// For SMD (double-length), the stanza is sung twice → 8 phrases total.
 const PHRASE_W_LINES = [
   "Lord haste me to de li ver",
   "with speed Lord suc cor me",
   "Let them that for my soul do seek",
   "shamed and con found ed be",
 ]
-const PHRASE_SYLLABLE_COUNTS = [7, 6, 8, 6]
-const SPLIT_POINTS = [7, 13, 21] // cumulative end-of-phrase indices
+const PHRASE_SYLLABLE_COUNTS_SINGLE = [7, 6, 8, 6]
+const PHRASE_SYLLABLE_COUNTS = DOUBLE_LENGTH
+  ? [...PHRASE_SYLLABLE_COUNTS_SINGLE, ...PHRASE_SYLLABLE_COUNTS_SINGLE]
+  : PHRASE_SYLLABLE_COUNTS_SINGLE
 
 // ── Build ABC body (one-syllable-per-note, no slur markup) ──────────────────
 
@@ -159,20 +170,35 @@ interface AbcToken {
   syl: string
 }
 
-function buildAbc(abcNotes: MxNote[], fifths: number): string {
+interface BuildResult {
+  abc: string
+  melismaPositions: number[][]
+}
+
+function buildAbc(abcNotes: MxNote[], fifths: number): BuildResult {
   const keySig = fifthsToAbcKey(fifths)
   const DIVS_PER_QUARTER = 256 // Hymnary Sibelius default
 
-  // Flatten all syllable tokens
+  // Flatten all syllable tokens. For double-length, repeat the stanza.
   const allTokens: string[] = []
-  for (const ph of PHRASE_W_LINES) {
-    const toks = ph.split(/\s+/).filter(Boolean)
-    for (const t of toks) allTokens.push(t)
+  if (DOUBLE_LENGTH) {
+    for (let i = 0; i < 2; i++) {
+      for (const ph of PHRASE_W_LINES) {
+        const toks = ph.split(/\s+/).filter(Boolean)
+        for (const t of toks) allTokens.push(t)
+      }
+    }
+  } else {
+    for (const ph of PHRASE_W_LINES) {
+      const toks = ph.split(/\s+/).filter(Boolean)
+      for (const t of toks) allTokens.push(t)
+    }
   }
 
-  if (allTokens.length !== PHRASE_SYLLABLE_COUNTS.reduce((a, b) => a + b, 0)) {
+  const expectedSylCount = PHRASE_SYLLABLE_COUNTS.reduce((a, b) => a + b, 0)
+  if (allTokens.length !== expectedSylCount) {
     throw new Error(
-      `Hard-coded syllable count mismatch: got ${allTokens.length}, expected ${PHRASE_SYLLABLE_COUNTS.reduce((a, b) => a + b, 0)}`,
+      `Hard-coded syllable count mismatch: got ${allTokens.length}, expected ${expectedSylCount}`,
     )
   }
 
@@ -192,9 +218,11 @@ function buildAbc(abcNotes: MxNote[], fifths: number): string {
     })
   }
 
-  // Build per-phrase chunks
+  // Build per-phrase chunks; track melisma_positions per phrase.
+  // Leominster has 0 slurs → all per-phrase melisma arrays are empty.
   const chunks: string[] = []
   const wChunks: string[] = []
+  const melismaPositions: number[][] = []
   let cursor = 0
   for (const budget of PHRASE_SYLLABLE_COUNTS) {
     const musicParts: string[] = []
@@ -205,6 +233,7 @@ function buildAbc(abcNotes: MxNote[], fifths: number): string {
     }
     chunks.push(musicParts.join(' '))
     wChunks.push(wParts.join(' '))
+    melismaPositions.push([]) // 0 slurs → empty array per phrase
     cursor += budget
   }
 
@@ -215,7 +244,7 @@ function buildAbc(abcNotes: MxNote[], fifths: number): string {
 
   const wLines = wChunks.map((p) => `w: ${p}`).join('\n')
 
-  return `X:1
+  const abc = `X:1
 T:Leominster
 M:C
 L:1/8
@@ -224,6 +253,8 @@ K:${keySig}
 ${body}
 ${wLines}
 `.trim() + '\n'
+
+  return { abc, melismaPositions }
 }
 
 // ── Rollback artifact ────────────────────────────────────────────────────────
@@ -231,20 +262,28 @@ ${wLines}
 interface Rollback {
   tuneId: number
   preAbc: string | null
+  preMelismaPositions: number[][] | null
   newAbcSha256: string
   timestamp: string
 }
 
-async function captureRollback(sql: ReturnType<typeof postgres>, newAbc: string): Promise<Rollback> {
+async function captureRollback(
+  sql: ReturnType<typeof postgres>,
+  newAbc: string,
+  newMelisma: number[][] | null,
+): Promise<Rollback> {
   const rows = await sql<
-    { abc_notation: string | null }[]
-  >`SELECT abc_notation FROM tunes WHERE id = ${TUNE_ID}`
+    { abc_notation: string | null; melisma_positions: number[][] | null }[]
+  >`SELECT abc_notation, melisma_positions FROM tunes WHERE id = ${TUNE_ID}`
   const preAbc = rows[0]?.abc_notation ?? null
+  const preMelismaPositions = rows[0]?.melisma_positions ?? null
   const sha = createHash('sha256').update(newAbc, 'utf8').digest('hex')
   const ts = new Date().toISOString()
   const rb: Rollback = {
     tuneId: TUNE_ID,
     preAbc,
+    preMelismaPositions,
+    newMelismaPositions: newMelisma,
     newAbcSha256: sha,
     timestamp: ts,
   }
@@ -267,8 +306,8 @@ async function main() {
   const { notes, fifths } = parseMusicXml(xml)
   console.log(`Parsed ${notes.length} voice=1 notes from Leominster MusicXML (fifths=${fifths})`)
 
-  // 2. Build ABC
-  const abc = buildAbc(notes, fifths)
+  // 2. Build ABC + melismaPositions
+  const { abc, melismaPositions } = buildAbc(notes, fifths)
 
   // 3. Validate
   const parsed = abcjs.parseOnly(abc)
@@ -280,6 +319,7 @@ async function main() {
   console.log('\n--- Generated abc_notation ---')
   console.log(abc)
   console.log('--- end preview ---\n')
+  console.log(`melismaPositions: ${JSON.stringify(melismaPositions)}`)
 
   if (!APPLY) {
     console.log('DRY RUN — no DB write. Re-run with --apply to UPDATE.')
@@ -295,7 +335,7 @@ async function main() {
 
   // 5. Capture rollback + apply
   const sql = postgres(process.env.DATABASE_URL!)
-  const rb = await captureRollback(sql, abc)
+  const rb = await captureRollback(sql, abc, melismaPositions)
   console.log(
     `Rollback captured: preAbc=${rb.preAbc === null ? '(null)' : `(length ${rb.preAbc.length})`} newAbcSha256=${rb.newAbcSha256}`,
   )
@@ -303,7 +343,7 @@ async function main() {
   const db = drizzle(sql)
   const result = await db
     .update(tunes)
-    .set({ abcNotation: abc })
+    .set({ abcNotation: abc, melismaPositions: melismaPositions })
     .where(eq(tunes.id, TUNE_ID))
     .returning({ id: tunes.id })
 
@@ -315,7 +355,7 @@ async function main() {
   console.log(`Updated tune id=${result[0].id} (${result.length} row)`)
 
   await sql.end()
-  console.log('PASS — Leominster abc_notation applied to DB')
+  console.log('PASS — Leominster abc_notation + melisma_positions applied to DB')
 }
 
 main().catch((e) => {

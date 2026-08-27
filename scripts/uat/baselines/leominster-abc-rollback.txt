@@ -1,6 +1,13 @@
 {
   "tuneId": 142,
-  "preAbc": null,
+  "preAbc": "X:1\nT:Leominster\nM:C\nL:1/8\nQ:1/4=84\nK:D\n^F2 ^F2 ^F2 ^F2 ^F2 G6 G2\n\n% PHRASE_BREAK\n| E2 E2 E2 ^F2 E6 E2\n\n% PHRASE_BREAK\n| ^F2 ^F2 A2 A2 d2 d2 d2 D2\n\n% PHRASE_BREAK\n| D2 ^F2 ^F2 E2 D6 D2\nw: Lord haste me to de li ver\nw: with speed Lord suc cor me\nw: Let them that for my soul do seek\nw: shamed and con found ed be\n",
+  "preMelismaPositions": null,
+  "newMelismaPositions": [
+    [],
+    [],
+    [],
+    []
+  ],
   "newAbcSha256": "d6a14550be1721371c285eae72869401a49cc8eaacee47699072a5260e5f67db",
-  "timestamp": "2026-08-26T17:16:26.061Z"
+  "timestamp": "2026-08-27T11:23:23.718Z"
 }
