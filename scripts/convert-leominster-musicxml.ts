@@ -263,6 +263,7 @@ interface Rollback {
   tuneId: number
   preAbc: string | null
   preMelismaPositions: number[][] | null
+  newMelismaPositions: number[][] | null
   newAbcSha256: string
   timestamp: string
 }
