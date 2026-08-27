@@ -31,6 +31,8 @@ import postgres from 'postgres'
 import { eq } from 'drizzle-orm'
 import { tunes } from '../src/db/schema'
 import * as abcjsModule from 'abcjs'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { buildMirroredDeBoerTokens } from './double-length-mirror'
 
 const abcjs = (abcjsModule as any).default ?? abcjsModule
 const TUNE_ID = 134
@@ -43,6 +45,10 @@ const ROLLBACK_PATH = path.join(
   process.cwd(),
   'scripts/uat/baselines/diademata-abc-rollback.txt',
 )
+// 2026-08-27 (revision): CPRC tunes Diademata twice through (SMD, not SM).
+// Mirror first-cycle music + slur markup for cycle 2 so both halves have
+// identical melody + melisma on "have".
+const DOUBLE_LENGTH = true
 
 const APPLY = process.argv.includes('--apply')
 
@@ -146,20 +152,24 @@ function durationToAbc(durationDivisions: number, divisionsPerQuarter: number): 
 // (additive-only hard rule).
 //
 // Phrase 1 = 6, phrase 2 = 6, phrase 3 = 8, phrase 4 = 6. Total = 26 syllables.
+// For SMD (double-length): the stanza is sung twice → 8 phrases = 52 syllables.
 //
 // Diademata MusicXML has 1 slur pair at voice=1 notes 19-20 → "have" syllable
 // on note 19, `_` continuation on note 20. With de Boer algorithm:
 //   note 19 (slurStart) → syllable 18 "have"
 //   note 20 (slurStop) → "_"
 //   note 21 → syllable 19 "made"
-// Total notes consumed = 26 syllables + 1 continuation = 27 notes.
+// Total notes consumed = 26 syllables + 1 continuation = 27 notes (per cycle).
 const PHRASE_W_LINES = [
   "My heart in di ting is",
   "good mat ter in a song",
   "I speak the things that I have made",
   "which to the King be long",
 ]
-const PHRASE_SYLLABLE_COUNTS = [6, 6, 8, 6]
+const PHRASE_SYLLABLE_COUNTS_SINGLE = [6, 6, 8, 6]
+const PHRASE_SYLLABLE_COUNTS = DOUBLE_LENGTH
+  ? [...PHRASE_SYLLABLE_COUNTS_SINGLE, ...PHRASE_SYLLABLE_COUNTS_SINGLE]
+  : PHRASE_SYLLABLE_COUNTS_SINGLE
 const SPLIT_POINTS = [6, 12, 20] // cumulative end-of-phrase indices
 
 // ── De Boer slur→syllable algorithm ──────────────────────────────────────────
@@ -226,11 +236,21 @@ function buildAbc(notes: MxNote[], fifths: number): { abc: string; melismaPositi
   const keySig = fifthsToAbcKey(fifths)
   const DIVS_PER_QUARTER = 256
 
-  // Flatten syllable tokens
+  // Flatten syllable tokens (one stream for double-length — the mirror helper
+  // splits it into halves internally).
   const allTokens: string[] = []
-  for (const ph of PHRASE_W_LINES) {
-    const toks = ph.split(/\s+/).filter(Boolean)
-    for (const t of toks) allTokens.push(t)
+  if (DOUBLE_LENGTH) {
+    for (let i = 0; i < 2; i++) {
+      for (const ph of PHRASE_W_LINES) {
+        const toks = ph.split(/\s+/).filter(Boolean)
+        for (const t of toks) allTokens.push(t)
+      }
+    }
+  } else {
+    for (const ph of PHRASE_W_LINES) {
+      const toks = ph.split(/\s+/).filter(Boolean)
+      for (const t of toks) allTokens.push(t)
+    }
   }
   const expectedSyls = PHRASE_SYLLABLE_COUNTS.reduce((a, b) => a + b, 0)
   if (allTokens.length !== expectedSyls) {
@@ -239,8 +259,16 @@ function buildAbc(notes: MxNote[], fifths: number): { abc: string; melismaPositi
     )
   }
 
-  // Apply de Boer → tokens with note indices
-  const dbTokens = applyDeBoer(notes, allTokens)
+  // Apply de Boer with mirror (for double-length) or single pass (for SM).
+  // The mirror helper guarantees identical music + slur pattern for cycle 2
+  // by re-running deBoer on the same first-cycle notes with the second half
+  // of the syllable stream.
+  const { tokens: dbTokens } = buildMirroredDeBoerTokens({
+    notes,
+    allSyllableTokens: allTokens,
+    doubleLength: DOUBLE_LENGTH,
+    applyDeBoer,
+  })
 
   // Validate: total note consumption = syllable count + melisma continuations
   const noteConsumed = dbTokens[dbTokens.length - 1].noteIdx + 1

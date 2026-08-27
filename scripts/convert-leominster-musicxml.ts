@@ -39,14 +39,13 @@ const ROLLBACK_PATH = path.join(
   process.cwd(),
   'scripts/uat/baselines/leominster-abc-rollback.txt',
 )
-// 2026-08-27: Leominster MusicXML has 52 notes per "stanza" but those notes
-// correspond to a DIFFERENT hymn (Bonar's "Not What My Hand Hath Done" — see
-// file's <text> tags), not psalm 70 / psalm 25. Neither psalm 25 (23 syllables)
-// nor psalm 70 (27 syllables) maps to 52 notes. Drop double-length: use the
-// first 27 MusicXML notes (one SM stanza) against psalm 70's 27 syllables →
-// 4-phrase SM. `tunes.double_length` column stays true in DB; the runtime
-// stanza pairing handles cycle grouping independently.
-const DOUBLE_LENGTH = false
+// 2026-08-27 (revision): CPRC tunes Leominster twice through (SMD, not SM).
+// The MusicXML has 52 voice=1 pitched notes for ONE SM stanza (the <text>
+// tags belong to Bonar's "Not What My Hand Hath Done" — not psalm 70 — so
+// we ignore the embedded lyrics). psalm 70 stanza 1 = 27 syllables (7+6+8+6).
+// For SMD we mirror the first 27 notes for cycle 2 → 8 phrases, identical
+// music in both halves, no slur markup (Leominster has 0 slur tags).
+const DOUBLE_LENGTH = true
 
 const APPLY = process.argv.includes('--apply')
 
@@ -202,15 +201,24 @@ function buildAbc(abcNotes: MxNote[], fifths: number): BuildResult {
     )
   }
 
-  if (abcNotes.length < allTokens.length) {
+  if (abcNotes.length < PHRASE_SYLLABLE_COUNTS_SINGLE.reduce((a, b) => a + b, 0)) {
     throw new Error(
-      `Not enough notes in MusicXML: have ${abcNotes.length}, need ${allTokens.length}`,
+      `Not enough notes in MusicXML: have ${abcNotes.length}, need ${PHRASE_SYLLABLE_COUNTS_SINGLE.reduce((a, b) => a + b, 0)}`,
     )
   }
 
+  // For DOUBLE_LENGTH: consume only the first cycle's worth of notes from
+  // MusicXML, then MIRROR the music for cycle 2 (i % firstCycleNoteCount).
+  // Leominster has 0 slur tags, so 1-syllable-per-note is the entire mapping;
+  // mirroring guarantees both cycles are musically identical.
+  const firstCycleNoteCount = DOUBLE_LENGTH
+    ? PHRASE_SYLLABLE_COUNTS_SINGLE.reduce((a, b) => a + b, 0)
+    : abcNotes.length
+
   const out: AbcToken[] = []
   for (let i = 0; i < allTokens.length; i++) {
-    const n = abcNotes[i]
+    const noteIdx = DOUBLE_LENGTH ? i % firstCycleNoteCount : i
+    const n = abcNotes[noteIdx]
     out.push({
       pitch: pitchToAbc(n.step, n.alter, n.octave),
       dur: durationToAbc(n.duration, DIVS_PER_QUARTER),
