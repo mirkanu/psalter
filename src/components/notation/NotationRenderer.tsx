@@ -1483,11 +1483,22 @@ export function NotationRenderer({
             }
 
             // Build w: token stream: `_` at melisma positions, syllable elsewhere.
+            // 2026-08-27 (tune page, Phase 16 D-02 rev): when showLyrics=false
+            // (the user is on /tunes/[slug] viewing the tune alone) but
+            // renderWLineUnderStaff=true (we still need w: lines so abcjs
+            // can draw `_` melisma continuation marks at the right horizontal
+            // positions), suppress the actual syllable text. Without this,
+            // the linked psalm's text would appear under the staff despite
+            // showLyrics:false. Empty strings render as zero-width gaps in
+            // abcjs — visually the staff shows only `_` markers, exactly
+            // what the user signed off on.
             let syllIdx = 0
             const wTokens: string[] = []
             for (let noteIdx = 0; noteIdx < noteCount; noteIdx++) {
               if (posSet.has(noteIdx)) {
                 wTokens.push('_')
+              } else if (!showLyrics) {
+                wTokens.push('')
               } else {
                 wTokens.push(syllTokens[syllIdx++] ?? '·')
               }
