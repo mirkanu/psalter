@@ -45,6 +45,7 @@ const ROLLBACK_PATH = path.join(
   process.cwd(),
   'scripts/uat/baselines/ellacomb-abc-rollback.txt',
 )
+const DOUBLE_LENGTH = true // tunes.double_length=true → CM/CMD (8 phrases = 2 CM cycles)
 
 const APPLY = process.argv.includes('--apply')
 
@@ -181,18 +182,20 @@ function durationToAbc(durationDivisions: number, divisionsPerQuarter: number): 
 // runtime behavior across the whole app (hard rule: additive only to lyrics.ts).
 // Hard-coding per-tune syllable tokens is the safe path.
 //
-// Phrase 1 = 8, phrase 2 = 6, phrase 3 = 8, phrase 4 = 6.
+// Phrase 1 = 8, phrase 2 = 6, phrase 3 = 8, phrase 4 = 6. For CMD (double-length),
+// the stanza is sung twice → 8 phrases total.
 const PHRASE_W_LINES = [
   "e- ter- nal Lord doth reign as king",
   "let all the peo- ple quake",
   "He sits be- tween the cher- u- bims",
   "let earth be mov'd and shake",
 ]
-// Expected syllable count per phrase (matches CM 8.6.8.6):
-const PHRASE_SYLLABLE_COUNTS = [8, 6, 8, 6]
-// getSplitPointsForMeter('CM', 4) → [8, 14, 22] — cumulative end-of-phrase
-// indices for syllable tokens in a single 28-token stream.
-const SPLIT_POINTS = [8, 14, 22]
+// Expected syllable count per phrase (CM = 8.6.8.6).
+// For CMD (double-length), phrases 5-8 repeat 1-4.
+const PHRASE_SYLLABLE_COUNTS_SINGLE = [8, 6, 8, 6]
+const PHRASE_SYLLABLE_COUNTS = DOUBLE_LENGTH
+  ? [...PHRASE_SYLLABLE_COUNTS_SINGLE, ...PHRASE_SYLLABLE_COUNTS_SINGLE]
+  : PHRASE_SYLLABLE_COUNTS_SINGLE
 
 // ── De Boer slur→syllable algorithm ──────────────────────────────────────────
 //
@@ -252,24 +255,52 @@ function applyDeBoer(notes: MxNote[], syllableTokens: string[]): AbcNoteToken[] 
   return tokens
 }
 
+// ── melismaPositions computation ─────────────────────────────────────────────
+//
+// melismaPositions[phraseIdx] = array of 0-based intra-phrase note indices that
+// are melisma continuations (the `_` tokens in the w: line). Consumed by
+// NotationRenderer → wrapMelismaSlurs to draw the abcjs native slur arcs above
+// the staff (replaces the legacy DOM-overlay approach).
+//
+// Algorithm: walk the deBoer output and the phrase budgets in parallel. For
+// each phrase, record the intra-phrase index of every `_` token. The phrase
+// boundaries drain trailing `_` continuations into the syllable that triggered
+// them (same convention as buildAbc).
+
 // ── ABC assembly ─────────────────────────────────────────────────────────────
+
+interface BuildResult {
+  abc: string
+  melismaPositions: number[][]
+}
 
 function buildAbc(
   abcNotes: MxNote[],
   syllabifiedPhrases: string[],
   fifths: number,
-): string {
+): BuildResult {
   const keySig = fifthsToAbcKey(fifths)
-  // Flatten phrase syllables to one stream, then split back by phrase boundaries
+  // Flatten phrase syllables to one stream, then split back by phrase boundaries.
+  // For double-length (CMD), the second half repeats the first half's syllables.
   const allTokens: string[] = []
-  for (const ph of syllabifiedPhrases) {
-    const toks = ph.split(/\s+/).filter(Boolean)
-    for (const t of toks) allTokens.push(t)
+  if (DOUBLE_LENGTH) {
+    for (let i = 0; i < 2; i++) {
+      for (const ph of syllabifiedPhrases) {
+        const toks = ph.split(/\s+/).filter(Boolean)
+        for (const t of toks) allTokens.push(t)
+      }
+    }
+  } else {
+    for (const ph of syllabifiedPhrases) {
+      const toks = ph.split(/\s+/).filter(Boolean)
+      for (const t of toks) allTokens.push(t)
+    }
   }
 
-  if (allTokens.length !== 28) {
+  const expectedSylCount = PHRASE_SYLLABLE_COUNTS.reduce((a, b) => a + b, 0)
+  if (allTokens.length !== expectedSylCount) {
     throw new Error(
-      `Expected 28 CM syllables, got ${allTokens.length}. Syllables: ${JSON.stringify(allTokens)}`,
+      `Expected ${expectedSylCount} syllables, got ${allTokens.length}. Syllables: ${JSON.stringify(allTokens)}`,
     )
   }
 
@@ -311,7 +342,8 @@ function buildAbc(
   }
 
   // Build music body with PHRASE_BREAK markers.
-// Phrase boundaries are determined by SYLLABLE counts (CM = 8.6.8.6 = [8,6,8,6]).
+// Phrase boundaries are determined by SYLLABLE counts (CM = 8.6.8.6 = [8,6,8,6],
+// CMD = [8,6,8,6,8,6,8,6]).
 // A melisma continuation (`_` in w:) consumes an extra note without consuming a
 // syllable, so a phrase's music-note range may be longer than its syllable count.
 // IMPORTANT: a `_` continuation belongs to the SAME phrase as the syllable that
@@ -321,6 +353,7 @@ function buildAbc(
 
   const chunks: string[] = []
   const wChunks: string[] = []
+  const melismaPositions: number[][] = []
 
   let noteStart = 0
   let syllablesInPhrase = 0
@@ -329,12 +362,18 @@ function buildAbc(
   function closePhrase(endIdx: number) {
     const musicParts: string[] = []
     const wParts: string[] = []
+    const phraseMelisma: number[] = []
     for (let j = noteStart; j <= endIdx; j++) {
       musicParts.push(out[j].pitch + out[j].dur)
       wParts.push(out[j].syl)
+      if (out[j].syl === '_') {
+        // intra-phrase note index = (j - noteStart)
+        phraseMelisma.push(j - noteStart)
+      }
     }
     chunks.push(musicParts.join(' '))
     wChunks.push(wParts.join(' '))
+    melismaPositions.push(phraseMelisma)
     noteStart = endIdx + 1
     syllablesInPhrase = 0
     phraseIdx++
@@ -371,7 +410,7 @@ function buildAbc(
 
   const wLines = wChunks.map((p) => `w: ${p}`).join('\n')
 
-  return `X:1
+  const abc = `X:1
 T:Ellacomb
 M:C
 L:1/8
@@ -380,6 +419,8 @@ K:${keySig}
 ${body}
 ${wLines}
 `.trim() + '\n'
+
+  return { abc, melismaPositions }
 }
 
 // ── Rollback artifact ────────────────────────────────────────────────────────
@@ -387,20 +428,28 @@ ${wLines}
 interface Rollback {
   tuneId: number
   preAbc: string | null
+  preMelismaPositions: number[][] | null
   newAbcSha256: string
   timestamp: string
 }
 
-async function captureRollback(sql: ReturnType<typeof postgres>, newAbc: string): Promise<Rollback> {
+async function captureRollback(
+  sql: ReturnType<typeof postgres>,
+  newAbc: string,
+  newMelisma: number[][] | null,
+): Promise<Rollback> {
   const rows = await sql<
-    { abc_notation: string | null }[]
-  >`SELECT abc_notation FROM tunes WHERE id = ${TUNE_ID}`
+    { abc_notation: string | null; melisma_positions: number[][] | null }[]
+  >`SELECT abc_notation, melisma_positions FROM tunes WHERE id = ${TUNE_ID}`
   const preAbc = rows[0]?.abc_notation ?? null
+  const preMelismaPositions = rows[0]?.melisma_positions ?? null
   const sha = createHash('sha256').update(newAbc, 'utf8').digest('hex')
   const ts = new Date().toISOString()
   const rb: Rollback = {
     tuneId: TUNE_ID,
     preAbc,
+    preMelismaPositions,
+    newMelismaPositions: newMelisma,
     newAbcSha256: sha,
     timestamp: ts,
   }
@@ -436,8 +485,8 @@ async function main() {
   console.log('Syllabified phrases (hard-coded):')
   syllabifiedPhrases.forEach((p, i) => console.log(`  phrase ${i + 1}: ${p}`))
 
-  // 3. Build ABC
-  const abc = buildAbc(notes, syllabifiedPhrases, fifths)
+  // 3. Build ABC + melismaPositions
+  const { abc, melismaPositions } = buildAbc(notes, syllabifiedPhrases, fifths)
 
   // 4. Validate via abcjs.parseOnly()
   const parsed = abcjs.parseOnly(abc)
@@ -450,6 +499,7 @@ async function main() {
   console.log('\n--- Generated abc_notation ---')
   console.log(abc)
   console.log('--- end preview ---\n')
+  console.log(`melismaPositions: ${JSON.stringify(melismaPositions)}`)
 
   if (!APPLY) {
     console.log('DRY RUN — no DB write. Re-run with --apply to UPDATE.')
@@ -465,7 +515,7 @@ async function main() {
 
   // 7. Connect to DB, capture rollback, apply
   const sql = postgres(process.env.DATABASE_URL!)
-  const rb = await captureRollback(sql, abc)
+  const rb = await captureRollback(sql, abc, melismaPositions)
   console.log(
     `Rollback captured: preAbc=${rb.preAbc === null ? '(null)' : `(length ${rb.preAbc.length})`} newAbcSha256=${rb.newAbcSha256}`,
   )
@@ -473,7 +523,7 @@ async function main() {
   const db = drizzle(sql)
   const result = await db
     .update(tunes)
-    .set({ abcNotation: abc })
+    .set({ abcNotation: abc, melismaPositions: melismaPositions })
     .where(eq(tunes.id, TUNE_ID))
     .returning({ id: tunes.id })
 
@@ -485,7 +535,7 @@ async function main() {
   console.log(`Updated tune id=${result[0].id} (${result.length} row)`)
 
   await sql.end()
-  console.log('PASS — Ellacomb abc_notation applied to DB')
+  console.log('PASS — Ellacomb abc_notation + melisma_positions applied to DB')
 }
 
 main().catch((e) => {
