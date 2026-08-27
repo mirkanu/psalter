@@ -42,7 +42,7 @@ export interface MirrorResult<T extends AbcMelismaToken> {
 }
 
 export function buildMirroredDeBoerTokens<T extends AbcMelismaToken>(args: {
-  notes: { length: number }[]
+  notes: any[]
   allSyllableTokens: string[]
   doubleLength: boolean
   applyDeBoer: (notes: any[], syls: string[]) => T[]
