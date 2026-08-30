@@ -1,7 +1,11 @@
 {
   "tuneId": 142,
-  "preAbc": "X:1\nT:Leominster\nM:C\nL:1/8\nQ:1/4=84\nK:D\n^F2 ^F2 ^F2 ^F2 ^F2 G6 G2\n\n% PHRASE_BREAK\n| E2 E2 E2 ^F2 E6 E2\n\n% PHRASE_BREAK\n| ^F2 ^F2 A2 A2 d2 d2 d2 D2\n\n% PHRASE_BREAK\n| D2 ^F2 ^F2 E2 D6 D2\n",
+  "preAbc": "X:1\nT:Leominster\nM:C\nL:1/8\nQ:1/4=84\nK:D\n^F2 ^F2 ^F2 ^F2 ^F2 G6 G2\n\n% PHRASE_BREAK\n| E2 E2 E2 ^F2 E6 E2\n\n% PHRASE_BREAK\n| ^F2 ^F2 A2 A2 d2 d2 d2 D2\n\n% PHRASE_BREAK\n| D2 ^F2 ^F2 E2 D6 D2\n\n% PHRASE_BREAK\n| ^F2 ^F2 ^F2 ^F2 ^F2 G6 G2\n\n% PHRASE_BREAK\n| E2 E2 E2 ^F2 E6 E2\n\n% PHRASE_BREAK\n| ^F2 ^F2 A2 A2 d2 d2 d2 D2\n\n% PHRASE_BREAK\n| D2 ^F2 ^F2 E2 D6 D2\n",
   "preMelismaPositions": [
+    [],
+    [],
+    [],
+    [],
     [],
     [],
     [],
@@ -11,12 +15,8 @@
     [],
     [],
     [],
-    [],
-    [],
-    [],
-    [],
     []
   ],
-  "newAbcSha256": "03d53f79e4bc8b9f1394ea6ae91eb746ac7dc6890b4c9d67d60731b17b1f48e5",
-  "timestamp": "2026-08-30T08:33:37.259Z"
+  "newAbcSha256": "06dd1b6669553c8de8cfc2b12fd50f7b5b04dc5ad9fd1cf0fd76c89c3e120c67",
+  "timestamp": "2026-08-30T08:56:58.618Z"
 }

@@ -45,12 +45,18 @@ const ROLLBACK_PATH = path.join(
   process.cwd(),
   'scripts/uat/baselines/ellacomb-abc-rollback.txt',
 )
-// 2026-08-30 (revision): CPRC tunes Ellacomb as CMD (sung-twice-through).
-// abc_notation is MUSIC-ONLY: 4 phrases of music with 3 PHRASE_BREAK markers,
-// no w: lines. Lyrics are injected at render time by NotationRenderer.tsx
-// from paired psalm stanzas (groupStanzasIntoCycles + mapCycleToPhraseSyllableLines),
-// matching the canonical pattern used by Orlington (#28), Perfect Way (#132),
-// and the other approved DCM tunes.
+// 2026-08-30 (revision 2): CPRC tunes Ellacomb as CMD (sung-twice-through).
+// abc_notation is MUSIC-ONLY for ONE CM stanza: 4 phrases of music with
+// 3 PHRASE_BREAK markers, no w: lines, melismaPositions length 4. The
+// renderer pairs 2 psalm stanzas via groupStanzasIntoCycles(doubleLength=true)
+// and emits 2 w: lines per phrase, then splitMusicIntoSubLines subdivides
+// each phrase into 2 sub-staves (since linesPerPhrase=2 for CM), producing
+// 4×2 = 8 visual staves with different lyrics in each cycle. Matches
+// Orlington (#28), Perfect Way (#132), Petersham (#118), Old 44th (#119).
+//
+// Earlier revision incorrectly mirrored phrases 5-8 from 1-4 (8 phrases in
+// the abc) — user correctly pointed out the canonical approved DCM tunes
+// have 4 unique phrases, not 8 mirrored.
 const DOUBLE_LENGTH = true // tunes.double_length=true → CM/CMD (sung-twice-through; renderer injects paired-stanza lyrics)
 
 const APPLY = process.argv.includes('--apply')
@@ -201,8 +207,6 @@ const PHRASE_W_LINES = [
   "let earth be mov'd and shake",
 ]
 const PHRASE_SYLLABLE_COUNTS_SINGLE = [8, 6, 8, 6]
-// DCM = CM sung twice → 8 phrase budgets
-const PHRASE_SYLLABLE_COUNTS = [...PHRASE_SYLLABLE_COUNTS_SINGLE, ...PHRASE_SYLLABLE_COUNTS_SINGLE]
 
 // ── De Boer slur→syllable algorithm ──────────────────────────────────────────
 //
@@ -287,46 +291,37 @@ function buildAbc(
   fifths: number,
 ): BuildResult {
   const keySig = fifthsToAbcKey(fifths)
-  // Flatten phrase syllables to one stream — DOUBLED for CMD (sung-twice-
-  // through). The renderer injects two different psalm stanzas at render
-  // time, but we still need the syllable stream here to compute
-  // melismaPositions correctly across both mirrored halves of the music.
+  // Canonical CMD pattern (matches Orlington #28 / Perfect Way #132 / etc.):
+  // abc_notation is MUSIC-ONLY for ONE CM stanza — 4 unique phrases with
+  // 3 PHRASE_BREAK markers, no w: lines. The renderer pairs 2 psalm stanzas
+  // via groupStanzasIntoCycles(doubleLength=true) and emits 2 w: lines per
+  // phrase (one per stanza), then splitMusicIntoSubLines subdivides each
+  // phrase into 2 sub-staves, producing 4×2 = 8 visual staves with different
+  // lyrics in each cycle. Mirroring phrases 5-8 = phrases 1-4 in the abc
+  // itself is WRONG — it duplicates music the renderer was supposed to
+  // emit ONCE and pair at render time.
   const allTokens: string[] = []
-  for (let i = 0; i < 2; i++) {
-    for (const ph of syllabifiedPhrases) {
-      const toks = ph.split(/\s+/).filter(Boolean)
-      for (const t of toks) allTokens.push(t)
-    }
+  for (const ph of syllabifiedPhrases) {
+    const toks = ph.split(/\s+/).filter(Boolean)
+    for (const t of toks) allTokens.push(t)
   }
 
-  const expectedSylCount = PHRASE_SYLLABLE_COUNTS.reduce((a, b) => a + b, 0)
+  const expectedSylCount = PHRASE_SYLLABLE_COUNTS_SINGLE.reduce((a, b) => a + b, 0)
   if (allTokens.length !== expectedSylCount) {
     throw new Error(
       `Expected ${expectedSylCount} syllables, got ${allTokens.length}. Syllables: ${JSON.stringify(allTokens)}`,
     )
   }
 
-  // Probe: how many notes does ONE cycle consume?
-  const halfPoint = PHRASE_SYLLABLE_COUNTS_SINGLE.reduce((a, b) => a + b, 0)
-  const firstHalfSyls = allTokens.slice(0, halfPoint)
-  const probeTokens = applyDeBoer(abcNotes, firstHalfSyls)
-  const firstCycleNoteCount = probeTokens.length
-
-  // Mirror: cycle 2 reuses the same notes from MusicXML with the second half
-  // of the syllable stream. This guarantees identical music AND identical
-  // slur markup in both cycles.
-  const notesToUse = abcNotes.slice(0, firstCycleNoteCount)
-  const deBoerTokens = [
-    ...applyDeBoer(notesToUse, firstHalfSyls),
-    ...applyDeBoer(notesToUse, allTokens.slice(halfPoint)),
-  ]
+  // DeBoer once for ONE CM stanza of music. Slur markup lives on the notes
+  // themselves and the renderer reuses them across both paired-stanza cycles.
+  const deBoerTokens = applyDeBoer(abcNotes, allTokens)
 
   // Map tokens back to original notes for pitch/duration
   const out: Array<{ pitch: string; dur: string; syl: string; isCont: boolean }> = []
   const DIVS_PER_QUARTER = 256
   for (let i = 0; i < deBoerTokens.length; i++) {
-    const noteIdx = i < firstCycleNoteCount ? i : i - firstCycleNoteCount
-    const n = abcNotes[noteIdx]
+    const n = abcNotes[i]
     const tk = deBoerTokens[i]
     out.push({
       pitch: pitchToAbc(n.step, n.alter, n.octave),
@@ -336,10 +331,10 @@ function buildAbc(
     })
   }
 
-  // Build 8 phrases with PHRASE_BREAK markers (4 unique + 4 mirrored). Each
-  // phrase gets its own melismaPositions entry (intra-phrase indices of `_`
-  // continuations). Trailing `_` continuations belong to the syllable that
-  // triggered them and drain into the same phrase.
+  // Build 4 unique phrases with PHRASE_BREAK markers. Each phrase gets its
+  // own melismaPositions entry (intra-phrase indices of `_` continuations).
+  // Trailing `_` continuations belong to the syllable that triggered them
+  // and drain into the same phrase.
   const chunks: string[] = []
   const melismaPositions: number[][] = []
 
@@ -367,7 +362,7 @@ function buildAbc(
     const o = out[i]
     if (o.syl !== '_') syllablesInPhrase++
 
-    const phraseBudget = PHRASE_SYLLABLE_COUNTS[phraseIdx]
+    const phraseBudget = PHRASE_SYLLABLE_COUNTS_SINGLE[phraseIdx]
     const isLast = i === out.length - 1
     const ranOutOfBudget = phraseBudget === undefined
 
@@ -377,9 +372,9 @@ function buildAbc(
       while (j < out.length && out[j].syl === '_') j++
       const endIdx = j - 1
       closePhrase(endIdx)
-      if (phraseIdx >= PHRASE_SYLLABLE_COUNTS.length) break
+      if (phraseIdx >= PHRASE_SYLLABLE_COUNTS_SINGLE.length) break
       i = j - 1
-    } else if (isLast && phraseIdx < PHRASE_SYLLABLE_COUNTS.length) {
+    } else if (isLast && phraseIdx < PHRASE_SYLLABLE_COUNTS_SINGLE.length) {
       closePhrase(i)
     }
   }
@@ -463,7 +458,7 @@ async function main() {
       )
     }
   }
-  void PHRASE_SYLLABLE_COUNTS // referenced inside buildAbc
+  void PHRASE_SYLLABLE_COUNTS_SINGLE // shape-check uses this in the loop above
   console.log('Syllabified phrases (hard-coded):')
   syllabifiedPhrases.forEach((p, i) => console.log(`  phrase ${i + 1}: ${p}`))
 
