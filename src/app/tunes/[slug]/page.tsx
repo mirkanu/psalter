@@ -120,7 +120,8 @@ export default async function TunePage({ params }: PageProps) {
       name: tune.name ?? null,
       meter: tune.meter ?? null,
       phraseShapeOverride: tune.phraseShapeOverride ?? null,
-      doubleLength: tune.doubleLength ?? false,
+      doubleLength: ((tune.meterVariant ?? []).includes('double_length')) as boolean,
+      meterVariant: (tune.meterVariant ?? []) as string[],
       // D-02: solfegeOcrText was MISSING at this call site before Phase 11.
       solfegeOcrText: tune.solfegeOcrText ?? null,
       // Note: JPG urls come from the filesystem-derived page arrays, not the

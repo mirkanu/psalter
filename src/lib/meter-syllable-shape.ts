@@ -10,17 +10,16 @@
 
 /** Per-line expected syllable count for a given meter name.
  *
- * When `doubleLength` is true, returns the doubled shape (concatenated with
- * itself) so each of the doubled tune's metrical lines has a defined expected
- * count. Without this, doubled-CM tunes (which already have `doubleLength`
- * paired elsewhere) get cropped to the un-doubled shape and every other
- * 6-syllable line in the doubled pairing is silently merged or split by
- * `forceMatchMeterShape`. Pass `doubleLength` from any caller that has the
- * tune's doubling flag in scope.
+ * When `meterVariant.includes('double_length')`, returns the doubled shape
+ * (concatenated with itself) so each of the doubled tune's metrical lines
+ * has a defined expected count. Without this, doubled-CM tunes get cropped
+ * to the un-doubled shape and every other 6-syllable line in the doubled
+ * pairing is silently merged or split by `forceMatchMeterShape`. Pass
+ * `meterVariant` from any caller that has the tune's variant array in scope.
  */
 export function expectedSyllablesByLine(
   meter: string | null | undefined,
-  doubleLength: boolean = false,
+  meterVariant: string[] = [],
 ): number[] | null {
   if (!meter) return null
   const m = meter.trim().toUpperCase()
@@ -88,9 +87,14 @@ export function expectedSyllablesByLine(
     }
   }
 
-  // Apply doubleLength only when the meter itself isn't already doubled
+  // Apply double_length variant only when the meter itself isn't already doubled
   // (DCM/LMD/SMD are intrinsically doubled — no need to double again).
-  if (doubleLength && !isDoubled && !m.startsWith('D') && !/(?:^|\s)DOUBLED/.test(m)) {
+  if (
+    meterVariant.includes('double_length') &&
+    !isDoubled &&
+    !m.startsWith('D') &&
+    !/(?:^|\s)DOUBLED/.test(m)
+  ) {
     shape = [...shape, ...shape]
   }
   return shape

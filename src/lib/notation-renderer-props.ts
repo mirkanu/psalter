@@ -24,6 +24,9 @@ export interface NotationSourceTune {
   name: string | null
   meter: string | null
   phraseShapeOverride?: number[] | null
+  /** Multi-select variant flags ('double_length', 'repeat_last_line'). The
+   *  `doubleLength` boolean below is derived from this for renderer convenience. */
+  meterVariant?: string[] | null
   doubleLength?: boolean | null
   solfegeOcrText?: string | null
   scoreJpgUrl?: string | null
