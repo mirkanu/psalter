@@ -1455,20 +1455,12 @@ export function NotationRenderer({
         // `Math.max(phraseSubdivisionsFor(i), linesPerPhrase || 1)` so CMD/SMD
         // tunes with melismas render 4 phrases × linesPerPhrase sub-staves
         // instead of being stuck at 1 sub-staff per phrase.
-        //
-        // 2026-08-30 (double-length single-measure phrases): when both linesPerPhrase
-        // is 2 (two paired stanzas) AND the phrase packs into a single measure
-        // (no internal `|`, e.g. Ellacomb/Diademata), don't split the music —
-        // render one staff per cycle instead, mirroring the non-melisma branch
-        // so music plays twice (4 phrases × 2 cycles = 8 staff lines, 56 notes).
         const cycleWLinesForSubdiv = wLinesForPhrase(i)
         const melismaLinesPerPhrase = cycleWLinesForSubdiv[0]?.length ?? 0
-        const melismaPhraseSubdivisions = phraseSubdivisionsFor(i)
-        const melismaDuplicatePerCycle =
-          melismaLinesPerPhrase > 1 && melismaPhraseSubdivisions === 1
-        const melismaTargetSubdivisions = melismaDuplicatePerCycle
-          ? 1
-          : Math.max(melismaPhraseSubdivisions, melismaLinesPerPhrase || 1)
+        const melismaTargetSubdivisions = Math.max(
+          phraseSubdivisionsFor(i),
+          melismaLinesPerPhrase || 1,
+        )
         const melismaMusicSubLines = melismaTargetSubdivisions > 1
           ? splitMusicIntoSubLines(cleanedBodyForPositions, melismaTargetSubdivisions)
           : [cleanedBodyForPositions]
@@ -1533,24 +1525,7 @@ export function NotationRenderer({
             // a melisma group (`_` run), pull it forward so the whole group
             // stays in one chunk. We do this for each cycle independently
             // since `wTokens` is rebuilt per cycle from the cycle's lyrics.
-            if (melismaDuplicatePerCycle) {
-              // 2026-08-30 (double-length single-measure phrases): one staff
-              // per cycle. Full phrase music + that cycle's w: line. Same
-              // canonical sung-twice-through pattern as the non-melisma
-              // branch — pair of consecutive staves share music, differ in
-              // lyrics. Music plays twice (4 phrases × 2 cycles = 8 staff
-              // lines, 56 notes for Ellacomb) instead of being visually
-              // split with stacked w: lines (28 notes spread across 8).
-              if (cycleIdx === 0) {
-                parts.push('%%staffsep 30')
-              } else {
-                parts.push('%%staffsep 30')
-              }
-              for (const line of cleanedBodyForPositions.split('\n')) parts.push(line)
-              if (showLyrics && wLine) {
-                parts.push(wLine)
-              }
-            } else if (cycleIdx === 0 && melismaActualSubdivisions > 1) {
+            if (cycleIdx === 0 && melismaActualSubdivisions > 1) {
               // Subdivided render: push one music line + one w: line per
               // sub-staff. Done inside the cycle-0 branch because music
               // body is identical across cycles — only the lyrics differ.
@@ -1667,28 +1642,7 @@ export function NotationRenderer({
       // count so every w: line lands under its OWN music slice — no
       // proportional splitting.
       const naturalSubdivisions = phraseSubdivisionsFor(i)
-
-      // 2026-08-30 (double-length single-measure phrases, Ellacomb #18 +
-      // Diademata #134 + Leominster #142): CMD/SMD tunes whose phrases pack
-      // into a single measure (no internal `|`) cannot be measure-split AND
-      // have linesPerPhrase=2 (two paired stanzas). Previously the renderer
-      // split the 28-note phrase across 2 sub-staves with stacked w: lines
-      // — producing 8 staff lines that VISUALLY looked correct but only
-      // played the music ONCE. The canonical sung-twice-through pattern
-      // requires the music to play once PER cycle: 4 phrases × 2 cycles = 8
-      // staff lines with the same melody duplicated, different lyrics each
-      // time. Detect the relevant shape (multi-cycle + single-measure
-      // phrase) and render one staff per cycle instead of splitting.
-      //
-      // Multi-measure double-length phrases (Orlington #28 phrase 4 has 8
-      // measures) keep the split-with-stacked-w-lines path because the full
-      // phrase overflows mobile width if rendered as a single staff.
-      const duplicateMusicPerCycle =
-        linesPerPhrase > 1 && naturalSubdivisions === 1
-
-      const targetSubdivisions = duplicateMusicPerCycle
-        ? 1
-        : Math.max(naturalSubdivisions, linesPerPhrase || 1)
+      const targetSubdivisions = Math.max(naturalSubdivisions, linesPerPhrase || 1)
       const musicSubLines = splitMusicIntoSubLines(cleanedBody, targetSubdivisions)
       const actualSubdivisions = musicSubLines.length
 
@@ -1698,9 +1652,7 @@ export function NotationRenderer({
       // of the lyric. This only applies when linesPerPhrase===1 (single
       // metrical line per phrase) — multi-line phrases keep structured layout.
       const needsProportionalSplit =
-        !duplicateMusicPerCycle &&
-        linesPerPhrase === 1 &&
-        actualSubdivisions > 1
+        linesPerPhrase === 1 && actualSubdivisions > 1
 
       // Per-sub-staff note-head counts, computed once per phrase. Used to
       // weight syllable distribution by actual note count instead of equal
@@ -1710,34 +1662,6 @@ export function NotationRenderer({
       const subNoteCounts = needsProportionalSplit
         ? musicSubLines.map((m) => countNoteHeads(m))
         : []
-
-      if (duplicateMusicPerCycle) {
-        // One staff per cycle: full phrase music + that cycle's w: line.
-        // Each pair of consecutive staves has the SAME music but DIFFERENT
-        // lyrics (one per paired stanza). Music plays twice — 4 phrases × 2
-        // cycles = 8 staff lines, 56 notes total for Ellacomb.
-        for (let cycleIdx = 0; cycleIdx < linesPerPhrase; cycleIdx++) {
-          if (cycleIdx === 0) {
-            parts.push('%%staffsep 30')
-          } else {
-            parts.push('%%staffsep 30')
-          }
-          if (viewMode === 'staff') {
-            parts.push('%%stretchlast')
-          }
-          parts.push(cleanedBody)
-          if (!showLyrics) continue
-          const cycleLines = wLines[cycleIdx]
-          if (!cycleLines) continue
-          const text = cycleLines[0]
-          if (!text || !text.trim()) continue
-          const phraseIdx = Math.min(i, localSplit.phrases.length - 1)
-          const metricalIdx = phraseIdx * linesPerPhrase + 0
-          const wRaw = wLineForSyllables(text, phraseIdx, cleanedBody, metricalIdx)
-          parts.push(`w: ${padWLineToNoteCount(wRaw, cleanedBody)}`)
-        }
-        continue
-      }
 
       for (let sub = 0; sub < actualSubdivisions; sub++) {
         // 2026-08-24 (row-count knob, padding fix): when A+ has split the
