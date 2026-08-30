@@ -45,7 +45,13 @@ const ROLLBACK_PATH = path.join(
   process.cwd(),
   'scripts/uat/baselines/ellacomb-abc-rollback.txt',
 )
-const DOUBLE_LENGTH = true // tunes.double_length=true → CM/CMD (8 phrases = 2 CM cycles)
+// 2026-08-30 (revision): CPRC tunes Ellacomb as CMD (sung-twice-through).
+// abc_notation is MUSIC-ONLY: 4 phrases of music with 3 PHRASE_BREAK markers,
+// no w: lines. Lyrics are injected at render time by NotationRenderer.tsx
+// from paired psalm stanzas (groupStanzasIntoCycles + mapCycleToPhraseSyllableLines),
+// matching the canonical pattern used by Orlington (#28), Perfect Way (#132),
+// and the other approved DCM tunes.
+const DOUBLE_LENGTH = true // tunes.double_length=true → CM/CMD (sung-twice-through; renderer injects paired-stanza lyrics)
 
 const APPLY = process.argv.includes('--apply')
 
@@ -182,20 +188,17 @@ function durationToAbc(durationDivisions: number, divisionsPerQuarter: number): 
 // runtime behavior across the whole app (hard rule: additive only to lyrics.ts).
 // Hard-coding per-tune syllable tokens is the safe path.
 //
-// Phrase 1 = 8, phrase 2 = 6, phrase 3 = 8, phrase 4 = 6. For CMD (double-length),
-// the stanza is sung twice → 8 phrases total.
+// Phrase 1 = 8, phrase 2 = 6, phrase 3 = 8, phrase 4 = 6 (CM = 8.6.8.6).
+// Used only to compute the per-phrase melismaPositions entries. The abc
+// output is music-only (no w: lines); the renderer injects paired-stanza
+// lyrics at render time.
 const PHRASE_W_LINES = [
   "e- ter- nal Lord doth reign as king",
   "let all the peo- ple quake",
   "He sits be- tween the cher- u- bims",
   "let earth be mov'd and shake",
 ]
-// Expected syllable count per phrase (CM = 8.6.8.6).
-// For CMD (double-length), phrases 5-8 repeat 1-4.
 const PHRASE_SYLLABLE_COUNTS_SINGLE = [8, 6, 8, 6]
-const PHRASE_SYLLABLE_COUNTS = DOUBLE_LENGTH
-  ? [...PHRASE_SYLLABLE_COUNTS_SINGLE, ...PHRASE_SYLLABLE_COUNTS_SINGLE]
-  : PHRASE_SYLLABLE_COUNTS_SINGLE
 
 // ── De Boer slur→syllable algorithm ──────────────────────────────────────────
 //
@@ -280,111 +283,51 @@ function buildAbc(
   fifths: number,
 ): BuildResult {
   const keySig = fifthsToAbcKey(fifths)
-  // Flatten phrase syllables to one stream, then split back by phrase boundaries.
-  // For double-length (CMD), the second half repeats the first half's syllables.
+  // Flatten ONE cycle's worth of phrase syllables (4 phrases for CM).
+  // For sung-twice-through CMD, the melody is sung twice with two different
+  // psalm stanzas — the renderer injects those lyrics at render time. We
+  // only need one cycle's syllables here to compute melismaPositions.
   const allTokens: string[] = []
-  if (DOUBLE_LENGTH) {
-    for (let i = 0; i < 2; i++) {
-      for (const ph of syllabifiedPhrases) {
-        const toks = ph.split(/\s+/).filter(Boolean)
-        for (const t of toks) allTokens.push(t)
-      }
-    }
-  } else {
-    for (const ph of syllabifiedPhrases) {
-      const toks = ph.split(/\s+/).filter(Boolean)
-      for (const t of toks) allTokens.push(t)
-    }
+  for (const ph of syllabifiedPhrases) {
+    const toks = ph.split(/\s+/).filter(Boolean)
+    for (const t of toks) allTokens.push(t)
   }
 
-  const expectedSylCount = PHRASE_SYLLABLE_COUNTS.reduce((a, b) => a + b, 0)
+  const expectedSylCount = PHRASE_SYLLABLE_COUNTS_SINGLE.reduce((a, b) => a + b, 0)
   if (allTokens.length !== expectedSylCount) {
     throw new Error(
       `Expected ${expectedSylCount} syllables, got ${allTokens.length}. Syllables: ${JSON.stringify(allTokens)}`,
     )
   }
 
-  // For double-length: only consume the FIRST cycle's notes from the MusicXML,
-  // then MIRROR the same notes (and their slur markup) for cycle 2. This
-  // guarantees both cycles have identical music AND identical slur pattern.
-  // The previous approach walked the full MusicXML twice and ended up with a
-  // different slur distribution in cycle 2 (MusicXML slur tags got consumed by
-  // cycle 1, leaving cycle 2 all-syllabic) AND truncated cycle 2's last phrase
-  // when the MusicXML ran out of notes.
-  let deBoerTokens: ReturnType<typeof applyDeBoer>
-  let notesToUse: MxNote[]
-  if (DOUBLE_LENGTH) {
-    const halfPoint = PHRASE_SYLLABLE_COUNTS_SINGLE.reduce((a, b) => a + b, 0)
-    const firstHalfSyls = allTokens.slice(0, halfPoint)
-    const secondHalfSyls = allTokens.slice(halfPoint)
+  // Run deBoer once against one cycle of syllables + MusicXML notes. The
+  // resulting tokens carry the melisma-continuation markers the renderer
+  // needs (intra-phrase indices of `_` tokens), but we do NOT embed those
+  // syllables in the output abc — real psalm stanzas are injected at
+  // render time.
+  const deBoerTokens = applyDeBoer(abcNotes, allTokens)
 
-    // Probe: how many notes does the first cycle consume?
-    const probeTokens = applyDeBoer(abcNotes, firstHalfSyls)
-    const firstCycleNoteCount = probeTokens.length
-
-    notesToUse = abcNotes.slice(0, firstCycleNoteCount)
-    const firstCycleTokens = applyDeBoer(notesToUse, firstHalfSyls)
-    const secondCycleTokens = applyDeBoer(notesToUse, secondHalfSyls)
-    deBoerTokens = [...firstCycleTokens, ...secondCycleTokens]
-  } else {
-    deBoerTokens = applyDeBoer(abcNotes, allTokens)
-    notesToUse = abcNotes
-  }
-
-  // Walk note indices in parallel: each deBoerToken has no abc string yet;
-  // we need to map them back to the original note index for pitch/duration.
-  // Easier: rebuild by walking notes and syllables together from the slur data.
-  // Re-do with note pitches attached:
+  // Map tokens back to original notes for pitch/duration
   const out: Array<{ pitch: string; dur: string; syl: string; isCont: boolean }> = []
-  let noteIdx2 = 0
-  let tIdx = 0
-  // Divisions per quarter = 256 for Ellacomb (typical Hymnary Sibelius export).
   const DIVS_PER_QUARTER = 256
-  // For double-length mirror: cycle 2 wraps noteIdx back to 0 so cycle 2 music
-  // matches cycle 1 exactly. abcNotes is used (not notesToUse) because we need
-  // unbounded index access; the modulo wrap keeps cycle 2 within first cycle's
-  // note range.
-  const firstCycleNoteCount = notesToUse.length
-
-  while (tIdx < deBoerTokens.length) {
-    const noteIdx = DOUBLE_LENGTH
-      ? (tIdx < firstCycleNoteCount ? tIdx : tIdx - firstCycleNoteCount)
-      : noteIdx2
-    const n = abcNotes[noteIdx]
-    const tk = deBoerTokens[tIdx]
-    if (tk.syllable === '_') {
-      // melisma continuation
-      out.push({
-        pitch: pitchToAbc(n.step, n.alter, n.octave),
-        dur: durationToAbc(n.duration, DIVS_PER_QUARTER),
-        syl: '_',
-        isCont: true,
-      })
-      tIdx++
-    } else {
-      out.push({
-        pitch: pitchToAbc(n.step, n.alter, n.octave),
-        dur: durationToAbc(n.duration, DIVS_PER_QUARTER),
-        syl: tk.syllable,
-        isCont: false,
-      })
-      tIdx++
-    }
-    noteIdx2++
+  for (let i = 0; i < deBoerTokens.length; i++) {
+    const n = abcNotes[i]
+    const tk = deBoerTokens[i]
+    out.push({
+      pitch: pitchToAbc(n.step, n.alter, n.octave),
+      dur: durationToAbc(n.duration, DIVS_PER_QUARTER),
+      syl: tk.syllable,
+      isCont: tk.isMelismaContinuation,
+    })
   }
 
-  // Build music body with PHRASE_BREAK markers.
-// Phrase boundaries are determined by SYLLABLE counts (CM = 8.6.8.6 = [8,6,8,6],
-// CMD = [8,6,8,6,8,6,8,6]).
-// A melisma continuation (`_` in w:) consumes an extra note without consuming a
-// syllable, so a phrase's music-note range may be longer than its syllable count.
-// IMPORTANT: a `_` continuation belongs to the SAME phrase as the syllable that
-// triggered it — if the last syllable of a phrase falls on a slur-start note,
-// the trailing `_` note(s) are still part of that phrase. So when a phrase
-// closes, we drain any trailing `_` entries before opening the next phrase.
-
+  // Build 4 phrases with PHRASE_BREAK markers. Each phrase gets its own
+  // melismaPositions entry (intra-phrase indices of `_` continuations).
+  // A melisma continuation (`_`) consumes an extra note without consuming a
+  // syllable, so a phrase's music-note range may be longer than its syllable
+  // count. When a phrase closes, trailing `_` continuations belong to the
+  // same phrase as the syllable that triggered them, so we drain them in.
   const chunks: string[] = []
-  const wChunks: string[] = []
   const melismaPositions: number[][] = []
 
   let noteStart = 0
@@ -393,18 +336,14 @@ function buildAbc(
 
   function closePhrase(endIdx: number) {
     const musicParts: string[] = []
-    const wParts: string[] = []
     const phraseMelisma: number[] = []
     for (let j = noteStart; j <= endIdx; j++) {
       musicParts.push(out[j].pitch + out[j].dur)
-      wParts.push(out[j].syl)
       if (out[j].syl === '_') {
-        // intra-phrase note index = (j - noteStart)
         phraseMelisma.push(j - noteStart)
       }
     }
     chunks.push(musicParts.join(' '))
-    wChunks.push(wParts.join(' '))
     melismaPositions.push(phraseMelisma)
     noteStart = endIdx + 1
     syllablesInPhrase = 0
@@ -415,22 +354,19 @@ function buildAbc(
     const o = out[i]
     if (o.syl !== '_') syllablesInPhrase++
 
-    const phraseBudget = PHRASE_SYLLABLE_COUNTS[phraseIdx]
+    const phraseBudget = PHRASE_SYLLABLE_COUNTS_SINGLE[phraseIdx]
     const isLast = i === out.length - 1
     const ranOutOfBudget = phraseBudget === undefined
 
     if (!ranOutOfBudget && syllablesInPhrase >= phraseBudget) {
-      // Phrase syllable budget met. Drain any trailing `_` continuations into
-      // this same phrase (they belong to the syllable that triggered them).
+      // Phrase syllable budget met. Drain trailing `_` continuations.
       let j = i + 1
       while (j < out.length && out[j].syl === '_') j++
       const endIdx = j - 1
       closePhrase(endIdx)
-      if (phraseIdx >= PHRASE_SYLLABLE_COUNTS.length) break
-      // continue from j on next iteration
-      // (noteStart was updated by closePhrase)
-      i = j - 1 // for-loop will increment to j
-    } else if (isLast && phraseIdx < PHRASE_SYLLABLE_COUNTS.length) {
+      if (phraseIdx >= PHRASE_SYLLABLE_COUNTS_SINGLE.length) break
+      i = j - 1
+    } else if (isLast && phraseIdx < PHRASE_SYLLABLE_COUNTS_SINGLE.length) {
       closePhrase(i)
     }
   }
@@ -440,8 +376,9 @@ function buildAbc(
       .map((c, i) => (i === 0 ? c : `\n% PHRASE_BREAK\n| ${c}`))
       .join('\n')
 
-  const wLines = wChunks.map((p) => `w: ${p}`).join('\n')
-
+  // Music-only abc: NO w: lines. Renderer injects lyrics from real psalm
+  // stanzas paired into cycles at render time (groupStanzasIntoCycles +
+  // mapCycleToPhraseSyllableLines).
   const abc = `X:1
 T:Ellacomb
 M:C
@@ -449,7 +386,6 @@ L:1/8
 Q:1/4=84
 K:${keySig}
 ${body}
-${wLines}
 `.trim() + '\n'
 
   return { abc, melismaPositions }
@@ -509,9 +445,9 @@ async function main() {
   const syllabifiedPhrases = PHRASE_W_LINES
   for (let i = 0; i < syllabifiedPhrases.length; i++) {
     const toks = syllabifiedPhrases[i].split(/\s+/).filter(Boolean)
-    if (toks.length !== PHRASE_SYLLABLE_COUNTS[i]) {
+    if (toks.length !== PHRASE_SYLLABLE_COUNTS_SINGLE[i]) {
       throw new Error(
-        `Phrase ${i + 1}: expected ${PHRASE_SYLLABLE_COUNTS[i]} syllables, got ${toks.length}: ${JSON.stringify(toks)}`,
+        `Phrase ${i + 1}: expected ${PHRASE_SYLLABLE_COUNTS_SINGLE[i]} syllables, got ${toks.length}: ${JSON.stringify(toks)}`,
       )
     }
   }
