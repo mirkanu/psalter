@@ -165,8 +165,6 @@ const PHRASE_W_LINES = [
   "shamed and con found ed be",
 ]
 const PHRASE_SYLLABLE_COUNTS_SINGLE = [7, 6, 8, 6]
-// SMD = SM sung twice → 8 phrase budgets
-const PHRASE_SYLLABLE_COUNTS = [...PHRASE_SYLLABLE_COUNTS_SINGLE, ...PHRASE_SYLLABLE_COUNTS_SINGLE]
 
 // ── Build ABC body (one-syllable-per-note, no slur markup) ──────────────────
 
@@ -185,36 +183,37 @@ function buildAbc(abcNotes: MxNote[], fifths: number): BuildResult {
   const keySig = fifthsToAbcKey(fifths)
   const DIVS_PER_QUARTER = 256 // Hymnary Sibelius default
 
-  // Flatten syllable tokens — DOUBLED for SMD (sung-twice-through). The
-  // renderer injects two different psalm stanzas at render time, but we
-  // need the doubled syllable stream here to compute the music chunk
-  // boundaries and the mirrored melismaPositions.
+  // Canonical SMD pattern (matches Orlington #28 / Perfect Way #132 / etc.):
+  // abc_notation is MUSIC-ONLY for ONE SM stanza — 4 unique phrases with
+  // 3 PHRASE_BREAK markers, no w: lines. The renderer pairs 2 psalm stanzas
+  // via groupStanzasIntoCycles(doubleLength=true) and emits 2 w: lines per
+  // phrase (one per stanza), then splitMusicIntoSubLines subdivides each
+  // phrase into 2 sub-staves, producing 4×2 = 8 visual staves with different
+  // lyrics in each cycle. Mirroring phrases 5-8 = phrases 1-4 in the abc
+  // itself is WRONG — it duplicates music the renderer was supposed to
+  // emit ONCE and pair at render time.
   const allTokens: string[] = []
-  for (let i = 0; i < 2; i++) {
-    for (const ph of PHRASE_W_LINES) {
-      const toks = ph.split(/\s+/).filter(Boolean)
-      for (const t of toks) allTokens.push(t)
-    }
+  for (const ph of PHRASE_W_LINES) {
+    const toks = ph.split(/\s+/).filter(Boolean)
+    for (const t of toks) allTokens.push(t)
   }
 
-  const expectedSylCount = PHRASE_SYLLABLE_COUNTS.reduce((a, b) => a + b, 0)
+  const expectedSylCount = PHRASE_SYLLABLE_COUNTS_SINGLE.reduce((a, b) => a + b, 0)
   if (allTokens.length !== expectedSylCount) {
     throw new Error(
       `Hard-coded syllable count mismatch: got ${allTokens.length}, expected ${expectedSylCount}`,
     )
   }
 
-  const firstCycleNoteCount = PHRASE_SYLLABLE_COUNTS_SINGLE.reduce((a, b) => a + b, 0)
-  if (abcNotes.length < firstCycleNoteCount) {
-    throw new Error(`Not enough notes in MusicXML: have ${abcNotes.length}, need ${firstCycleNoteCount}`)
+  if (abcNotes.length < expectedSylCount) {
+    throw new Error(`Not enough notes in MusicXML: have ${abcNotes.length}, need ${expectedSylCount}`)
   }
 
-  // Mirror: cycle 2 reuses the same notes as cycle 1 (modulo wrap).
-  // Leominster has 0 slur tags → 1-syllable-per-note alignment.
+  // One cycle of 1-syllable-per-note alignment. Leominster has 0 slur tags
+  // so no deBoer is needed — notes map directly to syllables.
   const out: AbcToken[] = []
   for (let i = 0; i < allTokens.length; i++) {
-    const noteIdx = i % firstCycleNoteCount
-    const n = abcNotes[noteIdx]
+    const n = abcNotes[i]
     out.push({
       pitch: pitchToAbc(n.step, n.alter, n.octave),
       dur: durationToAbc(n.duration, DIVS_PER_QUARTER),
@@ -222,12 +221,12 @@ function buildAbc(abcNotes: MxNote[], fifths: number): BuildResult {
     })
   }
 
-  // Build 8 phrases with PHRASE_BREAK markers (4 unique + 4 mirrored).
-  // Leominster has 0 slurs → all melismaPositions entries are empty.
+  // Build 4 unique phrases with PHRASE_BREAK markers. Leominster has 0 slurs
+  // → all melismaPositions entries are empty arrays.
   const chunks: string[] = []
   const melismaPositions: number[][] = []
   let cursor = 0
-  for (const budget of PHRASE_SYLLABLE_COUNTS) {
+  for (const budget of PHRASE_SYLLABLE_COUNTS_SINGLE) {
     const musicParts: string[] = []
     for (let i = cursor; i < cursor + budget; i++) {
       musicParts.push(out[i].pitch + out[i].dur)
