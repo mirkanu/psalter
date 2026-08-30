@@ -162,9 +162,10 @@ function durationToAbc(durationDivisions: number, divisionsPerQuarter: number): 
 //   note 20 (slurStop) → "_"
 //   note 21 → syllable 19 "made"
 // Total notes consumed = 26 syllables + 1 continuation = 27 notes (per cycle).
-// Used only to compute the per-phrase melismaPositions entries. The abc
-// output is music-only (no w: lines); the renderer injects paired-stanza
-// lyrics at render time.
+// For sung-twice-through SMD, the music is mirrored: phrases 5-8 reuse the
+// same notes as phrases 1-4 (with the same slur markup on "have"), but the
+// renderer injects two DIFFERENT psalm stanzas' lyrics at render time. The
+// abc output contains 8 chunks of music (no w: lines).
 const PHRASE_W_LINES = [
   "My heart in di ting is",
   "good mat ter in a song",
@@ -172,6 +173,8 @@ const PHRASE_W_LINES = [
   "which to the King be long",
 ]
 const PHRASE_SYLLABLE_COUNTS_SINGLE = [6, 6, 8, 6]
+// SMD = SM sung twice → 8 phrase budgets
+const PHRASE_SYLLABLE_COUNTS = [...PHRASE_SYLLABLE_COUNTS_SINGLE, ...PHRASE_SYLLABLE_COUNTS_SINGLE]
 const SPLIT_POINTS = [6, 12, 20] // cumulative end-of-phrase indices
 
 // ── De Boer slur→syllable algorithm ──────────────────────────────────────────
@@ -238,33 +241,47 @@ function buildAbc(notes: MxNote[], fifths: number): { abc: string; melismaPositi
   const keySig = fifthsToAbcKey(fifths)
   const DIVS_PER_QUARTER = 256
 
-  // Flatten ONE cycle's worth of syllable tokens (4 phrases for SM = 6.6.8.6).
-  // For sung-twice-through SMD, the melody is sung twice with two different
-  // psalm stanzas — the renderer injects those lyrics at render time. We
-  // only need one cycle's syllables here to compute melismaPositions.
+  // Flatten syllable tokens — DOUBLED for SMD (sung-twice-through). The
+  // renderer injects two different psalm stanzas at render time, but we
+  // need the doubled stream here to compute the music chunk boundaries
+  // and the mirrored melismaPositions (which must include the "have"
+  // slur continuation in both cycles).
   const allTokens: string[] = []
-  for (const ph of PHRASE_W_LINES) {
-    const toks = ph.split(/\s+/).filter(Boolean)
-    for (const t of toks) allTokens.push(t)
+  for (let i = 0; i < 2; i++) {
+    for (const ph of PHRASE_W_LINES) {
+      const toks = ph.split(/\s+/).filter(Boolean)
+      for (const t of toks) allTokens.push(t)
+    }
   }
-  const expectedSyls = PHRASE_SYLLABLE_COUNTS_SINGLE.reduce((a, b) => a + b, 0)
+  const expectedSyls = PHRASE_SYLLABLE_COUNTS.reduce((a, b) => a + b, 0)
   if (allTokens.length !== expectedSyls) {
     throw new Error(
       `Syllable count mismatch: got ${allTokens.length}, expected ${expectedSyls}`,
     )
   }
 
-  // Run deBoer once against one cycle of syllables + MusicXML notes. The
-  // resulting tokens carry the melisma-continuation markers (the `_` tokens
-  // for the slur on "have") the renderer needs (intra-phrase indices), but
-  // we do NOT embed those syllables in the output abc — real psalm stanzas
-  // are injected at render time.
-  const dbTokens = applyDeBoer(notes, allTokens)
+  // Mirror: cycle 2 reuses the same notes from MusicXML with the second half
+  // of the syllable stream. This guarantees identical music AND identical
+  // slur markup (the "have" slur pair at notes 19-20) in both cycles.
+  const halfPoint = PHRASE_SYLLABLE_COUNTS_SINGLE.reduce((a, b) => a + b, 0)
+  const firstHalfSyls = allTokens.slice(0, halfPoint)
+  const secondHalfSyls = allTokens.slice(halfPoint)
+
+  // Probe: how many notes does ONE cycle consume?
+  const probeTokens = applyDeBoer(notes, firstHalfSyls)
+  const firstCycleNoteCount = probeTokens.length
+  const notesToUse = notes.slice(0, firstCycleNoteCount)
+
+  const dbTokens = [
+    ...applyDeBoer(notesToUse, firstHalfSyls),
+    ...applyDeBoer(notesToUse, secondHalfSyls),
+  ]
 
   const out: OutToken[] = []
   for (let i = 0; i < dbTokens.length; i++) {
+    const noteIdx = i < firstCycleNoteCount ? i : i - firstCycleNoteCount
     const tk = dbTokens[i]
-    const n = notes[i]
+    const n = notes[noteIdx]
     out.push({
       pitch: pitchToAbc(n.step, n.alter, n.octave),
       dur: durationToAbc(n.duration, DIVS_PER_QUARTER),
@@ -272,12 +289,9 @@ function buildAbc(notes: MxNote[], fifths: number): { abc: string; melismaPositi
     })
   }
 
-  // Build 4 phrases with PHRASE_BREAK markers. Each phrase gets its own
-  // melismaPositions entry (intra-phrase indices of `_` continuations).
-  // A melisma continuation (`_`) consumes an extra note without consuming a
-  // syllable, so a phrase's music-note range may be longer than its syllable
-  // count. When a phrase closes, trailing `_` continuations belong to the
-  // same phrase as the syllable that triggered them, so we drain them in.
+  // Build 8 phrases with PHRASE_BREAK markers (4 unique + 4 mirrored).
+  // The "have" slur continuation (intra-phrase index 7 of phrase 3) appears
+  // in BOTH phrase 3 and phrase 7 melismaPositions entries.
   const chunks: string[] = []
   const melismaPositions: number[][] = []
 
@@ -305,7 +319,7 @@ function buildAbc(notes: MxNote[], fifths: number): { abc: string; melismaPositi
     const o = out[i]
     if (o.syl !== '_') syllablesInPhrase++
 
-    const phraseBudget = PHRASE_SYLLABLE_COUNTS_SINGLE[phraseIdx]
+    const phraseBudget = PHRASE_SYLLABLE_COUNTS[phraseIdx]
     const isLast = i === out.length - 1
     const ranOutOfBudget = phraseBudget === undefined
 
@@ -315,9 +329,9 @@ function buildAbc(notes: MxNote[], fifths: number): { abc: string; melismaPositi
       while (j < out.length && out[j].syl === '_') j++
       const endIdx = j - 1
       closePhrase(endIdx)
-      if (phraseIdx >= PHRASE_SYLLABLE_COUNTS_SINGLE.length) break
+      if (phraseIdx >= PHRASE_SYLLABLE_COUNTS.length) break
       i = j - 1
-    } else if (isLast && phraseIdx < PHRASE_SYLLABLE_COUNTS_SINGLE.length) {
+    } else if (isLast && phraseIdx < PHRASE_SYLLABLE_COUNTS.length) {
       closePhrase(i)
     }
   }
@@ -410,9 +424,10 @@ async function main() {
   )
   const shapeNote =
     `SM shape expected [6,6,8,6] = 26 syllables; hard-coded ` +
-    `[${PHRASE_SYLLABLE_COUNTS_SINGLE.join(',')}] = ${allSylCount} syllables. ` +
-    `Diademata MusicXML has 1 slur pair (notes 19-20) → 1 melisma continuation. ` +
-    `Total notes consumed = ${allSylCount + 1}.`
+    `[${PHRASE_SYLLABLE_COUNTS_SINGLE.join(',')}] = ${allSylCount} syllables per cycle; ` +
+    `SMD mirror → 8 phrases total. ` +
+    `Diademata MusicXML has 1 slur pair (notes 19-20) → 1 melisma continuation per cycle. ` +
+    `Total notes consumed = ${(allSylCount + 1) * 2}.`
   console.log(shapeNote)
 
   console.log('\n--- Generated abc_notation ---')
