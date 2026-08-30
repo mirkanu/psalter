@@ -452,7 +452,7 @@ async function main() {
     .set({
       abcNotation: abc,
       melismaPositions: melismaPositions,
-      doubleLength: true, // SMD (sung-twice-through) — was incorrectly false
+      meterVariant: ['double_length'], // SMD (sung-twice-through) — was incorrectly false
     })
     .where(eq(tunes.id, TUNE_ID))
     .returning({ id: tunes.id })

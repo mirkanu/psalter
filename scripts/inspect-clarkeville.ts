@@ -9,7 +9,7 @@ for (const r of rows) {
   console.log('id:', r.id);
   console.log('name:', r.name);
   console.log('meter:', r.meter);
-  console.log('double_length:', r.doubleLength);
+  console.log('double_length:', r.meterVariant);
   console.log('phrase_shape_override:', JSON.stringify(r.phraseShapeOverride));
   console.log('melisma_positions:', JSON.stringify(r.melismaPositions));
   const abc = r.abcNotation ?? '';

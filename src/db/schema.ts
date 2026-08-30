@@ -81,7 +81,7 @@ export const tunes = pgTable('tunes', {
   famousHymn: text('famous_hymn'),
   numberIn1979RpPsalter: integer('number_in_1979_rp_psalter'),
   numInPrcaPsalter: integer('num_in_prca_psalter'),
-  doubleLength: boolean('double_length').default(false).notNull(),  // DCM marker — manually curated in Airtable, see .planning/research/scottish-psalter-structure.md §2
+  meterVariant: text('meter_variant').array().default(sql`'{}'::text[]`).notNull(),  // multi-select: 'double_length' and/or 'repeat_last_line' — see .planning/research/scottish-psalter-structure.md §2
   historicalUsageCount: integer('historical_usage_count').default(0).notNull(),          // Airtable Tunes."CPRC historical tune usage" (count rollup) — TUNE-03
   weightedHistoricalFrequency: real('weighted_historical_frequency').default(0).notNull(), // Airtable Tunes."Weighted historical CPRC psalm frequency for CPRC Standard" (percent rollup, 0-1) — TUNE-03
 })

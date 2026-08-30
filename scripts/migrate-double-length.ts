@@ -40,7 +40,7 @@ async function main() {
 
     const result = await db
       .update(tunes)
-      .set({ doubleLength })
+      .set({ meterVariant: doubleLength ? ['double_length'] : [] })
       .where(eq(tunes.airtableId, airtableId))
 
     if ((result as unknown as { rowCount: number }).rowCount > 0) updated++

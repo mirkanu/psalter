@@ -194,7 +194,8 @@ function buildTuneOption(tune: Record<string, any>): AlternateTune {
     solfegeJpgUrl: (solfegePages[0] ?? tune.solfegeJpgUrl ?? null) as string | null,
     soundcloudUrl: (tune.soundcloudUrl ?? null) as string | null,
     youtubeUrl: (tune.youtubeUrl ?? null) as string | null,
-    doubleLength: (tune.doubleLength ?? false) as boolean,
+    doubleLength: ((tune.meterVariant ?? []).includes('double_length')) as boolean,
+    meterVariant: (tune.meterVariant ?? []) as string[],
     solfegeOcrText: (tune.solfegeOcrText ?? null) as string | null,
     melismaPositions: (tune.melismaPositions ?? null) as number[][] | null,
     // WR-04: phraseShapeOverride added to the shared AlternateTune type.

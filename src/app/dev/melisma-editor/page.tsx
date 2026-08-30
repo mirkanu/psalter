@@ -60,9 +60,10 @@ export interface TuneOption {
    *  melisma data. Used by the editor to restore underline state without parsing
    *  embedded w: lines (post-migration path). */
   melismaPositions: number[][] | null
-  /** True for DCM tunes (CM + doubleLength) — editor uses this to auto-inject
-   *  8 PHRASE_BREAKs even when the stored ABC already has some breaks. */
-  doubleLength: boolean
+  /** Multi-select variant flags. Editor uses these to auto-inject extra
+   *  PHRASE_BREAKs even when the stored ABC already has some breaks.
+   *  Possible values: 'double_length', 'repeat_last_line'. */
+  meterVariant: string[]
 }
 
 function slugify(name: string): string {
@@ -91,7 +92,7 @@ async function loadTunes(): Promise<TuneOption[]> {
       solfegeSopranoEdited: tunes.solfegeSopranoEdited,
       phraseShapeOverride: tunes.phraseShapeOverride,
       melismaPositions: tunes.melismaPositions,
-      doubleLength: tunes.doubleLength,
+      meterVariant: tunes.meterVariant,
     })
     .from(tunes)
     .where(isNotNull(tunes.abcNotation))
@@ -168,7 +169,7 @@ async function loadTunes(): Promise<TuneOption[]> {
         // DCM tunes sing two CM stanzas as one musical "stanza" — pull both
         // stanza 1 AND stanza 2 so the editor sees the full 8-line shape
         // [8,6,8,6,8,6,8,6]. Same for other doubled meters (LMD, SMD).
-        const isDoubled = r.doubleLength === true
+        const isDoubled = (r.meterVariant ?? []).includes('double_length')
         if (Array.isArray(ls) && Array.isArray(ls[0]?.lines)) {
           const collect = (stanza: { lines?: Array<{ text?: string; syllables?: string[] }> }) => {
             stanza.lines!.forEach((l) => {
@@ -322,7 +323,7 @@ async function loadTunes(): Promise<TuneOption[]> {
       solfegeSopranoEdited: r.solfegeSopranoEdited,
       phraseShapeOverride: r.phraseShapeOverride ?? null,
       melismaPositions: r.melismaPositions ?? null,
-      doubleLength: r.doubleLength ?? false,
+      meterVariant: r.meterVariant ?? [],
       solfegeJpgUrls: findSolfegeJpgs(slugify(r.name)),
       stanza1Syllables,
       stanza1SyllablesPerLine,

@@ -35,6 +35,7 @@ const baseTune: AlternateTune = {
   abcNotation: null,
   abcSatb: null,
   doubleLength: false,
+  meterVariant: [],
   solfegeOcrText: null,
   melismaPositions: null,
   phraseShapeOverride: null,

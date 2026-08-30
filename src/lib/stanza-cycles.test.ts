@@ -15,16 +15,16 @@ const S1 = stanza(1, 'Line 2a', 'Line 2b', 'Line 2c', 'Line 2d')
 const S2 = stanza(2, 'Line 3a', 'Line 3b', 'Line 3c', 'Line 3d')
 const S3 = stanza(3, 'Line 4a', 'Line 4b', 'Line 4c', 'Line 4d')
 
-describe('groupStanzasIntoCycles — RENDER-01 doubleLength gating', () => {
-  it('pairs two stanzas per cycle when doubleLength=true (DCM × CM stanzas)', () => {
-    expect(groupStanzasIntoCycles([S0, S1, S2, S3], true)).toEqual([
+describe('groupStanzasIntoCycles — RENDER-01 meterVariant gating', () => {
+  it('pairs two stanzas per cycle when meterVariant includes double_length (DCM × CM stanzas)', () => {
+    expect(groupStanzasIntoCycles([S0, S1, S2, S3], ['double_length'])).toEqual([
       [S0, S1],
       [S2, S3],
     ])
   })
 
-  it('produces one stanza per cycle when doubleLength=false', () => {
-    expect(groupStanzasIntoCycles([S0, S1, S2, S3], false)).toEqual([
+  it('produces one stanza per cycle when meterVariant is empty', () => {
+    expect(groupStanzasIntoCycles([S0, S1, S2, S3], [])).toEqual([
       [S0],
       [S1],
       [S2],
@@ -32,20 +32,29 @@ describe('groupStanzasIntoCycles — RENDER-01 doubleLength gating', () => {
     ])
   })
 
-  it('handles odd stanza count under doubleLength (under-fill — D-12; does NOT repeat content)', () => {
-    expect(groupStanzasIntoCycles([S0, S1, S2], true)).toEqual([
+  it('produces one stanza per cycle when meterVariant only carries repeat_last_line (not double_length)', () => {
+    expect(groupStanzasIntoCycles([S0, S1, S2, S3], ['repeat_last_line'])).toEqual([
+      [S0],
+      [S1],
+      [S2],
+      [S3],
+    ])
+  })
+
+  it('handles odd stanza count under double_length (under-fill — D-12; does NOT repeat content)', () => {
+    expect(groupStanzasIntoCycles([S0, S1, S2], ['double_length'])).toEqual([
       [S0, S1],
       [S2],
     ])
   })
 
   it('returns empty array on empty input', () => {
-    expect(groupStanzasIntoCycles([], true)).toEqual([])
-    expect(groupStanzasIntoCycles([], false)).toEqual([])
+    expect(groupStanzasIntoCycles([], ['double_length'])).toEqual([])
+    expect(groupStanzasIntoCycles([], [])).toEqual([])
   })
 
-  it('single-stanza doubleLength input yields one 1-stanza cycle (under-fill at index 0)', () => {
-    expect(groupStanzasIntoCycles([S0], true)).toEqual([[S0]])
+  it('single-stanza double_length input yields one 1-stanza cycle (under-fill at index 0)', () => {
+    expect(groupStanzasIntoCycles([S0], ['double_length'])).toEqual([[S0]])
   })
 
   it('does not import or compare meter strings (B3 audit)', async () => {

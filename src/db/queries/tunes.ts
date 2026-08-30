@@ -49,7 +49,7 @@ export async function fetchAllTunes() {
       abcNotation: true,
       abcSatb: true,
       phraseShapeOverride: true,
-      doubleLength: true,
+      meterVariant: true,
       solfegeOcrText: true,
       weightedHistoricalFrequency: true,
       solfegeJpgUrl: true,
@@ -89,7 +89,8 @@ export async function fetchAllTunes() {
       abcNotation: t.abcNotation ?? null,
       abcSatb: t.abcSatb ?? null,
       phraseShapeOverride: t.phraseShapeOverride ?? null,
-      doubleLength: t.doubleLength ?? false,
+      doubleLength: (t.meterVariant ?? []).includes('double_length'),
+      meterVariant: t.meterVariant ?? [],
       solfegeOcrText: t.solfegeOcrText ?? null,
       // TierableTune requires a number; sortTunesByTier treats it as a tie-breaker inside the 'other' tier only.
       weightedHistoricalFrequency: t.weightedHistoricalFrequency ?? 0,
@@ -179,7 +180,8 @@ export async function enrichAlternateTunesToTuneRows(
       abcNotation: alt.abcNotation,
       abcSatb: alt.abcSatb,
       phraseShapeOverride: alt.phraseShapeOverride,
-      doubleLength: alt.doubleLength,
+      doubleLength: (alt.meterVariant ?? []).includes('double_length'),
+      meterVariant: alt.meterVariant ?? [],
       solfegeOcrText: alt.solfegeOcrText,
       weightedHistoricalFrequency: alt.weightedHistoricalFrequency,
       staffPages: alt.staffPages,
@@ -226,8 +228,12 @@ export interface AlternateTune {
   solfegeJpgUrl: string | null
   soundcloudUrl: string | null
   youtubeUrl: string | null
-  /** D-11 canonical signal driving stanza-cycle pairing (DCM marker). */
+  /** D-11 canonical signal driving stanza-cycle pairing (DCM marker).
+   *  Derived from `meterVariant.includes('double_length')` for renderer convenience. */
   doubleLength: boolean
+  /** Multi-select variant flags — possible values: 'double_length', 'repeat_last_line'.
+   *  Use this when you need to distinguish variant types (e.g. melisma-editor UI). */
+  meterVariant: string[]
   /**
    * Plan 04.9.9: Raw solfège OCR JSON string from DB. When non-null and containing
    * soprano/doh/time fields, used by NotationRenderer to build melisma-aware w: lines
@@ -285,7 +291,7 @@ export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]>
       solfegeJpgUrl: true,
       soundcloudUrl: true,
       youtubeUrl: true,
-      doubleLength: true,
+      meterVariant: true,
       solfegeOcrText: true,
       melismaPositions: true,
       phraseShapeOverride: true,
@@ -314,6 +320,7 @@ export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]>
       slug: tuneNameToSlug(t.name),
       staffPages,
       solfegePages,
+      doubleLength: (t.meterVariant ?? []).includes('double_length'),
       melismaStatus: statusByTune.get(t.id) ?? null,
     }
   })
