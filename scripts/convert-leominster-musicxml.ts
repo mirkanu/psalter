@@ -39,12 +39,17 @@ const ROLLBACK_PATH = path.join(
   process.cwd(),
   'scripts/uat/baselines/leominster-abc-rollback.txt',
 )
-// 2026-08-27 (revision): CPRC tunes Leominster twice through (SMD, not SM).
-// The MusicXML has 52 voice=1 pitched notes for ONE SM stanza (the <text>
-// tags belong to Bonar's "Not What My Hand Hath Done" — not psalm 70 — so
-// we ignore the embedded lyrics). psalm 70 stanza 1 = 27 syllables (7+6+8+6).
-// For SMD we mirror the first 27 notes for cycle 2 → 8 phrases, identical
-// music in both halves, no slur markup (Leominster has 0 slur tags).
+// 2026-08-30 (revision): CPRC tunes Leominster twice through (SMD, sung-twice-
+// through). The MusicXML has 52 voice=1 pitched notes for ONE SM stanza (the
+// <text> tags belong to Bonar's "Not What My Hand Hath Done" — not psalm 70 —
+// so we ignore the embedded lyrics).
+//
+// abc_notation is MUSIC-ONLY: 4 phrases of music with 3 PHRASE_BREAK markers,
+// no w: lines. psalm 70 stanza 1 = 27 syllables (7+6+8+6) supplies the
+// syllable stream used only to compute melismaPositions. Lyrics are injected
+// at render time by NotationRenderer.tsx from paired psalm stanzas, matching
+// the canonical pattern used by Orlington (#28), Perfect Way (#132), and the
+// other approved DCM tunes.
 const DOUBLE_LENGTH = true
 
 const APPLY = process.argv.includes('--apply')
@@ -149,7 +154,9 @@ function durationToAbc(durationDivisions: number, divisionsPerQuarter: number): 
 // Phrase 1 = 7 syllables (CPRC "Lord haste me to deliver" — one extra "me" vs.
 // standard "Lord make haste to deliver"; user sing-test will confirm). Phrases
 // 2/3/4 = 6/8/6 syllables. Total = 27 syllables → 27 notes from MusicXML.
-// For SMD (double-length), the stanza is sung twice → 8 phrases total.
+// Used only to compute the per-phrase melismaPositions entries. The abc
+// output is music-only (no w: lines); the renderer injects paired-stanza
+// lyrics at render time.
 const PHRASE_W_LINES = [
   "Lord haste me to de li ver",
   "with speed Lord suc cor me",
@@ -157,9 +164,6 @@ const PHRASE_W_LINES = [
   "shamed and con found ed be",
 ]
 const PHRASE_SYLLABLE_COUNTS_SINGLE = [7, 6, 8, 6]
-const PHRASE_SYLLABLE_COUNTS = DOUBLE_LENGTH
-  ? [...PHRASE_SYLLABLE_COUNTS_SINGLE, ...PHRASE_SYLLABLE_COUNTS_SINGLE]
-  : PHRASE_SYLLABLE_COUNTS_SINGLE
 
 // ── Build ABC body (one-syllable-per-note, no slur markup) ──────────────────
 
@@ -178,47 +182,31 @@ function buildAbc(abcNotes: MxNote[], fifths: number): BuildResult {
   const keySig = fifthsToAbcKey(fifths)
   const DIVS_PER_QUARTER = 256 // Hymnary Sibelius default
 
-  // Flatten all syllable tokens. For double-length, repeat the stanza.
+  // Flatten ONE cycle's worth of syllable tokens (4 phrases for SM = 6.6.8.6).
+  // For sung-twice-through SMD, the melody is sung twice with two different
+  // psalm stanzas — the renderer injects those lyrics at render time. We
+  // only need one cycle's syllables here to compute melismaPositions.
   const allTokens: string[] = []
-  if (DOUBLE_LENGTH) {
-    for (let i = 0; i < 2; i++) {
-      for (const ph of PHRASE_W_LINES) {
-        const toks = ph.split(/\s+/).filter(Boolean)
-        for (const t of toks) allTokens.push(t)
-      }
-    }
-  } else {
-    for (const ph of PHRASE_W_LINES) {
-      const toks = ph.split(/\s+/).filter(Boolean)
-      for (const t of toks) allTokens.push(t)
-    }
+  for (const ph of PHRASE_W_LINES) {
+    const toks = ph.split(/\s+/).filter(Boolean)
+    for (const t of toks) allTokens.push(t)
   }
 
-  const expectedSylCount = PHRASE_SYLLABLE_COUNTS.reduce((a, b) => a + b, 0)
+  const expectedSylCount = PHRASE_SYLLABLE_COUNTS_SINGLE.reduce((a, b) => a + b, 0)
   if (allTokens.length !== expectedSylCount) {
     throw new Error(
       `Hard-coded syllable count mismatch: got ${allTokens.length}, expected ${expectedSylCount}`,
     )
   }
 
-  if (abcNotes.length < PHRASE_SYLLABLE_COUNTS_SINGLE.reduce((a, b) => a + b, 0)) {
-    throw new Error(
-      `Not enough notes in MusicXML: have ${abcNotes.length}, need ${PHRASE_SYLLABLE_COUNTS_SINGLE.reduce((a, b) => a + b, 0)}`,
-    )
+  if (abcNotes.length < expectedSylCount) {
+    throw new Error(`Not enough notes in MusicXML: have ${abcNotes.length}, need ${expectedSylCount}`)
   }
 
-  // For DOUBLE_LENGTH: consume only the first cycle's worth of notes from
-  // MusicXML, then MIRROR the music for cycle 2 (i % firstCycleNoteCount).
-  // Leominster has 0 slur tags, so 1-syllable-per-note is the entire mapping;
-  // mirroring guarantees both cycles are musically identical.
-  const firstCycleNoteCount = DOUBLE_LENGTH
-    ? PHRASE_SYLLABLE_COUNTS_SINGLE.reduce((a, b) => a + b, 0)
-    : abcNotes.length
-
+  // One-syllable-per-note mapping (Leominster has 0 slur tags → 1:1 alignment).
   const out: AbcToken[] = []
   for (let i = 0; i < allTokens.length; i++) {
-    const noteIdx = DOUBLE_LENGTH ? i % firstCycleNoteCount : i
-    const n = abcNotes[noteIdx]
+    const n = abcNotes[i]
     out.push({
       pitch: pitchToAbc(n.step, n.alter, n.octave),
       dur: durationToAbc(n.duration, DIVS_PER_QUARTER),
@@ -226,21 +214,17 @@ function buildAbc(abcNotes: MxNote[], fifths: number): BuildResult {
     })
   }
 
-  // Build per-phrase chunks; track melisma_positions per phrase.
-  // Leominster has 0 slurs → all per-phrase melisma arrays are empty.
+  // Build 4 phrases with PHRASE_BREAK markers. Each phrase gets its own
+  // melismaPositions entry (Leominster has 0 slurs → all empty arrays).
   const chunks: string[] = []
-  const wChunks: string[] = []
   const melismaPositions: number[][] = []
   let cursor = 0
-  for (const budget of PHRASE_SYLLABLE_COUNTS) {
+  for (const budget of PHRASE_SYLLABLE_COUNTS_SINGLE) {
     const musicParts: string[] = []
-    const wParts: string[] = []
     for (let i = cursor; i < cursor + budget; i++) {
       musicParts.push(out[i].pitch + out[i].dur)
-      wParts.push(out[i].syl)
     }
     chunks.push(musicParts.join(' '))
-    wChunks.push(wParts.join(' '))
     melismaPositions.push([]) // 0 slurs → empty array per phrase
     cursor += budget
   }
@@ -250,8 +234,8 @@ function buildAbc(abcNotes: MxNote[], fifths: number): BuildResult {
       .map((c, i) => (i === 0 ? c : `\n% PHRASE_BREAK\n| ${c}`))
       .join('\n')
 
-  const wLines = wChunks.map((p) => `w: ${p}`).join('\n')
-
+  // Music-only abc: NO w: lines. Renderer injects lyrics from real psalm
+  // stanzas paired into cycles at render time.
   const abc = `X:1
 T:Leominster
 M:C
@@ -259,7 +243,6 @@ L:1/8
 Q:1/4=84
 K:${keySig}
 ${body}
-${wLines}
 `.trim() + '\n'
 
   return { abc, melismaPositions }

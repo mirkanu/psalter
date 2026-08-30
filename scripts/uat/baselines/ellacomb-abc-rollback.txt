@@ -1,29 +1,21 @@
 {
   "tuneId": 18,
-  "preAbc": "X:1\nT:Ellacomb\nM:C\nL:1/8\nQ:1/4=84\nK:Ab\n_E2 _A2 G F _E2 _A2 C2 _D2 _E2\n\n% PHRASE_BREAK\n| _E2 F G _A2 _B2 _B2\n\n% PHRASE_BREAK\n| c6 _E2 _A2 G F _E2 _A2 C2 _D2\n\n% PHRASE_BREAK\n| _E2 _E2 F G _A2 _A2\n\n% PHRASE_BREAK\n| G2 _A6 _A _B c2 _B2 c2 _d2\n\n% PHRASE_BREAK\n| _B2 G _A _B2 _A _B c2 _B2\n\n% PHRASE_BREAK\n| c2 _d2 _B6 _E2 _A2 G F _E2\n\n% PHRASE_BREAK\n| _A2 C2 _D2 _E2 _E2 F G\nw: e- ter- nal Lord doth reign as _ king\nw: let all the peo- ple quake\nw: He sits be- tween the cher- u- bims _\nw: let earth be mov'd and shake\nw: e- ter- nal Lord doth reign as king\nw: let _ _ all the peo- ple quake\nw: He sits be- tween the cher- u- bims\nw: let earth _ be mov'd and shake\n",
+  "preAbc": "X:1\nT:Ellacomb\nM:C\nL:1/8\nQ:1/4=84\nK:Ab\n_E2 _A2 G F _E2 _A2 C2 _D2 _E2\n\n% PHRASE_BREAK\n| _E2 F G _A2 _B2 _B2\n\n% PHRASE_BREAK\n| c6 _E2 _A2 G F _E2 _A2 C2 _D2\n\n% PHRASE_BREAK\n| _E2 _E2 F G _A2 _A2\n\n% PHRASE_BREAK\n| _E2 _A2 G F _E2 _A2 C2 _D2 _E2\n\n% PHRASE_BREAK\n| _E2 F G _A2 _B2 _B2\n\n% PHRASE_BREAK\n| c6 _E2 _A2 G F _E2 _A2 C2 _D2\n\n% PHRASE_BREAK\n| _E2 _E2 F G _A2 _A2\nw: e- ter- nal Lord doth reign as _ king\nw: let all the peo- ple quake\nw: He sits be- tween the cher- u- bims _\nw: let earth be mov'd and shake\nw: e- ter- nal Lord doth reign as _ king\nw: let all the peo- ple quake\nw: He sits be- tween the cher- u- bims _\nw: let earth be mov'd and shake\n",
   "preMelismaPositions": [
     [
-      3
+      7
     ],
+    [],
     [
-      2
-    ],
-    [
-      3
-    ],
-    [
-      2,
-      5
-    ],
-    [
-      1,
       8
     ],
+    [],
     [
-      1
+      7
     ],
+    [],
     [
-      3
+      8
     ],
     []
   ],
@@ -35,16 +27,8 @@
     [
       8
     ],
-    [],
-    [
-      7
-    ],
-    [],
-    [
-      8
-    ],
     []
   ],
-  "newAbcSha256": "45cf653e6a5317550beadde9f39bb4701657ecf7158169834c7b55a799bb3983",
-  "timestamp": "2026-08-27T13:01:49.828Z"
+  "newAbcSha256": "9043765e99cab1bd0f01f7a0c4fdc0abf019c98915b1af62fbafd2a09ea5533a",
+  "timestamp": "2026-08-30T08:23:33.457Z"
 }
