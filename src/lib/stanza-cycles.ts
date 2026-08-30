@@ -5,13 +5,16 @@ import { syllabifyForAbc } from './lyrics'
  * Stanza-cycle model (D-11, D-12, D-19, D-20).
  *
  * A "stanza-cycle" is one full pass through the tune. The number of stanzas
- * per cycle is determined by the tune's `double_length` boolean column
- * (D-11) — NOT by parsing meter strings. This eliminates the entire class
- * of DCM mis-renders driven by meter-string heuristics (Phase 04.9.6 B3 fix).
+ * per cycle is determined by the tune's `meter_variant` array column (D-11)
+ * — NOT by parsing meter strings. This eliminates the entire class of DCM
+ * mis-renders driven by meter-string heuristics (Phase 04.9.6 B3 fix).
  *
- *   double_length=false → 1 stanza per cycle (CM/LM/SM/etc.).
- *   double_length=true  → 2 stanzas per cycle (DCM/DLM/DSM and any
- *                         hand-curated "double-length" tune variants).
+ *   meter_variant lacks 'double_length' → 1 stanza per cycle (CM/LM/SM/etc.).
+ *   meter_variant includes 'double_length' → 2 stanzas per cycle
+ *     (DCM/DLM/DSM and any hand-curated "double-length" tune variants).
+ *
+ * Note: 'repeat_last_line' is a separate flag that affects which phrases
+ * of the music carry lyrics, not cycle pairing. It's not consulted here.
  *
  * The retired meter-string-driven phrase-portion-splitting heuristic has
  * been deleted from src/lib/lyrics.ts; this module reads stanza.lines
@@ -22,17 +25,17 @@ import { syllabifyForAbc } from './lyrics'
  * Groups a flat stanzas array into stanza-cycles per D-11 / D-12.
  *
  * - Empty input → `[]`.
- * - `doubleLength=true`: pairs every two consecutive stanzas. Odd stanza
- *   count yields a final 1-stanza cycle (under-fill; D-12 — does NOT
- *   repeat content).
- * - `doubleLength=false`: emits one cycle per stanza.
+ * - `meterVariant.includes('double_length')`: pairs every two consecutive
+ *   stanzas. Odd stanza count yields a final 1-stanza cycle (under-fill;
+ *   D-12 — does NOT repeat content).
+ * - otherwise: emits one cycle per stanza.
  */
 export function groupStanzasIntoCycles(
   stanzas: Stanza[],
-  doubleLength: boolean,
+  meterVariant: string[],
 ): Stanza[][] {
   if (stanzas.length === 0) return []
-  const cycleSize = doubleLength ? 2 : 1
+  const cycleSize = meterVariant.includes('double_length') ? 2 : 1
   const cycles: Stanza[][] = []
   for (let i = 0; i < stanzas.length; i += cycleSize) {
     cycles.push(stanzas.slice(i, i + cycleSize))
@@ -79,7 +82,7 @@ export function groupStanzasIntoCycles(
  *
  * NO meter-string gating — this function NEVER reads CMD/DCM/DLM/DSM
  * literals or calls phrasesForMeter. Cycle grouping is driven entirely
- * by tune.double_length upstream (D-11, B3 invariant).
+ * by tune.meter_variant upstream (D-11, B3 invariant).
  */
 export function mapCycleToPhraseSyllableLines(
   cycle: Stanza[],

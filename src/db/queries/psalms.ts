@@ -37,7 +37,7 @@ export const fetchPsalmDetail = cache(async function fetchPsalmDetail(id: number
         with: {
           psalmVersionTunes: {
             with: {
-              // tune: true selects all columns including doubleLength (D-11
+              // tune: true selects all columns including meterVariant (D-11
               // canonical signal driving stanza-cycle pairing in Plan 04+).
               tune: true,
             },

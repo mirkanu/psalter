@@ -115,11 +115,11 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
   // wrote via the existing Save-to-DB path.
   const effectiveAbc = useMemo(() => {
     if (!rawEffectiveAbc) return ''
-    const isDoubled = tune?.doubleLength ?? false
+    const isDoubled = (tune?.meterVariant ?? []).includes('double_length')
     const isAlreadyDoubled = /\bD\b/.test(tune?.meter ?? '')
     const expected = expectedSyllablesByLine(tune?.meter ?? null)
-    // For DCM tunes (doubleLength=true, meter not already doubled via " D"):
-    // use the doubled shape so all 8 phrases get PHRASE_BREAKs.
+    // For DCM tunes (meter_variant includes 'double_length', meter not already
+    // doubled via " D"): use the doubled shape so all 8 phrases get PHRASE_BREAKs.
     const effectiveExpected =
       isDoubled && !isAlreadyDoubled && expected ? [...expected, ...expected] : expected
 

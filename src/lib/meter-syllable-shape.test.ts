@@ -15,20 +15,23 @@ describe('expectedSyllablesByLine', () => {
   it('8.7.8.7 parses', () => expect(expectedSyllablesByLine('8.7.8.7')).toEqual([8, 7, 8, 7]))
   it('null meter returns null', () => expect(expectedSyllablesByLine(null)).toBeNull())
   it('unknown returns null', () => expect(expectedSyllablesByLine('XYZ')).toBeNull())
-  it('CM with doubleLength=true doubles to 8 entries', () => {
-    expect(expectedSyllablesByLine('CM', true)).toEqual([8, 6, 8, 6, 8, 6, 8, 6])
+  it('CM with meterVariant including double_length doubles to 8 entries', () => {
+    expect(expectedSyllablesByLine('CM', ['double_length'])).toEqual([8, 6, 8, 6, 8, 6, 8, 6])
   })
-  it('DCM with doubleLength=true is idempotent (already doubled)', () => {
-    expect(expectedSyllablesByLine('DCM', true)).toEqual([8, 6, 8, 6, 8, 6, 8, 6])
+  it('DCM with meterVariant including double_length is idempotent (already doubled)', () => {
+    expect(expectedSyllablesByLine('DCM', ['double_length'])).toEqual([8, 6, 8, 6, 8, 6, 8, 6])
   })
-  it('numeric 76 76 with doubleLength=true doubles to 8 entries', () => {
-    expect(expectedSyllablesByLine('76 76', true)).toEqual([7, 6, 7, 6, 7, 6, 7, 6])
+  it('numeric 76 76 with meterVariant including double_length doubles to 8 entries', () => {
+    expect(expectedSyllablesByLine('76 76', ['double_length'])).toEqual([7, 6, 7, 6, 7, 6, 7, 6])
   })
-  it('numeric 76 76 D with doubleLength=true is idempotent (already doubled)', () => {
-    expect(expectedSyllablesByLine('76 76 D', true)).toEqual([7, 6, 7, 6, 7, 6, 7, 6])
+  it('numeric 76 76 D with meterVariant including double_length is idempotent (already doubled)', () => {
+    expect(expectedSyllablesByLine('76 76 D', ['double_length'])).toEqual([7, 6, 7, 6, 7, 6, 7, 6])
   })
-  it('null meter with doubleLength=true still returns null', () => {
-    expect(expectedSyllablesByLine(null, true)).toBeNull()
+  it('null meter with meterVariant including double_length still returns null', () => {
+    expect(expectedSyllablesByLine(null, ['double_length'])).toBeNull()
+  })
+  it('CM with meterVariant including repeat_last_line (but not double_length) does NOT double', () => {
+    expect(expectedSyllablesByLine('CM', ['repeat_last_line'])).toEqual([8, 6, 8, 6])
   })
 })
 

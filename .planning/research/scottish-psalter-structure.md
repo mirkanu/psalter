@@ -66,7 +66,7 @@ The Scottish Metrical Psalter (1650) renders all 150 psalms into a fixed set of 
 | 10 10 10 10 10 | 1 |
 
 **Observations:**
-- **No `CMD` / `DCM` label** appears in the `tunes.meter` column. DCM is encoded out-of-band via Airtable's `Double length` boolean, which is **not yet migrated** to Postgres — required upstream of any alignment-engine work.
+- **No `CMD` / `DCM` label** appears in the `tunes.meter` column. Doubled-length variants are encoded out-of-band via the `tunes.meter_variant` text[] column (replaced the old `double_length` boolean on 2026-08-30). Allowed values: `'double_length'` (music plays twice through — DCM/DLM/DSM and any hand-curated "double-length" tune variants), `'repeat_last_line'` (last phrase of music is sung twice for two lyric lines — currently only Eastgate id=83). A tune can carry both flags simultaneously.
 - **14 tunes have NULL / empty meter labels** (Bingham, Ballymena, Elrig, Eventide, Gabe, Going Home, Hawarden, Holly, Lafayette, Maitland, Penitence, Traditional, plus 2 control rows). Per CPRC review these are **data-quality gaps**, not a structural category. Out of scope for this doc beyond noting them.
 - **Tune-meter / lyric-meter divergences:** Lyric side has `66 66 D` (n=1) with no matching tune. Tune side has `76 76 D` (n=3) but no matching lyric meter — exposing the Aurelia↔Ps119:153–160 pairing as a meter mismatch (see §2 worked example).
 
@@ -303,7 +303,7 @@ Inline citations use `[tag]` shorthand; the full source list is below.
 
 These are surfaced as seeds for future phases — **out of scope** for this doc:
 
-- **Data migration:** Import Airtable Tunes `Double length` boolean → `tunes.double_length` column. Required before the alignment-implementation phase can render DCM correctly.
+- **Data migration:** ~~Import Airtable Tunes `Double length` boolean → `tunes.double_length` column~~ — **completed 2026-05-17** (commit `c4b3be7`, see STATE.md entry `260517-u35`). On 2026-08-30 the column was further migrated to `tunes.meter_variant` text[] (commit pending — see STATE.md) to support multi-select variant flags; same 23 tunes flagged, with Eastgate (id=83) additionally carrying `'repeat_last_line'`.
 - **Data migration:** Label the 14 unlabelled tunes in Airtable (Bingham, Ballymena, Elrig, etc.).
 - **Data migration:** Ingest printed-psalter recommended tune pairings (location TBD — printed JPGs vs separate index).
 - **Feature seed:** Meter-mismatch visual warning UI on psalm pages (Aurelia↔Ps119 is the motivating case).

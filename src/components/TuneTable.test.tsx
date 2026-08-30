@@ -28,6 +28,7 @@ function makeTuneRow(overrides: Partial<TuneRow> = {}): TuneRow {
     abcSatb: null,
     phraseShapeOverride: null,
     doubleLength: false,
+    meterVariant: [],
     solfegeOcrText: null,
     weightedHistoricalFrequency: 0,
     staffPages: [],

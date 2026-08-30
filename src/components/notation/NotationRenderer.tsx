@@ -514,7 +514,11 @@ export function NotationRenderer({
   }, [lyricsStructured, lyrics])
 
   const cycles = useMemo(
-    () => groupStanzasIntoCycles(stanzas, doubleLength),
+    () =>
+      groupStanzasIntoCycles(
+        stanzas,
+        doubleLength ? (['double_length'] as string[]) : [],
+      ),
     [stanzas, doubleLength],
   )
 
@@ -1326,7 +1330,10 @@ export function NotationRenderer({
         }
       }
 
-      const expectedShape = expectedSyllablesByLine(tuneMeter, doubleLength)
+      const expectedShape = expectedSyllablesByLine(
+        tuneMeter,
+        doubleLength ? (['double_length'] as string[]) : [],
+      )
       if (expectedShape) {
         const expected = expectedShape[metricalLineIndex]
         if (expected !== undefined && tokens.length !== expected) {
