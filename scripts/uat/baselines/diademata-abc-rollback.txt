@@ -1,13 +1,7 @@
 {
   "tuneId": 134,
-  "preAbc": "X:1\nT:Diademata\nM:C\nL:1/8\nQ:1/4=84\nK:D\nD2 D D ^F2 ^F2 B6\n\n% PHRASE_BREAK\n| B2 A2 D2 G2 ^F2 E6\n\n% PHRASE_BREAK\n| E2 ^F2 A2 B2 A2 ^G2 ^F E A2\n\n% PHRASE_BREAK\n| d2 ^c2 d2 B2 B2 A6\n\n% PHRASE_BREAK\n| D2 D D ^F2 ^F2 B6\n\n% PHRASE_BREAK\n| B2 A2 D2 G2 ^F2 E6\n\n% PHRASE_BREAK\n| E2 ^F2 A2 B2 A2 ^G2 ^F E A2\n\n% PHRASE_BREAK\n| d2 ^c2 d2 B2 B2 A6\nw: My heart in di ting is\nw: good mat ter in a song\nw: I speak the things that I have _ made\nw: which to the King be long\nw: My heart in di ting is\nw: good mat ter in a song\nw: I speak the things that I have _ made\nw: which to the King be long\n",
+  "preAbc": "X:1\nT:Diademata\nM:C\nL:1/8\nQ:1/4=84\nK:D\nD2 D D ^F2 ^F2 B6\n\n% PHRASE_BREAK\n| B2 A2 D2 G2 ^F2 E6\n\n% PHRASE_BREAK\n| E2 ^F2 A2 B2 A2 ^G2 ^F E A2\n\n% PHRASE_BREAK\n| d2 ^c2 d2 B2 B2 A6\n",
   "preMelismaPositions": [
-    [],
-    [],
-    [
-      7
-    ],
-    [],
     [],
     [],
     [
@@ -21,9 +15,15 @@
     [
       7
     ],
+    [],
+    [],
+    [],
+    [
+      7
+    ],
     []
   ],
-  "newAbcSha256": "433f6eb18ce345640f5f0ee672eeb683c7b2f6cc04a5b497b9b11f2cc705413e",
-  "timestamp": "2026-08-30T08:23:41.207Z",
-  "syllableShapeNote": "SM shape expected [6,6,8,6] = 26 syllables; hard-coded [6,6,8,6] = 26 syllables. Diademata MusicXML has 1 slur pair (notes 19-20) → 1 melisma continuation. Total notes consumed = 27."
+  "newAbcSha256": "6ea0098555e1257667f5d8e0bdb3af20a97d540c4bbe29bdb890bc6fcb848099",
+  "timestamp": "2026-08-30T08:33:40.394Z",
+  "syllableShapeNote": "SM shape expected [6,6,8,6] = 26 syllables; hard-coded [6,6,8,6] = 26 syllables per cycle; SMD mirror → 8 phrases total. Diademata MusicXML has 1 slur pair (notes 19-20) → 1 melisma continuation per cycle. Total notes consumed = 54."
 }
