@@ -154,9 +154,10 @@ function durationToAbc(durationDivisions: number, divisionsPerQuarter: number): 
 // Phrase 1 = 7 syllables (CPRC "Lord haste me to deliver" — one extra "me" vs.
 // standard "Lord make haste to deliver"; user sing-test will confirm). Phrases
 // 2/3/4 = 6/8/6 syllables. Total = 27 syllables → 27 notes from MusicXML.
-// Used only to compute the per-phrase melismaPositions entries. The abc
-// output is music-only (no w: lines); the renderer injects paired-stanza
-// lyrics at render time.
+// For sung-twice-through SMD, the music is mirrored: phrases 5-8 reuse the
+// same notes as phrases 1-4, but the renderer injects two DIFFERENT psalm
+// stanzas' lyrics at render time. The abc output contains 8 chunks of music
+// (no w: lines).
 const PHRASE_W_LINES = [
   "Lord haste me to de li ver",
   "with speed Lord suc cor me",
@@ -164,6 +165,8 @@ const PHRASE_W_LINES = [
   "shamed and con found ed be",
 ]
 const PHRASE_SYLLABLE_COUNTS_SINGLE = [7, 6, 8, 6]
+// SMD = SM sung twice → 8 phrase budgets
+const PHRASE_SYLLABLE_COUNTS = [...PHRASE_SYLLABLE_COUNTS_SINGLE, ...PHRASE_SYLLABLE_COUNTS_SINGLE]
 
 // ── Build ABC body (one-syllable-per-note, no slur markup) ──────────────────
 
@@ -182,31 +185,36 @@ function buildAbc(abcNotes: MxNote[], fifths: number): BuildResult {
   const keySig = fifthsToAbcKey(fifths)
   const DIVS_PER_QUARTER = 256 // Hymnary Sibelius default
 
-  // Flatten ONE cycle's worth of syllable tokens (4 phrases for SM = 6.6.8.6).
-  // For sung-twice-through SMD, the melody is sung twice with two different
-  // psalm stanzas — the renderer injects those lyrics at render time. We
-  // only need one cycle's syllables here to compute melismaPositions.
+  // Flatten syllable tokens — DOUBLED for SMD (sung-twice-through). The
+  // renderer injects two different psalm stanzas at render time, but we
+  // need the doubled syllable stream here to compute the music chunk
+  // boundaries and the mirrored melismaPositions.
   const allTokens: string[] = []
-  for (const ph of PHRASE_W_LINES) {
-    const toks = ph.split(/\s+/).filter(Boolean)
-    for (const t of toks) allTokens.push(t)
+  for (let i = 0; i < 2; i++) {
+    for (const ph of PHRASE_W_LINES) {
+      const toks = ph.split(/\s+/).filter(Boolean)
+      for (const t of toks) allTokens.push(t)
+    }
   }
 
-  const expectedSylCount = PHRASE_SYLLABLE_COUNTS_SINGLE.reduce((a, b) => a + b, 0)
+  const expectedSylCount = PHRASE_SYLLABLE_COUNTS.reduce((a, b) => a + b, 0)
   if (allTokens.length !== expectedSylCount) {
     throw new Error(
       `Hard-coded syllable count mismatch: got ${allTokens.length}, expected ${expectedSylCount}`,
     )
   }
 
-  if (abcNotes.length < expectedSylCount) {
-    throw new Error(`Not enough notes in MusicXML: have ${abcNotes.length}, need ${expectedSylCount}`)
+  const firstCycleNoteCount = PHRASE_SYLLABLE_COUNTS_SINGLE.reduce((a, b) => a + b, 0)
+  if (abcNotes.length < firstCycleNoteCount) {
+    throw new Error(`Not enough notes in MusicXML: have ${abcNotes.length}, need ${firstCycleNoteCount}`)
   }
 
-  // One-syllable-per-note mapping (Leominster has 0 slur tags → 1:1 alignment).
+  // Mirror: cycle 2 reuses the same notes as cycle 1 (modulo wrap).
+  // Leominster has 0 slur tags → 1-syllable-per-note alignment.
   const out: AbcToken[] = []
   for (let i = 0; i < allTokens.length; i++) {
-    const n = abcNotes[i]
+    const noteIdx = i % firstCycleNoteCount
+    const n = abcNotes[noteIdx]
     out.push({
       pitch: pitchToAbc(n.step, n.alter, n.octave),
       dur: durationToAbc(n.duration, DIVS_PER_QUARTER),
@@ -214,12 +222,12 @@ function buildAbc(abcNotes: MxNote[], fifths: number): BuildResult {
     })
   }
 
-  // Build 4 phrases with PHRASE_BREAK markers. Each phrase gets its own
-  // melismaPositions entry (Leominster has 0 slurs → all empty arrays).
+  // Build 8 phrases with PHRASE_BREAK markers (4 unique + 4 mirrored).
+  // Leominster has 0 slurs → all melismaPositions entries are empty.
   const chunks: string[] = []
   const melismaPositions: number[][] = []
   let cursor = 0
-  for (const budget of PHRASE_SYLLABLE_COUNTS_SINGLE) {
+  for (const budget of PHRASE_SYLLABLE_COUNTS) {
     const musicParts: string[] = []
     for (let i = cursor; i < cursor + budget; i++) {
       musicParts.push(out[i].pitch + out[i].dur)
