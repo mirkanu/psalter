@@ -1464,8 +1464,12 @@ export function NotationRenderer({
         const cycleWLinesForSubdiv = wLinesForPhrase(i)
         const melismaLinesPerPhrase = cycleWLinesForSubdiv[0]?.length ?? 0
         const melismaPhraseSubdivisions = phraseSubdivisionsFor(i)
+        // Mirror the non-melisma branch's measure-bar signal (NOT the UI
+        // subdivision knob, which is 1 on tune pages and would falsely trigger
+        // for any multi-measure double-length phrase on a tune page).
+        const melismaInternalBarCount = (cleanedBodyForPositions.match(/\|/g) ?? []).length
         const melismaDuplicatePerCycle =
-          melismaLinesPerPhrase > 1 && melismaPhraseSubdivisions === 1
+          melismaLinesPerPhrase > 1 && melismaInternalBarCount <= 1
         const melismaTargetSubdivisions = melismaDuplicatePerCycle
           ? 1
           : Math.max(melismaPhraseSubdivisions, melismaLinesPerPhrase || 1)
@@ -1683,8 +1687,14 @@ export function NotationRenderer({
       // Multi-measure double-length phrases (Orlington #28 phrase 4 has 8
       // measures) keep the split-with-stacked-w-lines path because the full
       // phrase overflows mobile width if rendered as a single staff.
+      //
+      // The "single-measure" signal is the actual `|` count in the phrase
+      // body — NOT `phraseSubdivisionsFor(i)`, which is a UI row-count knob
+      // (A+/A-) and equals 1 on tune pages regardless of how many measures
+      // the phrase actually has.
+      const internalBarCount = (cleanedBody.match(/\|/g) ?? []).length
       const duplicateMusicPerCycle =
-        linesPerPhrase > 1 && naturalSubdivisions === 1
+        linesPerPhrase > 1 && internalBarCount <= 1
 
       const targetSubdivisions = duplicateMusicPerCycle
         ? 1
