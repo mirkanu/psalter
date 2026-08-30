@@ -1448,7 +1448,19 @@ export function NotationRenderer({
         // for every cycle's emit step. phraseSubdivisions drives target count
         // (baseSubdivisions + parent rowDelta). When 1 we keep the original
         // "single staff + full w: line" render path verbatim.
-        const melismaTargetSubdivisions = phraseSubdivisionsFor(i)
+        //
+        // 2026-08-30 (double-length melisma): also bump to at least linesPerPhrase
+        // (number of stanza-lines per phrase slot, = 2 when 2 stanzas are paired
+        // in a double-length tune). Matches the non-melisma branch's
+        // `Math.max(phraseSubdivisionsFor(i), linesPerPhrase || 1)` so CMD/SMD
+        // tunes with melismas render 4 phrases × linesPerPhrase sub-staves
+        // instead of being stuck at 1 sub-staff per phrase.
+        const cycleWLinesForSubdiv = wLinesForPhrase(i)
+        const melismaLinesPerPhrase = cycleWLinesForSubdiv[0]?.length ?? 0
+        const melismaTargetSubdivisions = Math.max(
+          phraseSubdivisionsFor(i),
+          melismaLinesPerPhrase || 1,
+        )
         const melismaMusicSubLines = melismaTargetSubdivisions > 1
           ? splitMusicIntoSubLines(cleanedBodyForPositions, melismaTargetSubdivisions)
           : [cleanedBodyForPositions]
@@ -1460,7 +1472,7 @@ export function NotationRenderer({
 
         // T-04.9.12-07: skip positions branch when noteCount=0 (defensive).
         if (noteCount > 0) {
-          const cycleWLinesGrid = wLinesForPhrase(i)
+          const cycleWLinesGrid = cycleWLinesForSubdiv
           const cycleCount = visibleCycles.length
 
           for (let cycleIdx = 0; cycleIdx < cycleCount; cycleIdx++) {
