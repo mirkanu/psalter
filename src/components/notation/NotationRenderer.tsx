@@ -158,6 +158,15 @@ export interface NotationRendererProps {
    */
   doubleLength: boolean
   /**
+   * Plan 04.9.6-05 (D-11): multi-select variant flags. Source of truth for
+   * `doubleLength` (derived via .includes('double_length')) AND for the
+   * newer `repeat_last_line` flag (renderer appends one extra staff with a
+   * copy of the last phrase's music). Kept distinct from `doubleLength` so
+   * callers can keep their derived boolean plumbed while the renderer reads
+   * the array directly.
+   */
+  meterVariant?: string[] | null
+  /**
    * Plan 04.9.9: Raw solfège OCR JSON string from DB. When non-null and containing
    * soprano/doh/time fields, used to build melisma-aware w: lines via
    * buildWLineFromSolfa. When null, falls back to syllabifyForAbc.
@@ -458,6 +467,7 @@ export function NotationRenderer({
   tuneName,
   tuneMeter,
   phraseShapeOverride,
+  meterVariant,
   stanzaMeter,
   showLyrics = true,
   // Default w-line emission to `showLyrics` so existing call sites that
@@ -513,13 +523,28 @@ export function NotationRenderer({
       .filter((st) => st.lines.length > 0)
   }, [lyricsStructured, lyrics])
 
+  // repeat_last_line: append one extra "phrase" (the last phrase of music
+  // repeated) by synthesising a virtual phraseShapeOverride. The existing
+  // localVisiblePhraseIndices loop then iterates one extra time and reuses
+  // the last phrase's music for the final index (line 1389's Math.min).
+  // Synthesised locally — never written back to the DB row.
+  const repeatLastLine = (meterVariant ?? []).includes('repeat_last_line')
+  const effectivePhraseShapeOverride = useMemo(() => {
+    if (phraseShapeOverride && phraseShapeOverride.length > 0) return phraseShapeOverride
+    if (!repeatLastLine) return null
+    const meterShape = expectedSyllablesByLine(tuneMeter ?? null, [])
+    if (!meterShape || meterShape.length === 0) return null
+    const lastSyl = meterShape[meterShape.length - 1] ?? 6
+    return [...meterShape, lastSyl]
+  }, [phraseShapeOverride, repeatLastLine, tuneMeter])
+
   const cycles = useMemo(
     () =>
       groupStanzasIntoCycles(
         stanzas,
-        doubleLength ? (['double_length'] as string[]) : [],
+        meterVariant ?? [],
       ),
-    [stanzas, doubleLength],
+    [stanzas, meterVariant],
   )
 
   // Plan 04.9.9: Parse solfège OCR JSON for melisma-aware w: generation.
@@ -994,10 +1019,12 @@ export function NotationRenderer({
         }
       }
       const grid = mapCycleToPhraseSyllableLines(workingCycle, effectivePhraseCount)
-      if (i >= grid.length && typeof console !== 'undefined') {
+      if (i >= grid.length && typeof console !== 'undefined' && !repeatLastLine) {
         // Lyric would be silently dropped because the cycle has fewer metrical
         // lines than the meter/override expects. Surface this in dev so the
-        // root cause (insufficient lines in lyrics) is debuggable.
+        // root cause (insufficient lines in lyrics) is debuggable. The
+        // repeatLastLine case is expected (the extra i is a music-only repeat
+        // staff with no lyric), so suppress the warning there.
         console.warn(
           `[NotationRenderer] meter expects ${effectivePhraseCount} phrases but cycle ${visibleCycles.indexOf(cycle)} has only ${grid.length} (phrase ${i} dropped). ` +
           `tuneMeter=${tuneMeter ?? 'null'}, phraseShapeOverride=${JSON.stringify(phraseShapeOverride ?? null)}, doubleLength=${doubleLength}.`,
@@ -1197,7 +1224,7 @@ export function NotationRenderer({
   function buildUnifiedAbc(sourceAbc: string): string {
     const localSplit = splitOnPhraseBreaks(sourceAbc)
     const localT = localSplit.phrases.length
-    const localEffectivePhraseTotal = Math.max(localT, phraseShapeOverride?.length ?? 0)
+    const localEffectivePhraseTotal = Math.max(localT, effectivePhraseShapeOverride?.length ?? 0)
     const localVisiblePhraseIndices = Array.from({ length: localEffectivePhraseTotal }, (_, i) => i)
 
     // Strip header lines that produce visible chrome we already render elsewhere:
@@ -1380,7 +1407,7 @@ export function NotationRenderer({
     const flattenMode =
       extraSubdivisions > 0 &&
       viewMode === 'staff' &&
-      (phraseShapeOverride == null || phraseShapeOverride.length === 0) &&
+      (effectivePhraseShapeOverride == null || effectivePhraseShapeOverride.length === 0) &&
       !doubleLength
 
     if (!flattenMode) for (const i of localVisiblePhraseIndices) {
@@ -1994,7 +2021,7 @@ export function NotationRenderer({
   // defeat the memo; its own inputs are all listed explicitly below.
   const unifiedAbc = useMemo(
     () => buildUnifiedAbc(abc),
-    [abc, phraseShapeOverride, visibleCycles, tuneMeter, showLyrics, extraSubdivisions, baseSubdivisions, chromeless, solfegeVoices, melismaPositions, renderWLineUnderStaff],
+    [abc, effectivePhraseShapeOverride, visibleCycles, tuneMeter, showLyrics, extraSubdivisions, baseSubdivisions, chromeless, solfegeVoices, melismaPositions, renderWLineUnderStaff],
   )
 
   // Split-leaf staff view needs ABC without inline w: lyrics (lyrics render in separate column).
