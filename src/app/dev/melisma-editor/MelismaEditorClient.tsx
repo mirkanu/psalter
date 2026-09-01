@@ -115,7 +115,14 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
   // wrote via the existing Save-to-DB path.
   const effectiveAbc = useMemo(() => {
     if (!rawEffectiveAbc) return ''
-    const isDoubled = (tune?.meterVariant ?? []).includes('double_length')
+    const meterVariant = tune?.meterVariant ?? []
+    // repeat_last_line wins over double_length for editor purposes: the tune
+    // has 4 distinct musical phrases, and the renderer auto-appends a 5th
+    // staff that mirrors the 4th. The editor only needs to show the 4
+    // unique phrases so the user can manually mark melismas — the 5th staff
+    // inherits those marks at render time via the virtual phraseShapeOverride.
+    const repeatLastLine = meterVariant.includes('repeat_last_line')
+    const isDoubled = !repeatLastLine && meterVariant.includes('double_length')
     const isAlreadyDoubled = /\bD\b/.test(tune?.meter ?? '')
     const expected = expectedSyllablesByLine(tune?.meter ?? null)
     // For DCM tunes (meter_variant includes 'double_length', meter not already
