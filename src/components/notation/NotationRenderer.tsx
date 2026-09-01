@@ -1003,8 +1003,8 @@ export function NotationRenderer({
     return visibleCycles.map((cycle) => {
       let workingCycle = cycle
       if (
-        phraseShapeOverride &&
-        phraseShapeOverride.length > 0
+        effectivePhraseShapeOverride &&
+        effectivePhraseShapeOverride.length > 0
       ) {
         const flatLineCount = cycle.reduce((sum, s) => sum + s.lines.length, 0)
         if (flatLineCount > 0 && flatLineCount < effectivePhraseCount) {
@@ -1362,7 +1362,7 @@ export function NotationRenderer({
 
       const expectedShape = expectedSyllablesByLine(
         tuneMeter,
-        doubleLength ? (['double_length'] as string[]) : [],
+        doubleLength && !repeatLastLine ? (['double_length'] as string[]) : [],
       )
       if (expectedShape) {
         const expected = expectedShape[metricalLineIndex]

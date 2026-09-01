@@ -1201,6 +1201,7 @@ export function SingingView({
                     meter: activeTune.meter ?? null,
                     phraseShapeOverride: activeTune.phraseShapeOverride ?? null,
                     doubleLength: activeTune.doubleLength ?? false,
+                    meterVariant: activeTune.meterVariant ?? null,
                     solfegeOcrText: activeTune.solfegeOcrText ?? null,
                     scoreJpgUrl: scoreJpgUrl,
                     solfegeJpgUrl: solfegeJpgUrl,
