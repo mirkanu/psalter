@@ -1,0 +1,14 @@
+X:1
+T:Eastgate (last line repeat for Ps 133)
+M:C
+L:1/8
+Q:1/4=76
+K:D
+a2d'2c'bba | a2b2
+% PHRASE_BREAK
+c'2d'2 | f2f2ga
+% PHRASE_BREAK
+a2 | gff2e2a2 |
+bb
+% PHRASE_BREAK
+c'c'd'2e'2 | f'2d'c'bagf | g2baa4 | d'2d'd'd'2c'2 | d'4
