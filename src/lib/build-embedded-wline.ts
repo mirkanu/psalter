@@ -188,10 +188,26 @@ export function buildEmbeddedWline(
     : newPhraseBodies.join(separator)
 
   // --- Step 5: single-source-of-truth invariant ---
+  // `passesValidation` is consulted by the Melisma Editor's "Save to DB"
+  // gate. It must distinguish real failures (a phrase's note-head count
+  // doesn't match its w-token count, meaning the w-line can't be built)
+  // from soft warnings (syllable-count mismatches between the OCR syllabifier
+  // and the note count, which is normal for repeat_last_line tunes and for
+  // tunes where the syllabifier missed valid melismas — already surfaced
+  // to the user by the editor's `countMatch` check + confirm prompt).
+  //
+  // Filter the warnings list to count-mismatch diagnostics before gating
+  // on `warnings.length === 0`. Real failures (phrases exhausted mid-build,
+  // w-stream leftovers that signal a structural break) still block save.
   const allPhrasesValid = perPhrase.every(
     (p) => p.noteHeadCount === p.wTokenCount,
   )
-  const passesValidation = allPhrasesValid && warnings.length === 0
+  const softWarnings = warnings.filter(
+    (w) =>
+      w.startsWith('syllable count mismatch') ||
+      w.startsWith('token ') && w.includes('has no syllable'),
+  )
+  const passesValidation = allPhrasesValid && softWarnings.length === warnings.length
 
   return {
     abc: newAbc,
