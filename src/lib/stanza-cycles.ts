@@ -28,6 +28,13 @@ import { syllabifyForAbc } from './lyrics'
  * - `meterVariant.includes('double_length')`: pairs every two consecutive
  *   stanzas. Odd stanza count yields a final 1-stanza cycle (under-fill;
  *   D-12 — does NOT repeat content).
+ * - `meterVariant.includes('repeat_last_line')`: forces `cycleSize=1` even
+ *   when `double_length` is also set. The repeat-last-line convention repeats
+ *   the LAST MUSIC PHRASE (one staff appended after the 4 phrases), NOT the
+ *   whole stanza-cycle. Pairing two stanzas of lyrics would double that
+ *   single repeat, breaking the visual. Each stanza gets its own cycle and
+ *   the renderer's virtual phrase-shape override adds the 5th staff per
+ *   cycle.
  * - otherwise: emits one cycle per stanza.
  */
 export function groupStanzasIntoCycles(
@@ -35,7 +42,8 @@ export function groupStanzasIntoCycles(
   meterVariant: string[],
 ): Stanza[][] {
   if (stanzas.length === 0) return []
-  const cycleSize = meterVariant.includes('double_length') ? 2 : 1
+  const repeatLastLine = meterVariant.includes('repeat_last_line')
+  const cycleSize = repeatLastLine ? 1 : meterVariant.includes('double_length') ? 2 : 1
   const cycles: Stanza[][] = []
   for (let i = 0; i < stanzas.length; i += cycleSize) {
     cycles.push(stanzas.slice(i, i + cycleSize))

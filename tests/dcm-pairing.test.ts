@@ -7,23 +7,29 @@ function stz(idx: number, ...txt: string[]): Stanza {
 }
 
 describe('DCM pairing (RENDER-01, D-11) — live bug fix', () => {
-  it('pairs two consecutive CM stanzas per cycle when tune.double_length=true', () => {
+  it('pairs two consecutive CM stanzas per cycle when meter_variant includes double_length', () => {
     const stanzas = [stz(0, 'a'), stz(1, 'b'), stz(2, 'c'), stz(3, 'd')]
-    const cycles = groupStanzasIntoCycles(stanzas, true)
+    const cycles = groupStanzasIntoCycles(stanzas, ['double_length'])
     expect(cycles).toEqual([[stanzas[0], stanzas[1]], [stanzas[2], stanzas[3]]])
   })
 
-  it('does NOT pair when tune.double_length=false (CM tune × CM stanzas)', () => {
+  it('does NOT pair when meter_variant lacks double_length (CM tune × CM stanzas)', () => {
     const stanzas = [stz(0, 'a'), stz(1, 'b')]
-    const cycles = groupStanzasIntoCycles(stanzas, false)
+    const cycles = groupStanzasIntoCycles(stanzas, [])
     expect(cycles).toEqual([[stanzas[0]], [stanzas[1]]])
   })
 
-  it('under-fills the last cycle (3 stanzas, doubleLength=true → [[s0,s1],[s2]]) without duplicating content', () => {
+  it('under-fills the last cycle (3 stanzas, double_length=true → [[s0,s1],[s2]]) without duplicating content', () => {
     const stanzas = [stz(0, 'a'), stz(1, 'b'), stz(2, 'c')]
-    const cycles = groupStanzasIntoCycles(stanzas, true)
+    const cycles = groupStanzasIntoCycles(stanzas, ['double_length'])
     expect(cycles).toEqual([[stanzas[0], stanzas[1]], [stanzas[2]]])
     expect(cycles[1].length).toBe(1)
+  })
+
+  it('repeat_last_line forces cycleSize=1 even when double_length is also set', () => {
+    const stanzas = [stz(0, 'a'), stz(1, 'b'), stz(2, 'c'), stz(3, 'd')]
+    const cycles = groupStanzasIntoCycles(stanzas, ['double_length', 'repeat_last_line'])
+    expect(cycles).toEqual([[stanzas[0]], [stanzas[1]], [stanzas[2]], [stanzas[3]]])
   })
 })
 
