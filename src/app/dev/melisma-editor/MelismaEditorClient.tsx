@@ -741,17 +741,22 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
       ? 'abc-only'
       : null
 
+  // Save-mode disabling. The countMatch check used to BLOCK save when
+  // non-underlined notes ≠ syllables — but that breaks `repeat_last_line`
+  // tunes where the syllable stream intentionally has an extra copy of the
+  // 4th line appended for the 5th phrase, AND tunes where the user has
+  // valid melismas that the syllabifier doesn't account for. Now we keep
+  // the warning visible (so the user knows) but allow save; onSave prompts
+  // for confirmation when counts don't match.
   const saveDisabledReason =
     !tune
       ? 'No tune loaded'
       : willSaveMode === 'melisma'
         ? !built
           ? 'No tune loaded'
-          : !countMatch
-            ? `non-underlined count (${nonUnderlinedCount}) ≠ syllables (${syllableCount}) — mark more or fewer underlines, or clear all to save only ABC edits`
-            : !built.passesValidation
-              ? 'buildEmbeddedWline reports validation failure — see warnings'
-              : null
+          : !built.passesValidation
+            ? 'buildEmbeddedWline reports validation failure — see warnings'
+            : null
         : willSaveMode === 'abc-only'
           ? null
           : 'Nothing to save: mark underlines, OR edit notes via the solfège grid / raw ABC. (Syllable edits alone don’t persist — they only affect w-line generation.)'
@@ -761,6 +766,20 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
     const abcToSave =
       willSaveMode === 'melisma' && built ? built.abc : effectiveAbc
     if (!abcToSave) return
+    // Count-mismatch confirmation: the meter check is a heuristic and breaks
+    // down for repeat_last_line tunes (extra syllable for the 5th phrase) and
+    // for tunes with valid melismas the syllabifier doesn't account for.
+    // Surface the discrepancy as a confirmation rather than a hard block so
+    // the user can still save.
+    if (willSaveMode === 'melisma' && !countMatch) {
+      const ok = window.confirm(
+        `Syllable counts don't match: non-underlined notes = ${nonUnderlinedCount}, syllables = ${syllableCount} ` +
+          `(Δ ${nonUnderlinedCount - syllableCount}). ` +
+          `This is expected for repeat_last_line tunes (4 lyric lines, 5th phrase reuses the 4th line) ` +
+          `or when the syllabifier misses melismas. Save anyway?`,
+      )
+      if (!ok) return
+    }
     setSaving(true)
     setSaveMsg(null)
     try {
