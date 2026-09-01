@@ -116,11 +116,14 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
   const effectiveAbc = useMemo(() => {
     if (!rawEffectiveAbc) return ''
     const meterVariant = tune?.meterVariant ?? []
-    // repeat_last_line wins over double_length for editor purposes: the tune
-    // has 4 distinct musical phrases, and the renderer auto-appends a 5th
-    // staff that mirrors the 4th. The editor only needs to show the 4
-    // unique phrases so the user can manually mark melismas — the 5th staff
-    // inherits those marks at render time via the virtual phraseShapeOverride.
+    // repeat_last_line: the stored ABC carries 5 PHRASE_BREAKs marking 5
+    // unique musical phrases (4 base + 1 unique 5th phrase, NOT a copy of
+    // the 4th; the 5th has its own melody). The 4th lyric line is sung
+    // twice to fill the 5th phrase's lyric slot. The editor must therefore
+    // NOT auto-derive an 8-phrase DCM grid from `double_length` — the
+    // stored ABC already has the correct phrase count, and the lyric
+    // padding is handled by appending the 4th line to `effectiveSyllables`
+    // further below.
     const repeatLastLine = meterVariant.includes('repeat_last_line')
     const isDoubled = !repeatLastLine && meterVariant.includes('double_length')
     const isAlreadyDoubled = /\bD\b/.test(tune?.meter ?? '')
@@ -555,10 +558,21 @@ export function MelismaEditorClient({ tunes: initialTunes }: Props) {
     // Otherwise use meter-fitted stanza-1 syllables (auto-fix when needed).
     return autoFixed.fixed
   }, [editedSyllables, savedSyllablesPerPhrase, autoFixed])
-  const effectiveSyllables = useMemo(
-    () => effectiveSyllablesPerLine.flat(),
-    [effectiveSyllablesPerLine],
-  )
+  const effectiveSyllables = useMemo(() => {
+    const flat = effectiveSyllablesPerLine.flat()
+    // repeat_last_line: the stored ABC has 5 musical phrases (4 unique + 1
+    // unique 5th, NOT a duplicate — the 5th phrase carries its own melody),
+    // and the lyricist writes only 4 lyric lines. The 4th line is sung twice
+    // (once with phrase 4, once with phrase 5). Append a copy of the last
+    // lyric line to the flat syllable stream so buildEmbeddedWline has
+    // enough syllables to populate the 5th phrase's w: line.
+    const repeatLastLine = (tune?.meterVariant ?? []).includes('repeat_last_line')
+    if (repeatLastLine && effectiveSyllablesPerLine.length > 0) {
+      const lastLine = effectiveSyllablesPerLine[effectiveSyllablesPerLine.length - 1]
+      if (lastLine && lastLine.length > 0) return [...flat, ...lastLine]
+    }
+    return flat
+  }, [effectiveSyllablesPerLine, tune])
 
   // Per-line meter check: actual vs expected from the tune's meter (CM=[8,6,8,6] etc.)
   const meterCheck = useMemo(

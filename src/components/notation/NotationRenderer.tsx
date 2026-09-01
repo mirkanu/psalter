@@ -992,10 +992,13 @@ export function NotationRenderer({
   // structural: same meter → identical inner length across all cycles.
   function wLinesForPhrase(i: number): string[][] {
     // Per-tune phrase-shape override (e.g. [8,6,8,6,6] for Abbeyville) wins
-    // over meter-derived count. When set, also pad each cycle's lines by
-    // repeating the last line so cycles 2+ render a 5th phrase's lyrics.
-    const effectivePhraseCount = phraseShapeOverride && phraseShapeOverride.length > 0
-      ? phraseShapeOverride.length
+    // over meter-derived count. The `effectivePhraseShapeOverride` upstream
+    // already merges (a) the explicit phraseShapeOverride prop, (b) the
+    // repeat_last_line virtual override (= [meterShape, lastSyl]), so use it
+    // here too — that way repeat_last_line tunes get a 5th lyric slot that
+    // gets the 4th lyric line repeated (via the padding loop below).
+    const effectivePhraseCount = effectivePhraseShapeOverride && effectivePhraseShapeOverride.length > 0
+      ? effectivePhraseShapeOverride.length
       : phrasesForMeter(tuneMeter)
     return visibleCycles.map((cycle) => {
       let workingCycle = cycle
