@@ -35,6 +35,9 @@ export interface TuneRow {
   abcSatb: string | null
   phraseShapeOverride: number[] | null
   doubleLength: boolean
+  /** Multi-select variant flags — possible values: 'double_length', 'repeat_last_line'.
+   *  `doubleLength` above is derived from this for renderer convenience. */
+  meterVariant: string[]
   solfegeOcrText: string | null
   /** Global tie-breaker inside the 'other' tier (src/lib/tune-tiers.ts TierableTune). */
   weightedHistoricalFrequency: number

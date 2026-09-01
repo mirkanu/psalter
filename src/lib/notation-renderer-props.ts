@@ -81,7 +81,7 @@ export type CoreNotationProps = Pick<
   NotationRendererProps,
   | 'abc' | 'lyrics' | 'scoreJpgUrl' | 'solfegeJpgUrl' | 'tuneName' | 'tuneMeter'
   | 'phraseShapeOverride' | 'stanzaMeter' | 'lyricsStructured' | 'doubleLength'
-  | 'solfegeOcrText' | 'showLyrics' | 'onViewModeChange' | 'melismaPositions'
+  | 'meterVariant' | 'solfegeOcrText' | 'showLyrics' | 'onViewModeChange' | 'melismaPositions'
   | 'renderWLineUnderStaff' | 'tunePageMode'
 >
 
@@ -102,6 +102,7 @@ export function buildNotationRendererProps(
     stanzaMeter: ctx.stanzaMeter,
     lyricsStructured: ctx.lyricsStructured,
     doubleLength: tune?.doubleLength ?? false,
+    meterVariant: tune?.meterVariant ?? null,
     solfegeOcrText: tune?.solfegeOcrText ?? null,
     showLyrics: options.showLyrics ?? true,
     renderWLineUnderStaff: options.renderWLineUnderStaff ?? options.showLyrics ?? true,
