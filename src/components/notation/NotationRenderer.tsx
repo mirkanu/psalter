@@ -1227,6 +1227,31 @@ export function NotationRenderer({
   // emit its body line followed by one `w:` line per stanza-portion. This
   // gives the visual effect of N stacked phrase rows while remaining a single
   // tune for the synth (Play traverses end-to-end naturally).
+
+  // Strip header lines that produce visible chrome we already render elsewhere:
+  //   - `T:` titles — abcjs renders these as staff title; page UI already
+  //      shows the tune name.
+  //   - `Q:` tempo lines (chromeless only) — singing view has no tempo
+  //      indication; the global synth BPM is controlled via FAB audio
+  //      controls instead. Stripping prevents "♩ = 76" emission.
+  //   - Strip `name="..."` from V: voice declarations (chromeless) so abcjs
+  //     doesn't print "Soprano" beside the stave.
+  // Shared by buildUnifiedAbc and the split-half path so the two stay in
+  // lockstep — previously the split-half path used the raw header and emitted
+  // "Perfect Way" + tempo, which the user reported as a bug on 2026-09-02.
+  function cleanAbcHeader(rawHeader: string): string {
+    return rawHeader
+      .split('\n')
+      .filter((l) => {
+        const t = l.trim()
+        if (/^T:/.test(t)) return false
+        if (chromeless && /^Q:/.test(t)) return false
+        return true
+      })
+      .map((l) => (chromeless && /^V:/.test(l.trim()) ? l.replace(/\s*name="[^"]*"/g, '') : l))
+      .join('\n')
+  }
+
   // Builds the single Staff view `unifiedAbc` body from `abc`, composing
   // header → for each visible phrase, its music line followed by one `w:`
   // line per stanza-portion (~250 lines of w:-line / melisma-position logic).
@@ -1250,19 +1275,10 @@ export function NotationRenderer({
     //      asked this be documented here rather than equalised across routes.
     // We also strip the `name="..."` attribute from any `V:` voice declaration
     // in chromeless mode so abcjs doesn't print "Soprano" beside the stave.
-    const cleanedHeader = localSplit.header
-      .split('\n')
-      .filter((l) => {
-        const t = l.trim()
-        if (/^T:/.test(t)) return false
-        if (chromeless && /^Q:/.test(t)) return false
-        return true
-      })
-      // Strip `name="..."` ONLY on V: voice declarations — other header
-      // directives (%%score, %%MIDI, %%text, macros) can legally contain
-      // `name="..."` and must not be mutated. (BL-04)
-      .map((l) => (chromeless && /^V:/.test(l.trim()) ? l.replace(/\s*name="[^"]*"/g, '') : l))
-      .join('\n')
+    // 2026-09-02: routing both buildUnifiedAbc AND the split-half path
+    // through cleanAbcHeader so they stay in lockstep — previously the
+    // split-half path used the raw header and emitted "Perfect Way" + tempo.
+    const cleanedHeader = cleanAbcHeader(localSplit.header)
     if (localSplit.phrases.length === 0) return cleanedHeader
     // 260825-vocalspace: inject `%%vocalspace 5` globally to add ~5px gap
     // above each sub-staff's lyric line. Empirically (psalter mobile 390x800)
@@ -2089,7 +2105,11 @@ export function NotationRenderer({
     if (split.phrases.length < 2) return null
     const mid = Math.ceil(split.phrases.length / 2)
     return {
-      header: split.header,
+      // 2026-09-02: strip T:/Q: lines + V: name attribute from the split-half
+      // header so the per-half SVG matches what buildUnifiedAbc emits in the
+      // staff-inline path — previously this used split.header verbatim, so
+      // "Perfect Way" + "♩ = 76" rendered in the chromeless split-half view.
+      header: cleanAbcHeader(split.header),
       firstPhrases: split.phrases.slice(0, mid),
       secondPhrases: split.phrases.slice(mid),
     }
@@ -2145,6 +2165,15 @@ export function NotationRenderer({
     const hasMultiPages = pages.length > 1
     const currentSrc = pages[pageIndex] ?? fallbackUrl ?? null
 
+    // 2026-09-02: swipe left/right on the image as an alternative to the
+    // underneath chevrons — matches the staff-JPEG AbcPlayer pattern.
+    const swipeRef = useRef<HTMLDivElement>(null)
+    useSwipeGesture(swipeRef, {
+      enabled: hasMultiPages,
+      onSwipeLeft: () => setPageIndex((i) => Math.min(pages.length - 1, i + 1)),
+      onSwipeRight: () => setPageIndex((i) => Math.max(0, i - 1)),
+    })
+
     const image = currentSrc ? (
       // eslint-disable-next-line @next/next/no-img-element
       <img
@@ -2166,12 +2195,11 @@ export function NotationRenderer({
       <p className="text-sm text-muted-foreground italic">{emptyMessage}</p>
     )
 
-    // 260717-mwv checkpoint round 2 (item 1): the buttons were 44x44 (full
-    // touch-target size) with a 4px gap on both sides — on a ~375px mobile
-    // viewport that reserved ~100px of horizontal width for navigation,
-    // leaving little for the JPEG itself. Narrowed to a slim 28px-wide column
-    // (kept reasonably tall for a comfortable tap target) with no gap against
-    // the image, so more width goes to the JPEG.
+    // 2026-09-02: pagination moved to a row UNDERNEATH the image, flanking
+    // a "Page X of Y" label — same pattern as AbcPlayer's split-leaf staff
+    // JPEG (commit 6358386) so the nav no longer steals horizontal width
+    // from the JPEG on mobile. The chevrons remain slim (w-7) for fingertip
+    // taps; swipe on the image (swipeRef) is the alternate input.
     const navButton = (direction: 'prev' | 'next') => {
       const disabled = direction === 'prev' ? pageIndex === 0 : pageIndex === pages.length - 1
       return (
@@ -2184,7 +2212,7 @@ export function NotationRenderer({
             setPageIndex((i) => (direction === 'prev' ? Math.max(0, i - 1) : Math.min(pages.length - 1, i + 1)))
           }
           disabled={disabled}
-          className="h-10 w-7 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+          className="min-h-10 w-9 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
         >
           {direction === 'prev' ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         </button>
@@ -2193,18 +2221,28 @@ export function NotationRenderer({
 
     const imageBlock = (
       <div className={cn(
-        'flex items-center gap-0',
+        'space-y-1',
         chromeless && !isSplit ? '-mx-4' : '',
-        isSplit && chromeless ? 'flex-1 min-h-0' : '',
+        isSplit && chromeless ? 'flex-1 min-h-0 flex flex-col' : '',
       )}>
-        {hasMultiPages && navButton('prev')}
-        <div className={cn(
-          'min-w-0 flex-1 flex justify-center',
-          isSplit && chromeless ? 'h-full min-h-0 items-start' : 'items-center',
-        )}>
+        <div
+          ref={swipeRef}
+          className={cn(
+            'min-w-0 flex justify-center touch-pan-y',
+            isSplit && chromeless ? 'flex-1 min-h-0 items-start' : 'items-center',
+          )}
+        >
           {image}
         </div>
-        {hasMultiPages && navButton('next')}
+        {hasMultiPages && (
+          <div className="flex items-center justify-center gap-1">
+            {navButton('prev')}
+            <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap px-1">
+              Page {pageIndex + 1} of {pages.length}
+            </span>
+            {navButton('next')}
+          </div>
+        )}
       </div>
     )
 
@@ -2347,11 +2385,21 @@ export function NotationRenderer({
                 showOriginal={showOriginal}
                 onShowOriginalChange={setShowOriginal}
                 hidePlayerControls
-                staffWidthFactor={staffWidthFactor}
+                // 2026-09-02: split-half is the chromeless split-leaf staff
+                // path with lyrics hidden. The page UI already shows the
+                // tune name, and no lyrics reserve vertical space below, so
+                // we use the same factor as staff-inline (0.55 mobile /
+                // 0.95 wider) for a flush-left staff and matching geometry.
+                staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 0.55 : 0.95) : staffWidthFactor}
                 compactSplitMobile={false}
                 baseSize={baseSize}
                 rowDelta={extraSubdivisions}
                 meterPhraseCount={meterMinForDistribution}
+                // 2026-09-02: split-half path doesn't want abcjs to zoom
+                // the SVG when the container grows (fullscreen overlay).
+                // Responsive:'none' keeps notation at natural size; the
+                // parent's overflow-y-auto handles any overflow.
+                noResponsiveResize
               />
             ) : (
               <AbcPlayer
@@ -2366,11 +2414,12 @@ export function NotationRenderer({
                 showOriginal={showOriginal}
                 onShowOriginalChange={setShowOriginal}
                 hidePlayerControls
-                staffWidthFactor={staffWidthFactor}
+                staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 0.55 : 0.95) : staffWidthFactor}
                 compactSplitMobile={false}
                 baseSize={baseSize}
                 rowDelta={extraSubdivisions}
                 meterPhraseCount={meterMinForDistribution}
+                noResponsiveResize
               />
             )}
           </div>
