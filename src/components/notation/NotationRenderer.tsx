@@ -2061,6 +2061,50 @@ export function NotationRenderer({
     [unifiedAbc],
   )
 
+  // 2026-09-02: CMD/SMD/double-length CMD mobile staff-split split-half.
+  // When the notation has more than 5 phrases and would otherwise be height-
+  // fit-shrunk to ~50% slot making lyrics unreadable, we split the abc into
+  // two halves at the phrase boundary closest to the midpoint, then render
+  // one half at a time with prev/next chevron nav. compactSplitMobile stays
+  // off on this path (the per-half SVG renders at natural size; the viewarea
+  // scrolls within its 50% slot if needed). Only gates on chromeless +
+  // staff-split + mobile + inline-approved + >5 phrases (so CM with 4 phrases
+  // and Eastgate's 5 phrases from repeat_last_line keep their existing single-
+  // SVG render).
+  //
+  // Split from the SOURCE abc (not unifiedAbcNoLyrics) — the unified body
+  // joins phrases without PHRASE_BREAK separators and renders them as one
+  // continuous tune, so re-splitting it yields a single phrase. The source
+  // abc still has the markers from the digitisation pipeline.
+  const sourcePhraseCount = useMemo(() => {
+    if (!abc) return 0
+    return splitOnPhraseBreaks(abc).phrases.length
+  }, [abc])
+  const shouldSplitHalfMobile =
+    compactSplitMobile && staffInlineApproved && sourcePhraseCount > 5
+  const splitHalves = useMemo(() => {
+    if (!shouldSplitHalfMobile) return null
+    const split = splitOnPhraseBreaks(abc)
+    if (split.phrases.length < 2) return null
+    const mid = Math.ceil(split.phrases.length / 2)
+    return {
+      header: split.header,
+      firstPhrases: split.phrases.slice(0, mid),
+      secondPhrases: split.phrases.slice(mid),
+    }
+  }, [shouldSplitHalfMobile, abc])
+  const splitAbcFirst = useMemo(() => {
+    if (!splitHalves) return null
+    return `${splitHalves.header}\n${splitHalves.firstPhrases.join('\n% PHRASE_BREAK\n')}`
+  }, [splitHalves])
+  const splitAbcSecond = useMemo(() => {
+    if (!splitHalves) return null
+    return `${splitHalves.header}\n${splitHalves.secondPhrases.join('\n% PHRASE_BREAK\n')}`
+  }, [splitHalves])
+  const [halfIndex, setHalfIndex] = useState(0)
+  // Reset half index on tune switch / viewMode change.
+  useEffect(() => { setHalfIndex(0) }, [staffPages?.[0], solfegePages?.[0], viewMode])
+
   // ── View area ─────────────────────────────────────────────────────────────
   // Item 2: Play plays once — no chain/repeat. We deliberately do NOT pass
   // autoPlayToken / onPlayStart / onPlaybackComplete so playback stops at end
@@ -2268,7 +2312,82 @@ export function NotationRenderer({
           `Staff notation for ${tuneName}`,
           tunePageMode ? 'Staff notation not available for this tune yet' : undefined,
         ).imageBlock
-      : (
+      : shouldSplitHalfMobile && splitAbcFirst && splitAbcSecond ? (
+        // 2026-09-02: split-half mobile staff-split for tunes >5 phrases.
+        // Renders two AbcPlayer instances each with half the phrases, with
+        // prev/next chevron nav between them. The visible half fills the
+        // 50% split-leaf slot at natural size (no height-fit-shrink), and
+        // the viewarea's overflow-y-auto handles vertical scrolling when
+        // a half exceeds the slot height.
+        <div className="flex flex-col w-full h-full min-h-0">
+          <div className="flex items-center gap-0 min-h-0 flex-1">
+            <button
+              type="button"
+              aria-label="Previous half"
+              data-notation-half-prev
+              onClick={() => setHalfIndex(0)}
+              disabled={halfIndex === 0}
+              className="h-10 w-7 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <div className="min-w-0 flex-1 flex justify-center overflow-y-auto overscroll-y-none h-full">
+              {halfIndex === 0 ? (
+                <AbcPlayer
+                  abc={splitAbcFirst}
+                  scale={scale}
+                  tuneName={tuneName}
+                  staffJpgUrl={staffPages[0] ?? scoreJpgUrl}
+                  solfegeJpgUrl={solfegePages[0] ?? solfegeJpgUrl}
+                  staffPages={staffPages}
+                  solfegePages={solfegePages}
+                  renderLyricsBelow={undefined}
+                  showOriginal={showOriginal}
+                  onShowOriginalChange={setShowOriginal}
+                  hidePlayerControls
+                  staffWidthFactor={staffWidthFactor}
+                  compactSplitMobile={false}
+                  baseSize={baseSize}
+                  rowDelta={extraSubdivisions}
+                  meterPhraseCount={meterMinForDistribution}
+                />
+              ) : (
+                <AbcPlayer
+                  abc={splitAbcSecond}
+                  scale={scale}
+                  tuneName={tuneName}
+                  staffJpgUrl={staffPages[0] ?? scoreJpgUrl}
+                  solfegeJpgUrl={solfegePages[0] ?? solfegeJpgUrl}
+                  staffPages={staffPages}
+                  solfegePages={solfegePages}
+                  renderLyricsBelow={undefined}
+                  showOriginal={showOriginal}
+                  onShowOriginalChange={setShowOriginal}
+                  hidePlayerControls
+                  staffWidthFactor={staffWidthFactor}
+                  compactSplitMobile={false}
+                  baseSize={baseSize}
+                  rowDelta={extraSubdivisions}
+                  meterPhraseCount={meterMinForDistribution}
+                />
+              )}
+            </div>
+            <button
+              type="button"
+              aria-label="Next half"
+              data-notation-half-next
+              onClick={() => setHalfIndex(1)}
+              disabled={halfIndex === 1}
+              className="h-10 w-7 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="text-xs text-center text-muted-foreground tabular-nums py-1">
+            Half {halfIndex + 1} of 2
+          </div>
+        </div>
+      ) : (
         <div ref={staffRef} style={applyMinHeight ? { minHeight: minStaffHeight } : undefined}>
           <AbcPlayer
             abc={abcForView}
@@ -2284,6 +2403,11 @@ export function NotationRenderer({
             // "Show original" could never reveal an image for any tune.
             staffJpgUrl={staffPages[0] ?? scoreJpgUrl}
             solfegeJpgUrl={solfegePages[0] ?? solfegeJpgUrl}
+            // Multi-page arrays enable prev/next nav around the "Show
+            // original" scan when active (see AbcPlayer.tsx). Falls back to
+            // the single-URL props above when the array is empty.
+            staffPages={staffPages}
+            solfegePages={solfegePages}
             renderLyricsBelow={isSplit ? undefined : lyricsBelow}
             showOriginal={showOriginal}
             onShowOriginalChange={setShowOriginal}
