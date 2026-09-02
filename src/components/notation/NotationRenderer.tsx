@@ -1000,7 +1000,7 @@ export function NotationRenderer({
     const effectivePhraseCount = effectivePhraseShapeOverride && effectivePhraseShapeOverride.length > 0
       ? effectivePhraseShapeOverride.length
       : phrasesForMeter(tuneMeter)
-    return visibleCycles.map((cycle) => {
+    const result = visibleCycles.map((cycle) => {
       let workingCycle = cycle
       if (
         effectivePhraseShapeOverride &&
@@ -1033,8 +1033,10 @@ export function NotationRenderer({
           `tuneMeter=${tuneMeter ?? 'null'}, phraseShapeOverride=${JSON.stringify(phraseShapeOverride ?? null)}, doubleLength=${doubleLength}.`,
         )
       }
-      return grid[i] ?? []
+      const out = grid[i] ?? []
+      return out
     })
+    return result
   }
 
   // ── Pagination indicator ───────────────────────────────────────────────────
@@ -1310,7 +1312,14 @@ export function NotationRenderer({
     ): string {
       const text = rawText.replace(/\n/g, ' ')
       let raw: string
-      if (solfegeVoices && tuneMeter) {
+      if (solfegeVoices && tuneMeter && !doubleLength) {
+        // Skip the solfege heuristic for double-length tunes: the buildWLineFromSolfa
+        // slice table is sized for the SINGLE meter cycle (CM=4, LM=4, SM=4), so when
+        // the piece is doubled the function's `o - slice[phraseIndex]` math blows up
+        // (e.g. Perfect Way #132 with phraseIndex=3 produces ~42 slots from a
+        // 4-phrase soprano, then forceMatchMeterShape merges them into pathological
+        // tokens like "shallstandingbe." with embedded underscores). The simple
+        // syllabify path + phrase_shape_override is correct for doubled tunes.
         const warnings: string[] = []
         raw = buildWLineFromSolfa(
           solfegeVoices.soprano,
@@ -1327,6 +1336,20 @@ export function NotationRenderer({
       }
       let tokens = raw.split(/\s+/).filter(Boolean)
 
+      // phrase_shape_override wins over canonical meter shape — real CMD tunes
+      // (e.g. Perfect Way) extend the second half asymmetrically.
+      const overrideShape =
+        effectivePhraseShapeOverride && effectivePhraseShapeOverride.length > 0
+          ? effectivePhraseShapeOverride
+          : null
+      const expectedShape =
+        overrideShape ??
+        expectedSyllablesByLine(
+          tuneMeter,
+          doubleLength && !repeatLastLine ? (['double_length'] as string[]) : [],
+        )
+      const expected = expectedShape ? expectedShape[metricalLineIndex] : undefined
+
       // Reconcile a syllable deficit against the phrase's actual note count
       // BEFORE falling back to the meter-shape word-splitter. A repeated-pitch
       // note run (the psalm-singing "reciting note" / "point" convention —
@@ -1338,10 +1361,17 @@ export function NotationRenderer({
       // count-correct but nonsensical text that visually collides with
       // neighbouring syllables once notes are packed tightly (mobile
       // sub-staves).
-      if (musicForPhrase) {
+      //
+      // Gated on the meter-derived target (expected), NOT raw noteCount. For
+      // a CMD tune like Perfect Way the notes legitimately run long (the
+      // meter is 6 but the music has 30+ notes across a single phrase);
+      // we still want 6 lyric tokens, not 30+ melismas followed by a
+      // destructive forceMatchMeterShape merge that hides underscores in
+      // merged tokens abcjs cannot render.
+      if (musicForPhrase && expected !== undefined && tokens.length < expected) {
         const noteCount = countNoteHeads(musicForPhrase)
-        if (noteCount > 0 && tokens.length < noteCount) {
-          const deficit = noteCount - tokens.length
+        if (noteCount > 0) {
+          const deficit = expected - tokens.length
           const continuations = detectRepeatedPitchContinuations(musicForPhrase, deficit)
           if (continuations.length > 0) {
             const contSet = new Set(continuations)
@@ -1360,12 +1390,7 @@ export function NotationRenderer({
         }
       }
 
-      const expectedShape = expectedSyllablesByLine(
-        tuneMeter,
-        doubleLength && !repeatLastLine ? (['double_length'] as string[]) : [],
-      )
       if (expectedShape) {
-        const expected = expectedShape[metricalLineIndex]
         if (expected !== undefined && tokens.length !== expected) {
           const { fixed } = forceMatchMeterShape([tokens], [expected])
           return (fixed[0] ?? tokens).join(' ')
