@@ -1142,17 +1142,8 @@ export function SingingView({
         data-notation-region
         data-tour-target="scroll-area"
         aria-label={enableSwipe ? 'Swipe left or right for previous or next stanza group' : undefined}
-        // 2026-09-02: when fullscreen is active, hide the inline main content
-        // via display:none. We use display (not unmount) so the underlying
-        // NotationRendererClient keeps its abcjs DOM/JS state warm — exiting
-        // fullscreen snaps back to the same render instantly. Without this,
-        // both this inline renderer AND the fullscreen overlay's renderer
-        // mount simultaneously, producing two competing split-half viewAreas
-        // (svgCount 13 → 19 with TWO 189x467 notation SVGs visible).
-        aria-hidden={isFullscreen ? true : undefined}
         className="overflow-hidden flex flex-col h-[calc(100dvh_-_104px_-_env(safe-area-inset-top))] md:h-[calc(100dvh_-_116px_-_env(safe-area-inset-top))] pb-11 md:pb-13 transition-[height,margin-top,padding-bottom] duration-200 ease-out motion-reduce:transition-none"
         style={{
-          display: isFullscreen ? 'none' : undefined,
           height: topBarHidden ? '100dvh' : undefined,
           marginTop: topBarHidden ? 'calc(-104px - env(safe-area-inset-top))' : undefined,
           paddingBottom: bottomBarHidden ? '0px' : undefined,
@@ -1166,6 +1157,13 @@ export function SingingView({
            casing) as any other Lyrics Only view; viewMode is kept at 'lyrics'
            until a tune is chosen (see the hasAnyNotation-gated effects above
            and GearPopover's tune-selection-request flow). */}
+        {/* 2026-09-02: when fullscreen is active, unmount the inline
+           NotationRendererClient (display:none alone wasn't enough — both
+           renderers still mounted their abcjs SVGs, doubling svgCount 13 → 19
+           with two competing split-half viewAreas). Unmounting means the
+           inline abcjs state is rebuilt on the next toggle; the overlay's
+           renderer handles the fullscreen view and vice versa. */}
+        {!isFullscreen && (
         <div ref={notationAnimRef} className="flex-1 min-h-0 flex flex-col">
           <NotationRendererClient
             {...buildNotationRendererProps(
@@ -1221,6 +1219,7 @@ export function SingingView({
             staffInlineApproved={staffInlineApproved}
           />
         </div>
+        )}
         {/* Task 4 (04.9.14-03): dynamic spacer reserving exact room for
            PlayMiniBar (on top of the pb-11/md:pb-13 already reserved for
            GlassBottomBar), so content never sits hidden behind the two
