@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select'
 import { Play, Pause, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react'
 import { SOUNDFONT_URL } from '@/lib/abc-soundfont'
+import { useSwipeGesture } from '@/hooks/useSwipeGesture'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -512,6 +513,9 @@ export default function AbcPlayer({
   const needsSynthReinitRef = useRef(true)
 
   const outerRef = useRef<HTMLDivElement>(null)
+  // 2026-09-02: ref for the scan image wrapper — hosts the swipe listener so
+  // users can swipe left/right to advance/regress pages in "Show original".
+  const scanImageRef = useRef<HTMLDivElement>(null)
   const [staffWidth, setStaffWidth] = useState(0)
 
   // Synchronous initial measurement so abcjs never paints at a wrong staffwidth.
@@ -1358,6 +1362,14 @@ export default function AbcPlayer({
     ? originalPages[scanPageIndex] ?? originalPages[0]
     : (originalMode === 'solfege' ? (solfegeJpgUrl ?? staffJpgUrl) : (staffJpgUrl ?? solfegeJpgUrl))
 
+  // 2026-09-02: swipe left/right to advance/regress scan pages when there
+  // are multiple pages — alternative to the chevron buttons underneath.
+  useSwipeGesture(scanImageRef, {
+    enabled: hasMultiPages,
+    onSwipeLeft: () => setScanPageIndex((i) => Math.min(originalPages.length - 1, i + 1)),
+    onSwipeRight: () => setScanPageIndex((i) => Math.max(0, i - 1)),
+  })
+
   return (
     <div
       ref={outerRef}
@@ -1368,20 +1380,12 @@ export default function AbcPlayer({
       {showOriginal ? (
         <div className="relative w-full space-y-2">
           {originalSrc ? (
-            <div className="flex items-center gap-0">
-              {hasMultiPages && (
-                <button
-                  type="button"
-                  aria-label="Previous page"
-                  data-page-prev
-                  onClick={() => setScanPageIndex((i) => Math.max(0, i - 1))}
-                  disabled={scanPageIndex === 0}
-                  className="h-10 w-7 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-              )}
-              <div className="min-w-0 flex-1 flex justify-center">
+            <>
+              {/* 2026-09-02: image now full-width; prev/next + "Page X of Y"
+                  moved to a row UNDERNEATH the image so the chevrons no
+                  longer steal horizontal space on a 390px mobile viewport.
+                  Swipe on the image is also supported (scanImageRef). */}
+              <div ref={scanImageRef} className="w-full flex justify-center touch-pan-y">
                 {/* R2-hosted JPG with unknown intrinsic dimensions — next/image
                     requires either width/height or fill+sized parent, which
                     the surrounding aspect-fitting layout doesn't provide.
@@ -1394,18 +1398,33 @@ export default function AbcPlayer({
                 />
               </div>
               {hasMultiPages && (
-                <button
-                  type="button"
-                  aria-label="Next page"
-                  data-page-next
-                  onClick={() => setScanPageIndex((i) => Math.min(originalPages.length - 1, i + 1))}
-                  disabled={scanPageIndex === originalPages.length - 1}
-                  className="h-10 w-7 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
+                <div className="flex items-center justify-center gap-1 pt-1">
+                  <button
+                    type="button"
+                    aria-label="Previous page"
+                    data-page-prev
+                    onClick={() => setScanPageIndex((i) => Math.max(0, i - 1))}
+                    disabled={scanPageIndex === 0}
+                    className="min-h-10 w-9 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap px-1">
+                    Page {scanPageIndex + 1} of {originalPages.length}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Next page"
+                    data-page-next
+                    onClick={() => setScanPageIndex((i) => Math.min(originalPages.length - 1, i + 1))}
+                    disabled={scanPageIndex === originalPages.length - 1}
+                    className="min-h-10 w-9 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
               )}
-            </div>
+            </>
           ) : (
             <p className="text-sm text-muted-foreground italic">Original score not available.</p>
           )}
