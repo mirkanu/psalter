@@ -1142,8 +1142,17 @@ export function SingingView({
         data-notation-region
         data-tour-target="scroll-area"
         aria-label={enableSwipe ? 'Swipe left or right for previous or next stanza group' : undefined}
+        // 2026-09-02: when fullscreen is active, hide the inline main content
+        // via display:none. We use display (not unmount) so the underlying
+        // NotationRendererClient keeps its abcjs DOM/JS state warm — exiting
+        // fullscreen snaps back to the same render instantly. Without this,
+        // both this inline renderer AND the fullscreen overlay's renderer
+        // mount simultaneously, producing two competing split-half viewAreas
+        // (svgCount 13 → 19 with TWO 189x467 notation SVGs visible).
+        aria-hidden={isFullscreen ? true : undefined}
         className="overflow-hidden flex flex-col h-[calc(100dvh_-_104px_-_env(safe-area-inset-top))] md:h-[calc(100dvh_-_116px_-_env(safe-area-inset-top))] pb-11 md:pb-13 transition-[height,margin-top,padding-bottom] duration-200 ease-out motion-reduce:transition-none"
         style={{
+          display: isFullscreen ? 'none' : undefined,
           height: topBarHidden ? '100dvh' : undefined,
           marginTop: topBarHidden ? 'calc(-104px - env(safe-area-inset-top))' : undefined,
           paddingBottom: bottomBarHidden ? '0px' : undefined,
