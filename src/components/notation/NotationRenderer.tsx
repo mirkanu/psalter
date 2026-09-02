@@ -872,14 +872,17 @@ export function NotationRenderer({
   // notation-slot budget) — both compact spacing AND a height-fit scale are
   // required.
   //
-  // 260716: extended to inline (non-split) Staff too. The whole-tune inline
-  // view had NO height-fit at all on mobile — a CM tune's 8 sub-staves could
-  // exceed the chromeless notation-viewarea height and force a page scroll,
-  // even though the surrounding comment/design intent (UAT v6 issue #3) says
-  // Staff mode should never need to scroll. Gated to chromeless && (staff OR
-  // split-leaf) && <768px so desktop and non-chromeless callers (/tunes/[id],
-  // /study) stay byte-identical; inline/split-leaf Solfège (JPG-based, sized
-  // separately) are unaffected.
+  // 260716 originally extended this to inline (non-split) Staff too, but
+  // 2026-09-02 reverted that for the user-facing rule: staff inline view
+  // must use the ENTIRE viewport width with vertical scrolling allowed
+  // when content exceeds viewport height (Perfect Way #132 / CMD with
+  // 8 phrases × 2 cycles = 16 systems is the canonical case). The height-fit
+  // transform was clipping the SVG down to the slot height, making CMD
+  // lyrics unreadable on mobile. Now gated to staff-split ONLY — inline
+  // Staff falls through to natural rendering + `overflow-y: auto` on the
+  // viewarea (set in the viewarea className below), so non-double CMs still
+  // fit (they always did naturally at staffwidth=0.55) and double CMs scroll
+  // instead of being squished.
   //
   // 260824-rowscroll: bypass height-fit-scale when rowDelta > 0. The user has
   // explicitly asked for MORE rows via A+ — those rows should render at
@@ -891,7 +894,7 @@ export function NotationRenderer({
   const compactSplitMobile =
     chromeless &&
     (viewportW < 768 || isPhoneLandscapeForFit) &&
-    (viewMode === 'staff' || viewMode === 'staff-split') &&
+    viewMode === 'staff-split' &&
     (rowDeltaProp ?? 0) === 0
 
   // 04.9.15.1-03 checkpoint fix: reserve top (portrait + landscape) / bottom
