@@ -406,6 +406,17 @@ interface AbcPlayerProps {
   /** Phrase count for the active meter (e.g. 4 for CM). Used by the
    *  growth-factor formula above. Ignored when rowDelta = 0. */
   meterPhraseCount?: number
+  /**
+   * 2026-09-02: split-half mobile path. When true, passes
+   * `responsive: 'none'` to abcjs so the SVG renders at its natural
+   * `staffwidth`-driven size and does NOT upscale when the container
+   * grows (e.g. when the user enters fullscreen on a non-CMD tune — the
+   * overlay gives the SVG more vertical room, but we don't want the
+   * notation to fill it by zooming, we want it to stay at the same
+   * visual size and scroll if needed). Default false preserves
+   * staff-inline behaviour where responsive:resize is desirable.
+   */
+  noResponsiveResize?: boolean
 }
 
 const STORAGE_BPM_KEY = 'psalter-bpm'
@@ -448,6 +459,7 @@ export default function AbcPlayer({
   baseSize,
   rowDelta = 0,
   meterPhraseCount = 1,
+  noResponsiveResize = false,
 }: AbcPlayerProps) {
   const baseKeySemitone = useMemo(() => parseKeyFromAbc(abc), [abc])
   const defaultBpm = useMemo(() => parseBpmFromAbc(abc), [abc])
@@ -785,7 +797,12 @@ export default function AbcPlayer({
         // Keep abcjs `scale` at 1; visual size is driven by staffwidth above.
         scale: 1,
         staffwidth: effectiveStaffWidth,
-        responsive: 'resize',
+        // 2026-09-02: split-half path uses 'none' so the SVG does NOT
+        // upscale when the container grows (e.g. user enters fullscreen and
+        // the overlay gives the SVG more vertical room — we want the
+        // notation to stay at the same visual size, scrolling within its
+        // h-full slot, not zoom to fill).
+        responsive: noResponsiveResize ? 'none' : 'resize',
         // MOBILE-07: see comment above effectiveStaffWidth — lets a row that
         // naturally needs more than our target re-layout every row to match,
         // unifying per-row widths so the last row no longer needs the old
@@ -1378,7 +1395,7 @@ export default function AbcPlayer({
     >
       {/* Notation area: SVG OR original JPEG */}
       {showOriginal ? (
-        <div className="relative w-full space-y-2">
+        <div className="relative w-full space-y-1">
           {originalSrc ? (
             <>
               {/* 2026-09-02: image now full-width; prev/next + "Page X of Y"
@@ -1398,7 +1415,7 @@ export default function AbcPlayer({
                 />
               </div>
               {hasMultiPages && (
-                <div className="flex items-center justify-center gap-1 pt-1">
+                <div className="flex items-center justify-center gap-1 -mt-1">
                   <button
                     type="button"
                     aria-label="Previous page"
