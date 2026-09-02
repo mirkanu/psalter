@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useSwipeGesture } from '@/hooks/useSwipeGesture'
 import { isPhoneDevice } from '@/lib/device'
 import AbcPlayer from '@/components/AbcPlayer'
 import { FullscreenOverlay } from './FullscreenOverlay'
@@ -2102,6 +2103,15 @@ export function NotationRenderer({
     return `${splitHalves.header}\n${splitHalves.secondPhrases.join('\n% PHRASE_BREAK\n')}`
   }, [splitHalves])
   const [halfIndex, setHalfIndex] = useState(0)
+  // 2026-09-02: hosts the swipe listener so users can swipe left/right on
+  // the SVG to advance/regress between halves (alternative to the chevrons
+  // underneath).
+  const splitHalfRef = useRef<HTMLDivElement>(null)
+  useSwipeGesture(splitHalfRef, {
+    enabled: shouldSplitHalfMobile && !!splitAbcFirst && !!splitAbcSecond,
+    onSwipeLeft: () => setHalfIndex((i) => Math.min(1, i + 1)),
+    onSwipeRight: () => setHalfIndex((i) => Math.max(0, i - 1)),
+  })
   // Reset half index on tune switch / viewMode change.
   useEffect(() => { setHalfIndex(0) }, [staffPages?.[0], solfegePages?.[0], viewMode])
 
@@ -2314,77 +2324,80 @@ export function NotationRenderer({
         ).imageBlock
       : shouldSplitHalfMobile && splitAbcFirst && splitAbcSecond ? (
         // 2026-09-02: split-half mobile staff-split for tunes >5 phrases.
-        // Renders two AbcPlayer instances each with half the phrases, with
-        // prev/next chevron nav between them. The visible half fills the
-        // 50% split-leaf slot at natural size (no height-fit-shrink), and
-        // the viewarea's overflow-y-auto handles vertical scrolling when
-        // a half exceeds the slot height.
+        // Renders two AbcPlayer instances each with half the phrases.
+        // 2026-09-02 (relayout): prev/next chevrons moved OUT of the row
+        // flanking the SVG (which stole ~56px horizontal on a 390px viewport)
+        // and into a row UNDERNEATH, flanking the "Half X of 2" label.
+        // Swipe left/right on the SVG also advances/regresses.
         <div className="flex flex-col w-full h-full min-h-0">
-          <div className="flex items-center gap-0 min-h-0 flex-1">
+          <div
+            ref={splitHalfRef}
+            className="min-w-0 flex-1 flex justify-center overflow-y-auto overscroll-y-none h-full touch-pan-y"
+          >
+            {halfIndex === 0 ? (
+              <AbcPlayer
+                abc={splitAbcFirst}
+                scale={scale}
+                tuneName={tuneName}
+                staffJpgUrl={staffPages[0] ?? scoreJpgUrl}
+                solfegeJpgUrl={solfegePages[0] ?? solfegeJpgUrl}
+                staffPages={staffPages}
+                solfegePages={solfegePages}
+                renderLyricsBelow={undefined}
+                showOriginal={showOriginal}
+                onShowOriginalChange={setShowOriginal}
+                hidePlayerControls
+                staffWidthFactor={staffWidthFactor}
+                compactSplitMobile={false}
+                baseSize={baseSize}
+                rowDelta={extraSubdivisions}
+                meterPhraseCount={meterMinForDistribution}
+              />
+            ) : (
+              <AbcPlayer
+                abc={splitAbcSecond}
+                scale={scale}
+                tuneName={tuneName}
+                staffJpgUrl={staffPages[0] ?? scoreJpgUrl}
+                solfegeJpgUrl={solfegePages[0] ?? solfegeJpgUrl}
+                staffPages={staffPages}
+                solfegePages={solfegePages}
+                renderLyricsBelow={undefined}
+                showOriginal={showOriginal}
+                onShowOriginalChange={setShowOriginal}
+                hidePlayerControls
+                staffWidthFactor={staffWidthFactor}
+                compactSplitMobile={false}
+                baseSize={baseSize}
+                rowDelta={extraSubdivisions}
+                meterPhraseCount={meterMinForDistribution}
+              />
+            )}
+          </div>
+          <div className="flex items-center justify-center gap-1 pt-1">
             <button
               type="button"
               aria-label="Previous half"
               data-notation-half-prev
               onClick={() => setHalfIndex(0)}
               disabled={halfIndex === 0}
-              className="h-10 w-7 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+              className="min-h-10 w-9 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <div className="min-w-0 flex-1 flex justify-center overflow-y-auto overscroll-y-none h-full">
-              {halfIndex === 0 ? (
-                <AbcPlayer
-                  abc={splitAbcFirst}
-                  scale={scale}
-                  tuneName={tuneName}
-                  staffJpgUrl={staffPages[0] ?? scoreJpgUrl}
-                  solfegeJpgUrl={solfegePages[0] ?? solfegeJpgUrl}
-                  staffPages={staffPages}
-                  solfegePages={solfegePages}
-                  renderLyricsBelow={undefined}
-                  showOriginal={showOriginal}
-                  onShowOriginalChange={setShowOriginal}
-                  hidePlayerControls
-                  staffWidthFactor={staffWidthFactor}
-                  compactSplitMobile={false}
-                  baseSize={baseSize}
-                  rowDelta={extraSubdivisions}
-                  meterPhraseCount={meterMinForDistribution}
-                />
-              ) : (
-                <AbcPlayer
-                  abc={splitAbcSecond}
-                  scale={scale}
-                  tuneName={tuneName}
-                  staffJpgUrl={staffPages[0] ?? scoreJpgUrl}
-                  solfegeJpgUrl={solfegePages[0] ?? solfegeJpgUrl}
-                  staffPages={staffPages}
-                  solfegePages={solfegePages}
-                  renderLyricsBelow={undefined}
-                  showOriginal={showOriginal}
-                  onShowOriginalChange={setShowOriginal}
-                  hidePlayerControls
-                  staffWidthFactor={staffWidthFactor}
-                  compactSplitMobile={false}
-                  baseSize={baseSize}
-                  rowDelta={extraSubdivisions}
-                  meterPhraseCount={meterMinForDistribution}
-                />
-              )}
-            </div>
+            <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap px-1">
+              Half {halfIndex + 1} of 2
+            </span>
             <button
               type="button"
               aria-label="Next half"
               data-notation-half-next
               onClick={() => setHalfIndex(1)}
               disabled={halfIndex === 1}
-              className="h-10 w-7 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+              className="min-h-10 w-9 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
-          </div>
-          <div className="text-xs text-center text-muted-foreground tabular-nums py-1">
-            Half {halfIndex + 1} of 2
           </div>
         </div>
       ) : (

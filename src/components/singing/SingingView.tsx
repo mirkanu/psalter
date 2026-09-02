@@ -1,7 +1,7 @@
 'use client'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { RotateCcw, Minimize2 } from 'lucide-react'
+import { RotateCcw } from 'lucide-react'
 import { NotationRendererClient } from '@/components/notation/NotationRendererClient'
 import { PsalmTopBarClient } from './PsalmTopBarClient'
 import { GlassBottomBar } from './GlassBottomBar'
@@ -1332,26 +1332,15 @@ export function SingingView({
       <OnboardingTourClient key={tourKey} totalStanzas={totalStanzas} />
 
       {/* 2026-09-02: fullscreen overlay — replaces the old scroll-hide-UI
-         pattern. Renders just the notation (full-bleed) with an Exit button
-         in the top-right and the same GlassBottomBar at the bottom so
-         Play/Gear/Fullscreen controls remain available. Escape key, body
-         scroll lock, and landscape-orientation lock are handled by
-         FullscreenOverlay itself. */}
+         pattern. Renders just the notation+lyrics at full bleed; the SAME
+         GlassBottomBar is reused at the bottom so the fullscreen button
+         becomes the Exit control (Minimize2) in the same spot where the
+         Enter button lives in the normal view (immediately left of Play).
+         Escape key, body scroll lock, and landscape-orientation lock are
+         handled by FullscreenOverlay itself. */}
       <FullscreenOverlay
         open={isFullscreen}
         onClose={() => setIsFullscreen(false)}
-        topBar={
-          <div className="flex w-full items-center justify-end">
-            <button
-              type="button"
-              aria-label="Exit fullscreen"
-              onClick={() => setIsFullscreen(false)}
-              className="min-h-10 min-w-10 inline-flex items-center justify-center text-muted-foreground active:scale-[0.90] transition-transform duration-75"
-            >
-              <Minimize2 className="h-5 w-5" />
-            </button>
-          </div>
-        }
         bottomBar={
           <GlassBottomBar
             value={
@@ -1373,10 +1362,9 @@ export function SingingView({
             onGearOpen={() => setGearOpen(true)}
             onFullscreenToggle={() => setIsFullscreen(false)}
             isFullscreen={true}
-            // The overlay already provides its own Exit button in the top-
-            // right; suppress the duplicate here so the bottom bar shows
-            // A−/A+/Play/Gear only (matches the standard fullscreen UX).
-            hideFullscreenButton={true}
+            // Show the fullscreen button (becomes Minimize2 = exit) so the
+            // exit control sits in the same place as the entry button.
+            hideFullscreenButton={false}
             hidden={false}
             gear={
               <GearPopoverClient
@@ -1401,7 +1389,11 @@ export function SingingView({
           />
         }
       >
-        <div className="w-full h-full flex flex-col">
+        {/* 2026-09-02: h-full + min-h-0 + flex flex-col gives the chromeless
+            viewArea (which uses `flex-1 min-h-0` internally) a definite
+            parent height so the SVG renders at full size instead of
+            collapsing to 0×0. */}
+        <div className="w-full h-full min-h-0 flex flex-col">
           <NotationRendererClient
             {...buildNotationRendererProps(
               activeTune
@@ -1430,12 +1422,13 @@ export function SingingView({
             onBaseSizeChange={handleBaseSizeChange}
             rowDelta={rowDelta}
             notationBaseSize={notationBaseSize}
-            // Disable chromeless inside the overlay — chromeless strips the
-            // outer fixed-height wrappers that the inline split layout relies
-            // on, leaving the SVG with 0×0 dimensions. The overlay itself
-            // already provides a full-bleed chrome-less surface, so we don't
-            // need NotationRenderer to hide its own chrome.
-            chromeless={false}
+            // 2026-09-02: chromeless=true hides the inner controlBar (A+/A−,
+            // Staff/Solfège/Lyrics toggle, tune title, tempo, Enter-FS icon)
+            // so the overlay shows ONLY notation + lyrics. The wrapper above
+            // (`h-full min-h-0 flex flex-col`) gives the chromeless viewArea's
+            // `flex-1 min-h-0` a definite parent height, so the SVG renders
+            // at full overlay size instead of collapsing to 0×0.
+            chromeless={true}
             onStanzaChange={handleStanzaChange}
             stanzaPage={stanzaPage}
             onStanzaPageChange={setStanzaPage}
