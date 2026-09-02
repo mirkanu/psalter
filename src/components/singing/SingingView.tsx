@@ -1,7 +1,7 @@
 'use client'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { RotateCcw } from 'lucide-react'
+import { RotateCcw, Minimize2 } from 'lucide-react'
 import { NotationRendererClient } from '@/components/notation/NotationRendererClient'
 import { PsalmTopBarClient } from './PsalmTopBarClient'
 import { GlassBottomBar } from './GlassBottomBar'
@@ -19,6 +19,7 @@ import type { PsalmRow } from '@/components/PsalmListingGrid'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
 import { buildNotationRendererProps } from '@/lib/notation-renderer-props'
 import { setChromeHidden } from '@/lib/chrome-hidden-store'
+import { FullscreenOverlay } from '@/components/notation/FullscreenOverlay'
 import { phrasesForMeter } from '@/lib/abc-phrase-meter-map'
 import { resolveStaffInlineApproved, shouldFallbackToSplit } from '@/lib/inline-staff-gating'
 import { isIOSDevice, isStandaloneDisplayMode, isPhoneDevice } from '@/lib/device'
@@ -568,6 +569,11 @@ export function SingingView({
   const mainRef = useRef<HTMLElement | null>(null)
   const [topBarHidden, setTopBarHidden] = useState(false)
   const [bottomBarHidden, setBottomBarHidden] = useState(false)
+  // Fullscreen overlay state — toggled by the bottom-bar fullscreen button.
+  // Hides all chrome (top bar, bottom bar, header) and renders just the
+  // notation+lyrics, with an "Exit fullscreen" affordance in the overlay's
+  // own top bar.
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const handleRestartTour = useCallback(() => {
     try {
@@ -848,17 +854,10 @@ export function SingingView({
     setBottomBarHidden(false)
     setMiniBarAutoHidden(false)
 
-    // Phone landscape: force chrome hidden immediately, overriding the reset
-    // above. All guards below additionally check this flag so nothing else
-    // in this effect (the fits-viewport gate, the mql-crossing handler) can
-    // flip it back to visible while still in landscape — it only clears on
-    // the next run of this effect, when phoneLandscapeChromeHide itself
-    // flips false (rotated back to portrait).
-    if (phoneLandscapeChromeHide) {
-      setTopBarHidden(true)
-      setBottomBarHidden(true)
-      setMiniBarAutoHidden(true)
-    }
+    // 2026-09-02: phoneLandscapeChromeHide forced-hide removed — mobile now
+    // behaves identically to desktop (chrome always visible, user can hide
+    // manually via the fullscreen button). Keeping the flag referenced below
+    // for the handleMql guard.
 
     const main = mainRef.current
     if (!main) return
@@ -963,48 +962,20 @@ export function SingingView({
 
     const lastByEl = new WeakMap<EventTarget, number>()
     const handleScroll = (e: Event) => {
-      // Landscape has no scroll-driven reveal — bars stay hidden until the
-      // device rotates back to portrait (see phoneLandscapeChromeHide above).
-      if (phoneLandscapeChromeHide) return
+      // 2026-09-02: mobile scroll-hide-UI disabled per user request — mobile
+      // scrolling now behaves identically to desktop (chrome always visible).
+      // The `hidden` state still exists for API stability but is never set
+      // from scroll. We still record scrollTop in `lastByEl` for any future
+      // diagnostic use (e.g. detecting scroll direction at tune switch).
       if (!mql.matches) return
-      // 2026-08-24 (row-count knob): with A+/A− the staff is now larger
-      // than the viewport — disable the scroll-driven chrome auto-hide so
-      // the user always has access to A− to step back. We still record the
-      // scroll position for the rowDelta change trigger but don't toggle
-      // any of the hidden flags.
-      if (viewMode === 'staff' && rowDelta > 0) {
-        const el = e.target as HTMLElement | null
-        if (el && typeof el.scrollTop === 'number') {
-          lastByEl.set(el, el.scrollTop)
-        }
-        return
-      }
       const el = e.target as HTMLElement | null
-      if (!el || typeof el.scrollTop !== 'number') return
-      const maxTop = Math.max(0, el.scrollHeight - el.clientHeight)
-      // Item 4: a region whose content fits has its overflow forced to
-      // 'hidden' above so this shouldn't fire in practice — defensive only.
-      if (maxTop <= SCROLL_FIT_TOLERANCE) return
-      // iOS Safari rubber-band overscroll reports scrollTop OUTSIDE the natural
-      // [0, maxTop] range and oscillates rapidly at the boundary. Clamp to the
-      // valid range so bounce frames collapse to a constant boundary value
-      // (delta ~0) instead of registering as real up/down movement.
-      const scrollTop = Math.min(Math.max(el.scrollTop, 0), maxTop)
-      const last = lastByEl.get(el) ?? 0
-      const delta = scrollTop - last
-      // Ignore sub-threshold jitter (bounce settle / tiny finger tremor). Normal
-      // scrolling easily exceeds 4px; slow real scrolls still accumulate because
-      // we do NOT advance `last` until the threshold is crossed.
-      if (Math.abs(delta) < 4) return
-      const scrollingDown = delta > 0
-      setTopBarHidden(scrollTop > 40 && scrollingDown)
-      setBottomBarHidden(scrollTop > 100 && scrollingDown)
-      // Task 3 (04.9.14-03): PlayMiniBar auto-hides on scroll down (same
-      // 100px threshold as the bottom bar, since it sits directly above
-      // it) and reappears on any upward scroll — independent of the
-      // manual collapse state (see `effectiveMiniBarVisible`).
-      setMiniBarAutoHidden(scrollTop > 100 && scrollingDown)
-      lastByEl.set(el, scrollTop)
+      if (el && typeof el.scrollTop === 'number') {
+        lastByEl.set(el, el.scrollTop)
+      }
+      // Force-reset to visible in case a previous render left them hidden.
+      setTopBarHidden(false)
+      setBottomBarHidden(false)
+      setMiniBarAutoHidden(false)
     }
 
     const handleMql = () => {
@@ -1307,6 +1278,12 @@ export function SingingView({
         isPlaying={isPlaying}
         onPlayToggle={handlePlayToggle}
         onGearOpen={() => setGearOpen(true)}
+        // 2026-09-02: fullscreen button (icon-only) sits just left of Play.
+        // The same GlassBottomBar instance is also rendered inside the
+        // FullscreenOverlay so Play/Gear/Fullscreen controls stay available
+        // there too — the overlay's own top-bar just adds the Exit button.
+        onFullscreenToggle={() => setIsFullscreen((v) => !v)}
+        isFullscreen={isFullscreen}
         hidden={bottomBarHidden}
         gear={
           <GearPopoverClient
@@ -1353,6 +1330,123 @@ export function SingingView({
         <StanzaDotIndicator current={currentStanza ?? 1} total={totalStanzas as number} />
       )}
       <OnboardingTourClient key={tourKey} totalStanzas={totalStanzas} />
+
+      {/* 2026-09-02: fullscreen overlay — replaces the old scroll-hide-UI
+         pattern. Renders just the notation (full-bleed) with an Exit button
+         in the top-right and the same GlassBottomBar at the bottom so
+         Play/Gear/Fullscreen controls remain available. Escape key, body
+         scroll lock, and landscape-orientation lock are handled by
+         FullscreenOverlay itself. */}
+      <FullscreenOverlay
+        open={isFullscreen}
+        onClose={() => setIsFullscreen(false)}
+        topBar={
+          <div className="flex w-full items-center justify-end">
+            <button
+              type="button"
+              aria-label="Exit fullscreen"
+              onClick={() => setIsFullscreen(false)}
+              className="min-h-10 min-w-10 inline-flex items-center justify-center text-muted-foreground active:scale-[0.90] transition-transform duration-75"
+            >
+              <Minimize2 className="h-5 w-5" />
+            </button>
+          </div>
+        }
+        bottomBar={
+          <GlassBottomBar
+            value={
+              viewMode === 'staff'
+                ? phrasesForMeter(activeTune?.meter ?? null) + rowDelta
+                : activeBaseSize
+            }
+            onValueChange={handleBaseSizeChange}
+            step={viewMode === 'staff' ? 1 : undefined}
+            minValue={viewMode === 'staff' ? phrasesForMeter(activeTune?.meter ?? null) : undefined}
+            maxValue={viewMode === 'staff' ? phrasesForMeter(activeTune?.meter ?? null) + MAX_ROW_DELTA : undefined}
+            hideZoom={viewMode === 'staff'}
+            currentStanza={staffPaginationActive ? currentStanza : null}
+            totalStanzas={staffPaginationActive ? totalStanzas : null}
+            onStanzaPrev={handleStanzaPrev}
+            onStanzaNext={handleStanzaNext}
+            isPlaying={isPlaying}
+            onPlayToggle={handlePlayToggle}
+            onGearOpen={() => setGearOpen(true)}
+            onFullscreenToggle={() => setIsFullscreen(false)}
+            isFullscreen={true}
+            // The overlay already provides its own Exit button in the top-
+            // right; suppress the duplicate here so the bottom bar shows
+            // A−/A+/Play/Gear only (matches the standard fullscreen UX).
+            hideFullscreenButton={true}
+            hidden={false}
+            gear={
+              <GearPopoverClient
+                open={gearOpen}
+                onOpenChange={setGearOpen}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+                studyHref={studyHref}
+                onRestartTour={handleRestartTour}
+                showLyricsOption={!!showLyrics}
+                staffAvailable={staffAvailable}
+                solfegeInlineAvailable={false}
+                solfegeSplitAvailable={solfegeSplitAvailable}
+                staffInlineApproved={staffInlineApproved}
+                hasActiveTune={!!activeTune}
+                onRequestTuneSelection={handleRequestTuneSelection}
+                originalScanAvailable={originalScanAvailable}
+                showOriginal={showOriginal}
+                onShowOriginalChange={setShowOriginal}
+              />
+            }
+          />
+        }
+      >
+        <div className="w-full h-full flex flex-col">
+          <NotationRendererClient
+            {...buildNotationRendererProps(
+              activeTune
+                ? {
+                    abcNotation: activeTune.abcNotation ?? null,
+                    abcSatb: activeTune.abcSatb ?? null,
+                    name: activeTune.name ?? null,
+                    meter: activeTune.meter ?? null,
+                    phraseShapeOverride: activeTune.phraseShapeOverride ?? null,
+                    doubleLength: activeTune.doubleLength ?? false,
+                    meterVariant: activeTune.meterVariant ?? null,
+                    solfegeOcrText: activeTune.solfegeOcrText ?? null,
+                    scoreJpgUrl: scoreJpgUrl,
+                    solfegeJpgUrl: solfegeJpgUrl,
+                  }
+                : null,
+              { lyrics, stanzaMeter, lyricsStructured },
+              { showLyrics, onViewModeChange: setViewMode, fallbackTuneName: '' },
+            )}
+            abc={abc}
+            melismaPositions={activeTune?.melismaPositions ?? null}
+            viewMode={viewMode}
+            showOriginal={showOriginal}
+            onShowOriginalChange={setShowOriginal}
+            baseSize={activeBaseSize}
+            onBaseSizeChange={handleBaseSizeChange}
+            rowDelta={rowDelta}
+            notationBaseSize={notationBaseSize}
+            // Disable chromeless inside the overlay — chromeless strips the
+            // outer fixed-height wrappers that the inline split layout relies
+            // on, leaving the SVG with 0×0 dimensions. The overlay itself
+            // already provides a full-bleed chrome-less surface, so we don't
+            // need NotationRenderer to hide its own chrome.
+            chromeless={false}
+            onStanzaChange={handleStanzaChange}
+            stanzaPage={stanzaPage}
+            onStanzaPageChange={setStanzaPage}
+            youtubeUrl={youtubeUrl}
+            soundcloudUrl={soundcloudUrl}
+            staffPages={activeStaffPages}
+            solfegePages={activeSolfegePages}
+            staffInlineApproved={staffInlineApproved}
+          />
+        </div>
+      </FullscreenOverlay>
     </div>
   )
 }

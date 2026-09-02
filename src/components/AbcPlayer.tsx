@@ -14,7 +14,7 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select'
-import { Play, Pause, RotateCcw } from 'lucide-react'
+import { Play, Pause, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react'
 import { SOUNDFONT_URL } from '@/lib/abc-soundfont'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -314,6 +314,16 @@ interface AbcPlayerProps {
   title?: string
   staffJpgUrl?: string | null
   solfegeJpgUrl?: string | null
+  /**
+   * Multi-page scan URLs for "Show original" mode. When the active array has
+   * more than one page, prev/next chevron nav flanks the rendered image so
+   * the user can page through the scanned sheets (mirrors the JPEG nav in
+   * NotationRenderer.renderScannedPages). Single-page and empty arrays fall
+   * through to the legacy single-URL `staffJpgUrl`/`solfegeJpgUrl` props,
+   * byte-identical to pre-fix behaviour.
+   */
+  staffPages?: string[]
+  solfegePages?: string[]
   tuneName?: string
   initialMode?: 'staff' | 'solfege'
   /** Plain-text lyrics for the current stanza group, lines separated by \n */
@@ -418,6 +428,8 @@ export default function AbcPlayer({
   title,
   staffJpgUrl,
   solfegeJpgUrl,
+  staffPages,
+  solfegePages,
   tuneName,
   initialMode = 'staff',
   lyricsText,
@@ -1332,7 +1344,19 @@ export default function AbcPlayer({
   }, [onPlaybackStop])
 
   const hasOriginal = !!(staffJpgUrl || solfegeJpgUrl)
-  const originalSrc = originalMode === 'solfege' ? (solfegeJpgUrl ?? staffJpgUrl) : (staffJpgUrl ?? solfegeJpgUrl)
+  // Multi-page scans: derive the active page array + selected page index.
+  // Resets to 0 whenever the array identity changes (tune switch / page
+  // source swap). Falls back to the single-URL props when the array is
+  // empty/undefined so legacy callers are byte-identical.
+  const originalPages: string[] = originalMode === 'solfege'
+    ? (solfegePages && solfegePages.length > 0 ? solfegePages : [])
+    : (staffPages && staffPages.length > 0 ? staffPages : [])
+  const [scanPageIndex, setScanPageIndex] = useState(0)
+  useEffect(() => { setScanPageIndex(0) }, [originalPages[0]])
+  const hasMultiPages = originalPages.length > 1
+  const originalSrc = hasMultiPages
+    ? originalPages[scanPageIndex] ?? originalPages[0]
+    : (originalMode === 'solfege' ? (solfegeJpgUrl ?? staffJpgUrl) : (staffJpgUrl ?? solfegeJpgUrl))
 
   return (
     <div
@@ -1344,16 +1368,44 @@ export default function AbcPlayer({
       {showOriginal ? (
         <div className="relative w-full space-y-2">
           {originalSrc ? (
-            // R2-hosted JPG with unknown intrinsic dimensions — next/image
-            // requires either width/height or fill+sized parent, which the
-            // surrounding aspect-fitting layout doesn't provide. Match the
-            // disable used elsewhere (SiteHeader.tsx). (WR-09)
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={originalSrc}
-              alt={`Original score for ${tuneName ?? 'tune'}`}
-              className="w-full h-auto object-contain rounded-md border border-border"
-            />
+            <div className="flex items-center gap-0">
+              {hasMultiPages && (
+                <button
+                  type="button"
+                  aria-label="Previous page"
+                  data-page-prev
+                  onClick={() => setScanPageIndex((i) => Math.max(0, i - 1))}
+                  disabled={scanPageIndex === 0}
+                  className="h-10 w-7 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+              )}
+              <div className="min-w-0 flex-1 flex justify-center">
+                {/* R2-hosted JPG with unknown intrinsic dimensions — next/image
+                    requires either width/height or fill+sized parent, which
+                    the surrounding aspect-fitting layout doesn't provide.
+                    Match the disable used elsewhere (SiteHeader.tsx). (WR-09) */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={originalSrc}
+                  alt={`Original score for ${tuneName ?? 'tune'}`}
+                  className="w-full h-auto object-contain rounded-md border border-border"
+                />
+              </div>
+              {hasMultiPages && (
+                <button
+                  type="button"
+                  aria-label="Next page"
+                  data-page-next
+                  onClick={() => setScanPageIndex((i) => Math.min(originalPages.length - 1, i + 1))}
+                  disabled={scanPageIndex === originalPages.length - 1}
+                  className="h-10 w-7 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           ) : (
             <p className="text-sm text-muted-foreground italic">Original score not available.</p>
           )}
