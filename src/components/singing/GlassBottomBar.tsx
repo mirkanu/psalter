@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, type ReactNode } from 'react'
-import { Settings, Play, Pause, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Settings, Play, Pause, ChevronLeft, ChevronRight, Maximize2, Minimize2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MAX_SIZE, SIZE_STEP } from '@/components/notation/NotationRenderer'
 
@@ -26,6 +26,16 @@ interface Props {
   isPlaying: boolean
   onPlayToggle: () => void
   onGearOpen: () => void
+  /** Fullscreen toggle — when provided, renders an icon button left of Play
+   *  that opens/closes the FullscreenOverlay. When omitted, the button is
+   *  hidden (desktop/tune-page callers don't want it). */
+  onFullscreenToggle?: () => void
+  isFullscreen?: boolean
+  /** Suppress the fullscreen button entirely. Used when rendering the bar
+   *  INSIDE the FullscreenOverlay — the overlay already provides its own
+   *  exit button in the top-right, so a second exit control here is
+   *  redundant. */
+  hideFullscreenButton?: boolean
   /** Gear popover slot — when provided, replaces the default Settings button. */
   gear?: ReactNode
   /** Task 3 (04.9.14-01): scroll-hide navigation. When true, slides down and
@@ -61,6 +71,9 @@ export function GlassBottomBar({
   isPlaying,
   onPlayToggle,
   onGearOpen,
+  onFullscreenToggle,
+  isFullscreen = false,
+  hideFullscreenButton = false,
   gear,
   hidden = false,
   hideZoom = false,
@@ -175,6 +188,20 @@ export function GlassBottomBar({
             </button>
           )}
         </div>
+
+        {/* Fullscreen (icon-only) — placed just LEFT of Play, matches Play/Gear styling.
+            Only rendered when parent provides onFullscreenToggle (mobile SingingView). */}
+        {onFullscreenToggle && !hideFullscreenButton && (
+          <button
+            type="button"
+            aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+            data-singing-fullscreen
+            onClick={onFullscreenToggle}
+            className="min-h-10 min-w-11 inline-flex items-center justify-center text-muted-foreground active:scale-[0.90] transition-transform duration-75 shrink-0"
+          >
+            {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+          </button>
+        )}
 
         {/* Play (icon-only) */}
         <button
