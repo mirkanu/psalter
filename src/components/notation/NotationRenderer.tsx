@@ -629,6 +629,28 @@ export function NotationRenderer({
   // active page-array identity changes (tune switch / legacy URL change).
   const [pageIndex, setPageIndex] = useState(0)
   useEffect(() => { setPageIndex(0) }, [staffPages?.[0], solfegePages?.[0]])
+
+  // 2026-09-03 (could-not-load bug): hooks for the scanned-pages image
+  // MUST live at the component top level. The previous version declared
+  // useRef + useSwipeGesture inside renderScannedPages (a regular function),
+  // which only ran when forceStaffJpgFallback or solfege-split was active —
+  // so hook count fluctuated between renders (0 vs 2 hooks), throwing
+  // React error #310 ("Rendered more hooks than during the previous
+  // render") on unapproved tunes like Psalm 10 / Ostend. Hoisting them up
+  // keeps hook order stable across every permutation of viewMode/approval.
+  //
+  // activeImagePageCount is derived inline from viewMode + the page arrays.
+  // Both call sites of renderScannedPages use activePages() to pick their
+  // pages array, so the same rule determines which array is "active" here:
+  // isSolfegeMode picks solfegePages, otherwise staffPages.
+  const activeImagePageCount = (isSolfegeMode(viewMode) ? solfegePages : staffPages)?.length ?? 0
+  const pageSwipeRef = useRef<HTMLDivElement>(null)
+  useSwipeGesture(pageSwipeRef, {
+    enabled: activeImagePageCount > 1,
+    onSwipeLeft: () => setPageIndex((i) => Math.min(activeImagePageCount - 1, i + 1)),
+    onSwipeRight: () => setPageIndex((i) => Math.max(0, i - 1)),
+  })
+
   const [isFullscreen, setIsFullscreen] = useState(false)
   // Lifted from AbcPlayer so NotationRenderer knows when the legacy JPG is
   // shown (and can therefore hide the stanza-pagination row, which is
@@ -2167,12 +2189,9 @@ export function NotationRenderer({
 
     // 2026-09-02: swipe left/right on the image as an alternative to the
     // underneath chevrons — matches the staff-JPEG AbcPlayer pattern.
-    const swipeRef = useRef<HTMLDivElement>(null)
-    useSwipeGesture(swipeRef, {
-      enabled: hasMultiPages,
-      onSwipeLeft: () => setPageIndex((i) => Math.min(pages.length - 1, i + 1)),
-      onSwipeRight: () => setPageIndex((i) => Math.max(0, i - 1)),
-    })
+    // 2026-09-03 refactor: the swipe ref + handler live at the component
+    // top level (pageSwipeRef / activeImagePageCount) to keep hook order
+    // stable across renders. This function is a pure JSX builder.
 
     const image = currentSrc ? (
       // eslint-disable-next-line @next/next/no-img-element
@@ -2226,7 +2245,7 @@ export function NotationRenderer({
         isSplit && chromeless ? 'flex-1 min-h-0 flex flex-col' : '',
       )}>
         <div
-          ref={swipeRef}
+          ref={pageSwipeRef}
           className={cn(
             'min-w-0 flex justify-center touch-pan-y',
             isSplit && chromeless ? 'flex-1 min-h-0 items-start' : 'items-center',
