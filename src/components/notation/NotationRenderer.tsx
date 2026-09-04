@@ -2383,7 +2383,12 @@ export function NotationRenderer({
                 ? 'flex-1 min-w-0 h-full overflow-y-auto overscroll-y-none'
                 : shouldSplitHalfMobile
                   ? 'flex-none min-h-0 overflow-y-auto md:max-h-none md:overflow-visible overscroll-y-none'
-                  : 'flex-none min-h-0 max-h-[50%] overflow-y-auto md:max-h-none md:overflow-visible overscroll-y-none'
+                  // 260903-bump: split-leaf renders the SVG at full natural height
+                  // (heightFit={false} on the AbcPlayer call below). Bumped the
+                  // mobile cap from 50% → 65% so the ~538 px-tall Ps121 SVG fits
+                  // in a 390 px / 844vh slot (~549 px @ 65%) without clipping the
+                  // last phrase. Lyrics slot gets the remaining 35%.
+                  : 'flex-none min-h-0 max-h-[65%] overflow-y-auto md:max-h-none md:overflow-visible overscroll-y-none'
             }
           >
             {notationSlot}
