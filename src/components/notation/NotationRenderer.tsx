@@ -2383,12 +2383,7 @@ export function NotationRenderer({
                 ? 'flex-1 min-w-0 h-full overflow-y-auto overscroll-y-none'
                 : shouldSplitHalfMobile
                   ? 'flex-none min-h-0 overflow-y-auto md:max-h-none md:overflow-visible overscroll-y-none'
-                  // 260903-bump: split-leaf renders the SVG at full natural height
-                  // (heightFit={false} on the AbcPlayer call below). Bumped the
-                  // mobile cap from 50% → 65% so the ~538 px-tall Ps121 SVG fits
-                  // in a 390 px / 844vh slot (~549 px @ 65%) without clipping the
-                  // last phrase. Lyrics slot gets the remaining 35%.
-                  : 'flex-none min-h-0 max-h-[65%] overflow-y-auto md:max-h-none md:overflow-visible overscroll-y-none'
+                  : 'flex-none min-h-0 max-h-[50%] overflow-y-auto md:max-h-none md:overflow-visible overscroll-y-none'
             }
           >
             {notationSlot}
@@ -2487,6 +2482,13 @@ export function NotationRenderer({
                 // Responsive:'none' keeps notation at natural size; the
                 // parent's overflow-y-auto handles any overflow.
                 noResponsiveResize
+                // 260903: disable height-fit transform entirely on split-half
+                // — the height-fit scale's resize-mutation loop races with
+                // the iOS Safari 1.5s settle-window width transitions,
+                // producing the "flickers like crazy without stopping" symptom.
+                // SVG now renders at natural abcjs viewBox dimensions (factor
+                // 0.55 of outerRef width) — visually identical to inline Staff.
+                heightFit={false}
               />
             ) : (
               <AbcPlayer
@@ -2508,6 +2510,9 @@ export function NotationRenderer({
                 rowDelta={extraSubdivisions}
                 meterPhraseCount={meterMinForDistribution}
                 noResponsiveResize
+                // 260903: see splitAbcFirst sibling — disable height-fit on
+                // split-half to eliminate the iOS settle-window flicker.
+                heightFit={false}
               />
             )}
           </div>
@@ -2565,13 +2570,12 @@ export function NotationRenderer({
             hidePlayerControls={isFullscreen || chromeless || tunePageMode}
             staffWidthFactor={staffWidthFactor}
             compactSplitMobile={compactSplitMobile}
-            // 2026-09-04: split-leaf (vs split-half) wants the SVG to fill
-            // the full mobile slot width rather than being uniformly shrunk
-            // to fit the slot height — the notation-slot already has
-            // overflow-y-auto so any vertical overflow scrolls cleanly.
-            // Split-half keeps heightFit={true} (its slot is also
-            // overflow-y-auto, but it has no max-h cap and the user has
-            // signed off on its fitted scale-to-slot look).
+            // 260903: disable height-fit on split-leaf — the height-fit scale
+            // was producing a uniform-scaled SVG (355×422 from a 215×256
+            // natural) that looked ~40% bigger than inline Staff. With
+            // heightFit={false} the SVG element renders at the same natural
+            // abcjs viewBox dimensions as inline (factor 0.55 × outerRef
+            // width), so split-leaf and inline are visually identical.
             heightFit={false}
             // baseSize drives AbcPlayer's dynamic lyric solver
             // (MIN/POST_BUMP window) in the chromeless mobile path. In
