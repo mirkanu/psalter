@@ -1559,16 +1559,16 @@ export default function AbcPlayer({
               ref={containerRef}
               role="img"
               aria-label={title ? `Music notation for ${title}` : 'Music notation'}
-              // 260904-szw: re-added [&_svg]:w-full [&_svg]:max-w-full [&_svg]:h-auto.
-              // Without it, the split-half path (which uses responsive:'none' via
-              // noResponsiveResize) emits an SVG with explicit width="N" height="N"
-              // attrs and NO viewBox, so the SVG stays at its natural abcjs size
-              // (~215 px wide) inside the 374 px slot — literally half the viewport.
-              // Forcing width:100% + max-width:100% + height:auto stretches the SVG
-              // to fill the slot width while preserving intrinsic aspect ratio.
-              // CM split-leaf already renders at 374 wide via viewBox +
-              // preserveAspectRatio="xMidYMid meet", so the CSS is a no-op there.
-              className="w-full max-w-full overflow-x-hidden [&_svg]:w-full [&_svg]:max-w-full [&_svg]:h-auto"
+              // 260904-szw: gate the [&_svg]:w-full CSS stretch on
+              // noResponsiveResize. Split-half (CMD) sets noResponsiveResize=true
+              // → abcjs emits explicit width/height attrs (no viewBox) → needs
+              // the CSS stretch to fill the slot width. Split-leaf (CM) leaves
+              // noResponsiveResize undefined → abcjs emits viewBox +
+              // preserveAspectRatio → the CSS would also stretch it, breaking
+              // the natural 215×256 size the user explicitly said was perfect.
+              // Inverted conditional: apply CSS stretch ONLY when
+              // noResponsiveResize is true.
+              className={`w-full max-w-full overflow-x-hidden${noResponsiveResize ? ' [&_svg]:w-full [&_svg]:max-w-full [&_svg]:h-auto' : ''}`}
             />
           </div>
           {/* Lyrics text block — shown below notation in interactive mode */}
