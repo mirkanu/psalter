@@ -2120,7 +2120,7 @@ export function NotationRenderer({
     return splitOnPhraseBreaks(abc).phrases.length
   }, [abc])
   const shouldSplitHalfMobile =
-    compactSplitMobile && staffInlineApproved && sourcePhraseCount > 5
+    compactSplitMobile && staffInlineApproved && sourcePhraseCount > 5 && !showOriginal
   const splitHalves = useMemo(() => {
     if (!shouldSplitHalfMobile) return null
     const split = splitOnPhraseBreaks(abc)
@@ -2293,7 +2293,7 @@ export function NotationRenderer({
         // a minimum 50%. SingingView's <main> is fixed-height on desktop
         // (md:h-[calc(100dvh-116px)]) so h-full resolves correctly here.
         return (
-          <div className={beside ? 'flex flex-row h-full gap-4 px-4 pt-4' : 'flex flex-col h-full gap-4 px-4 pt-4'}>
+          <div className={beside ? 'flex flex-row h-full gap-4 pt-4' : 'flex flex-col h-full gap-4 pt-4'}>
             <div
               data-notation-slot
               className={
@@ -2322,7 +2322,7 @@ export function NotationRenderer({
         )
       }
       return (
-        <div className={beside ? 'flex flex-row h-full gap-4 px-4 pt-4' : 'flex flex-col h-full gap-4 px-4 pt-4 md:h-auto md:gap-4'}>
+        <div className={beside ? 'flex flex-row h-full gap-4 pt-4' : 'flex flex-col h-full gap-4 pt-4 md:h-auto md:gap-4'}>
           {/* 260712-szw: data-notation-slot is a measurement hook for
               tests/diagnostics/split-leaf-staff-diff.mjs (clientHeight vs
               scrollHeight overflow check) — no behaviour change. */}
@@ -2404,12 +2404,12 @@ export function NotationRenderer({
                 showOriginal={showOriginal}
                 onShowOriginalChange={setShowOriginal}
                 hidePlayerControls
-                // 2026-09-02: split-half is the chromeless split-leaf staff
-                // path with lyrics hidden. The page UI already shows the
-                // tune name, and no lyrics reserve vertical space below, so
-                // we use the same factor as staff-inline (0.55 mobile /
-                // 0.95 wider) for a flush-left staff and matching geometry.
-                staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 0.55 : 0.95) : staffWidthFactor}
+                // 2026-09-04: split-half is the chromeless split-leaf staff
+                // path with lyrics hidden. Per-phrase SVG already at full
+                // container width so the staff fills the viewport like
+                // non-double CMs (the older 0.55 mobile factor shrank it
+                // by 45% causing the narrow-staff fullscreen bug Ps122).
+                staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 1 : 0.95) : staffWidthFactor}
                 compactSplitMobile={false}
                 baseSize={baseSize}
                 rowDelta={extraSubdivisions}
@@ -2433,7 +2433,7 @@ export function NotationRenderer({
                 showOriginal={showOriginal}
                 onShowOriginalChange={setShowOriginal}
                 hidePlayerControls
-                staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 0.55 : 0.95) : staffWidthFactor}
+                staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 1 : 0.95) : staffWidthFactor}
                 compactSplitMobile={false}
                 baseSize={baseSize}
                 rowDelta={extraSubdivisions}
