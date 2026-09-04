@@ -391,6 +391,19 @@ interface AbcPlayerProps {
    */
   compactSplitMobile?: boolean
   /**
+   * 2026-09-04: opt-out flag for the post-render CSS height-fit scale
+   * documented above. Default true (preserves legacy behaviour everywhere
+   * split-leaf and split-half are callers). Set false on split-leaf when the
+   * caller wants the SVG to fill the full slot width instead of being
+   * uniformly shrunk to fit the slot height — split-leaf's notation-slot has
+   * `overflow-y-auto`, so vertical overflow scrolls within the slot rather
+   * than being clipped. Split-half continues to default to true because its
+   * slot is the SAME shared `data-notation-slot` and the pages are short
+   * enough that fitting without scroll is the intended UX (and the user has
+   * not asked for split-half to span full width).
+   */
+  heightFit?: boolean
+  /**
    * Drives the dynamic lyric-solver window (MIN_LYRIC_FONT_PX floor +
    * POST_BUMP_PX start) in the mobile-gated vertical re-pack block below.
    * Defaults to 14 (the historical hardcoded value) when not supplied so
@@ -468,6 +481,7 @@ export default function AbcPlayer({
   hidePlayerControls = false,
   staffWidthFactor = 1,
   compactSplitMobile = false,
+  heightFit = true,
   baseSize,
   rowDelta = 0,
   meterPhraseCount = 1,
@@ -1302,7 +1316,7 @@ export default function AbcPlayer({
     el.style.transformOrigin = ''
     wrap.style.height = ''
     wrap.style.overflow = ''
-    if (!compactSplitMobile || !slotHeight) return
+    if (!compactSplitMobile || !slotHeight || heightFit === false) return
     const svg = el.querySelector('svg')
     if (!svg) return
     const naturalHeight = svg.getBoundingClientRect().height
@@ -1312,7 +1326,7 @@ export default function AbcPlayer({
     el.style.transform = `scale(${fitScale})`
     wrap.style.height = `${slotHeight}px`
     wrap.style.overflow = 'hidden'
-  }, [abc, transpose, bpm, scale, showOriginal, staffWidth, staffWidthFactor, compactSplitMobile, slotHeight, baseSize])
+  }, [abc, transpose, bpm, scale, showOriginal, staffWidth, staffWidthFactor, compactSplitMobile, slotHeight, baseSize, heightFit])
 
   // ── Cleanup on unmount ────────────────────────────────────────────────────
   useEffect(() => {
@@ -1545,7 +1559,7 @@ export default function AbcPlayer({
               ref={containerRef}
               role="img"
               aria-label={title ? `Music notation for ${title}` : 'Music notation'}
-              className="w-full max-w-full overflow-x-hidden [&_svg]:max-w-full [&_svg]:h-auto"
+              className="w-full max-w-full overflow-x-hidden [&_svg]:w-full [&_svg]:max-w-full [&_svg]:h-auto"
             />
           </div>
           {/* Lyrics text block — shown below notation in interactive mode */}
