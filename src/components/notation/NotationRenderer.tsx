@@ -2560,6 +2560,14 @@ export function NotationRenderer({
             hidePlayerControls={isFullscreen || chromeless || tunePageMode}
             staffWidthFactor={staffWidthFactor}
             compactSplitMobile={compactSplitMobile}
+            // 2026-09-04: split-leaf (vs split-half) wants the SVG to fill
+            // the full mobile slot width rather than being uniformly shrunk
+            // to fit the slot height — the notation-slot already has
+            // overflow-y-auto so any vertical overflow scrolls cleanly.
+            // Split-half keeps heightFit={true} (its slot is also
+            // overflow-y-auto, but it has no max-h cap and the user has
+            // signed off on its fitted scale-to-slot look).
+            heightFit={false}
             // baseSize drives AbcPlayer's dynamic lyric solver
             // (MIN/POST_BUMP window) in the chromeless mobile path. In
             // Inline Staff mode this stays at the mobile default — A+/A−
