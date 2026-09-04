@@ -1560,6 +1560,12 @@ export default function AbcPlayer({
               role="img"
               aria-label={title ? `Music notation for ${title}` : 'Music notation'}
               className="w-full max-w-full overflow-x-hidden [&_svg]:w-full [&_svg]:max-w-full [&_svg]:h-auto"
+              // 2026-09-04: abcjs's `abcjs-container` stylesheet applies
+              // `display: inline-block` which shrinks the container to its
+              // child SVG's intrinsic width (~374 instead of 100% of fitWrap
+              // ~390) even with `w-full` on the className. Force `block`
+              // inline-style so width:100% actually fills the slot.
+              style={{ display: 'block' }}
             />
           </div>
           {/* Lyrics text block — shown below notation in interactive mode */}
