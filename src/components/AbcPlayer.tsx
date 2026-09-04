@@ -1281,22 +1281,6 @@ export default function AbcPlayer({
     }
   }, [abc, transpose, bpm, scale, showOriginal, stopAudio, staffWidth, staffWidthFactor, compactSplitMobile, baseSize, rowDelta, meterPhraseCount])
 
-  // 2026-09-04: abcjs's render-abc call writes `display: inline-block` to
-  // containerRef's inline style AFTER the React commit, overwriting any
-  // React-side `style={{ display: 'block' }}`. That shrinks the container to
-  // the SVG's intrinsic width (~374) instead of filling the fitWrap width
-  // (~390 on mobile), defeating width:100% on the w-full className. This
-  // effect re-asserts `display: block` immediately after every render so
-  // the container actually fills the slot horizontally — required for the
-  // split-leaf heightFit={false} path where the SVG is allowed to span
-  // full mobile width instead of being uniformly shrunk by the height-fit
-  // transform.
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    if (el.style.display !== 'block') el.style.display = 'block'
-  })
-
   // ── Height-fit pass (260712-szw) ──────────────────────────────────────────
   // Mobile split-leaf only: the width-only responsive fit above (MOBILE-03)
   // has no height counterpart, so even with compact spacing a 4-system CM
@@ -1575,13 +1559,12 @@ export default function AbcPlayer({
               ref={containerRef}
               role="img"
               aria-label={title ? `Music notation for ${title}` : 'Music notation'}
-              className="w-full max-w-full overflow-x-hidden [&_svg]:w-full [&_svg]:max-w-full [&_svg]:h-auto"
-              // 2026-09-04: abcjs's `abcjs-container` stylesheet applies
-              // `display: inline-block` which shrinks the container to its
-              // child SVG's intrinsic width (~374 instead of 100% of fitWrap
-              // ~390) even with `w-full` on the className. Force `block`
-              // inline-style so width:100% actually fills the slot.
-              style={{ display: 'block' }}
+              // 260903: `!block` overrides abcjs's post-mount
+              // `style="display: inline-block"` via class !important so the
+              // container honours `w-full` instead of shrinking to its SVG
+              // content width. Inline `style.display` loses the race with
+              // abcjs's setAttribute('style', ...) after the React commit.
+              className="!block w-full max-w-full overflow-x-hidden [&_svg]:w-full [&_svg]:max-w-full [&_svg]:h-auto"
             />
           </div>
           {/* Lyrics text block — shown below notation in interactive mode */}
