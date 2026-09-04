@@ -2299,7 +2299,18 @@ export function NotationRenderer({
               className={
                 beside
                   ? 'flex-1 min-w-0 h-full overflow-hidden flex flex-col'
-                  : 'flex-none min-h-0 max-h-[50%] overflow-hidden flex flex-col'
+                  // 2026-09-04: when showing the original scan OR when the
+                  // notation is already split in half (compactSplitMobile),
+                  // drop the 50% cap so the jpeg/notation + Page label both
+                  // render without scrolling. For jpeg: the image was scaling
+                  // up to fill 50% and clipping the Page label underneath.
+                  // For split-half: the half-notation is ~half the height of
+                  // the full tune, but the 50% cap assumed the full tune
+                  // was here — the cap was actively defeating the purpose of
+                  // the split. Lyrics slot still takes the rest via flex-1.
+                  : (showOriginal || shouldSplitHalfMobile)
+                    ? 'flex-none min-h-0 overflow-hidden flex flex-col'
+                    : 'flex-none min-h-0 max-h-[50%] overflow-hidden flex flex-col'
               }
             >
               {notationSlot}
@@ -2325,13 +2336,20 @@ export function NotationRenderer({
         <div className={beside ? 'flex flex-row h-full gap-4 pt-4' : 'flex flex-col h-full gap-4 pt-4 md:h-auto md:gap-4'}>
           {/* 260712-szw: data-notation-slot is a measurement hook for
               tests/diagnostics/split-leaf-staff-diff.mjs (clientHeight vs
-              scrollHeight overflow check) — no behaviour change. */}
+              scrollHeight overflow check) — no behaviour change.
+              2026-09-04: when the notation is already split in half
+              (compactSplitMobile) drop the 50% cap on mobile too — the
+              half-notation is ~half the height of the full tune, but the
+              50% cap was assuming the full tune was here and was actively
+              defeating the purpose of the split. */}
           <div
             data-notation-slot
             className={
               beside
                 ? 'flex-1 min-w-0 h-full overflow-y-auto overscroll-y-none'
-                : 'flex-none min-h-0 max-h-[50%] overflow-y-auto md:max-h-none md:overflow-visible overscroll-y-none'
+                : shouldSplitHalfMobile
+                  ? 'flex-none min-h-0 overflow-y-auto md:max-h-none md:overflow-visible overscroll-y-none'
+                  : 'flex-none min-h-0 max-h-[50%] overflow-y-auto md:max-h-none md:overflow-visible overscroll-y-none'
             }
           >
             {notationSlot}
@@ -2400,6 +2418,12 @@ export function NotationRenderer({
                 solfegeJpgUrl={solfegePages[0] ?? solfegeJpgUrl}
                 staffPages={staffPages}
                 solfegePages={solfegePages}
+                // 2026-09-04: drive AbcPlayer's scan-mode selection from the
+                // current viewMode — without this, the original-scan jpeg
+                // was pinned to whichever array was mounted first (always
+                // staff for staff-split), and toggling Solfège split-leaf
+                // still showed the staff scan.
+                mode={isSolfegeMode(viewMode) ? 'solfege' : 'staff'}
                 renderLyricsBelow={undefined}
                 showOriginal={showOriginal}
                 onShowOriginalChange={setShowOriginal}
@@ -2429,6 +2453,7 @@ export function NotationRenderer({
                 solfegeJpgUrl={solfegePages[0] ?? solfegeJpgUrl}
                 staffPages={staffPages}
                 solfegePages={solfegePages}
+                mode={isSolfegeMode(viewMode) ? 'solfege' : 'staff'}
                 renderLyricsBelow={undefined}
                 showOriginal={showOriginal}
                 onShowOriginalChange={setShowOriginal}
@@ -2489,6 +2514,7 @@ export function NotationRenderer({
             // the single-URL props above when the array is empty.
             staffPages={staffPages}
             solfegePages={solfegePages}
+            mode={isSolfegeMode(viewMode) ? 'solfege' : 'staff'}
             renderLyricsBelow={isSplit ? undefined : lyricsBelow}
             showOriginal={showOriginal}
             onShowOriginalChange={setShowOriginal}
