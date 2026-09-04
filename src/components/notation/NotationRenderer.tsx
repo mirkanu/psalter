@@ -2442,7 +2442,7 @@ export function NotationRenderer({
               />
             )}
           </div>
-          <div className="flex items-center justify-center gap-1 pt-1">
+          <div className="flex items-center justify-center gap-1 -mt-1">
             <button
               type="button"
               aria-label="Previous half"
@@ -2454,7 +2454,7 @@ export function NotationRenderer({
               <ChevronLeft className="h-4 w-4" />
             </button>
             <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap px-1">
-              Half {halfIndex + 1} of 2
+              Page {halfIndex + 1} of 2
             </span>
             <button
               type="button"
