@@ -1554,17 +1554,19 @@ export default function AbcPlayer({
               (cropping the tune instead of shrinking it). Only active when
               compactSplitMobile fits the SVG down; otherwise both layers are
               inert (no height/overflow/transform set). */}
-          <div ref={fitWrapRef} className="w-screen -ml-2">
+          <div ref={fitWrapRef} className="w-full">
             <div
               ref={containerRef}
               role="img"
               aria-label={title ? `Music notation for ${title}` : 'Music notation'}
-              // 260903: `!block` overrides abcjs's post-mount
-              // `style="display: inline-block"` via class !important so the
-              // container honours `w-full` instead of shrinking to its SVG
-              // content width. Inline `style.display` loses the race with
-              // abcjs's setAttribute('style', ...) after the React commit.
-              className="!block w-full max-w-full overflow-x-hidden [&_svg]:w-full [&_svg]:max-w-full [&_svg]:h-auto"
+              // 260903: removed [&_svg]:w-full [&_svg]:max-w-full [&_svg]:h-auto
+              // so the SVG renders at its natural abcjs viewBox dimensions
+              // (factor × outerRef) instead of being CSS-stretched to fill
+              // the container width — that horizontal stretch made split-leaf
+              // render at ~374 wide × ~440 tall, ~80% wider than inline Staff
+              // (which shares the same factor 0.55 layout). Now both paths
+              // produce a 215 × 256 SVG element and visually match.
+              className="w-full max-w-full overflow-x-hidden"
             />
           </div>
           {/* Lyrics text block — shown below notation in interactive mode */}
