@@ -1559,14 +1559,16 @@ export default function AbcPlayer({
               ref={containerRef}
               role="img"
               aria-label={title ? `Music notation for ${title}` : 'Music notation'}
-              // 260903: removed [&_svg]:w-full [&_svg]:max-w-full [&_svg]:h-auto
-              // so the SVG renders at its natural abcjs viewBox dimensions
-              // (factor × outerRef) instead of being CSS-stretched to fill
-              // the container width — that horizontal stretch made split-leaf
-              // render at ~374 wide × ~440 tall, ~80% wider than inline Staff
-              // (which shares the same factor 0.55 layout). Now both paths
-              // produce a 215 × 256 SVG element and visually match.
-              className="w-full max-w-full overflow-x-hidden"
+              // 260904-szw: re-added [&_svg]:w-full [&_svg]:max-w-full [&_svg]:h-auto.
+              // Without it, the split-half path (which uses responsive:'none' via
+              // noResponsiveResize) emits an SVG with explicit width="N" height="N"
+              // attrs and NO viewBox, so the SVG stays at its natural abcjs size
+              // (~215 px wide) inside the 374 px slot — literally half the viewport.
+              // Forcing width:100% + max-width:100% + height:auto stretches the SVG
+              // to fill the slot width while preserving intrinsic aspect ratio.
+              // CM split-leaf already renders at 374 wide via viewBox +
+              // preserveAspectRatio="xMidYMid meet", so the CSS is a no-op there.
+              className="w-full max-w-full overflow-x-hidden [&_svg]:w-full [&_svg]:max-w-full [&_svg]:h-auto"
             />
           </div>
           {/* Lyrics text block — shown below notation in interactive mode */}
