@@ -1294,26 +1294,36 @@ export function SingingView({
         isFullscreen={isFullscreen}
         hidden={bottomBarHidden}
         gear={
-          <GearPopoverClient
-            open={gearOpen}
-            onOpenChange={setGearOpen}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            studyHref={studyHref}
-            onRestartTour={handleRestartTour}
-            showLyricsOption={!!showLyrics}
-            staffAvailable={staffAvailable}
-            // Inline Solfège rendering is not built yet (abcjs has no tonic
-            // sol-fa) — permanently disabled until real rendering exists.
-            solfegeInlineAvailable={false}
-            solfegeSplitAvailable={solfegeSplitAvailable}
-            staffInlineApproved={staffInlineApproved}
-            hasActiveTune={!!activeTune}
-            onRequestTuneSelection={handleRequestTuneSelection}
-            originalScanAvailable={originalScanAvailable}
-            showOriginal={showOriginal}
-            onShowOriginalChange={setShowOriginal}
-          />
+          // 2026-09-04: only mount the gear popover in the inline (non-FS)
+          // bottom-bar — the FullscreenOverlay renders its OWN bottom-bar
+          // with its own GearPopoverClient instance below. Mounting both
+          // produced two Popovers sharing the same controlled `open` state
+          // and Radix refused to open either one (probably confused about
+          // which is the "real" one). Inline bottom-bar is hidden behind the
+          // dialog in fullscreen anyway, so its gear isn't reachable — only
+          // the FS one needs the popover in fullscreen.
+          isFullscreen ? null : (
+            <GearPopoverClient
+              open={gearOpen}
+              onOpenChange={setGearOpen}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              studyHref={studyHref}
+              onRestartTour={handleRestartTour}
+              showLyricsOption={!!showLyrics}
+              staffAvailable={staffAvailable}
+              // Inline Solfège rendering is not built yet (abcjs has no tonic
+              // sol-fa) — permanently disabled until real rendering exists.
+              solfegeInlineAvailable={false}
+              solfegeSplitAvailable={solfegeSplitAvailable}
+              staffInlineApproved={staffInlineApproved}
+              hasActiveTune={!!activeTune}
+              onRequestTuneSelection={handleRequestTuneSelection}
+              originalScanAvailable={originalScanAvailable}
+              showOriginal={showOriginal}
+              onShowOriginalChange={setShowOriginal}
+            />
+          )
         }
       />
       {(abc || soundcloudUrl) && (

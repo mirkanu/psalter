@@ -529,6 +529,10 @@ export default function AbcPlayer({
   // users can swipe left/right to advance/regress pages in "Show original".
   const scanImageRef = useRef<HTMLDivElement>(null)
   const [staffWidth, setStaffWidth] = useState(0)
+  // Mirror of staffWidth so the settle-window ResizeObserver (which only runs
+  // once on mount) can compare against the latest value without re-subscribing
+  // every time staffWidth updates.
+  const staffWidthRef = useRef(0)
 
   // Synchronous initial measurement so abcjs never paints at a wrong staffwidth.
   useLayoutEffect(() => {
@@ -560,13 +564,23 @@ export default function AbcPlayer({
   // 390) leaves staffWidth stuck at the transient value forever, because the
   // ResizeObserver fires for the 187 → 390 transition but the event is
   // ignored, and no further resize event fires once the width stabilises.
+  // 2026-09-04b: dependencies dropped from [staffWidth] to [] — the settle
+  // window is meant for the iOS Safari mount-time settle event, NOT for every
+  // staffWidth change. With [staffWidth], every re-measure restarted the 1.5s
+  // window, so a container resize happening within 1.5s of a previous
+  // re-measure (fullscreen exit) was also ignored — leaving the staff stuck
+  // at the narrow value until something else (orientation change, etc.) broke
+  // the loop.
   useEffect(() => {
     const el = outerRef.current
     if (!el) return
     const settled = { current: false }
     const measure = () => {
       const w = el.clientWidth
-      if (w > 0 && Math.abs(w - staffWidth) >= 8) setStaffWidth(w)
+      if (w > 0 && Math.abs(w - staffWidthRef.current) >= 8) {
+        staffWidthRef.current = w
+        setStaffWidth(w)
+      }
     }
     const settleTimer = setTimeout(() => {
       settled.current = true
@@ -583,13 +597,16 @@ export default function AbcPlayer({
       obs.disconnect()
       clearTimeout(settleTimer)
     }
-  }, [staffWidth])
+  }, [])
 
   // iOS Safari: ResizeObserver does NOT reliably fire on URL-bar / orientation
   // transitions. Add explicit listeners with rAF debounce + ≥8px threshold.
   // Same settle-window guard as above — the visualViewport can also fire a
   // settling event in the first ~1.5s after load. Real orientation changes
   // happen after settle, so this guard is invisible to the user.
+  // 2026-09-04b: dependencies dropped from [staffWidth] to [] (see sibling
+  // effect above for the rationale — re-subscribing every re-measure
+  // restarted the 1.5s window).
   useEffect(() => {
     if (typeof window === 'undefined') return
     let raf = 0
@@ -600,14 +617,20 @@ export default function AbcPlayer({
       // Re-measure once at settle end to catch transitions that completed
       // during the ignore window (no subsequent resize event).
       const w = outerRef.current?.clientWidth ?? 0
-      if (w > 0 && Math.abs(w - staffWidth) >= 8) setStaffWidth(w)
+      if (w > 0 && Math.abs(w - staffWidthRef.current) >= 8) {
+        staffWidthRef.current = w
+        setStaffWidth(w)
+      }
     }, 1500)
     const trigger = () => {
       if (!settled.current) return
       cancelAnimationFrame(raf)
       raf = requestAnimationFrame(() => {
         const w = outerRef.current?.clientWidth ?? 0
-        if (w > 0 && Math.abs(w - staffWidth) >= 8) setStaffWidth(w)
+        if (w > 0 && Math.abs(w - staffWidthRef.current) >= 8) {
+          staffWidthRef.current = w
+          setStaffWidth(w)
+        }
       })
     }
     const debounced = () => {
@@ -623,7 +646,7 @@ export default function AbcPlayer({
       window.removeEventListener('orientationchange', debounced)
       window.visualViewport?.removeEventListener('resize', debounced)
     }
-  }, [staffWidth])
+  }, [])
 
   // 260712-szw: mobile split-leaf compact fix — observe the ancestor
   // `[data-notation-slot]` region's height (NotationRenderer's chromeless
@@ -737,8 +760,24 @@ export default function AbcPlayer({
     el.innerHTML = ''
     setAudioError(null)
 
+    // 2026-09-04: prefer the live container width over the captured
+    // staffWidth state when the render fires immediately after mount. The
+    // state may be a transient value (e.g. 220 captured during the same
+    // tick the FullscreenOverlay closed, before layout settled at 374).
+    // Reading `outerRef.current.clientWidth` here gives the CURRENT width,
+    // so abcjs paints at the right staffwidth from the first paint.
+    const liveW = outerRef.current?.clientWidth ?? 0
+    const renderStaffWidth = liveW > 0 && Math.abs(liveW - staffWidth) > 16 ? liveW : staffWidth
+    if (renderStaffWidth !== staffWidth) {
+      staffWidthRef.current = renderStaffWidth
+      setStaffWidth(renderStaffWidth)
+    }
+
     try {
       // staffWidth is measured from outerRef (ResizeObserver + useLayoutEffect).
+      // We prefer `renderStaffWidth` here (live clientWidth read) — see comment
+      // above. Falls back to the captured staffWidth state on subsequent
+      // renders where the discrepancy check passes.
       // Passing it as `staffwidth` constrains abcjs to the available width so
       // notes wrap to more rows as scale increases rather than overflowing.
       //
@@ -751,7 +790,7 @@ export default function AbcPlayer({
       //      bring the rendered SVG within the available width (one feedback
       //      loop max, guarded by a ref so we don't loop), shrink `scale`
       //      proportionally and re-render once.
-      const containerWidth = Math.max(0, (staffWidth || 600) - 16)
+      const containerWidth = Math.max(0, (renderStaffWidth || 600) - 16)
       const effectiveScale = scale ?? 1
       // UAT v7 bug-fix (MOBILE-03, UAT v6 #1c regression):
       //
