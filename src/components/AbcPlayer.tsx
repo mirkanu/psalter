@@ -683,10 +683,21 @@ export default function AbcPlayer({
   // NotationRenderer beyond the `compactSplitMobile` boolean. No-op when the
   // flag is false (desktop split-leaf / inline Staff / inline Solfège /
   // split-leaf Solfège never observe or apply this).
+  //
+  // 260904: also expose slotWidth in state. The heightFit effect reads both
+  // dimensions; previously slotWidth was read fresh in the effect from
+  // `slotEl.clientWidth`, but iOS Safari fires slot RESIZE events with the
+  // transient pre-settle width (374 px) before settling to 390 px within
+  // ~1.5s. Combining a stale layoutW=374 with a settled slotW=390 yielded
+  // scaleX=1.043 (visually 407 wide) — slot overflow.
+  // The state holds slotWidth alongside slotHeight so a single
+  // ResizeObserver event updates both atomically.
   const [slotHeight, setSlotHeight] = useState(0)
+  const [slotWidth, setSlotWidth] = useState(0)
   useEffect(() => {
     if (!compactSplitMobile) {
       setSlotHeight(0)
+      setSlotWidth(0)
       return
     }
     // 260716: also matches `[data-notation-fit-slot]` — the inline (non-split)
@@ -696,11 +707,28 @@ export default function AbcPlayer({
     // `[data-notation-slot]`) is unaffected.
     const slotEl = outerRef.current?.closest('[data-notation-slot], [data-notation-fit-slot]') as HTMLElement | null
     if (!slotEl) return
-    const update = () => setSlotHeight(slotEl.clientHeight)
+    const update = () => {
+      const w = slotEl.clientWidth
+      const h = slotEl.clientHeight
+      setSlotWidth((prev) => (Math.abs(prev - w) >= 1 ? w : prev))
+      setSlotHeight((prev) => (Math.abs(prev - h) >= 1 ? h : prev))
+    }
     update()
     const obs = new ResizeObserver(update)
     obs.observe(slotEl)
-    return () => obs.disconnect()
+    // 260904-szw: force one re-measure at the END of the iOS Safari
+    // settle window (1.5s). Without this, a slot transition that BEGINS
+    // during the settle window (e.g. iPhone safe-area settles 374→390)
+    // can leave the heightFit transform stuck at the transient
+    // dimensions — ResizeObserver fires the 374→390 event but the
+    // surrounding state/effect dependencies may not always re-fire, or
+    // the heightFit effect may have already settled on the transient
+    // value before the slot update arrived.
+    const settleTimer = setTimeout(update, 1500)
+    return () => {
+      obs.disconnect()
+      clearTimeout(settleTimer)
+    }
   }, [compactSplitMobile])
 
   // ── Note highlight callback ────────────────────────────────────────────────
@@ -1321,46 +1349,51 @@ export default function AbcPlayer({
     if (!svg) return
     // 260904-szw: dynamic non-uniform scale to fill the available slot
     // rectangle exactly (the user's "fully filling the rectangle without
-    // overflow" requirement). Uniform scale (previous version) preserved
-    // note aspect ratio but couldn't fill both dimensions when the abcjs
-    // natural aspect ratio differed from the slot's — CM French is 204×290
-    // (aspect 0.70) but the 374×422 mobile slot is aspect 0.886, so uniform
-    // scale either overflowed Y or left 100+px of horizontal whitespace.
-    // Non-uniform scaleX/scaleY fills both dimensions. The slot is the
-    // nearest [data-notation-slot] / [data-notation-fit-slot] ancestor, which
-    // NotationRenderer caps at max-h-[50%] of the viewport (≤422 px on a
-    // 390×844 phone).
-    const slotEl = outerRef.current?.closest('[data-notation-slot], [data-notation-fit-slot]') as HTMLElement | null
-    const slotWidth = slotEl?.clientWidth ?? el.clientWidth
-    // Read SVG's INTRINSIC dimensions (viewBox or explicit attrs) so we
-    // divide by the abcjs natural size, not the CSS-stretched rendered size.
-    let naturalW = 0
-    let naturalH = 0
-    const vb = svg.getAttribute('viewBox')
-    if (vb) {
-      const parts = vb.split(/\s+/).map(Number)
-      if (parts.length === 4 && parts[2] > 0 && parts[3] > 0) {
-        naturalW = parts[2]
-        naturalH = parts[3]
-      }
+    // overflow" requirement).
+    //
+    // Reads containerRef's POST-ABCJS-RENDER CSS dimensions (clientWidth
+    // and clientHeight), NOT the SVG's viewBox dimensions. With
+    // responsive:'resize' (split-leaf CM) abcjs wraps the SVG in an
+    // `.abcjs-container` div with `padding-bottom: 141.625%` to preserve
+    // the score's natural aspect ratio — so containerRef's clientHeight
+    // equals clientWidth × 1.41625 (= 552 px on a 390 px slot). Using the
+    // SVG's viewBox (204×290 for CM French) as the divisor would compute
+    // scaleY=1.20, but scaling containerRef's 552 px CSS height by 1.20
+    // gives 663 px visually — overshooting the 348 px slot.
+    //
+    // Using containerRef's actual layout dims yields scaleX=1.0,
+    // scaleY=0.63 here → visual 390×348 (fills the slot exactly).
+    //
+    // Both `slotWidth` and `slotHeight` are state updated atomically by
+    // the slot observer above (see comment there about iOS settle
+    // protection), so width and height transitions stay in sync.
+    if (slotWidth <= 0) return
+    const applyScale = () => {
+      const lw = el.clientWidth
+      const lh = el.clientHeight
+      if (lw <= 0 || lh <= 0) return
+      const sx = slotWidth / lw
+      const sy = slotHeight / lh
+      el.style.transformOrigin = 'top left'
+      el.style.transform = `scale(${sx}, ${sy})`
+      wrap.style.height = `${slotHeight}px`
+      wrap.style.width = `${slotWidth}px`
+      wrap.style.overflow = 'hidden'
     }
-    if (naturalW === 0) {
-      const aW = parseFloat(svg.getAttribute('width') || '')
-      const aH = parseFloat(svg.getAttribute('height') || '')
-      if (aW > 0 && aH > 0) {
-        naturalW = aW
-        naturalH = aH
-      }
-    }
-    if (naturalW <= 0 || naturalH <= 0 || slotWidth <= 0 || slotHeight <= 0) return
-    const scaleX = slotWidth / naturalW
-    const scaleY = slotHeight / naturalH
-    el.style.transformOrigin = 'top left'
-    el.style.transform = `scale(${scaleX}, ${scaleY})`
-    wrap.style.height = `${slotHeight}px`
-    wrap.style.width = `${slotWidth}px`
-    wrap.style.overflow = 'hidden'
-  }, [abc, transpose, bpm, scale, showOriginal, staffWidth, staffWidthFactor, compactSplitMobile, slotHeight, baseSize, heightFit])
+    applyScale()
+    // 260904-szw: also re-apply at the END of the iOS Safari settle
+    // window. Without this, the slot transitions to settled dims
+    // (e.g. 374 → 390 wide) inside the settle window while
+    // containerRef's padding-bottom wrapper hasn't yet caught up, so
+    // the initial applyScale runs with a transient layoutW (374) and
+    // settled slotW (390) → scaleX ≈ 1.04 (407 px visual). When the
+    // containerRef layout finally settles to 390 wide 1.5s later,
+    // there's no further resize event to re-trigger this effect, so
+    // the wrong scale sticks. The setTimeout re-reads the now-settled
+    // clientWidth/clientHeight and fixes the transform.
+    const settleRetry = setTimeout(applyScale, 1500)
+    return () => clearTimeout(settleRetry)
+  }, [abc, transpose, bpm, scale, showOriginal, staffWidth, staffWidthFactor, compactSplitMobile, slotHeight, slotWidth, baseSize, heightFit])
 
   // ── Cleanup on unmount ────────────────────────────────────────────────────
   useEffect(() => {
