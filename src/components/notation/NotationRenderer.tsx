@@ -2577,16 +2577,6 @@ export function NotationRenderer({
             // abcjs viewBox dimensions as inline (factor 0.55 × outerRef
             // width), so split-leaf and inline are visually identical.
             heightFit={false}
-            // 260904-szw: split-half (CMD) already uses noResponsiveResize so
-            // CSS w-full + h-auto stretches the SVG to slot width at abcjs's
-            // natural aspect ratio. Split-leaf (CM) was still on
-            // responsive:'resize' which emits a viewBox sized to the
-            // constrained staffwidth=205px — different aspect ratio, and the
-            // resulting 374×530 SVG has each phrase ~30% taller than the
-            // 374×434 split-half (CMD), looking "zoomed in". Matching the
-            // responsive mode means both paths produce visually identical
-            // notation density (modulo phrase count).
-            noResponsiveResize
             // baseSize drives AbcPlayer's dynamic lyric solver
             // (MIN/POST_BUMP window) in the chromeless mobile path. In
             // Inline Staff mode this stays at the mobile default — A+/A−
