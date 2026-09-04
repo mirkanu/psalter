@@ -2286,6 +2286,12 @@ export function NotationRenderer({
   function renderSplitLeaf(notationSlot: ReactNode, stanzaSlot: ReactNode, capBothHalvesOnDesktop = false): ReactNode {
     if (chromeless) {
       const beside = !isNarrowPortrait
+      // 2026-09-04: in solfege-split the slot ALWAYS renders the scanned JPG
+      // (it's the jpeg fallback for the unbuilt inline solfege path), not
+      // gated on showOriginal. So `showOriginal` alone undercounts jpeg
+      // cases — combine with viewMode check to capture the always-jpeg path.
+      const slotShowsScannedJpeg =
+        showOriginal || viewMode === 'solfege-split' || viewMode === 'staff-split'
       if (capBothHalvesOnDesktop) {
         // 260712-tmm Bug (a): Solfège split-leaf must keep the 50/50 cap at
         // ALL widths (no md:h-auto / md:max-h-none escape hatch), so the
@@ -2308,7 +2314,7 @@ export function NotationRenderer({
                   // the full tune, but the 50% cap assumed the full tune
                   // was here — the cap was actively defeating the purpose of
                   // the split. Lyrics slot still takes the rest via flex-1.
-                  : (showOriginal || shouldSplitHalfMobile)
+                  : (slotShowsScannedJpeg || shouldSplitHalfMobile)
                     ? 'flex-none min-h-0 overflow-hidden flex flex-col'
                     : 'flex-none min-h-0 max-h-[50%] overflow-hidden flex flex-col'
               }
