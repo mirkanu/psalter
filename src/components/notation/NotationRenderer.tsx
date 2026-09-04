@@ -871,10 +871,19 @@ export function NotationRenderer({
   // this restores parity with inline's effective geometry. Inline Staff,
   // inline Solfège, and split-leaf Solfège (JPG) are unaffected.
   const isSplitForWidth = isSplitMode(viewMode)
+  // 2026-09-04: split-leaf mobile now mirrors inline mobile (0.55). Previously
+  // split-leaf hardcoded factor=1 (because there's no lyrics to free vertical
+  // space, so the factor<1 narrowing was considered unnecessary). But
+  // factor=1 also turned OFF AbcPlayer's compact visual passes (clef shrink,
+  // padding zero, viewBox trim, lyric solver) — those were gated on factor<1,
+  // and split-leaf rendered at abcjs defaults (large clef, 68px left gutter,
+  // full-height viewBox) while inline Staff looked tightly packed. With the
+  // gate widened to (compactSplitMobile || factor<1) in AbcPlayer, factor=1 is
+  // now safe — but the 0.55 here makes split-leaf use the same narrower
+  // viewBox so more systems wrap and the notation fills the mobile slot
+  // tightly (matching inline minus lyrics).
   const staffWidthFactor = chromeless
-    ? isSplitForWidth
-      ? 1
-      : viewportW < 768 || isPhoneLandscapeForFit
+    ? viewportW < 768 || isPhoneLandscapeForFit
       ? 0.55
       // Quick task 260823-stretch: desktop/tablet SingingView staff mode.
       // 0.85 was producing a noticeable right-edge gap because the viewBox
@@ -2126,14 +2135,25 @@ export function NotationRenderer({
     const split = splitOnPhraseBreaks(abc)
     if (split.phrases.length < 2) return null
     const mid = Math.ceil(split.phrases.length / 2)
+    // 2026-09-04: digitisation residue — a single phrase can contain an
+    // internal `\n` where the original OCR-preserved score placed a lyric
+    // line break (e.g. Ps122 Perfect Way phrase 3 =
+    // `| G2F2B2A2 |\nc2 B6`). abcjs treats each `\n` as a system break, so
+    // the unsplit phrase rendered as 2 staves, making page 1 show 5 staves
+    // instead of the expected 4 (CMD = 8 musical phrases → 4 per page).
+    // Collapse every internal newline within each phrase body to a single
+    // space so each phrase becomes exactly one visual staff. PHRASE_BREAK
+    // markers between phrases are still re-inserted at the join, so this
+    // only affects intra-phrase line breaks.
+    const flat = (p: string) => p.replace(/\s*\n+\s*/g, ' ').trim()
     return {
       // 2026-09-02: strip T:/Q: lines + V: name attribute from the split-half
       // header so the per-half SVG matches what buildUnifiedAbc emits in the
       // staff-inline path — previously this used split.header verbatim, so
       // "Perfect Way" + "♩ = 76" rendered in the chromeless split-half view.
       header: cleanAbcHeader(split.header),
-      firstPhrases: split.phrases.slice(0, mid),
-      secondPhrases: split.phrases.slice(mid),
+      firstPhrases: split.phrases.slice(0, mid).map(flat),
+      secondPhrases: split.phrases.slice(mid).map(flat),
     }
   }, [shouldSplitHalfMobile, abc])
   const splitAbcFirst = useMemo(() => {
@@ -2305,7 +2325,7 @@ export function NotationRenderer({
         // vertical space between the "Page x of y" label (inside the slot)
         // and the lyrics below on mobile.
         return (
-          <div className={beside ? 'flex flex-row h-full gap-2 pt-2' : 'flex flex-col h-full gap-2 pt-2'}>
+          <div className={beside ? 'flex flex-row h-full gap-1 pt-0' : 'flex flex-col h-full gap-1 pt-0'}>
             <div
               data-notation-slot
               className={
@@ -2347,7 +2367,7 @@ export function NotationRenderer({
       return (
         // 2026-09-04: gap-4→gap-2 and pt-4→pt-2 (and kept md:gap-2 / dropped pt-2 on md) to
         // tighten the gap between the notation slot and the lyrics on mobile.
-        <div className={beside ? 'flex flex-row h-full gap-2 pt-2' : 'flex flex-col h-full gap-2 pt-2 md:h-auto md:gap-2'}>
+        <div className={beside ? 'flex flex-row h-full gap-1 pt-0' : 'flex flex-col h-full gap-1 pt-0 md:h-auto md:gap-1'}>
           {/* 260712-szw: data-notation-slot is a measurement hook for
               tests/diagnostics/split-leaf-staff-diff.mjs (clientHeight vs
               scrollHeight overflow check) — no behaviour change.
@@ -2443,11 +2463,10 @@ export function NotationRenderer({
                 onShowOriginalChange={setShowOriginal}
                 hidePlayerControls
                 // 2026-09-04: split-half is the chromeless split-leaf staff
-                // path with lyrics hidden. Per-phrase SVG already at full
-                // container width so the staff fills the viewport like
-                // non-double CMs (the older 0.55 mobile factor shrank it
-                // by 45% causing the narrow-staff fullscreen bug Ps122).
-                staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 1 : 0.95) : staffWidthFactor}
+                // path with lyrics hidden. Per-phrase SVG width = factor
+                // 0.55 on mobile — same as inline Staff — so both paths
+                // yield visually identical notation (modulo lyrics).
+                staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 0.55 : 0.95) : staffWidthFactor}
                 // 2026-09-04: enable compactSplitMobile so the split-half
                 // rendering matches non-paginated staff-split (Ps121 French)
                 // — same `%%staffsep 10` / `%%systemsep 10` row spacing AND
@@ -2478,7 +2497,7 @@ export function NotationRenderer({
                 showOriginal={showOriginal}
                 onShowOriginalChange={setShowOriginal}
                 hidePlayerControls
-                staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 1 : 0.95) : staffWidthFactor}
+                staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 0.55 : 0.95) : staffWidthFactor}
                 compactSplitMobile={compactSplitMobile}
                 baseSize={baseSize}
                 rowDelta={extraSubdivisions}
@@ -2487,7 +2506,7 @@ export function NotationRenderer({
               />
             )}
           </div>
-          <div className="flex items-center justify-center gap-1 -mt-1">
+          <div className="flex items-center justify-center gap-1 mt-0.5">
             <button
               type="button"
               aria-label="Previous half"
