@@ -2165,7 +2165,10 @@ export function NotationRenderer({
   // render the same StanzaList below the JPG.
   const lyricsBelow =
     showLyrics && stanzas.length > 0 ? (
-      <div className="mt-4 max-h-[60vh] overflow-y-auto overscroll-y-none">
+      // 2026-09-04: tighten the gap between the AbcPlayer (which renders
+      // the "Page x of y" label inside its showOriginal block) and the
+      // lyrics below. mt-2 (8px) reads better on mobile than mt-4 (16px).
+      <div className="mt-2 max-h-[60vh] overflow-y-auto overscroll-y-none">
         <StanzaList stanzas={stanzas} />
       </div>
     ) : null
@@ -2298,8 +2301,11 @@ export function NotationRenderer({
         // scanned JPG never exceeds 50% of the viewport, guaranteeing lyrics
         // a minimum 50%. SingingView's <main> is fixed-height on desktop
         // (md:h-[calc(100dvh-116px)]) so h-full resolves correctly here.
+        // 2026-09-04: tightened gap-4→gap-2 and pt-4→pt-2 to reduce the
+        // vertical space between the "Page x of y" label (inside the slot)
+        // and the lyrics below on mobile.
         return (
-          <div className={beside ? 'flex flex-row h-full gap-4 pt-4' : 'flex flex-col h-full gap-4 pt-4'}>
+          <div className={beside ? 'flex flex-row h-full gap-2 pt-2' : 'flex flex-col h-full gap-2 pt-2'}>
             <div
               data-notation-slot
               className={
@@ -2339,7 +2345,9 @@ export function NotationRenderer({
         )
       }
       return (
-        <div className={beside ? 'flex flex-row h-full gap-4 pt-4' : 'flex flex-col h-full gap-4 pt-4 md:h-auto md:gap-4'}>
+        // 2026-09-04: gap-4→gap-2 and pt-4→pt-2 (and kept md:gap-2 / dropped pt-2 on md) to
+        // tighten the gap between the notation slot and the lyrics on mobile.
+        <div className={beside ? 'flex flex-row h-full gap-2 pt-2' : 'flex flex-col h-full gap-2 pt-2 md:h-auto md:gap-2'}>
           {/* 260712-szw: data-notation-slot is a measurement hook for
               tests/diagnostics/split-leaf-staff-diff.mjs (clientHeight vs
               scrollHeight overflow check) — no behaviour change.
@@ -2440,7 +2448,13 @@ export function NotationRenderer({
                 // non-double CMs (the older 0.55 mobile factor shrank it
                 // by 45% causing the narrow-staff fullscreen bug Ps122).
                 staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 1 : 0.95) : staffWidthFactor}
-                compactSplitMobile={false}
+                // 2026-09-04: enable compactSplitMobile so the split-half
+                // rendering matches non-paginated staff-split (Ps121 French)
+                // — same `%%staffsep 10` / `%%systemsep 10` row spacing AND
+                // the same height-fit scale to slot. The splitHalfRef div
+                // already has `overflow-y-auto h-full` so an over-tall SVG
+                // never escapes the slot.
+                compactSplitMobile={compactSplitMobile}
                 baseSize={baseSize}
                 rowDelta={extraSubdivisions}
                 meterPhraseCount={meterMinForDistribution}
@@ -2465,7 +2479,7 @@ export function NotationRenderer({
                 onShowOriginalChange={setShowOriginal}
                 hidePlayerControls
                 staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 1 : 0.95) : staffWidthFactor}
-                compactSplitMobile={false}
+                compactSplitMobile={compactSplitMobile}
                 baseSize={baseSize}
                 rowDelta={extraSubdivisions}
                 meterPhraseCount={meterMinForDistribution}
