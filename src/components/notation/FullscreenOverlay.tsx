@@ -63,7 +63,7 @@ export function FullscreenOverlay({ open, onClose, topBar, bottomBar, children }
           {topBar}
         </div>
       )}
-      <div className="flex-1 flex items-center justify-center overflow-auto p-4">
+      <div className="flex-1 flex items-center justify-center overflow-auto">
         {children}
       </div>
       {bottomBar && (
