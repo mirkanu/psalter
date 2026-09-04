@@ -326,6 +326,17 @@ interface AbcPlayerProps {
   staffPages?: string[]
   solfegePages?: string[]
   tuneName?: string
+  /**
+   * Live view mode — drives which scan array (staffPages vs solfegePages)
+   * is rendered when `showOriginal` is on. Defaults to `initialMode` for
+   * legacy callers; NotationRenderer always passes the current viewMode so
+   * toggling Staff ↔ Solfège from the gear flips the scan image too.
+   */
+  mode?: 'staff' | 'solfege'
+  /**
+   * @deprecated Use `mode` instead. Kept as a one-shot default so the
+   * initial render before `mode` arrives picks a sensible array.
+   */
   initialMode?: 'staff' | 'solfege'
   /** Plain-text lyrics for the current stanza group, lines separated by \n */
   lyricsText?: string
@@ -444,6 +455,7 @@ export default function AbcPlayer({
   solfegePages,
   tuneName,
   initialMode = 'staff',
+  mode: modeProp,
   lyricsText,
   scale,
   autoPlayToken,
@@ -500,11 +512,13 @@ export default function AbcPlayer({
     },
     [isControlled, showOriginal, onShowOriginalChange],
   )
-  // Which JPEG to show when showOriginal=true. 260822-sou: the Staff/Solfège
-  // sub-toggle UI writer (setOriginalMode) was removed — GearPopover and the
-  // tune page each own their own Staff/Solfège control now — so this stays
-  // pinned at `initialMode` as the fallback preference.
-  const [originalMode] = useState<'staff' | 'solfege'>(initialMode)
+  // Which JPEG to show when showOriginal=true. 2026-09-04: live-track the
+  // parent's `mode` prop (NotationRenderer's viewMode) instead of pinning at
+  // mount via `initialMode` — without this, toggling Staff ↔ Solfège from the
+  // gear kept showing the wrong scan array (originalMode was sticky from the
+  // first mount). Falls back to `initialMode` if `mode` isn't passed (legacy
+  // callers + the first render before the parent re-renders).
+  const mode: 'staff' | 'solfege' = modeProp ?? initialMode
   const [isPlaying, setIsPlaying] = useState(false)
   const [audioReady, setAudioReady] = useState(false)
   const [audioError, setAudioError] = useState<string | null>(null)
@@ -1425,7 +1439,7 @@ export default function AbcPlayer({
   // Resets to 0 whenever the array identity changes (tune switch / page
   // source swap). Falls back to the single-URL props when the array is
   // empty/undefined so legacy callers are byte-identical.
-  const originalPages: string[] = originalMode === 'solfege'
+  const originalPages: string[] = mode === 'solfege'
     ? (solfegePages && solfegePages.length > 0 ? solfegePages : [])
     : (staffPages && staffPages.length > 0 ? staffPages : [])
   const [scanPageIndex, setScanPageIndex] = useState(0)
@@ -1433,7 +1447,7 @@ export default function AbcPlayer({
   const hasMultiPages = originalPages.length > 1
   const originalSrc = hasMultiPages
     ? originalPages[scanPageIndex] ?? originalPages[0]
-    : (originalMode === 'solfege' ? (solfegeJpgUrl ?? staffJpgUrl) : (staffJpgUrl ?? solfegeJpgUrl))
+    : (mode === 'solfege' ? (solfegeJpgUrl ?? staffJpgUrl) : (staffJpgUrl ?? solfegeJpgUrl))
 
   // 2026-09-02: swipe left/right to advance/regress scan pages when there
   // are multiple pages — alternative to the chevron buttons underneath.
