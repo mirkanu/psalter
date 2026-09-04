@@ -1570,7 +1570,7 @@ export default function AbcPlayer({
               (cropping the tune instead of shrinking it). Only active when
               compactSplitMobile fits the SVG down; otherwise both layers are
               inert (no height/overflow/transform set). */}
-          <div ref={fitWrapRef} className="w-full">
+          <div ref={fitWrapRef} className="w-full -mx-2">
             <div
               ref={containerRef}
               role="img"
