@@ -553,17 +553,30 @@ export default function AbcPlayer({
   // (device rotation, split-view resizing) still propagate. The
   // `settled` ref is intentionally mutable (not state) so reading it from
   // the observer callback is synchronous and doesn't cause a re-render.
+  //
+  // 2026-09-04: also force one re-measure at the END of the settle window.
+  // Without this, a layout transition that BEGINS during the settle window
+  // (e.g. fullscreen entry — outerRef is briefly 187 wide before settling to
+  // 390) leaves staffWidth stuck at the transient value forever, because the
+  // ResizeObserver fires for the 187 → 390 transition but the event is
+  // ignored, and no further resize event fires once the width stabilises.
   useEffect(() => {
     const el = outerRef.current
     if (!el) return
     const settled = { current: false }
+    const measure = () => {
+      const w = el.clientWidth
+      if (w > 0 && Math.abs(w - staffWidth) >= 8) setStaffWidth(w)
+    }
     const settleTimer = setTimeout(() => {
       settled.current = true
+      // Re-measure once at settle end to catch transitions that completed
+      // during the ignore window (no subsequent ResizeObserver event).
+      measure()
     }, 1500)
     const obs = new ResizeObserver(() => {
       if (!settled.current) return
-      const w = el.clientWidth
-      if (w > 0 && Math.abs(w - staffWidth) >= 8) setStaffWidth(w)
+      measure()
     })
     obs.observe(el)
     return () => {
@@ -584,6 +597,10 @@ export default function AbcPlayer({
     const settled = { current: false }
     const settleTimer = setTimeout(() => {
       settled.current = true
+      // Re-measure once at settle end to catch transitions that completed
+      // during the ignore window (no subsequent resize event).
+      const w = outerRef.current?.clientWidth ?? 0
+      if (w > 0 && Math.abs(w - staffWidth) >= 8) setStaffWidth(w)
     }, 1500)
     const trigger = () => {
       if (!settled.current) return
@@ -1411,7 +1428,7 @@ export default function AbcPlayer({
                 <img
                   src={originalSrc}
                   alt={`Original score for ${tuneName ?? 'tune'}`}
-                  className="w-full h-auto object-contain rounded-md border border-border"
+                  className="max-w-full max-h-full w-full h-auto object-contain rounded-md border border-border mx-auto"
                 />
               </div>
               {hasMultiPages && (
