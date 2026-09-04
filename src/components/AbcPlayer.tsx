@@ -1319,12 +1319,46 @@ export default function AbcPlayer({
     if (!compactSplitMobile || !slotHeight || heightFit === false) return
     const svg = el.querySelector('svg')
     if (!svg) return
-    const naturalHeight = svg.getBoundingClientRect().height
-    if (naturalHeight <= 0 || naturalHeight <= slotHeight) return
-    const fitScale = slotHeight / naturalHeight
-    el.style.transformOrigin = 'top center'
-    el.style.transform = `scale(${fitScale})`
+    // 260904-szw: dynamic non-uniform scale to fill the available slot
+    // rectangle exactly (the user's "fully filling the rectangle without
+    // overflow" requirement). Uniform scale (previous version) preserved
+    // note aspect ratio but couldn't fill both dimensions when the abcjs
+    // natural aspect ratio differed from the slot's — CM French is 204×290
+    // (aspect 0.70) but the 374×422 mobile slot is aspect 0.886, so uniform
+    // scale either overflowed Y or left 100+px of horizontal whitespace.
+    // Non-uniform scaleX/scaleY fills both dimensions. The slot is the
+    // nearest [data-notation-slot] / [data-notation-fit-slot] ancestor, which
+    // NotationRenderer caps at max-h-[50%] of the viewport (≤422 px on a
+    // 390×844 phone).
+    const slotEl = outerRef.current?.closest('[data-notation-slot], [data-notation-fit-slot]') as HTMLElement | null
+    const slotWidth = slotEl?.clientWidth ?? el.clientWidth
+    // Read SVG's INTRINSIC dimensions (viewBox or explicit attrs) so we
+    // divide by the abcjs natural size, not the CSS-stretched rendered size.
+    let naturalW = 0
+    let naturalH = 0
+    const vb = svg.getAttribute('viewBox')
+    if (vb) {
+      const parts = vb.split(/\s+/).map(Number)
+      if (parts.length === 4 && parts[2] > 0 && parts[3] > 0) {
+        naturalW = parts[2]
+        naturalH = parts[3]
+      }
+    }
+    if (naturalW === 0) {
+      const aW = parseFloat(svg.getAttribute('width') || '')
+      const aH = parseFloat(svg.getAttribute('height') || '')
+      if (aW > 0 && aH > 0) {
+        naturalW = aW
+        naturalH = aH
+      }
+    }
+    if (naturalW <= 0 || naturalH <= 0 || slotWidth <= 0 || slotHeight <= 0) return
+    const scaleX = slotWidth / naturalW
+    const scaleY = slotHeight / naturalH
+    el.style.transformOrigin = 'top left'
+    el.style.transform = `scale(${scaleX}, ${scaleY})`
     wrap.style.height = `${slotHeight}px`
+    wrap.style.width = `${slotWidth}px`
     wrap.style.overflow = 'hidden'
   }, [abc, transpose, bpm, scale, showOriginal, staffWidth, staffWidthFactor, compactSplitMobile, slotHeight, baseSize, heightFit])
 
@@ -1559,16 +1593,15 @@ export default function AbcPlayer({
               ref={containerRef}
               role="img"
               aria-label={title ? `Music notation for ${title}` : 'Music notation'}
-              // 260904-szw: gate the [&_svg]:w-full CSS stretch on
-              // noResponsiveResize. Split-half (CMD) sets noResponsiveResize=true
-              // → abcjs emits explicit width/height attrs (no viewBox) → needs
-              // the CSS stretch to fill the slot width. Split-leaf (CM) leaves
-              // noResponsiveResize undefined → abcjs emits viewBox +
-              // preserveAspectRatio → the CSS would also stretch it, breaking
-              // the natural 215×256 size the user explicitly said was perfect.
-              // Inverted conditional: apply CSS stretch ONLY when
-              // noResponsiveResize is true.
-              className={`w-full max-w-full overflow-x-hidden${noResponsiveResize ? ' [&_svg]:w-full [&_svg]:max-w-full [&_svg]:h-auto' : ''}`}
+              // 260904-szw: NO [&_svg]:w-full CSS stretch here. Width/height
+              // sizing is fully handled by the heightFit effect (lines below)
+              // which applies a non-uniform CSS transform to containerRef so
+              // the abcjs-emitted SVG fills the surrounding
+              // [data-notation-slot] rectangle exactly. Adding a CSS width
+              // stretch on top would double-stretch (CSS lays out at 374px,
+              // then transform rescales the rendered visual to 648px),
+              // breaking split-half CMD rendering.
+              className="w-full max-w-full overflow-x-hidden"
             />
           </div>
           {/* Lyrics text block — shown below notation in interactive mode */}

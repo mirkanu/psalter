@@ -2482,13 +2482,13 @@ export function NotationRenderer({
                 // Responsive:'none' keeps notation at natural size; the
                 // parent's overflow-y-auto handles any overflow.
                 noResponsiveResize
-                // 260903: disable height-fit transform entirely on split-half
-                // — the height-fit scale's resize-mutation loop races with
-                // the iOS Safari 1.5s settle-window width transitions,
-                // producing the "flickers like crazy without stopping" symptom.
-                // SVG now renders at natural abcjs viewBox dimensions (factor
-                // 0.55 of outerRef width) — visually identical to inline Staff.
-                heightFit={false}
+                // 260904-szw: height-fit now drives a non-uniform CSS
+                // scale that fills the [data-notation-slot] rectangle
+                // exactly (AbcPlayer.tsx heightFit effect). Apply it on
+                // split-half too — previously disabled to dodge the old
+                // uniform-scale iOS Safari flicker, but the new effect reads
+                // intrinsic viewBox/width+height (not stretched CSS) so
+                // there is no double-stretch and no width-vs-height race.
               />
             ) : (
               <AbcPlayer
@@ -2510,9 +2510,9 @@ export function NotationRenderer({
                 rowDelta={extraSubdivisions}
                 meterPhraseCount={meterMinForDistribution}
                 noResponsiveResize
-                // 260903: see splitAbcFirst sibling — disable height-fit on
-                // split-half to eliminate the iOS settle-window flicker.
-                heightFit={false}
+                // 260904-szw: see splitAbcFirst sibling — height-fit now
+                // applies the non-uniform CSS scale and is safe on
+                // split-half (no flicker, no double-stretch).
               />
             )}
           </div>
@@ -2570,13 +2570,13 @@ export function NotationRenderer({
             hidePlayerControls={isFullscreen || chromeless || tunePageMode}
             staffWidthFactor={staffWidthFactor}
             compactSplitMobile={compactSplitMobile}
-            // 260903: disable height-fit on split-leaf — the height-fit scale
-            // was producing a uniform-scaled SVG (355×422 from a 215×256
-            // natural) that looked ~40% bigger than inline Staff. With
-            // heightFit={false} the SVG element renders at the same natural
-            // abcjs viewBox dimensions as inline (factor 0.55 × outerRef
-            // width), so split-leaf and inline are visually identical.
-            heightFit={false}
+            // 260904-szw: ENABLED height-fit on split-leaf. The new effect uses
+            // non-uniform CSS scale (scaleX=slotW/naturalW,
+            // scaleY=slotH/naturalH) so the SVG fills the
+            // [data-notation-slot] rectangle exactly (matches inline
+            // Staff width and stretches vertically to the 50% viewport
+            // cap). The previous uniform scale that grew the SVG by ~40%
+            // is gone.
             // baseSize drives AbcPlayer's dynamic lyric solver
             // (MIN/POST_BUMP window) in the chromeless mobile path. In
             // Inline Staff mode this stays at the mobile default — A+/A−
