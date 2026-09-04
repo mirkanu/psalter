@@ -853,6 +853,17 @@ export default function AbcPlayer({
       // because expandToWidest never unified them. With it on, every row
       // shares the same target width.
       const expandToWidest = true
+      // 2026-09-04: compact-pass gate. Originally every compact pass below
+      // (clef shrink, padding zero, viewBox trim, lyric solver) was gated
+      // on `staffWidthFactor < 1` — chromeless inline Staff only. The
+      // mobile staff-split path passes factor=1 (no lyrics to free space,
+      // so factor=1 ≠ "default density") and so ALL of those passes
+      // silently skipped, leaving split-leaf Staff rendering at abcjs
+      // defaults (large clef, 68px left gutter, full-height viewBox)
+      // while inline Staff looks tightly packed.  Re-gate to fire when
+      // EITHER signal says we're on a mobile compact path. Caller decides
+      // which one to set; this component is signal-agnostic.
+      const compact = compactSplitMobile || staffWidthFactor < 1
       // 260712-szw: mobile split-leaf only — compact vertical spacing via
       // %% ABC directive prepend (see injectCompactSpacingDirectives; abcjs's
       // JS-level `format` option does not honor topmargin/botmargin/
@@ -898,8 +909,8 @@ export default function AbcPlayer({
         // the last note flush right). Gated to staffWidthFactor < 1 so the
         // non-chromeless paths (study / tunes — factor=1) keep the 68px
         // gutter that their centered title text actually uses.
-        paddingleft: staffWidthFactor < 1 ? 0 : undefined,
-        paddingright: staffWidthFactor < 1 ? 0 : undefined,
+        paddingleft: compact ? 0 : undefined,
+        paddingright: compact ? 0 : undefined,
       })
       visualObjRef.current = visualObjs?.[0] ?? null
       // MOBILE-04 (revised): shrink the clef/key-signature/time-signature
@@ -908,7 +919,7 @@ export default function AbcPlayer({
       // staffWidthFactor < 1 signal as expandToWidest above (chromeless
       // inline non-split Staff only); split-leaf and desktop non-chromeless
       // are untouched.
-      if (staffWidthFactor < 1) {
+      if (compact) {
         applyLeadingGlyphShrink(el)
         // Quick task 260823-stretch: abcjs hard-codes every SVG's
         // preserveAspectRatio to "xMinYMin meet" (see
