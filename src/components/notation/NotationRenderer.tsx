@@ -2381,17 +2381,7 @@ export function NotationRenderer({
             className={
               beside
                 ? 'flex-1 min-w-0 h-full overflow-y-auto overscroll-y-none'
-                // 2026-09-05: dropped max-h-[50%] cap for split-leaf CM too.
-                // The cap existed to reserve space for lyrics below; split-leaf
-                // already passes renderLyricsBelow=undefined so the lyrics area
-                // is empty. With the cap, the inline-Staff-style SVG (which
-                // is 552 tall with padding-bottom aspect) was getting clipped
-                // at 422 px on a 844 px viewport — losing the bottom of the
-                // score. Removing the cap lets the slot grow to the SVG's
-                // natural height (matching staff inline behavior). Split-half
-                // (CMD pagination) already had the cap dropped for the same
-                // reason.
-                : 'flex-none min-h-0 overflow-y-auto md:max-h-none md:overflow-visible overscroll-y-none'
+                : 'flex-none min-h-0 max-h-[50%] overflow-y-auto md:max-h-none md:overflow-visible overscroll-y-none'
             }
           >
             {notationSlot}
@@ -2401,11 +2391,7 @@ export function NotationRenderer({
             className={
               beside
                 ? 'flex-1 min-w-0 h-full overflow-y-auto overscroll-y-none'
-                // 2026-09-05: on mobile (narrow portrait, !beside), the
-                // user wants split-leaf to be just the abcjs staff — no
-                // lyrics panel below. Desktop still shows the two-column
-                // verses beside the staff.
-                : 'hidden'
+                : 'flex-1 min-h-0 overflow-y-auto md:max-h-none md:overflow-visible md:flex-none overscroll-y-none'
             }
           >
             {stanzaSlot}
