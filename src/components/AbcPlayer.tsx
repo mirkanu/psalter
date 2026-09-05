@@ -1355,9 +1355,14 @@ export default function AbcPlayer({
     if (!slotHeight || heightFit === false) return
     const svg = el.querySelector('svg')
     if (!svg) return
-    // 260904-szw: dynamic non-uniform scale to fill the available slot
-    // rectangle exactly (the user's "fully filling the rectangle without
-    // overflow" requirement).
+    // 260905: uniform CSS scale to fit the slot rectangle while preserving
+    // the notation's natural aspect ratio (notes/clef appear correctly
+    // proportioned, not horizontally stretched). The slot is wider than tall
+    // for typical mobile viewports, so most tunes end up height-bounded:
+    // the notation fits the slot height exactly and is centered horizontally
+    // with whitespace on each side. Container's transformOrigin is `center`
+    // so the wrap (slot-sized, flex-centered) holds the scaled content in
+    // the middle.
     //
     // Reads containerRef's POST-ABCJS-RENDER CSS dimensions (clientWidth
     // and clientHeight), NOT the SVG's viewBox dimensions. With
@@ -1366,11 +1371,7 @@ export default function AbcPlayer({
     // the score's natural aspect ratio — so containerRef's clientHeight
     // equals clientWidth × 1.41625 (= 552 px on a 390 px slot). Using the
     // SVG's viewBox (204×290 for CM French) as the divisor would compute
-    // scaleY=1.20, but scaling containerRef's 552 px CSS height by 1.20
-    // gives 663 px visually — overshooting the 348 px slot.
-    //
-    // Using containerRef's actual layout dims yields scaleX=1.0,
-    // scaleY=0.63 here → visual 390×348 (fills the slot exactly).
+    // a wrong (smaller) scale, since viewBox ≠ layout dims.
     //
     // Both `slotWidth` and `slotHeight` are state updated atomically by
     // the slot observer above (see comment there about iOS settle
@@ -1380,12 +1381,14 @@ export default function AbcPlayer({
       const lw = el.clientWidth
       const lh = el.clientHeight
       if (lw <= 0 || lh <= 0) return
-      const sx = slotWidth / lw
-      const sy = slotHeight / lh
-      el.style.transformOrigin = 'top left'
-      el.style.transform = `scale(${sx}, ${sy})`
+      const s = Math.min(slotWidth / lw, slotHeight / lh)
+      el.style.transformOrigin = 'center center'
+      el.style.transform = `scale(${s})`
       wrap.style.height = `${slotHeight}px`
       wrap.style.width = `${slotWidth}px`
+      wrap.style.display = 'flex'
+      wrap.style.alignItems = 'center'
+      wrap.style.justifyContent = 'center'
       wrap.style.overflow = 'hidden'
     }
     applyScale()
