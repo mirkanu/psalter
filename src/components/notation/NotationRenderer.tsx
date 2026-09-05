@@ -2381,9 +2381,17 @@ export function NotationRenderer({
             className={
               beside
                 ? 'flex-1 min-w-0 h-full overflow-y-auto overscroll-y-none'
-                : shouldSplitHalfMobile
-                  ? 'flex-none min-h-0 overflow-y-auto md:max-h-none md:overflow-visible overscroll-y-none'
-                  : 'flex-none min-h-0 max-h-[50%] overflow-y-auto md:max-h-none md:overflow-visible overscroll-y-none'
+                // 2026-09-05: dropped max-h-[50%] cap for split-leaf CM too.
+                // The cap existed to reserve space for lyrics below; split-leaf
+                // already passes renderLyricsBelow=undefined so the lyrics area
+                // is empty. With the cap, the inline-Staff-style SVG (which
+                // is 552 tall with padding-bottom aspect) was getting clipped
+                // at 422 px on a 844 px viewport — losing the bottom of the
+                // score. Removing the cap lets the slot grow to the SVG's
+                // natural height (matching staff inline behavior). Split-half
+                // (CMD pagination) already had the cap dropped for the same
+                // reason.
+                : 'flex-none min-h-0 overflow-y-auto md:max-h-none md:overflow-visible overscroll-y-none'
             }
           >
             {notationSlot}
@@ -2473,20 +2481,25 @@ export function NotationRenderer({
                 // the same height-fit scale to slot. The splitHalfRef div
                 // already has `overflow-y-auto h-full` so an over-tall SVG
                 // never escapes the slot.
-                compactSplitMobile={compactSplitMobile}
+                // 2026-09-05: REVERTED — split-half now renders identical
+                // to inline Staff (no compactSplitMobile, no
+                // noResponsiveResize, no heightFit transform). The user's
+                // instruction: "for e.g. CMD you should do same as for CM"
+                // — both split paths render at the proven inline Staff
+                // dimensions (responsive:'resize', viewBox+meet, padding-
+                // bottom aspect wrapper, factor-0.55 staff width). The
+                // split-half's `overflow-y-auto` parent handles any
+                // over-tall content gracefully.
                 baseSize={baseSize}
                 rowDelta={extraSubdivisions}
                 meterPhraseCount={meterMinForDistribution}
-                // 2026-09-02: split-half path doesn't want abcjs to zoom
-                // the SVG when the container grows (fullscreen overlay).
-                // Responsive:'none' keeps notation at natural size; the
-                // parent's overflow-y-auto handles any overflow.
-                noResponsiveResize
-                // 260904-szw: height-fit now drives a non-uniform CSS
-                // scale that fills the [data-notation-slot] rectangle
-                // exactly (AbcPlayer.tsx heightFit effect). Apply it on
-                // split-half too — previously disabled to dodge the old
-                // uniform-scale iOS Safari flicker, but the new effect reads
+                // 2026-09-05: removed `noResponsiveResize`. With
+                // responsive:'resize', abcjs handles viewBox+aspect on
+                // container resize just like inline Staff — no need to
+                // pin natural size here. Removed `heightFit` consideration
+                // — the heightFit effect is gated on `compactSplitMobile`,
+                // which is now false, so the effect is a no-op for this
+                // path.
                 // intrinsic viewBox/width+height (not stretched CSS) so
                 // there is no double-stretch and no width-vs-height race.
               />
@@ -2505,14 +2518,12 @@ export function NotationRenderer({
                 onShowOriginalChange={setShowOriginal}
                 hidePlayerControls
                 staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 0.55 : 0.95) : staffWidthFactor}
-                compactSplitMobile={compactSplitMobile}
+                // 2026-09-05: removed compactSplitMobile + noResponsiveResize
+                // — split-half second page now renders identical to
+                // inline Staff (matches splitAbcFirst sibling above).
                 baseSize={baseSize}
                 rowDelta={extraSubdivisions}
                 meterPhraseCount={meterMinForDistribution}
-                noResponsiveResize
-                // 260904-szw: see splitAbcFirst sibling — height-fit now
-                // applies the non-uniform CSS scale and is safe on
-                // split-half (no flicker, no double-stretch).
               />
             )}
           </div>
@@ -2569,14 +2580,16 @@ export function NotationRenderer({
             onShowOriginalChange={setShowOriginal}
             hidePlayerControls={isFullscreen || chromeless || tunePageMode}
             staffWidthFactor={staffWidthFactor}
-            compactSplitMobile={compactSplitMobile}
-            // 260904-szw: ENABLED height-fit on split-leaf. The new effect uses
-            // non-uniform CSS scale (scaleX=slotW/naturalW,
-            // scaleY=slotH/naturalH) so the SVG fills the
-            // [data-notation-slot] rectangle exactly (matches inline
-            // Staff width and stretches vertically to the 50% viewport
-            // cap). The previous uniform scale that grew the SVG by ~40%
-            // is gone.
+            // 2026-09-05: removed compactSplitMobile — split-leaf now
+            // renders identical to inline Staff (no heightFit transform,
+            // no compact row spacing override, no slot-fill logic). The
+            // user's instruction: use the proven staff inline rendering
+            // and just drop the lyrics block (which was already
+            // undefined via renderLyricsBelow). Lyrics area slot cap
+            // (max-h-50%) stays as the conservative upper bound for
+            // viewbox-derived content overflow.
+            // baseSize drives AbcPlayer's dynamic lyric solver
+            // (MIN/POST_BUMP window) in the chromeless mobile path. In
             // baseSize drives AbcPlayer's dynamic lyric solver
             // (MIN/POST_BUMP window) in the chromeless mobile path. In
             // Inline Staff mode this stays at the mobile default — A+/A−
