@@ -2420,7 +2420,27 @@ export function NotationRenderer({
     // 2026-08-16 (Phase 16 R3): also force the JPG when there's NO abc to
     // render at all — many tunes lack digital staff notation, and on the
     // tune page we surface the scanned staff sheet as the default fallback.
-    const forceStaffJpgFallback = (isSplit && !staffInlineApproved) || (tunePageMode && !abc.trim())
+    //
+    // 2026-09-05 (REVERTED): Staff SPLIT-LEAF now ALWAYS renders the scanned
+    // JPG — the live-rendered abcjs split-leaf path is disabled site-wide.
+    // See [[project-staff-split-leaf-disabled]] memory. After many rounds of
+    // tuning (staffWidthFactor, heightFit, redistribute effect, per-system
+    // translateY, %%staffsep/%%systemsep tweaks, mobile slot-cap adjustments)
+    // the digital split-leaf never converged to a layout that satisfied the
+    // user on iPhone: gaps between phrases were either too large (systems
+    // didn't fill the slot) or too tight (last system clipped off-screen);
+    // full-width staff lines crowded the slot's edges; the per-system
+    // translateY math fought abcjs's intrinsic %%systemsep. Solfège split-
+    // leaf has always used the scanned JPG and the user is happy with it.
+    // Mirroring that for Staff removes a divergent code path entirely while
+    // keeping every line below (shouldSplitHalfMobile branch, the inline
+    // staff AbcPlayer call) intact for future re-activation. To re-enable:
+    // remove the `|| isSplit` term and the slot will once again render the
+    // unified abcjs split-leaf path (subject to all the tuning above).
+    const forceStaffJpgFallback =
+      (isSplit && !staffInlineApproved) ||
+      (tunePageMode && !abc.trim()) ||
+      isSplit
 
     const notationBlock: ReactNode = forceStaffJpgFallback
       ? renderScannedPages(
