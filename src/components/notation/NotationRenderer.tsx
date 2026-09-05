@@ -2464,10 +2464,16 @@ export function NotationRenderer({
               // path with lyrics hidden. Per-phrase SVG width = factor
               // 0.55 on mobile — same as inline Staff — so both paths
               // yield visually identical notation (modulo lyrics).
-              staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 0.55 : 0.95) : staffWidthFactor}
+              // 2026-09-05: factor=1.0 so the 5 staff lines span the
+              // full slot width (was 0.55, leaving horizontal whitespace).
+              staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 1.0 : 0.95) : staffWidthFactor}
               baseSize={baseSize}
               rowDelta={extraSubdivisions}
               meterPhraseCount={meterMinForDistribution}
+              // 2026-09-05: disable heightFit — staff lines are full-width
+              // via factor=1.0, no CSS transform. Vertical distribution is
+              // via %%systemsep.
+              heightFit={false}
             />
           ) : (
             <AbcPlayer
@@ -2483,10 +2489,13 @@ export function NotationRenderer({
               showOriginal={showOriginal}
               onShowOriginalChange={setShowOriginal}
               hidePlayerControls
-              staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 0.55 : 0.95) : staffWidthFactor}
+              // 2026-09-05: factor=1.0 — see splitAbcFirst sibling above
+              staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 1.0 : 0.95) : staffWidthFactor}
               baseSize={baseSize}
               rowDelta={extraSubdivisions}
               meterPhraseCount={meterMinForDistribution}
+              // 2026-09-05: disable heightFit — see splitAbcFirst above
+              heightFit={false}
             />
           )}
         </div>
@@ -2523,7 +2532,12 @@ export function NotationRenderer({
             // only would leave lyrics un-scaled and the layout would
             // mis-stack. Split-half call sites above default to heightFit
             // true (always shrink-to-fit on CMD pagination).
-            heightFit={isSplit}
+            // 2026-09-05: disabled heightFit for split-leaf too — staff
+            // lines span the full slot width via staffWidthFactor=1.0 and
+            // we want the natural element sizes (notes/clefs/bars) without
+            // any CSS transform. Vertical distribution between systems is
+            // handled via injected %%systemsep in the AbcPlayer pass.
+            heightFit={false}
             // 2026-09-05: removed compactSplitMobile — split-leaf now
             // renders identical to inline Staff (no heightFit transform,
             // no compact row spacing override, no slot-fill logic). The
