@@ -54,7 +54,14 @@ function parseBpmFromAbc(abc: string): number {
  * tune from 434px to 299px (spacing-tighter sweep).
  */
 function injectCompactSpacingDirectives(abc: string): string {
-  const DIRECTIVES = ['%%topmargin 0', '%%botmargin 0', '%%staffsep 10', '%%systemsep 10']
+  // 2026-09-05: reduce %%systemsep from 10 → 5 on CMD/SMD/LMD where
+  // 6–8 systems need to fit on a single split-half page; the previous
+  // value was leaving ~85 px gaps between systems, causing the final
+  // system to overflow the slot even after the redistribute effect.
+  // %%staffsep stays at 10 since the 5 staff lines themselves need
+  // ~50 px of vertical room for notehead-to-notehead spacing within
+  // a single system.
+  const DIRECTIVES = ['%%topmargin 0', '%%botmargin 0', '%%staffsep 10', '%%systemsep 5']
   const lines = abc.split('\n')
   const kIdx = lines.findIndex((l) => l.indexOf('K:') === 0)
   if (kIdx === -1) return DIRECTIVES.concat(lines).join('\n')
@@ -1363,11 +1370,17 @@ export default function AbcPlayer({
       const N = sysData.length
       const svgW = svg.viewBox.baseVal.width || svg.clientWidth || slotWidth
       const svgVBH = svg.viewBox.baseVal.height
-      // SVG renders at slotW wide × (slotW × svgVBH/svgVBW) tall. So 1
-      // userspace unit = (slotW/svgVBW) rendered pixels. Compute each
-      // system's rendered-pixel top, then compute translateY so the
-      // visual top lands at `margin + i × stepY`.
-      const pxPerUnit = slotWidth / svgW
+      // 2026-09-05 (right padding): leave ~8 px breathing room on the
+      // right edge so the staff bars don't run flush against the
+      // viewport (mirror of the existing left padding that abcjs's
+      // responsive='resize' naturally leaves from its padding-bottom
+      // aspect math).
+      const rightPad = 8
+      const effectiveSlotW = slotWidth - rightPad
+      // SVG renders at effectiveSlotW wide × (effectiveSlotW ×
+      // svgVBH/svgVBW) tall. So 1 userspace unit = (effectiveSlotW /
+      // svgVBW) rendered pixels.
+      const pxPerUnit = effectiveSlotW / svgW
       const stackTop = sysData[0]?.y ?? 0
       const stackBottom = sysData.length
         ? sysData[sysData.length - 1].y + sysData[sysData.length - 1].h
@@ -1386,13 +1399,19 @@ export default function AbcPlayer({
       const fitScale = Math.min(1, slotHeight / Math.max(stackHeightPx, 1))
       el.style.transformOrigin = 'center center'
       el.style.transform = `scale(${fitScale})`
-      const margin = 4
-      const usableH = slotHeight - 2 * margin
+      // 2026-09-05 (zero top margin): user feedback was that the first
+      // system sat too low (large empty band at the top of the slot).
+      // Push it flush to the slot top with no reserved top padding; the
+      // natural staff-line height is consistent across systems so the
+      // first line lands right at slot y=0.
+      const topMargin = 0
+      const botMargin = 0
+      const usableH = slotHeight - topMargin - botMargin
       const stepY = N > 1 ? (usableH - sysHpx) / (N - 1) : 0
       wrappers.forEach((w, i) => {
         const s = sysData[i]
         // Visual target Y in slot pixels (relative to slot top).
-        const visualTarget = margin + i * stepY
+        const visualTarget = topMargin + i * stepY
         // Visual Y of system in slot pixels BEFORE translate, AFTER
         // parent CSS scale: visualY = s.y × pxPerUnit × fitScale
         const visualY = (s.y - stackTop) * pxPerUnit * fitScale
@@ -1409,7 +1428,20 @@ export default function AbcPlayer({
       wrap.style.width = `${slotWidth}px`
       wrap.style.display = 'flex'
       wrap.style.alignItems = 'flex-start'
-      wrap.style.justifyContent = 'center'
+      wrap.style.justifyContent = 'flex-start'
+      // 2026-09-05: offset the SVG (and its abcjs-container child) left
+      // by the existing left padding amount and right by `rightPad` so
+      // the right edge has ~8 px breathing room. abcjs's
+      // responsive='resize' naturally leaves a left-side padding via
+      // its padding-bottom aspect wrapper, but the staff lines span
+      // edge-to-edge in x — pin to the slot's existing visual padding
+      // by adding an equivalent left margin here.
+      const abcjsContainer = svg.parentElement
+      if (abcjsContainer) {
+        abcjsContainer.style.marginLeft = '4px'
+        abcjsContainer.style.maxWidth = `${effectiveSlotW + 8}px`
+      }
+      svg.style.maxWidth = `${effectiveSlotW + 8}px`
       wrap.style.overflow = 'hidden'
     }
     applyRedistribute()
