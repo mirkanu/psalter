@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, cleanup, fireEvent } from '@testing-library/react'
+import { render, screen, cleanup } from '@testing-library/react'
 import { GearPopover } from './GearPopover'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
 
@@ -34,18 +34,24 @@ function renderGearPopover(overrides: Partial<React.ComponentProps<typeof GearPo
   return render(<GearPopover {...defaultProps} {...overrides} />)
 }
 
-describe('GearPopover — Score: Digital / Original scan row (quick 260822-di9)', () => {
-  it('shows the Score row with two radios when staff is rendering digitally (Split-Leaf) and a scan exists', () => {
-    renderGearPopover({ viewMode: 'staff-split', originalScanAvailable: true, showOriginal: false })
-    const group = document.querySelector('[data-settings-sub="score-source"]')
-    expect(group).toBeTruthy()
-    const digital = screen.getByRole('radio', { name: 'Digital' })
-    const original = screen.getByRole('radio', { name: 'Original scan' })
-    expect(digital.getAttribute('aria-checked')).toBe('true')
-    expect(original.getAttribute('aria-checked')).toBe('false')
+// 2026-09-05: The "Score: Digital | Original scan" sub-toggle is HIDDEN in the
+// gear menu because Staff split-leaf now ALWAYS renders the scanned JPG
+// (forceStaffJpgFallback in NotationRenderer.tsx). The JSX block and its
+// showScoreSourceRow derivation are preserved (gated on `false &&`) for
+// future re-activation — see [[project-staff-split-leaf-disabled]]. Tests
+// below verify the row is currently NOT rendered in any configuration that
+// previously would have shown it.
+describe('GearPopover — Score: Digital / Original scan row (hidden 2026-09-05)', () => {
+  it('is hidden in APPROVED Staff Split-Leaf even when a scan exists', () => {
+    renderGearPopover({
+      viewMode: 'staff-split',
+      staffInlineApproved: true,
+      originalScanAvailable: true,
+    })
+    expect(document.querySelector('[data-settings-sub="score-source"]')).toBeNull()
   })
 
-  it('is absent in INLINE Staff layout (quick 260822-fgb)', () => {
+  it('is hidden in INLINE Staff layout', () => {
     renderGearPopover({
       viewMode: 'staff',
       staffInlineApproved: true,
@@ -54,38 +60,22 @@ describe('GearPopover — Score: Digital / Original scan row (quick 260822-di9)'
     expect(document.querySelector('[data-settings-sub="score-source"]')).toBeNull()
   })
 
-  it('clicking Original scan calls onShowOriginalChange(true) exactly once', () => {
-    const onShowOriginalChange = vi.fn()
-    renderGearPopover({ showOriginal: false, onShowOriginalChange })
-    fireEvent.click(screen.getByRole('radio', { name: 'Original scan' }))
-    expect(onShowOriginalChange).toHaveBeenCalledTimes(1)
-    expect(onShowOriginalChange).toHaveBeenCalledWith(true)
-  })
-
-  it('clicking Digital while showOriginal is true calls onShowOriginalChange(false)', () => {
-    const onShowOriginalChange = vi.fn()
-    renderGearPopover({ showOriginal: true, onShowOriginalChange })
-    fireEvent.click(screen.getByRole('radio', { name: 'Digital' }))
-    expect(onShowOriginalChange).toHaveBeenCalledTimes(1)
-    expect(onShowOriginalChange).toHaveBeenCalledWith(false)
-  })
-
-  it('is absent when originalScanAvailable is false', () => {
+  it('is hidden when originalScanAvailable is false', () => {
     renderGearPopover({ originalScanAvailable: false })
     expect(document.querySelector('[data-settings-sub="score-source"]')).toBeNull()
   })
 
-  it('is absent in Lyrics Only view mode', () => {
+  it('is hidden in Lyrics Only view mode', () => {
     renderGearPopover({ viewMode: 'lyrics', originalScanAvailable: true })
     expect(document.querySelector('[data-settings-sub="score-source"]')).toBeNull()
   })
 
-  it('is absent in Solfège Split-Leaf (the scan IS the render there)', () => {
+  it('is hidden in Solfège Split-Leaf', () => {
     renderGearPopover({ viewMode: 'solfege-split', originalScanAvailable: true })
     expect(document.querySelector('[data-settings-sub="score-source"]')).toBeNull()
   })
 
-  it('is absent in unapproved Staff Split-Leaf (scan already force-shown)', () => {
+  it('is hidden in unapproved Staff Split-Leaf', () => {
     renderGearPopover({
       viewMode: 'staff-split',
       staffInlineApproved: false,
@@ -94,12 +84,13 @@ describe('GearPopover — Score: Digital / Original scan row (quick 260822-di9)'
     expect(document.querySelector('[data-settings-sub="score-source"]')).toBeNull()
   })
 
-  it('is present in APPROVED Staff Split-Leaf when a scan exists', () => {
+  it('does not render the Digital or Original scan radio buttons', () => {
     renderGearPopover({
       viewMode: 'staff-split',
       staffInlineApproved: true,
       originalScanAvailable: true,
     })
-    expect(document.querySelector('[data-settings-sub="score-source"]')).toBeTruthy()
+    expect(screen.queryByRole('radio', { name: 'Digital' })).toBeNull()
+    expect(screen.queryByRole('radio', { name: 'Original scan' })).toBeNull()
   })
 })
