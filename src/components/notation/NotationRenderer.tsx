@@ -2570,6 +2570,13 @@ export function NotationRenderer({
             onShowOriginalChange={setShowOriginal}
             hidePlayerControls={isFullscreen || chromeless || tunePageMode}
             staffWidthFactor={staffWidthFactor}
+            // 2026-09-05: shrink-to-fit only on split-leaf. Inline Staff
+            // (isSplit=false) renders its own lyrics overlay inside
+            // AbcPlayer — applying the heightFit scale to the staff SVG
+            // only would leave lyrics un-scaled and the layout would
+            // mis-stack. Split-half call sites above default to heightFit
+            // true (always shrink-to-fit on CMD pagination).
+            heightFit={isSplit}
             // 2026-09-05: removed compactSplitMobile — split-leaf now
             // renders identical to inline Staff (no heightFit transform,
             // no compact row spacing override, no slot-fill logic). The
