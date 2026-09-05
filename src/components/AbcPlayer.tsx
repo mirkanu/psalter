@@ -1317,6 +1317,107 @@ export default function AbcPlayer({
     }
   }, [abc, transpose, bpm, scale, showOriginal, stopAudio, staffWidth, staffWidthFactor, compactSplitMobile, baseSize, rowDelta, meterPhraseCount])
 
+  // ── Vertical redistribution of systems across slot height ────────────────
+  // 2026-09-05 (full-width staff lines): user wants the staff bars to span
+  // the full viewport width while keeping note/clef sizes at their natural
+  // proportions (no CSS scale on the SVG). The remaining problem: with
+  // staffWidthFactor=1.0 the 4 systems render naturally stacked at abcjs's
+  // default inter-system gap (~70–100 px each), and the stack can run past
+  // the slot height. Distribute them evenly across the slot by applying a
+  // CSS `transform: translateY(...)` to each `g.abcjs-staff-wrapper.abcjs-l*`
+  // — the natural Y of each system is unchanged (notes/clefs/bars keep
+  // their sizes), but the wrapper is shifted so its top edge lands at
+  // `i × slotH / N` for the i-th system. Each `abcjs-l*` wrapper contains
+  // ALL elements for that system (staff lines, notes, bars, lyrics tspans
+  // the gap-math moved into abcjs, etc.), so a single translateY moves the
+  // whole system as one unit.
+  //
+  // Gated on `compactSplitMobile || staffWidthFactor >= 1` so non-mobile
+  // (desktop inline Staff at factor<1) is unaffected — those use the
+  // existing uniform scale pass below.
+  useEffect(() => {
+    const el = containerRef.current
+    const wrap = fitWrapRef.current
+    if (!el || !wrap) return
+    const svg = el.querySelector('svg')
+    if (!svg) return
+    const isRedistribute = compactSplitMobile || staffWidthFactor >= 1
+    if (!isRedistribute) return
+    if (!slotHeight || slotWidth <= 0) return
+
+    const applyRedistribute = () => {
+      const wrappers = Array.from(
+        svg.querySelectorAll<SVGGElement>('g.abcjs-staff-wrapper.abcjs-l0, g.abcjs-staff-wrapper.abcjs-l1, g.abcjs-staff-wrapper.abcjs-l2, g.abcjs-staff-wrapper.abcjs-l3, g.abcjs-staff-wrapper.abcjs-l4, g.abcjs-staff-wrapper.abcjs-l5, g.abcjs-staff-wrapper.abcjs-l6, g.abcjs-staff-wrapper.abcjs-l7, g.abcjs-staff-wrapper.abcjs-l8, g.abcjs-staff-wrapper.abcjs-l9'),
+      )
+      if (wrappers.length === 0) return
+      // Reset any previous transforms first (this effect re-runs on re-render).
+      wrappers.forEach((w) => {
+        w.style.transform = ''
+        w.removeAttribute('transform')
+      })
+      // Measure each wrapper's natural bbox y (in SVG userspace coords).
+      const sysData = wrappers.map((w, idx) => {
+        const bb = w.getBBox()
+        return { idx, y: bb.y, h: bb.height }
+      })
+      const N = sysData.length
+      const svgW = svg.viewBox.baseVal.width || svg.clientWidth || slotWidth
+      const svgVBH = svg.viewBox.baseVal.height
+      // SVG renders at slotW wide × (slotW × svgVBH/svgVBW) tall. So 1
+      // userspace unit = (slotW/svgVBW) rendered pixels. Compute each
+      // system's rendered-pixel top, then compute translateY so the
+      // visual top lands at `margin + i × stepY`.
+      const pxPerUnit = slotWidth / svgW
+      const stackTop = sysData[0]?.y ?? 0
+      const stackBottom = sysData.length
+        ? sysData[sysData.length - 1].y + sysData[sysData.length - 1].h
+        : svgVBH
+      const stackHeightPx = (stackBottom - stackTop) * pxPerUnit
+      // Average system height in pixels. Used to compute the step
+      // between system TOPS so all systems fit (not overlapping and not
+      // clipped). stepY = (usableH - sysH) / (N - 1) gives exactly N
+      // systems with one full system at top, one at bottom, and the rest
+      // evenly between.
+      const sysHpx = sysData.length
+        ? Math.max(...sysData.map((s) => s.h)) * pxPerUnit
+        : 0
+      // If the natural stack overflows the slot, apply a UNIFORM CSS
+      // scale to the container (preserves aspect, shrinks both x and y).
+      const fitScale = Math.min(1, slotHeight / Math.max(stackHeightPx, 1))
+      el.style.transformOrigin = 'center center'
+      el.style.transform = `scale(${fitScale})`
+      const margin = 4
+      const usableH = slotHeight - 2 * margin
+      const stepY = N > 1 ? (usableH - sysHpx) / (N - 1) : 0
+      wrappers.forEach((w, i) => {
+        const s = sysData[i]
+        // Visual target Y in slot pixels (relative to slot top).
+        const visualTarget = margin + i * stepY
+        // Visual Y of system in slot pixels BEFORE translate, AFTER
+        // parent CSS scale: visualY = s.y × pxPerUnit × fitScale
+        const visualY = (s.y - stackTop) * pxPerUnit * fitScale
+        // translateY in SVG userspace such that after parent scale, the
+        // visual Y = visualTarget.
+        const dyUserspace = (visualTarget - visualY) / (pxPerUnit * fitScale)
+        w.setAttribute('transform', `translate(0 ${dyUserspace.toFixed(3)})`)
+      })
+      // Constrain the SVG. Pre-scale, the SVG is slotW/fitScale wide and
+      // (slotW × svgVBH/svgVBW)/fitScale tall — let the SVG keep its
+      // natural rendered height (no manual override), but ensure the
+      // wrap clips overflow.
+      wrap.style.height = `${slotHeight}px`
+      wrap.style.width = `${slotWidth}px`
+      wrap.style.display = 'flex'
+      wrap.style.alignItems = 'flex-start'
+      wrap.style.justifyContent = 'center'
+      wrap.style.overflow = 'hidden'
+    }
+    applyRedistribute()
+    // Re-apply after iOS Safari's settle window in case slot dims change.
+    const settleRetry = setTimeout(applyRedistribute, 1500)
+    return () => clearTimeout(settleRetry)
+  }, [abc, transpose, bpm, scale, showOriginal, staffWidth, staffWidthFactor, slotHeight, slotWidth, baseSize, compactSplitMobile])
+
   // ── Height-fit pass (260712-szw) ──────────────────────────────────────────
   // Mobile split-leaf only: the width-only responsive fit above (MOBILE-03)
   // has no height counterpart, so even with compact spacing a 4-system CM
@@ -1355,6 +1456,12 @@ export default function AbcPlayer({
     if (!slotHeight || heightFit === false) return
     const svg = el.querySelector('svg')
     if (!svg) return
+    // 260905: vertical system redistribution now lives in the effect above
+    // (for split-leaf + full-width factor=1.0). This effect is the fallback
+    // for paths that want a uniform-scale-to-fit instead (kept available for
+    // non-mobile split-leaf with staffWidthFactor<1).
+    const isRedistribute = compactSplitMobile || staffWidthFactor >= 1
+    if (isRedistribute) return
     // 260905: uniform CSS scale to fit the slot rectangle while preserving
     // the notation's natural aspect ratio (notes/clef appear correctly
     // proportioned, not horizontally stretched). The slot is wider than tall
@@ -1404,7 +1511,7 @@ export default function AbcPlayer({
     // clientWidth/clientHeight and fixes the transform.
     const settleRetry = setTimeout(applyScale, 1500)
     return () => clearTimeout(settleRetry)
-  }, [abc, transpose, bpm, scale, showOriginal, staffWidth, staffWidthFactor, slotHeight, slotWidth, baseSize, heightFit])
+  }, [abc, transpose, bpm, scale, showOriginal, staffWidth, staffWidthFactor, slotHeight, slotWidth, baseSize, heightFit, compactSplitMobile])
 
   // ── Cleanup on unmount ────────────────────────────────────────────────────
   useEffect(() => {
