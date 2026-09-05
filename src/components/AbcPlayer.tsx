@@ -692,10 +692,18 @@ export default function AbcPlayer({
   // scaleX=1.043 (visually 407 wide) — slot overflow.
   // The state holds slotWidth alongside slotHeight so a single
   // ResizeObserver event updates both atomically.
+  //
+  // 260905: gate widened from `compactSplitMobile` to `heightFit !== false`
+  // (default true). The slot observer + heightFit effect run for any caller
+  // whose ABC mounts inside a `[data-notation-slot]` ancestor. compactSplitMobile
+  // now controls ONLY the compact-ABC-spacing injection (line ~915 below).
+  // This decouples "shrink-to-fit" from "compact spacing" so the user can
+  // get natural-abcjs sizing scaled into the slot rectangle without the
+  // %%staffsep/%%systemsep directive injection that compact spacing adds.
   const [slotHeight, setSlotHeight] = useState(0)
   const [slotWidth, setSlotWidth] = useState(0)
   useEffect(() => {
-    if (!compactSplitMobile) {
+    if (heightFit === false) {
       setSlotHeight(0)
       setSlotWidth(0)
       return
@@ -729,7 +737,7 @@ export default function AbcPlayer({
       obs.disconnect()
       clearTimeout(settleTimer)
     }
-  }, [compactSplitMobile])
+  }, [heightFit])
 
   // ── Note highlight callback ────────────────────────────────────────────────
   const highlightEvent = useCallback(
@@ -1344,7 +1352,7 @@ export default function AbcPlayer({
     el.style.transformOrigin = ''
     wrap.style.height = ''
     wrap.style.overflow = ''
-    if (!compactSplitMobile || !slotHeight || heightFit === false) return
+    if (!slotHeight || heightFit === false) return
     const svg = el.querySelector('svg')
     if (!svg) return
     // 260904-szw: dynamic non-uniform scale to fill the available slot
@@ -1393,7 +1401,7 @@ export default function AbcPlayer({
     // clientWidth/clientHeight and fixes the transform.
     const settleRetry = setTimeout(applyScale, 1500)
     return () => clearTimeout(settleRetry)
-  }, [abc, transpose, bpm, scale, showOriginal, staffWidth, staffWidthFactor, compactSplitMobile, slotHeight, slotWidth, baseSize, heightFit])
+  }, [abc, transpose, bpm, scale, showOriginal, staffWidth, staffWidthFactor, slotHeight, slotWidth, baseSize, heightFit])
 
   // ── Cleanup on unmount ────────────────────────────────────────────────────
   useEffect(() => {
