@@ -2401,7 +2401,11 @@ export function NotationRenderer({
             className={
               beside
                 ? 'flex-1 min-w-0 h-full overflow-y-auto overscroll-y-none'
-                : 'flex-1 min-h-0 overflow-y-auto md:max-h-none md:overflow-visible md:flex-none overscroll-y-none'
+                // 2026-09-05: on mobile (narrow portrait, !beside), the
+                // user wants split-leaf to be just the abcjs staff — no
+                // lyrics panel below. Desktop still shows the two-column
+                // verses beside the staff.
+                : 'hidden'
             }
           >
             {stanzaSlot}
