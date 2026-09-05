@@ -54,13 +54,11 @@ function parseBpmFromAbc(abc: string): number {
  * tune from 434px to 299px (spacing-tighter sweep).
  */
 function injectCompactSpacingDirectives(abc: string): string {
-  // 2026-09-05: reduce %%systemsep from 10 → 5 on CMD/SMD/LMD where
-  // 6–8 systems need to fit on a single split-half page; the previous
-  // value was leaving ~85 px gaps between systems, causing the final
-  // system to overflow the slot even after the redistribute effect.
-  // %%staffsep stays at 10 since the 5 staff lines themselves need
-  // ~50 px of vertical room for notehead-to-notehead spacing within
-  // a single system.
+  // 2026-09-05 (round 2): keep %%staffsep at 10 (compresses the 5 staff
+  // lines of each system — reducing this below ~10 starts squashing
+  // the notehead-to-notehead spacing) and %%systemsep at 5 (gap
+  // between adjacent systems). The redistribute effect compensates for
+  // any residual whitespace by spreading systems across the slot.
   const DIRECTIVES = ['%%topmargin 0', '%%botmargin 0', '%%staffsep 10', '%%systemsep 5']
   const lines = abc.split('\n')
   const kIdx = lines.findIndex((l) => l.indexOf('K:') === 0)
@@ -1386,40 +1384,43 @@ export default function AbcPlayer({
         ? sysData[sysData.length - 1].y + sysData[sysData.length - 1].h
         : svgVBH
       const stackHeightPx = (stackBottom - stackTop) * pxPerUnit
-      // Average system height in pixels. Used to compute the step
-      // between system TOPS so all systems fit (not overlapping and not
-      // clipped). stepY = (usableH - sysH) / (N - 1) gives exactly N
-      // systems with one full system at top, one at bottom, and the rest
-      // evenly between.
-      const sysHpx = sysData.length
-        ? Math.max(...sysData.map((s) => s.h)) * pxPerUnit
-        : 0
-      // If the natural stack overflows the slot, apply a UNIFORM CSS
-      // scale to the container (preserves aspect, shrinks both x and y).
-      const fitScale = Math.min(1, slotHeight / Math.max(stackHeightPx, 1))
-      el.style.transformOrigin = 'center center'
-      el.style.transform = `scale(${fitScale})`
-      // 2026-09-05 (zero top margin): user feedback was that the first
-      // system sat too low (large empty band at the top of the slot).
-      // Push it flush to the slot top with no reserved top padding; the
-      // natural staff-line height is consistent across systems so the
-      // first line lands right at slot y=0.
+      // 2026-09-05: only redistribute when the natural stack overflows.
+      // When it fits, leave systems at their natural abcjs positions
+      // (which respect %%systemsep) and skip the transform — the user
+      // complained that uniform "spread to fill slot" was adding ~30-40
+      // px of whitespace between systems.
+      const naturalOverflows = stackHeightPx > slotHeight
+      const fitScale = naturalOverflows
+        ? slotHeight / Math.max(stackHeightPx, 1)
+        : 1
       const topMargin = 0
       const botMargin = 0
-      const usableH = slotHeight - topMargin - botMargin
-      const stepY = N > 1 ? (usableH - sysHpx) / (N - 1) : 0
-      wrappers.forEach((w, i) => {
-        const s = sysData[i]
-        // Visual target Y in slot pixels (relative to slot top).
-        const visualTarget = topMargin + i * stepY
-        // Visual Y of system in slot pixels BEFORE translate, AFTER
-        // parent CSS scale: visualY = s.y × pxPerUnit × fitScale
-        const visualY = (s.y - stackTop) * pxPerUnit * fitScale
-        // translateY in SVG userspace such that after parent scale, the
-        // visual Y = visualTarget.
-        const dyUserspace = (visualTarget - visualY) / (pxPerUnit * fitScale)
-        w.setAttribute('transform', `translate(0 ${dyUserspace.toFixed(3)})`)
-      })
+      const usableH = slotHeight / fitScale - topMargin - botMargin
+      let stepY: number
+      if (naturalOverflows) {
+        const sysHpx = Math.max(...sysData.map((s) => s.h)) * pxPerUnit
+        stepY = N > 1 ? (usableH - sysHpx) / (N - 1) : 0
+      } else {
+        // Natural layout: do not move systems; clear transforms so they
+        // render at abcjs's intrinsic positions.
+        stepY = 0
+      }
+      el.style.transformOrigin = 'center center'
+      el.style.transform = `scale(${fitScale})`
+      if (naturalOverflows) {
+        wrappers.forEach((w, i) => {
+          const s = sysData[i]
+          // Visual target Y in slot pixels (relative to slot top).
+          const visualTarget = topMargin + i * stepY
+          // Visual Y of system in slot pixels BEFORE translate, AFTER
+          // parent CSS scale: visualY = s.y × pxPerUnit × fitScale
+          const visualY = (s.y - stackTop) * pxPerUnit * fitScale
+          // translateY in SVG userspace such that after parent scale, the
+          // visual Y = visualTarget.
+          const dyUserspace = (visualTarget - visualY) / (pxPerUnit * fitScale)
+          w.setAttribute('transform', `translate(0 ${dyUserspace.toFixed(3)})`)
+        })
+      }
       // Constrain the SVG. Pre-scale, the SVG is slotW/fitScale wide and
       // (slotW × svgVBH/svgVBW)/fitScale tall — let the SVG keep its
       // natural rendered height (no manual override), but ensure the
