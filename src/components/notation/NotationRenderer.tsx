@@ -2432,116 +2432,63 @@ export function NotationRenderer({
       : shouldSplitHalfMobile && splitAbcFirst && splitAbcSecond ? (
         // 2026-09-02: split-half mobile staff-split for tunes >5 phrases.
         // Renders two AbcPlayer instances each with half the phrases.
-        // 2026-09-02 (relayout): prev/next chevrons moved OUT of the row
-        // flanking the SVG (which stole ~56px horizontal on a 390px viewport)
-        // and into a row UNDERNEATH, flanking the "Half X of 2" label.
         // Swipe left/right on the SVG also advances/regresses.
-        <div className="flex flex-col w-full h-full min-h-0">
-          <div
-            ref={splitHalfRef}
-            className="min-w-0 flex-1 flex justify-center overflow-y-auto overscroll-y-none h-full touch-pan-y"
-          >
-            {halfIndex === 0 ? (
-              <AbcPlayer
-                abc={splitAbcFirst}
-                scale={scale}
-                tuneName={tuneName}
-                staffJpgUrl={staffPages[0] ?? scoreJpgUrl}
-                solfegeJpgUrl={solfegePages[0] ?? solfegeJpgUrl}
-                staffPages={staffPages}
-                solfegePages={solfegePages}
-                // 2026-09-04: drive AbcPlayer's scan-mode selection from the
-                // current viewMode — without this, the original-scan jpeg
-                // was pinned to whichever array was mounted first (always
-                // staff for staff-split), and toggling Solfège split-leaf
-                // still showed the staff scan.
-                mode={isSolfegeMode(viewMode) ? 'solfege' : 'staff'}
-                renderLyricsBelow={undefined}
-                showOriginal={showOriginal}
-                onShowOriginalChange={setShowOriginal}
-                hidePlayerControls
-                // 2026-09-04: split-half is the chromeless split-leaf staff
-                // path with lyrics hidden. Per-phrase SVG width = factor
-                // 0.55 on mobile — same as inline Staff — so both paths
-                // yield visually identical notation (modulo lyrics).
-                staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 0.55 : 0.95) : staffWidthFactor}
-                // 2026-09-04: enable compactSplitMobile so the split-half
-                // rendering matches non-paginated staff-split (Ps121 French)
-                // — same `%%staffsep 10` / `%%systemsep 10` row spacing AND
-                // the same height-fit scale to slot. The splitHalfRef div
-                // already has `overflow-y-auto h-full` so an over-tall SVG
-                // never escapes the slot.
-                // 2026-09-05: REVERTED — split-half now renders identical
-                // to inline Staff (no compactSplitMobile, no
-                // noResponsiveResize, no heightFit transform). The user's
-                // instruction: "for e.g. CMD you should do same as for CM"
-                // — both split paths render at the proven inline Staff
-                // dimensions (responsive:'resize', viewBox+meet, padding-
-                // bottom aspect wrapper, factor-0.55 staff width). The
-                // split-half's `overflow-y-auto` parent handles any
-                // over-tall content gracefully.
-                baseSize={baseSize}
-                rowDelta={extraSubdivisions}
-                meterPhraseCount={meterMinForDistribution}
-                // 2026-09-05: removed `noResponsiveResize`. With
-                // responsive:'resize', abcjs handles viewBox+aspect on
-                // container resize just like inline Staff — no need to
-                // pin natural size here. Removed `heightFit` consideration
-                // — the heightFit effect is gated on `compactSplitMobile`,
-                // which is now false, so the effect is a no-op for this
-                // path.
-                // intrinsic viewBox/width+height (not stretched CSS) so
-                // there is no double-stretch and no width-vs-height race.
-              />
-            ) : (
-              <AbcPlayer
-                abc={splitAbcSecond}
-                scale={scale}
-                tuneName={tuneName}
-                staffJpgUrl={staffPages[0] ?? scoreJpgUrl}
-                solfegeJpgUrl={solfegePages[0] ?? solfegeJpgUrl}
-                staffPages={staffPages}
-                solfegePages={solfegePages}
-                mode={isSolfegeMode(viewMode) ? 'solfege' : 'staff'}
-                renderLyricsBelow={undefined}
-                showOriginal={showOriginal}
-                onShowOriginalChange={setShowOriginal}
-                hidePlayerControls
-                staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 0.55 : 0.95) : staffWidthFactor}
-                // 2026-09-05: removed compactSplitMobile + noResponsiveResize
-                // — split-half second page now renders identical to
-                // inline Staff (matches splitAbcFirst sibling above).
-                baseSize={baseSize}
-                rowDelta={extraSubdivisions}
-                meterPhraseCount={meterMinForDistribution}
-              />
-            )}
-          </div>
-          <div className="flex items-center justify-center gap-1 mt-0.5">
-            <button
-              type="button"
-              aria-label="Previous half"
-              data-notation-half-prev
-              onClick={() => setHalfIndex(0)}
-              disabled={halfIndex === 0}
-              className="min-h-10 w-9 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap px-1">
-              Page {halfIndex + 1} of 2
-            </span>
-            <button
-              type="button"
-              aria-label="Next half"
-              data-notation-half-next
-              onClick={() => setHalfIndex(1)}
-              disabled={halfIndex === 1}
-              className="min-h-10 w-9 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
+        // 2026-09-05: the "Page x of 2" indicator is now lifted out of the
+        // notation slot and placed inside the lyrics slot (`paginationBlock`
+        // below) so it doesn't steal vertical space from the 50% notation
+        // rectangle that shrink-to-fit needs.
+        <div
+          ref={splitHalfRef}
+          className="min-w-0 flex-1 flex justify-center overflow-y-auto overscroll-y-none h-full touch-pan-y"
+        >
+          {halfIndex === 0 ? (
+            <AbcPlayer
+              abc={splitAbcFirst}
+              scale={scale}
+              tuneName={tuneName}
+              staffJpgUrl={staffPages[0] ?? scoreJpgUrl}
+              solfegeJpgUrl={solfegePages[0] ?? solfegeJpgUrl}
+              staffPages={staffPages}
+              solfegePages={solfegePages}
+              // 2026-09-04: drive AbcPlayer's scan-mode selection from the
+              // current viewMode — without this, the original-scan jpeg
+              // was pinned to whichever array was mounted first (always
+              // staff for staff-split), and toggling Solfège split-leaf
+              // still showed the staff scan.
+              mode={isSolfegeMode(viewMode) ? 'solfege' : 'staff'}
+              renderLyricsBelow={undefined}
+              showOriginal={showOriginal}
+              onShowOriginalChange={setShowOriginal}
+              hidePlayerControls
+              // 2026-09-04: split-half is the chromeless split-leaf staff
+              // path with lyrics hidden. Per-phrase SVG width = factor
+              // 0.55 on mobile — same as inline Staff — so both paths
+              // yield visually identical notation (modulo lyrics).
+              staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 0.55 : 0.95) : staffWidthFactor}
+              baseSize={baseSize}
+              rowDelta={extraSubdivisions}
+              meterPhraseCount={meterMinForDistribution}
+            />
+          ) : (
+            <AbcPlayer
+              abc={splitAbcSecond}
+              scale={scale}
+              tuneName={tuneName}
+              staffJpgUrl={staffPages[0] ?? scoreJpgUrl}
+              solfegeJpgUrl={solfegePages[0] ?? solfegeJpgUrl}
+              staffPages={staffPages}
+              solfegePages={solfegePages}
+              mode={isSolfegeMode(viewMode) ? 'solfege' : 'staff'}
+              renderLyricsBelow={undefined}
+              showOriginal={showOriginal}
+              onShowOriginalChange={setShowOriginal}
+              hidePlayerControls
+              staffWidthFactor={chromeless ? (viewportW < 768 || isPhoneLandscapeForFit ? 0.55 : 0.95) : staffWidthFactor}
+              baseSize={baseSize}
+              rowDelta={extraSubdivisions}
+              meterPhraseCount={meterMinForDistribution}
+            />
+          )}
         </div>
       ) : (
         <div ref={staffRef} style={applyMinHeight ? { minHeight: minStaffHeight } : undefined}>
@@ -2603,6 +2550,38 @@ export function NotationRenderer({
         </div>
       )
 
+    // 2026-09-05: split-half "Page x of 2" pagination indicator — lifted
+    // OUT of the notation slot (where it was stealing ~32px from the 50%
+    // notation rectangle that shrink-to-fit needs) and rendered at the top
+    // of the lyrics slot instead. Only populated for split-half pagination.
+    const paginationBlock: ReactNode = shouldSplitHalfMobile && splitAbcFirst && splitAbcSecond ? (
+      <div className="flex items-center justify-center gap-1 pb-2 shrink-0">
+        <button
+          type="button"
+          aria-label="Previous half"
+          data-notation-half-prev
+          onClick={() => setHalfIndex(0)}
+          disabled={halfIndex === 0}
+          className="min-h-10 w-9 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap px-1">
+          Page {halfIndex + 1} of 2
+        </span>
+        <button
+          type="button"
+          aria-label="Next half"
+          data-notation-half-next
+          onClick={() => setHalfIndex(1)}
+          disabled={halfIndex === 1}
+          className="min-h-10 w-9 shrink-0 inline-flex items-center justify-center rounded-md text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    ) : null
+
     if (isSplit) {
       // 260717-mwv checkpoint round 1 follow-up: this inner div (not the
       // outer data-lyrics-slot wrapper from renderSplitLeaf, which always
@@ -2636,7 +2615,16 @@ export function NotationRenderer({
           <StanzaList stanzas={stanzas} />
         </div>
       ) : null
-      viewArea = renderSplitLeaf(notationBlock, stanzaBlock, forceStaffJpgFallback)
+      // 2026-09-05: prepend the split-half pagination indicator to the
+      // lyrics slot so it lives in the other 50% of the viewport instead
+      // of stealing space from the notation's 50% rectangle.
+      const lyricsWithPagination: ReactNode = (
+        <>
+          {paginationBlock}
+          {stanzaBlock}
+        </>
+      )
+      viewArea = renderSplitLeaf(notationBlock, lyricsWithPagination, forceStaffJpgFallback)
     } else {
       viewArea = notationBlock
     }
