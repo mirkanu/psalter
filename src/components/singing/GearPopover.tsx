@@ -87,23 +87,33 @@ export function GearPopover({
   const hasAnyNotation = staffAvailable || solfegeSplitAvailable
   const musicNotesBlocked = hasActiveTune && !hasAnyNotation
 
-  // The scan swap only does anything where live abcjs is what's rendering:
-  // staff / staff-split with the approval gate satisfied. In solfege-split the
-  // scan IS the render (NotationRenderer line 1547+), and in an unapproved
-  // staff-split the scan is already force-shown (forceStaffJpgFallback,
-  // NotationRenderer line 1468) — offering "Digital" there would hand back the
-  // very inline rendering MOBILE-08 blocks.
+  // 2026-09-05: "Score: Digital | Original scan" sub-toggle HIDDEN.
+  // Staff split-leaf now ALWAYS renders the scanned JPG (see
+  // [[project-staff-split-leaf-disabled]] and `forceStaffJpgFallback` in
+  // NotationRenderer.tsx). With digital split-leaf disabled, the only view
+  // where the swap would have meant anything is already force-JPG, so this
+  // toggle has no effect to expose to the user. The JSX block below is gated
+  // on `false && showScoreSourceRow` and the derivation is hard-coded to
+  // `false` so both pieces of code are preserved verbatim in source. To
+  // re-enable: restore the derivation and remove the `false &&` short-circuit.
   //
-  // Quick 260822-fgb: the swap is offered ONLY in Split-Leaf layout, where the
-  // score panel is a standalone column. In Inline layout the staff is
-  // interleaved with the `w:` lyric lines, and substituting a flat scan there
-  // would break the lyric-to-note pairing the Inline view exists to provide.
-  // With `isSplit` required, `!scanAlreadyForced` reduces to
-  // `staffInlineApproved === true` — both clauses are kept anyway, since each
-  // documents a distinct rule and `scanAlreadyForced` is referenced above.
-  const scanAlreadyForced = isStaff && isSplit && !staffInlineApproved
-  const showScoreSourceRow =
-    isMusicNotes && isStaff && isSplit && originalScanAvailable && !scanAlreadyForced
+  // ORIGINAL DERIVATION (preserved for re-activation):
+  //   // The scan swap only does anything where live abcjs is what's rendering:
+  //   // staff / staff-split with the approval gate satisfied. In solfege-split
+  //   // the scan IS the render, and in an unapproved staff-split the scan is
+  //   // already force-shown (forceStaffJpgFallback) — offering "Digital"
+  //   // there would hand back the very inline rendering MOBILE-08 blocks.
+  //   //
+  //   // Quick 260822-fgb: the swap is offered ONLY in Split-Leaf layout,
+  //   // where the score panel is a standalone column. In Inline layout the
+  //   // staff is interleaved with the `w:` lyric lines, and substituting a
+  //   // flat scan there would break the lyric-to-note pairing.
+  //   const scanAlreadyForced = isStaff && isSplit && !staffInlineApproved
+  //   const showScoreSourceRow =
+  //     isMusicNotes && isStaff && isSplit && originalScanAvailable && !scanAlreadyForced
+  void isMusicNotes; void isStaff; void isSplit; void originalScanAvailable; void staffInlineApproved
+  const scanAlreadyForced = false
+  const showScoreSourceRow = false
 
   const handleNotationChange = (notation: 'staff' | 'solfege') => {
     if (notation === 'staff' && !staffAvailable) {
@@ -330,10 +340,14 @@ export function GearPopover({
               </div>
             </div>
 
-            {/* Sub-toggle C: Score source (quick 260822-di9) — voluntary swap
-                between live abcjs and the scanned original JPG. Only shown
-                where the digital staff is what's actually rendering. */}
-            {showScoreSourceRow && (
+            {/* Sub-toggle C: Score source (quick 260822-di9) — HIDDEN 2026-09-05.
+                Staff split-leaf now ALWAYS renders the scanned JPG
+                (forceStaffJpgFallback in NotationRenderer.tsx routes to
+                renderScannedPages), so a "Digital | Original scan" toggle
+                would have no effect — every staff-split view IS the scan.
+                Kept verbatim for easy re-activation when/if digital split-leaf
+                comes back. See [[project-staff-split-leaf-disabled]]. */}
+            {false && showScoreSourceRow && (
               <div role="radiogroup" aria-label="Score source" data-settings-sub="score-source">
                 <span className="text-xs text-muted-foreground">Score:</span>
                 <div className="flex items-center gap-1 mt-1">
