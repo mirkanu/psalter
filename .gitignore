@@ -30,6 +30,9 @@ Thumbs.db
 .idea/
 *.swp
 
+# Vercel CLI (project link metadata — auto-generated per machine)
+.vercel/
+
 # Claude local settings
 .claude/settings.local.json
 
