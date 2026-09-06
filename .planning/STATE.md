@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
 status: executing
-stopped_at: Phase 15.2 complete -- POLISH-03 closed via Google PageSpeed Insights (96/100/100 on / / /psalms / /psalms/23); local Lighthouse was unreliable due to VPS CPU contention
-last_updated: "2026-08-13T00:00:00.000Z"
-last_activity: 2026-08-13 -- Phase 15.2 closed via real-world PageSpeed Insights verification (96/100/100 on /, /psalms, /psalms/23); all v1 milestones complete except POLISH-01/02/04 (out of 15-phase scope)
+stopped_at: Phase 14 UI-SPEC approved
+last_updated: "2026-09-06T09:36:07.331Z"
+last_activity: 2026-09-06 -- Phase 17 planning complete
 progress:
-  total_phases: 12
+  total_phases: 11
   completed_phases: 9
-  total_plans: 51
-  completed_plans: 51
-  percent: 98
+  total_plans: 47
+  completed_plans: 43
+  percent: 91
 ---
 
 # Project State
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone clos
 
 Phase: 15.2 (Lighthouse final TBT reduction) — COMPLETE (3/3 plans)
 Plan: 15.2-03 of 3
-Status: Phase 15.2 complete; POLISH-03 closed via Google PageSpeed Insights (96/100/100 on / / /psalms / /psalms/23)
-Last activity: 2026-08-23 -- Direct follow-up fix (5th round of study-view fixes): 260823-9w6's Psalm 119 scoping was still leaking on bare "/psalms/119/study" (no explicit range) because activeVerseRange was derived from the raw URL slug before activeVersion was resolved — fixed by deriving it from the resolved activeVersion.psalterNumber instead, uniformly covering both the explicit-slug and bare-slug-fallback paths; also fixed the Parallel tab's Scottish Psalter/KJV columns having mismatched auto-sized widths (added table-fixed + explicit 10/45/45% widths) (master @ bd3fc25); previous: 260823-9w1/9w6 (Overview enrichment + Ps 119 scoping v1 + picker modal), 260822-sou/sox (overlay removal + nav/collapsible/links/wrap fixes), 260822-fgb/fge (Split-Leaf-gated toggle + study view v2), 260821-uqe (Sing-panel removal), 260822-di9 (original-scan toggle); Phase 15.2 closed previously; POLISH-03 flipped to `[x]` complete based on external Lighthouse measurement (Lighthouse v13.4.1, emulated Moto G Power, Slow 4G, run from Google's data centers — no VPS CPU contention)
+Status: Ready to execute
+Last activity: 2026-09-06 -- Phase 17 planning complete
 
 **Authoritative Lighthouse record:** `.planning/phases/15.2-lighthouse-final-tbt-reduction/15.2-pagespeed-insights-results.txt` (Google PageSpeed Insights, scores 96/100/100). Supplementary: `15.2-FINAL-ANALYSIS.md` (median-of-5 localhost measurements + measurement-noise disproof). The local Lighthouse harness (`scripts/lighthouse-bench.mjs --runs 5`) remains useful for CI/PR regression gates, but its measurements on this 3.7GB VPS are dominated by host CPU contention and cannot detect anything smaller than a ~10-point change.
 
@@ -314,6 +314,7 @@ Resume file: .planning/phases/14-launch-polish/14-UI-SPEC.md
 
 - **abcjs note-highlight on visible staff:** restoring the playing-note highlight in chromeless SingingView requires sharing AbcPlayer's visualObjRef with AbcAudioControls (or moving synth back into AbcPlayer). See `.planning/quick/260517-cm0-04.9.4-singing-r3/SUMMARY.md` "Deferred" section.
 - **SoundCloud embedding:** 12/172 `tunes.soundcloud_url` rows; top entries are placeholder strings ("Missing, also from youtube"). YouTube fallback active via TuneAudioPlayer; plug SoundCloud in when real URLs are populated.
+
 | 260813-fast1 | Move Changelog from header nav into footer menu (desktop + mobile Sheet mirror). Removes the Changelog item from `navLinks` and adds it after Feedback in both `SiteFooter.tsx` and the mobile Sheet's footer-menu block. | 2026-08-13 | fad49a6 | n/a |
 | 260813-fast2 | iOS Safari URL bar shrink baseline: added `overscroll-behavior-y: contain` to html/body in globals.css so the document body retains its own scroll across all routes (defensive guard against nested overflow-y-auto wrappers stealing the gesture). | 2026-08-13 | b5b498e | n/a |
 | 260813-quick1 | Tour swipe trail colour fix: rgba(120,120,120,0.5) → rgba(255,255,255,0.5). Trail now reads on the dark cutout in dark mode. Theme default is already `system` (Providers.tsx:8), no change needed. | 2026-08-13 | 3fb6daa | n/a |
