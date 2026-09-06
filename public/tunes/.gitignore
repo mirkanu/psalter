@@ -1,6 +1,0 @@
-# Tune score sheet images are downloaded at migration time (not tracked in git)
-# Run: npx tsx scripts/migrate-airtable.ts (without SKIP_IMAGES=1) to download
-*.jpg
-*.jpeg
-*.png
-*.pdf
