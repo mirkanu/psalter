@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "prebuild": "tsx scripts/capture-deploy-info.ts",
+    "prebuild": "bash scripts/check-airtable-pat.sh && tsx scripts/capture-deploy-info.ts",
     "dev": "next dev",
     "build": "next build",
     "postbuild": "tsx scripts/capture-build-id.ts",
