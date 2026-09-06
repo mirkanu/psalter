@@ -261,6 +261,35 @@ Plans:
 - [ ] 14-04-PLAN.md — Click-feedback mechanical sweep across src/components/ and src/app/**/page.tsx (normalize 0.97→0.98, add active:bg-muted/translate-y-px), exclude Dialog/Sheet/Popover + Button shadcn + disabled, document contract + run Lighthouse 90+ verification against production (wave 3)
 **UI hint**: yes
 
+### Phase 17: Vercel + Neon Migration
+**Goal**: Psalter runs on managed platforms (Vercel + Neon + Cloudflare R2), with the Hetzner VPS footprint fully retired
+**Depends on**: Nothing (next-to-execute as of 2026-09-06, runs ahead of Phases 6/7)
+**Requirements**: INFRA-01, INFRA-02, INFRA-03, INFRA-04, INFRA-05, INFRA-06, INFRA-07, INFRA-08, INFRA-09, INFRA-10, INFRA-11
+**Success Criteria** (what must be TRUE):
+  1. Every tune JPG is served from Cloudflare R2 (not `public/tunes/`), with public read access from the production hostname
+  2. The `public/tunes/` directory has been removed from the deployed artifact (zero JPGs in the Vercel build output)
+  3. Neon Postgres holds all psalter tables with parity to the pre-migration VPS schema (same row counts, same indexes, same constraints)
+  4. A Vercel project is connected to the GitHub repo, builds successfully from `master`, and serves `psalter.gsdlabs.dev` over HTTPS at parity with pre-migration (psalms, tunes, precentor portal all working)
+  5. Better Auth (admin/precentor login) works end-to-end on Vercel — login, session cookie, server-action guards verified live
+  6. Cloudflare DNS `psalter.gsdlabs.dev` resolves to `cname.vercel-dns.com`; the tunnel CNAME is recorded as a documented rollback path
+  7. `docker ps` shows no psalter container; `pm2 jlist` shows no psalter app; `/home/services/.env.production` contains no `PSALTER_*` vars; Cloudflare Tunnel ingress has no psalter entry
+  8. `AIRTABLE_PAT` is NOT present in any Vercel environment variable (verified by build log inspection)
+  9. If a cron job is needed (Telegram devotional? daily psalm-of-the-day?), it runs on GitHub Actions with secrets sourced from GitHub repo secrets
+  10. Free-tier ceilings are documented and current usage fits: Vercel function invocations < 100K/day, Neon storage < 0.5GB, R2 egress < 10GB/mo
+  11. Cloudflare R2 cache hit ratio for tune images is > 90% within 24h of cutover (proves R2 is the live source)
+**Plans**: 6 plans in 4 waves
+Plans:
+**Wave 0** *(on existing VPS, no Vercel touch)*
+- [ ] 17-00-PLAN.md — R2 tune image migration: URL pattern decision, public-read setup, 326-file sync, swap `src/lib/tune-jpg-urls.ts` to R2 CDN, remove `public/tunes/`, live verify (wave 0)
+**Wave 1** *(provision managed platforms)*
+- [ ] 17-01-PLAN.md — Neon project + Vercel project provisioning (no code deploys yet), env-var mapping, AIRTABLE_PAT exclusion guard (wave 1)
+**Wave 2** *(deploy + import)*
+- [ ] 17-02-PLAN.md — Schema push to Neon, seed-from-Airtable script (or pg_dump import), first Vercel build + preview URL verification (wave 2)
+**Wave 3** *(cut over + retire)*
+- [ ] 17-03-PLAN.md — DNS CNAME flip psalter.gsdlabs.dev → cname.vercel-dns.com, keep tunnel as rollback, monitor 24h, decommission VPS footprint (wave 3)
+
+(Skipping 17-04 and 17-05 per debates v10.0 precedent — cron in 17-01 if needed; 17-06 absorbed into 17-03 decommission step.)
+
 ## Backlog
 
 Deferred, not part of the active v2.0 milestone. Pick up via `/gsd-phase` + `/gsd-discuss-phase` whenever prioritised.
