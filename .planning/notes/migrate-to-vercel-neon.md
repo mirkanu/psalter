@@ -41,9 +41,9 @@ Debates migrated off the same VPS 2026-09-03 with identical architecture (Next.j
 | Dynamic surface | Static browse + 1 weekly cron | Public ISR + **precentor portal** (event CRUD, server actions) |
 | Static assets | None | `public/tunes/` — **126MB, 326 JPGs** (must move to R2 BEFORE Vercel deploy) |
 | Airtable PAT | None | Used in one-time scripts only — must NOT ship to Vercel env |
-| Cron | Weekly Monday ingest | TBD in 7-00 verification (Telegram devotional? daily psalm-of-the-day?) |
+| Cron | Weekly Monday ingest | TBD in 17-00 verification (Telegram devotional? daily psalm-of-the-day?) |
 
-## Why R2 first (Plan 7-00 leading)
+## Why R2 first (Plan 17-00 leading)
 
 Vercel Hobby has a 250MB build artifact cap. `public/tunes/` (126MB compressed) fits but adds deploy time and bundles stale images into every release. Cloudflare R2 already holds the uncompressed originals in `gsd-psalter`; serving compressed JPGs from R2 instead of `public/` gives:
 
@@ -51,7 +51,7 @@ Vercel Hobby has a 250MB build artifact cap. `public/tunes/` (126MB compressed) 
 - Free Cloudflare CDN caching for tune images
 - Zero Vercel egress for image traffic
 
-**Order matters.** R2 migration runs as Plan 7-00 on the existing VPS deployment before any Vercel provisioning — a small, reversible change with the same rollback shape as a normal deploy.
+**Order matters.** R2 migration runs as Plan 17-00 on the existing VPS deployment before any Vercel provisioning — a small, reversible change with the same rollback shape as a normal deploy.
 
 ## Free-tier sanity check (current scale)
 
@@ -69,33 +69,33 @@ Vercel Hobby has a 250MB build artifact cap. `public/tunes/` (126MB compressed) 
 
 | Risk | Mitigation |
 |---|---|
-| `AIRTABLE_PAT` leaks into Vercel env (visible in build logs) | Lint/grep before 7-02; explicitly exclude from Vercel env in 7-01; documented as dev-time-only |
+| `AIRTABLE_PAT` leaks into Vercel env (visible in build logs) | Lint/grep before 17-02; explicitly exclude from Vercel env in 17-01; documented as dev-time-only |
 | Neon cold start on precentor portal (~500ms) | Acceptable at admin-only scale; if precentors complain, Vercel Cron ping to keep warm |
-| 126MB tune images regress into Vercel bundle | Plan 7-00 enforces removal before any Vercel deploy; CI check or build assertion |
-| Rollback on DNS cutover (Vercel issues) | Tunnel kept up until 7-06; original CNAME captured in 7-03 for instant flip-back |
-| R2 URL pattern / key naming ambiguity | Open verification step in 7-00 (bucket layout, key alignment with originals, access model) |
+| 126MB tune images regress into Vercel bundle | Plan 17-00 enforces removal before any Vercel deploy; CI check or build assertion |
+| Rollback on DNS cutover (Vercel issues) | Tunnel kept up until 17-06; original CNAME captured in 17-03 for instant flip-back |
+| R2 URL pattern / key naming ambiguity | Open verification step in 17-00 (bucket layout, key alignment with originals, access model) |
 
-## Open verification in Plan 7-00
+## Open verification in Plan 17-00
 
-Three questions deferred to 7-00 execution (user confirmed 2026-09-06):
+Three questions deferred to 17-00 execution (user confirmed 2026-09-06):
 
 1. R2 URL pattern: custom domain (e.g. `cdn.psalter.gsdlabs.dev`), default `*.r2.dev`, or behind Cloudflare Access?
 2. R2 key naming: do originals use `tunes/<slug>-staff-0.jpg` keys aligned with `public/tunes/`? Or different prefix?
 3. R2 read access: public read (anonymous GET works) or signed URLs only?
 
-## Plan structure (Phase TBD — see ROADMAP note)
+## Plan structure (Phase 17 confirmed 2026-09-06)
 
 | Plan | Title | Status |
 |---|---|---|
-| 7-00 | R2 tune image migration (leading — on current VPS) | Not started |
-| 7-01 | Provision Neon + Vercel | Not started |
-| 7-02 | Schema + data + first deploy | Not started |
-| 7-03 | DNS cutover (tunnel kept as rollback) | Not started |
-| 7-04 | GH Actions cron (conditional on actual cron need) | Not started |
-| 7-05 | (skip — debates skipped this) | n/a |
-| 7-06 | Hetzner decommission | Not started |
+| 17-00 | R2 tune image migration (leading — on current VPS) | Not started |
+| 17-01 | Provision Neon + Vercel | Not started |
+| 17-02 | Schema + data + first deploy | Not started |
+| 17-03 | DNS cutover (tunnel kept as rollback) | Not started |
+| 17-04 | GH Actions cron (conditional on actual cron need) | Not started |
+| 17-05 | (skip — debates skipped this) | n/a |
+| 17-06 | Hetzner decommission | Not started |
 
-Plan numbers intentionally mirror debates Phase 44 for parity. Final phase number is TBD — current Phase 7 in `ROADMAP.md` is "Email Foundation (Resend Provisioning)" which must not collide. **Recommended: Phase 15** (next free integer).
+Plan numbering uses the Phase 17 prefix (psalter convention, matching `14-01-PLAN.md`, `15.2-...` etc.). Plan structure mirrors debates Phase 44 (6 active plans + 1 skip) for parity.
 
 ## Success criteria
 

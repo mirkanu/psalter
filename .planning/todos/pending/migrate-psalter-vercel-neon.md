@@ -11,20 +11,19 @@ priority: high
 
 Kick off the migration plan documented in `.planning/notes/migrate-to-vercel-neon.md`.
 
-Recommended phase number: **15** (Phase 7 is taken by Email Foundation in current ROADMAP).
+**Phase number confirmed: 17** (the very next phase as of 2026-09-06). User explicitly answered "yes" to 17 being correct, and confirmed it should run before Phase 6 and Phase 7 in execution order.
 
 # First concrete actions
 
-1. Resolve phase numbering with user (15 vs insertion as 6.1 vs v3.0 milestone)
-2. Run `/gsd-plan-phase <n>` to plan Phase 7-00 first (the R2 migration leading plan)
-3. Plan 7-00 must:
+1. Run `/gsd-plan-phase 17` to plan Phase 17-00 first (the R2 migration leading plan)
+2. Plan 17-00 must:
    - Verify R2 bucket layout (URL pattern, key naming, access model) — three open questions in the note
    - Sync compressed `public/tunes/*` → R2 bucket (preserve or align keys)
    - Rewrite `<img src="/tunes/X.jpg">` references to R2 URLs (across `AbcPlayer`, `NotationRenderer`, dev tools)
    - Update `next.config.ts` `images.remotePatterns` if using `next/image`
    - Deploy to current VPS first — validate R2 serving on production-equivalent path
    - Remove `public/tunes/` from build before any Vercel work
-4. Plan 7-01..7-06 follow debates Phase 44 ordering: provision → deploy+import → DNS cutover → GH Actions cron (if needed) → decommission
+3. Plans 17-01..17-06 follow debates Phase 44 ordering: provision → deploy+import → DNS cutover → GH Actions cron (if needed) → decommission
 
 # Why this matters
 
@@ -43,7 +42,7 @@ Recommended phase number: **15** (Phase 7 is taken by Email Foundation in curren
 
 - AIRTABLE_PAT must NOT appear in Vercel env vars (one-time use only)
 - `public/tunes/` removed from build before Vercel preview deploy
-- Tunnel kept up until 7-06 (rollback safety for DNS cutover)
+- Tunnel kept up until 17-06 (rollback safety for DNS cutover)
 - Original Cloudflare CNAME captured before any flip
 
 # Related seed
