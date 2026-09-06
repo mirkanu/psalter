@@ -282,7 +282,7 @@ Plans:
 **Wave 0** *(on existing VPS, no Vercel touch)*
 - [x] 17-00-PLAN.md — R2 tune image migration: URL pattern decision, public-read setup, 326-file sync, swap `src/lib/tune-jpg-urls.ts` to R2 CDN, remove `public/tunes/` from repo + build artifact, live verify (wave 0) [Tasks 1-3 done 2026-09-06; human-verify checkpoint + local-files-delete pending user approval]
 **Wave 1** *(provision managed platforms)*
-- [ ] 17-01-PLAN.md — Neon project + Vercel project provisioning (no code deploys yet), env-var mapping, AIRTABLE_PAT exclusion guard (wave 1)
+- [x] 17-01-PLAN.md — Neon project + Vercel project provisioning (no code deploys yet), env-var mapping, AIRTABLE_PAT exclusion guard (wave 1)
 **Wave 2** *(deploy + import)*
 - [ ] 17-02-PLAN.md — Schema push to Neon, seed-from-Airtable script (or pg_dump import), first Vercel build + preview URL verification (wave 2)
 **Wave 3** *(cut over + retire)*
@@ -334,4 +334,4 @@ Phases 7 and 10 have no dependencies on Phase 6 or each other and may be worked 
 | 13. Tune Image Compression | 3/3 | Complete    | 2026-08-11 |
 | 14. Launch Polish | 0/TBD | Not started | - |
 | 16. Tune Page First-Class Surface | 3/3 | Complete    | 2026-08-15 |
-| 17. Vercel + Neon Migration | 0/TBD | Not started | - |
+| 17. Vercel + Neon Migration | 2/4 | In Progress|  |
