@@ -4,8 +4,8 @@ milestone: v2.0
 milestone_name: Public Beta
 status: executing
 stopped_at: Phase 14 UI-SPEC approved
-last_updated: "2026-09-06T09:36:07.331Z"
-last_activity: 2026-09-06 -- Phase 17 planning complete
+last_updated: "2026-09-06T13:34:28.377Z"
+last_activity: 2026-09-06 -- Phase 17 execution started
 progress:
   total_phases: 11
   completed_phases: 9
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone close)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 15 — Lighthouse 90+ ✅ complete; next priority is Phase 10 (Tune Data Fixes)
+**Current focus:** Phase 17 — vercel-neon-migration
 
 ## Current Position
 
-Phase: 15.2 (Lighthouse final TBT reduction) — COMPLETE (3/3 plans)
-Plan: 15.2-03 of 3
-Status: Ready to execute
-Last activity: 2026-09-06 -- Phase 17 planning complete
+Phase: 17 (vercel-neon-migration) — EXECUTING
+Plan: 1 of 4
+Status: Executing Phase 17
+Last activity: 2026-09-06 -- Phase 17 execution started
 
 **Authoritative Lighthouse record:** `.planning/phases/15.2-lighthouse-final-tbt-reduction/15.2-pagespeed-insights-results.txt` (Google PageSpeed Insights, scores 96/100/100). Supplementary: `15.2-FINAL-ANALYSIS.md` (median-of-5 localhost measurements + measurement-noise disproof). The local Lighthouse harness (`scripts/lighthouse-bench.mjs --runs 5`) remains useful for CI/PR regression gates, but its measurements on this 3.7GB VPS are dominated by host CPU contention and cannot detect anything smaller than a ~10-point change.
 

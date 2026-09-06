@@ -76,7 +76,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Infrastructure Migration (Vercel + Neon + R2)
 
-- [ ] **INFRA-01**: All tune JPGs served from Cloudflare R2 with public read access; `public/tunes/` directory removed from Vercel build artifact — Phase 17
+- [x] **INFRA-01**: All tune JPGs served from Cloudflare R2 with public read access; `public/tunes/` directory removed from Vercel build artifact — Phase 17 Plan 17-00 (2026-09-06, INFRA-01 partial — local files retained on disk pending user approval for `rm -rf`; build artifact and repo confirmed clean)
 - [ ] **INFRA-02**: Neon Postgres project provisioned (eu-central-1, free tier) with schema parity to VPS Postgres — Phase 17
 - [ ] **INFRA-03**: Vercel Hobby project connected to GitHub repo, builds from `master`, env-var mapping documented, `AIRTABLE_PAT` excluded from Vercel env — Phase 17
 - [ ] **INFRA-04**: Schema + data migrated to Neon via one-shot script (or `pg_dump`/`pg_restore`); row counts parity-checked against VPS Postgres — Phase 17

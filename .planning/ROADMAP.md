@@ -280,7 +280,7 @@ Plans:
 **Plans**: 6 plans in 4 waves
 Plans:
 **Wave 0** *(on existing VPS, no Vercel touch)*
-- [ ] 17-00-PLAN.md — R2 tune image migration: URL pattern decision, public-read setup, 326-file sync, swap `src/lib/tune-jpg-urls.ts` to R2 CDN, remove `public/tunes/`, live verify (wave 0)
+- [x] 17-00-PLAN.md — R2 tune image migration: URL pattern decision, public-read setup, 326-file sync, swap `src/lib/tune-jpg-urls.ts` to R2 CDN, remove `public/tunes/` from repo + build artifact, live verify (wave 0) [Tasks 1-3 done 2026-09-06; human-verify checkpoint + local-files-delete pending user approval]
 **Wave 1** *(provision managed platforms)*
 - [ ] 17-01-PLAN.md — Neon project + Vercel project provisioning (no code deploys yet), env-var mapping, AIRTABLE_PAT exclusion guard (wave 1)
 **Wave 2** *(deploy + import)*
