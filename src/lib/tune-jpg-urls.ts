@@ -5,7 +5,8 @@
  * `psalter-tunes-backup` Cloudflare R2 bucket under flat
  * `{slug}-staff-{n}.jpg` / `{slug}-solfege-{n}.jpg` keys, served
  * via the custom domain `cdn.psalter.gsdlabs.dev`. R2 is the source
- * of truth — we no longer probe the local filesystem.
+ * of truth — we no longer probe the local filesystem. Which pages exist
+ * comes from the generated `tune-jpg-manifest.ts`.
  *
  * Slug = tune name lowercased, non-alphanumeric chars → hyphen,
  *        multiple hyphens collapsed, leading/trailing hyphens trimmed.
@@ -14,6 +15,7 @@
  */
 
 import { tuneNameToSlug } from './tune-slug'
+import { TUNE_JPG_MANIFEST } from './tune-jpg-manifest'
 
 export { tuneNameToSlug }
 
@@ -28,10 +30,11 @@ const jpgPageCache = new Map<string, { staffPages: string[]; solfegePages: strin
 
 /**
  * Return arrays of https://cdn.psalter.gsdlabs.dev/{slug}-staff-{n}.jpg
- * and ...-solfege-{n}.jpg URLs for indices 0..maxPages-1.
+ * and ...-solfege-{n}.jpg URLs for the pages that actually exist in R2.
  *
- * Always returns maxPages entries per side — R2 is the source of
- * truth; missing keys 404 at the edge, no local fallback.
+ * Page counts come from the generated manifest, not a filesystem probe —
+ * Vercel has no local copy of the JPGs. A tune absent from the manifest
+ * has no scans and yields empty arrays.
  */
 export function deriveTuneJpgPages(
   tuneName: string,
@@ -42,11 +45,17 @@ export function deriveTuneJpgPages(
   if (cached) return cached
 
   const slug = tuneNameToSlug(tuneName)
+  const counts = TUNE_JPG_MANIFEST[slug]
   const staffPages: string[] = []
   const solfegePages: string[] = []
 
-  for (let i = 0; i < maxPages; i++) {
+  const staffCount = Math.min(counts?.staff ?? 0, maxPages)
+  const solfegeCount = Math.min(counts?.solfege ?? 0, maxPages)
+
+  for (let i = 0; i < staffCount; i++) {
     staffPages.push(`${R2_PUBLIC_BASE}/${slug}-staff-${i}.jpg`)
+  }
+  for (let i = 0; i < solfegeCount; i++) {
     solfegePages.push(`${R2_PUBLIC_BASE}/${slug}-solfege-${i}.jpg`)
   }
 
