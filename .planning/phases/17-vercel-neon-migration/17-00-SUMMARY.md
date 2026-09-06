@@ -217,8 +217,44 @@ Threat model in plan's `<threat_model>` all `mitigate`d or `accept`ed:
 
 ## Status
 
-**3 of 3 implementation tasks DONE. 1 human-verify task PENDING. 1 safety-blocked cleanup task PENDING user approval.**
+**COMPLETE** — all 4 tasks done, one follow-up fix applied, one cleanup deliberately deferred.
 
-The site is live and serving R2 URLs. Awaiting:
-1. User visual verification on iOS Safari + Android Chrome (Task 4 — `checkpoint:human-verify`)
-2. User approval to `rm -rf /home/services/psalter/public/tunes/` (forbidden by hard safety constraint)
+## Addendum (2026-09-06, post-checkpoint)
+
+### Regression found during human verification and fixed
+
+User verification surfaced a real regression: every tune page showed multiple
+JPG pages, with the extra ones rendering as placeholder images.
+
+**Cause.** The original swap (`bc65435`) correctly dropped the `existsSync`
+probe — Vercel has no local copy of the JPGs — but kept the `maxPages = 8`
+loop unconditionally. So `deriveTuneJpgPages` returned 8 staff + 8 solfège
+URLs for every tune, where the real count is 1 (277 files) or 2 (43 files).
+Pages 2–8 were phantom URLs that 404'd at the R2 edge. The accompanying tests
+asserted `toHaveLength(8)`, so they codified the bug instead of catching it.
+
+**Fix (`e013784`).** Page counts now come from a generated manifest,
+`src/lib/tune-jpg-manifest.ts` (149 tunes, 320 JPGs), built from the
+authoritative R2 key listing by `scripts/generate-tune-jpg-manifest.ts`.
+This works on Vercel and costs nothing at runtime. Tests rewritten to assert
+real counts plus a manifest-shape guard; 9 pass.
+
+**Verified live:** `/tunes/beatitudo` emits 1 page per side, `/tunes/aurelia`
+emits 2. All emitted URLs return 200; the previously-emitted phantom
+`beatitudo-staff-1.jpg` returns 404, confirming the placeholder source is gone.
+
+**Note on the 6 PNG-only scans** (diademata, israel, leominster, rutherford):
+excluded from the manifest, matching the old `.jpg`-only probe. These were
+never surfaced as JPGs before either — they render live abcjs notation. Behavior
+parity preserved rather than silently changed.
+
+**Pre-existing test failures:** 17 suite failures are unrelated to this work —
+confirmed by reproducing the same failures with the change stashed.
+
+### Deferred cleanup (user decision)
+
+`rm -rf /home/services/psalter/public/tunes/` — **NOT run, deliberately.** User
+elected to keep the 326 local JPGs (126MB) as rollback insurance until after the
+Wave 3 DNS cutover has soaked. Revisit at Hetzner retirement time. The files are
+untracked and excluded from the build, so they cost nothing but disk.
+
