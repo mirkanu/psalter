@@ -122,7 +122,13 @@ cv2.imwrite(sys.argv[2], out)
     const abcTmpPath = path.join(tmpDir, 'score.abc')
     fs.writeFileSync(xmlTmpPath, rawMxml)
 
-    const xml2abcScript = path.join(process.cwd(), 'scripts/xml2abc.py')
+    // Scope to 'scripts' subfolder so Vercel's Node File Tracer (NFT) doesn't
+    // walk the entire project root looking for unresolved dynamic requires.
+    // See Plan 17-02 deviation log — the unsplit 'scripts/xml2abc.py' literal
+    // caused NFT to trace back through ./next.config.ts and fail packaging
+    // with "framework produced files in symlinked directories".
+    const SCRIPTS_DIR = path.join(process.cwd(), 'scripts')
+    const xml2abcScript = path.join(SCRIPTS_DIR, 'xml2abc.py')
     const xml2abcStdout = execSync(`python3 "${xml2abcScript}" "${xmlTmpPath}"`, {
       stdio: 'pipe',
       timeout: 15_000,
@@ -169,7 +175,8 @@ export async function GET(request: NextRequest) {
 
   const mode = request.nextUrl.searchParams.get('mode') ?? 'solfege'
   const slug = slugify(tune.name)
-  const dir = path.join(process.cwd(), 'public/tunes')
+  // Scope to 'public/tunes' subfolder — see Plan 17-02 deviation log.
+  const dir = path.join(process.cwd(), 'public', 'tunes')
 
   function collectPages(type: 'solfege' | 'staff'): string[] {
     const pages: string[] = []
@@ -233,7 +240,8 @@ export async function GET(request: NextRequest) {
         xmlContent = buf.toString('utf-8')
       }
       fs.writeFileSync(xmlPath, xmlContent)
-      const xml2abcScript = path.join(process.cwd(), 'scripts/xml2abc.py')
+      // Scope to 'scripts' subfolder — see Plan 17-02 deviation log.
+      const xml2abcScript = path.join(process.cwd(), 'scripts', 'xml2abc.py')
       // xml2abc writes to stdout when no -o flag is given
       const rawAbc = execSync(`python3 "${xml2abcScript}" "${xmlPath}"`, { stdio: 'pipe', timeout: 15_000 }).toString('utf-8')
       if (!rawAbc.includes('X:')) throw new Error('xml2abc did not produce ABC output')
