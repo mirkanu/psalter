@@ -51,23 +51,23 @@ jobs:
         with:
           repository: mirkanu/psalter-db-backup
           token: ${{ secrets.PSALTER_DB_BACKUP_PAT }}
-          path: /tmp/backup-repo
+          path: backup-staging
           fetch-depth: 0
 
       - name: Copy today's dumps into backup repo
         env:
           DATE: ${{ steps.date.outputs.date }}
         run: |
-          mkdir -p /tmp/backup-repo/daily /tmp/backup-repo/weekly /tmp/backup-repo/monthly
-          cp "out/daily/${DATE}.sql.gz" "/tmp/backup-repo/daily/"
-          [ -f out/weekly/${DATE}.sql.gz ] && cp "out/weekly/${DATE}.sql.gz" "/tmp/backup-repo/weekly/" || true
-          [ -f out/monthly/${DATE}.sql.gz ] && cp "out/monthly/${DATE}.sql.gz" "/tmp/backup-repo/monthly/" || true
+          mkdir -p backup-staging/daily backup-staging/weekly backup-staging/monthly
+          cp "out/daily/${DATE}.sql.gz" "backup-staging/daily/"
+          [ -f out/weekly/${DATE}.sql.gz ] && cp "out/weekly/${DATE}.sql.gz" "backup-staging/weekly/" || true
+          [ -f out/monthly/${DATE}.sql.gz ] && cp "out/monthly/${DATE}.sql.gz" "backup-staging/monthly/" || true
 
       - name: Prune old backups + commit + push
         env:
           DATE: ${{ steps.date.outputs.date }}
         run: |
-          cd /tmp/backup-repo
+          cd backup-staging
           # Sweep any orphaned root-level dumps (e.g. legacy single-file layout)
           find . -maxdepth 1 -name "*.sql.gz" -delete 2>/dev/null
           # Tiered retention
