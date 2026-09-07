@@ -1,0 +1,96 @@
+name: Backup psalter Neon
+
+on:
+  schedule:
+    - cron: '0 3 * * *'          # 3am UTC daily
+  workflow_dispatch:
+
+concurrency:
+  group: backup-neon
+  cancel-in-progress: false     # never cancel a backup mid-run
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Compute date
+        id: date
+        run: |
+          echo "date=$(date -u +%Y-%m-%d)"           >> "$GITHUB_OUTPUT"
+          echo "day_of_week=$(date -u +%u)"          >> "$GITHUB_OUTPUT"   # 7 = Sunday
+          echo "day_of_month=$(date -u +%d)"         >> "$GITHUB_OUTPUT"   # 01 = first
+
+      - name: Install postgres client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Dump Neon database
+        env:
+          DATE: ${{ steps.date.outputs.date }}
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+        run: |
+          mkdir -p out/daily out/weekly out/monthly
+          pg_dump "$DATABASE_URL" --no-owner --no-acl --clean --if-exists \
+            | gzip -9 > "out/daily/${DATE}.sql.gz"
+          echo "Daily dump: $(du -h out/daily/${DATE}.sql.gz | cut -f1)"
+
+      - name: Promote to weekly tier (Sundays only)
+        if: steps.date.outputs.day_of_week == '7'
+        env:
+          DATE: ${{ steps.date.outputs.date }}
+        run: cp "out/daily/${DATE}.sql.gz" "out/weekly/${DATE}.sql.gz"
+
+      - name: Promote to monthly tier (1st of month only)
+        if: steps.date.outputs.day_of_month == '01'
+        env:
+          DATE: ${{ steps.date.outputs.date }}
+        run: cp "out/daily/${DATE}.sql.gz" "out/monthly/${DATE}.sql.gz"
+
+      - name: Checkout backup repo
+        uses: actions/checkout@v4
+        with:
+          repository: mirkanu/psalter-db-backup
+          token: ${{ secrets.PSALTER_DB_BACKUP_PAT }}
+          path: /tmp/backup-repo
+          fetch-depth: 0
+
+      - name: Copy today's dumps into backup repo
+        env:
+          DATE: ${{ steps.date.outputs.date }}
+        run: |
+          mkdir -p /tmp/backup-repo/daily /tmp/backup-repo/weekly /tmp/backup-repo/monthly
+          cp "out/daily/${DATE}.sql.gz" "/tmp/backup-repo/daily/"
+          [ -f out/weekly/${DATE}.sql.gz ] && cp "out/weekly/${DATE}.sql.gz" "/tmp/backup-repo/weekly/" || true
+          [ -f out/monthly/${DATE}.sql.gz ] && cp "out/monthly/${DATE}.sql.gz" "/tmp/backup-repo/monthly/" || true
+
+      - name: Prune old backups + commit + push
+        env:
+          DATE: ${{ steps.date.outputs.date }}
+        run: |
+          cd /tmp/backup-repo
+          # Sweep any orphaned root-level dumps (e.g. legacy single-file layout)
+          find . -maxdepth 1 -name "*.sql.gz" -delete 2>/dev/null
+          # Tiered retention
+          find daily/   -name "*.sql.gz" -mtime +7   -delete 2>/dev/null
+          find weekly/  -name "*.sql.gz" -mtime +30  -delete 2>/dev/null
+          find monthly/ -name "*.sql.gz" -mtime +365 -delete 2>/dev/null
+          git config user.email "psalter-backup-bot@users.noreply.github.com"
+          git config user.name  "psalter-backup-bot"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "backup ${DATE}"
+            git push origin main
+          fi
+
+      - name: Fail loud if dump suspiciously small
+        env:
+          DATE: ${{ steps.date.outputs.date }}
+        run: |
+          SIZE=$(stat -c%s "out/daily/${DATE}.sql.gz")
+          echo "Final dump size: $SIZE bytes"
+          if [ "$SIZE" -lt 1000 ]; then
+            echo "ERROR: backup is $SIZE bytes — likely empty"
+            exit 1
+          fi
