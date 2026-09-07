@@ -2,7 +2,7 @@
 import { Fragment, useState, useEffect } from 'react'
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Menu, Search, Moon, Sun, MonitorSmartphone } from 'lucide-react'
+import { Menu, Search, Moon, Sun, MonitorSmartphone, Github } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { Sheet, SheetTrigger, SheetContent, SheetClose } from '@/components/ui/sheet'
@@ -238,6 +238,12 @@ export function SiteHeader() {
                       render={<button onClick={() => setFooterOpen('feedback')} className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted px-3 py-2 rounded-md text-left transition-colors w-full" />}
                     >
                       Feedback
+                    </SheetClose>
+                    <SheetClose
+                      render={<a href="https://github.com/mirkanu/psalter" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between text-sm text-muted-foreground hover:text-foreground hover:bg-muted px-3 py-2 rounded-md text-left transition-colors w-full" />}
+                    >
+                      <span>GitHub</span>
+                      <Github className="size-4" />
                     </SheetClose>
                     {!isStandalone && (
                       <SheetClose

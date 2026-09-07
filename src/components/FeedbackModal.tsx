@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Github } from 'lucide-react'
 
 interface FeedbackModalProps {
   open: boolean
@@ -58,6 +59,20 @@ export function FeedbackModal({ open, onClose }: FeedbackModalProps) {
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader><DialogTitle>Send Feedback</DialogTitle></DialogHeader>
+
+        <p className="text-xs text-muted-foreground -mt-2">
+          If you&apos;re familiar with GitHub,{' '}
+          <a
+            href="https://github.com/mirkanu/psalter/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 underline hover:text-foreground"
+          >
+            <Github className="size-3.5" />
+            open an issue
+          </a>
+          {' '}instead — it&apos;s easier to track.
+        </p>
         {status === 'success' ? (
           <div className="space-y-3 text-center py-4">
             <h3 className="font-semibold">Thank you for your feedback</h3>

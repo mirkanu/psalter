@@ -58,3 +58,7 @@ For the database, copy `.env.example` to `.env` and set `DATABASE_URL` to a Neon
 - **Mobile is primary.** Test on iOS Safari / Android Chrome first; desktop is secondary.
 - **Don't commit `.env`** — secrets live in Vercel project env vars.
 - **Hetzner is being retired** as of 2026-09-07; do not add new Hetzner infra.
+
+## Contribution licence
+
+By submitting a pull request to this repository, you agree that you may fork and modify the code solely to submit a contribution back to `mirkanu/psalter`, and that you assign copyright of any accepted contribution to the project (the `mirkanu/psalter` repository owned by its owner) so the work remains a single coherent whole. No permission is granted to deploy or host the code independently of this project.
