@@ -79,10 +79,10 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [x] **INFRA-01**: All tune JPGs served from Cloudflare R2 with public read access; `public/tunes/` directory removed from Vercel build artifact — Phase 17 Plan 17-00 (2026-09-06, INFRA-01 partial — local files retained on disk pending user approval for `rm -rf`; build artifact and repo confirmed clean)
 - [x] **INFRA-02**: Neon Postgres project provisioned (eu-central-1, free tier) with schema parity to VPS Postgres — Phase 17
 - [x] **INFRA-03**: Vercel Hobby project connected to GitHub repo, builds from `master`, env-var mapping documented, `AIRTABLE_PAT` excluded from Vercel env — Phase 17
-- [ ] **INFRA-04**: Schema + data migrated to Neon via one-shot script (or `pg_dump`/`pg_restore`); row counts parity-checked against VPS Postgres — Phase 17
-- [ ] **INFRA-05**: First Vercel deploy serves psalter at a preview URL with psalms, tunes, and precentor portal functional — Phase 17
+- [x] **INFRA-04**: Schema + data migrated to Neon via one-shot script (or `pg_dump`/`pg_restore`); row counts parity-checked against VPS Postgres — Phase 17
+- [x] **INFRA-05**: First Vercel deploy serves psalter at a preview URL with psalms, tunes, and precentor portal functional — Phase 17
 - [ ] **INFRA-06**: DNS `psalter.gsdlabs.dev` CNAME flipped to `cname.vercel-dns.com`; tunnel CNAME retained as documented rollback path for 7 days — Phase 17
-- [ ] **INFRA-07**: Better Auth (admin/precentor login) verified working end-to-end on Vercel — login, session cookie, server-action guards — Phase 17
+- [x] **INFRA-07**: Better Auth (admin/precentor login) verified working end-to-end on Vercel — login, session cookie, server-action guards — Phase 17
 - [ ] **INFRA-08**: Hetzner VPS footprint retired: psalter Docker container stopped and removed, `psalter` PM2 app stopped, `PSALTER_*` env vars removed from `/home/services/.env.production`, Cloudflare Tunnel ingress entry for `psalter.gsdlabs.dev` removed — Phase 17
 - [x] **INFRA-09**: If any periodic cron is needed (Telegram devotional? daily psalm-of-the-day?), it runs via GitHub Actions with secrets in repo secrets — Phase 17
 - [x] **INFRA-10**: Free-tier ceilings documented and current usage fits: Vercel < 100K function invocations/day, Neon < 0.5GB storage, R2 < 10GB egress/mo — Phase 17

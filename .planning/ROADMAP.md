@@ -284,7 +284,7 @@ Plans:
 **Wave 1** *(provision managed platforms)*
 - [x] 17-01-PLAN.md — Neon project + Vercel project provisioning (no code deploys yet), env-var mapping, AIRTABLE_PAT exclusion guard (wave 1)
 **Wave 2** *(deploy + import)*
-- [ ] 17-02-PLAN.md — Schema push to Neon, seed-from-Airtable script (or pg_dump import), first Vercel build + preview URL verification (wave 2)
+- [x] 17-02-PLAN.md — Schema push to Neon, seed-from-Airtable script (or pg_dump import), first Vercel build + preview URL verification (wave 2)
 **Wave 3** *(cut over + retire)*
 - [ ] 17-03-PLAN.md — DNS CNAME flip psalter.gsdlabs.dev → cname.vercel-dns.com, keep tunnel as rollback, monitor 24h, decommission VPS footprint (wave 3)
 
@@ -334,4 +334,4 @@ Phases 7 and 10 have no dependencies on Phase 6 or each other and may be worked 
 | 13. Tune Image Compression | 3/3 | Complete    | 2026-08-11 |
 | 14. Launch Polish | 0/TBD | Not started | - |
 | 16. Tune Page First-Class Surface | 3/3 | Complete    | 2026-08-15 |
-| 17. Vercel + Neon Migration | 2/4 | In Progress|  |
+| 17. Vercel + Neon Migration | 3/4 | In Progress|  |

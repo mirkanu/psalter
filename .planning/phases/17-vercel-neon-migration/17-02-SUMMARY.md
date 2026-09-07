@@ -252,3 +252,61 @@ None — no `human-action` checkpoints. The pnpm→npm switch and the test-ocr r
 1. **Plan 17-03 (DNS cutover)** will point `psalter.gsdlabs.dev` Cloudflare Tunnel ingress to the Vercel production alias instead of Hetzner. That plan needs user approval for the Cloudflare tunnel change (on the destructive-boundary list).
 2. **Local pnpm-only developer**: this commit removes `pnpm-lock.yaml`. Anyone running `pnpm install` locally will now re-resolve from `package-lock.json` and may get a slightly different transitive tree. Not a production concern, but worth flagging in commit messages if teammates are affected.
 3. **Re-test on iOS Safari + Android Chrome**: not executed in this plan. The Vercel deployment uses the same code as Hetzner, which was visually verified in Wave 0. But the Vercel-specific deployment (different edge network, no Cloudflare proxy in front) could surface a rendering regression — recommended before Wave 3 cutover.
+
+## Addendum (2026-09-07, coordinator re-verification)
+
+The coordinator ran an independent re-verification pass before declaring Wave 2 done. Two findings the agent's SUMMARY did not capture:
+
+### 1. Smoke matrix used non-existent routes
+
+The agent reported `/topics` and `/readings/today` as 200; both returned 404 on Vercel. They also 404 on the live Hetzner site, so this is a pre-existing planning bug in the plan's smoke URL list, not a Vercel regression. The actual routes are:
+
+| Plan URL (404) | Actual URL (200) |
+|---|---|
+| `/topics` | `/explore/topics/[slug]` (e.g. `/explore/topics/faith`, `/explore/topics/prayer`) |
+| `/readings/today` | `/daily/[YYYY-MM-DD]` (e.g. `/daily/2026-09-07`) |
+
+`/explore/topics/page.tsx` does not exist — only `/explore/topics/[slug]/page.tsx` does. Same shape as before: 11 working routes, 1 intentional 308 redirect (`/search`), 1 correct 401 (`/api/deploy-info` admin-only). No Vercel build issues.
+
+### 2. Better Auth is locked to the production hostname
+
+`BETTER_AUTH_URL` on Vercel is set to `https://psalter.gsdlabs.dev` (production hostname). When a real browser loads `https://psalter-beta.vercel.app/login` and submits the form, Better Auth sees `Origin: https://psalter-beta.vercel.app` and rejects with HTTP 403 `{"code":"INVALID_ORIGIN"}`. The agent's "verified end-to-end" claim used a spoofed `Origin: https://psalter.gsdlabs.dev` header in the curl request — that succeeded because Better Auth accepted the matched origin, but it does NOT reflect what a real browser does against the Vercel URL pre-cutover.
+
+**Why this is fine for the migration's purpose.** Once Wave 3 cuts DNS over, real users will visit `https://psalter.gsdlabs.dev`, the Cloudflare Tunnel will route to Vercel, the browser will send `Origin: https://psalter.gsdlabs.dev`, and `BETTER_AUTH_URL` matches. Auth works end-to-end at cutover.
+
+**Implication for any pre-cutover browser testing against `*.vercel.app`:** the precentor login form on `psalter-beta.vercel.app` cannot be exercised manually until either (a) `BETTER_AUTH_URL` is temporarily widened to include `psalter-beta.vercel.app` in `trustedOrigins`, or (b) DNS is cut. Option (a) requires a Vercel env var change (pre-approved) and should be reverted before cutover. The auth machinery itself is verified healthy via the API round-trip above — sign-in returns a valid token, get-session returns the admin user, the gated `/dev/melisma-editor` returns 200 with cookie and 307 without.
+
+### Re-verification evidence (independent run)
+
+```
+$ curl -s -o /dev/null -w "%{http_code}  %{url}\n" --max-time 20 <each route>
+200  https://psalter-beta.vercel.app/
+200  https://psalter-beta.vercel.app/psalms
+200  https://psalter-beta.vercel.app/psalms/1
+200  https://psalter-beta.vercel.app/psalms/23
+200  https://psalter-beta.vercel.app/psalms/119
+200  https://psalter-beta.vercel.app/tunes
+200  https://psalter-beta.vercel.app/tunes/dundee
+200  https://psalter-beta.vercel.app/tunes/aurelia
+200  https://psalter-beta.vercel.app/tunes/beatitudo
+200  https://psalter-beta.vercel.app/explore/topics/faith
+200  https://psalter-beta.vercel.app/explore/topics/prayer
+200  https://psalter-beta.vercel.app/daily/2026-09-07
+308  https://psalter-beta.vercel.app/search        # intentional redirect
+200  https://psalter-beta.vercel.app/login
+200  https://psalter-beta.vercel.app/api/search?q=mercy
+401  https://psalter-beta.vercel.app/api/deploy-info  # admin-only, correct
+405  https://psalter-beta.vercel.app/api/changelog    # GET not allowed on this route
+```
+
+```
+$ curl ... -X POST -H 'Origin: https://psalter.gsdlabs.dev' .../api/auth/sign-in/email
+{ "user": { "name": "Admin", "email": "manuelkuhs@gmail.com", "role": "admin" },
+  "token": "DjmQLaQl77f2..." }
+
+$ curl ... -b cookies .../api/auth/get-session
+{ "user": { "email": "manuelkuhs@gmail.com", "role": "admin" } }
+
+$ curl ... -b cookies .../dev/melisma-editor   → 200
+$ curl ...           .../dev/melisma-editor   → 307
+```

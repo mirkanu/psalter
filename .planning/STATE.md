@@ -4,14 +4,14 @@ milestone: v2.0
 milestone_name: Public Beta
 status: executing
 stopped_at: Phase 14 UI-SPEC approved
-last_updated: "2026-09-06T16:48:42.600Z"
-last_activity: 2026-09-06
+last_updated: "2026-09-07T07:43:40.420Z"
+last_activity: 2026-09-07
 progress:
   total_phases: 11
   completed_phases: 9
   total_plans: 47
-  completed_plans: 45
-  percent: 96
+  completed_plans: 46
+  percent: 98
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone clos
 ## Current Position
 
 Phase: 17 (vercel-neon-migration) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
-Last activity: 2026-09-06
+Last activity: 2026-09-07
 
 **Authoritative Lighthouse record:** `.planning/phases/15.2-lighthouse-final-tbt-reduction/15.2-pagespeed-insights-results.txt` (Google PageSpeed Insights, scores 96/100/100). Supplementary: `15.2-FINAL-ANALYSIS.md` (median-of-5 localhost measurements + measurement-noise disproof). The local Lighthouse harness (`scripts/lighthouse-bench.mjs --runs 5`) remains useful for CI/PR regression gates, but its measurements on this 3.7GB VPS are dominated by host CPU contention and cannot detect anything smaller than a ~10-point change.
 
@@ -311,7 +311,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-06T16:46:35.913Z
+Last session: 2026-09-07T07:43:40.378Z
 Stopped at: Phase 14 UI-SPEC approved
 Resume file: None
 
