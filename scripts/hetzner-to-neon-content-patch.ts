@@ -3,22 +3,33 @@
  * Hetzner → Neon content patch (2026-09-07).
  *
  * Background: the initial Airtable → Neon migration (scripts/migrate-airtable.ts)
- * faithfully migrated only the columns present in Airtable. Five+ columns of
- * post-migration annotation data exist on the live Hetzner DB but were never
- * copied to Neon:
+ * faithfully migrated only the columns present in Airtable. Post-migration
+ * annotation data lives on the live Hetzner DB but was never copied to Neon
+ * (these columns were populated by later scripts: apply-abc-notation,
+ * bulk-ocr-text, apply-tune-fixes, annotate-phrase-breaks, etc.).
  *
+ * Tables patched:
  *   tunes:
  *     abc_notation, abc_notation_ocr, abc_satb,
  *     solfege_ocr_text, solfege_soprano_edited,
- *     melisma_positions, phrase_shape_override
+ *     melisma_positions, phrase_shape_override,
+ *     soundcloud_url, famous_hymn,
+ *     number_in_1979_rp_psalter, num_in_prca_psalter
  *
  *   psalm_versions:
  *     lyrics_structured
  *
- * Symptom: every singing view on the Vercel preview renders an empty staff
- * (abcjs gets an empty string for abc_notation) and an empty verse area
- * (SingingView falls back to nothing when lyricsStructured is null).
- * Root cause confirmed by parity scan; this script closes the gap.
+ *   daily_readings:
+ *     starting_verse, ending_verse
+ *
+ *   naves_topics:
+ *     messianic
+ *
+ *   psalms:
+ *     date_bc, occasion, nkjv_title
+ *
+ * Symptom: empty sing views (abcjs gets empty string), missing daily calendar
+ * verses, missing nave topic "Messianic" flag, missing psalm metadata.
  *
  * Safety:
  *   - Reads from Hetzner psalter-db (read-only via this script).
@@ -60,12 +71,37 @@ const PATCHES: TablePatch[] = [
       { name: 'solfege_soprano_edited' },
       { name: 'melisma_positions', cast: 'jsonb' },
       { name: 'phrase_shape_override', cast: 'jsonb' },
+      { name: 'soundcloud_url' },
+      { name: 'famous_hymn' },
+      { name: 'number_in_1979_rp_psalter' },
+      { name: 'num_in_prca_psalter' },
     ],
   },
   {
     table: 'psalm_versions',
     columns: [
       { name: 'lyrics_structured', cast: 'jsonb' },
+    ],
+  },
+  {
+    table: 'daily_readings',
+    columns: [
+      { name: 'starting_verse' },
+      { name: 'ending_verse' },
+    ],
+  },
+  {
+    table: 'naves_topics',
+    columns: [
+      { name: 'messianic' },
+    ],
+  },
+  {
+    table: 'psalms',
+    columns: [
+      { name: 'date_bc' },
+      { name: 'occasion' },
+      { name: 'nkjv_title' },
     ],
   },
 ]
