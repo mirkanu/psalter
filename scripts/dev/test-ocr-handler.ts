@@ -1,0 +1,280 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { execSync } from 'node:child_process'
+import { db } from '@/db'
+import { eq } from 'drizzle-orm'
+import { tunes } from '@/db/schema'
+import * as path from 'node:path'
+import * as fs from 'node:fs'
+import { extractTuneV2, extractStaffToAbc, transcribeOnly } from '@/lib/ocr-solfege-v2'
+import { HYMNARY_FETCH_IDS } from '@/lib/hymnary-lookup'
+import { getAdminSessionOr401 } from '@/lib/admin-auth'
+
+function slugify(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
+function extractMelodyVoice(fullAbc: string): string {
+  const lines = fullAbc.split('\n')
+  const output: string[] = []
+  let inHeader = true
+  let inV1Content = false
+
+  for (const line of lines) {
+    const t = line.trim()
+    if (inHeader) {
+      if (t.startsWith('X:') || t.startsWith('T:') || t.startsWith('L:') ||
+          t.startsWith('Q:')) {
+        output.push(line)
+      } else if (t.startsWith('M:')) {
+        output.push(t === 'M:none' ? 'M:4/4' : line)
+      } else if (t.startsWith('K:')) {
+        output.push(t === 'K:none' ? 'K:C' : line)
+      } else if (t.startsWith('V:1 ')) {
+        output.push(line)
+      } else if (t === 'V:1') {
+        output.push(line)
+        inHeader = false
+        inV1Content = true
+      }
+      // skip %%score, I:linebreak, V:2+, etc.
+    } else {
+      if (t === 'V:1' || (t.startsWith('V:1') && !t.startsWith('V:1 '))) {
+        output.push(line)
+        inV1Content = true
+      } else if (t.startsWith('V:')) {
+        inV1Content = false
+      } else if (inV1Content) {
+        output.push(line)
+      }
+    }
+  }
+
+  return output.join('\n')
+}
+
+async function runAudiveris(tune: { name: string }, imagePath: string) {
+  const audiverisJarDir = '/tmp/opt/audiveris/lib/app'
+  if (!fs.existsSync(audiverisJarDir)) {
+    throw new Error('Audiveris JARs not found at /tmp/opt/audiveris/lib/app — restart may have cleared /tmp. Re-run the Audiveris setup script.')
+  }
+
+  const tmpDir = fs.mkdtempSync('/tmp/audiveris-api-')
+  try {
+    const preprocessedImg = path.join(tmpDir, 'input.png')
+    const outputDir = path.join(tmpDir, 'out')
+    fs.mkdirSync(outputDir)
+
+    // Preprocess: spine crop + Otsu binarize + scale to <18MP
+    const preprocessPy = `
+import cv2, numpy as np, sys
+img = cv2.imread(sys.argv[1])
+if img is None:
+    raise SystemExit("Cannot read: " + sys.argv[1])
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+row_means = gray.mean(axis=1)
+page_start = next((i for i in range(gray.shape[0]) if row_means[i] > 180), 0)
+page = gray[page_start:, :]
+_, binary = cv2.threshold(page, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+ph, pw = binary.shape
+target = 18_000_000
+if ph * pw > target:
+    s = (target / (ph * pw)) ** 0.5
+    out = cv2.resize(binary, (int(pw*s), int(ph*s)), interpolation=cv2.INTER_LANCZOS4)
+else:
+    out = binary
+cv2.imwrite(sys.argv[2], out)
+`.trim()
+
+    execSync(`python3 -c '${preprocessPy}' "${imagePath}" "${preprocessedImg}"`, {
+      stdio: 'pipe',
+      timeout: 30_000,
+    })
+
+    // Run Audiveris OMR
+    execSync(
+      `java -Djava.awt.headless=true -Xmx1g -cp "${audiverisJarDir}/*" Audiveris -batch -export -output "${outputDir}" "${preprocessedImg}"`,
+      { stdio: 'pipe', timeout: 180_000 }
+    )
+
+    // Find .mxl output
+    const mxlFiles = fs.readdirSync(outputDir).filter(f => f.endsWith('.mxl'))
+    if (!mxlFiles.length) {
+      throw new Error('Audiveris did not produce MXL output — transcription may have failed (check staff lines are detectable in the image)')
+    }
+
+    // Extract MusicXML from MXL (zip) — write script to file to avoid shell quoting issues
+    const mxlPath = path.join(outputDir, mxlFiles[0])
+    const extractScript = path.join(tmpDir, 'extract.py')
+    fs.writeFileSync(extractScript, [
+      'import zipfile, sys',
+      'with zipfile.ZipFile(sys.argv[1]) as z:',
+      '    xml_files = [n for n in z.namelist() if n.endswith(".xml") and "META" not in n]',
+      '    sys.stdout.buffer.write(z.read(xml_files[0]))',
+    ].join('\n'))
+    const rawMxml = execSync(`python3 "${extractScript}" "${mxlPath}"`, {
+      stdio: 'pipe',
+      timeout: 10_000,
+    }).toString('utf-8')
+
+    // Convert MusicXML → ABC via xml2abc.py
+    // xml2abc.py writes {input}.abc next to the input file and also prints to stdout
+    const xmlTmpPath = path.join(tmpDir, 'score.xml')
+    const abcTmpPath = path.join(tmpDir, 'score.abc')
+    fs.writeFileSync(xmlTmpPath, rawMxml)
+
+    const xml2abcScript = path.join(process.cwd(), 'scripts/xml2abc.py')
+    const xml2abcStdout = execSync(`python3 "${xml2abcScript}" "${xmlTmpPath}"`, {
+      stdio: 'pipe',
+      timeout: 15_000,
+      cwd: tmpDir,
+    }).toString('utf-8')
+
+    // xml2abc.py writes {xmlTmpPath}.abc; fall back to parsing stdout if file not found
+    let rawAbc: string
+    if (fs.existsSync(abcTmpPath)) {
+      rawAbc = fs.readFileSync(abcTmpPath, 'utf-8')
+    } else {
+      // Try cwd (xml2abc.py may strip directory and write to cwd)
+      const cwdAbc = path.join(tmpDir, 'score.abc')
+      const altAbc = fs.readdirSync(tmpDir).find(f => f.endsWith('.abc'))
+      if (altAbc) {
+        rawAbc = fs.readFileSync(path.join(tmpDir, altAbc), 'utf-8')
+      } else if (xml2abcStdout.includes('X:')) {
+        // Parse ABC from stdout (xml2abc.py echoes content)
+        rawAbc = xml2abcStdout.slice(xml2abcStdout.indexOf('X:'))
+      } else {
+        throw new Error(`xml2abc.py did not produce output. stdout: ${xml2abcStdout.slice(0, 300)}`)
+      }
+    }
+    const melodyAbc = extractMelodyVoice(rawAbc)
+
+    return { abc: melodyAbc, rawAbc, rawMxml }
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true })
+  }
+}
+
+export async function GET(request: NextRequest) {
+  const { res: authRes } = await getAdminSessionOr401()
+  if (authRes) return authRes
+
+  const tuneId = request.nextUrl.searchParams.get('tuneId')
+  if (!tuneId) return NextResponse.json({ error: 'tuneId required' }, { status: 400 })
+
+  const tune = await db.query.tunes.findFirst({
+    where: eq(tunes.id, parseInt(tuneId)),
+    columns: { id: true, name: true },
+  })
+  if (!tune) return NextResponse.json({ error: 'Tune not found' }, { status: 404 })
+
+  const mode = request.nextUrl.searchParams.get('mode') ?? 'solfege'
+  const slug = slugify(tune.name)
+  const dir = path.join(process.cwd(), 'public/tunes')
+
+  function collectPages(type: 'solfege' | 'staff'): string[] {
+    const pages: string[] = []
+    for (let i = 0; ; i++) {
+      const p = path.join(dir, `${slug}-${type}-${i}.jpg`)
+      if (fs.existsSync(p)) pages.push(p)
+      else break
+    }
+    return pages
+  }
+
+  const solfegePages = collectPages('solfege')
+  const staffPages = collectPages('staff')
+  // Legacy single-path aliases kept for audiveris (needs one image)
+  const staffImg = staffPages[0] ?? path.join(dir, `${slug}-staff-0.jpg`)
+  const solfegeImg = solfegePages[0] ?? path.join(dir, `${slug}-solfege-0.jpg`)
+
+  if (mode === 'audiveris') {
+    // Prefer staff image (has actual music staff lines Audiveris can parse)
+    const imagePath = fs.existsSync(staffImg) ? staffImg
+      : fs.existsSync(solfegeImg) ? solfegeImg
+      : null
+    if (!imagePath) {
+      return NextResponse.json({ error: `No image for "${tune.name}" (slug: ${slug})` }, { status: 404 })
+    }
+    try {
+      const result = await runAudiveris(tune, imagePath)
+      return NextResponse.json({ tuneName: tune.name, ...result })
+    } catch (err) {
+      return NextResponse.json({ error: String(err) }, { status: 500 })
+    }
+  }
+
+  if (mode === 'hymnary') {
+    const fetchId = HYMNARY_FETCH_IDS[tune.name]
+    if (!fetchId) {
+      return NextResponse.json({ error: `No Hymnary entry for "${tune.name}"` }, { status: 404 })
+    }
+    const tmpDir = fs.mkdtempSync('/tmp/hymnary-')
+    try {
+      const xmlPath = path.join(tmpDir, 'score.xml')
+      const abcPath = path.join(tmpDir, 'score.abc')
+      const res = await fetch(`https://hymnary.org/media/fetch/${fetchId}`)
+      if (!res.ok) throw new Error(`Hymnary returned ${res.status} for fetch/${fetchId}`)
+      const buf = Buffer.from(await res.arrayBuffer())
+      // MXL (zip) or plain XML — detect by magic bytes
+      const isMxl = buf[0] === 0x50 && buf[1] === 0x4b
+      let xmlContent: string
+      if (isMxl) {
+        const extractScript = path.join(tmpDir, 'extract.py')
+        fs.writeFileSync(extractScript, [
+          'import zipfile, sys',
+          'with zipfile.ZipFile(sys.argv[1]) as z:',
+          '    xml_files = [n for n in z.namelist() if n.endswith(".xml") and "META" not in n]',
+          '    sys.stdout.buffer.write(z.read(xml_files[0]))',
+        ].join('\n'))
+        const mxlPath = path.join(tmpDir, 'score.mxl')
+        fs.writeFileSync(mxlPath, buf)
+        xmlContent = execSync(`python3 "${extractScript}" "${mxlPath}"`, { stdio: 'pipe', timeout: 10_000 }).toString('utf-8')
+      } else {
+        xmlContent = buf.toString('utf-8')
+      }
+      fs.writeFileSync(xmlPath, xmlContent)
+      const xml2abcScript = path.join(process.cwd(), 'scripts/xml2abc.py')
+      // xml2abc writes to stdout when no -o flag is given
+      const rawAbc = execSync(`python3 "${xml2abcScript}" "${xmlPath}"`, { stdio: 'pipe', timeout: 15_000 }).toString('utf-8')
+      if (!rawAbc.includes('X:')) throw new Error('xml2abc did not produce ABC output')
+      const abc = extractMelodyVoice(rawAbc)
+      return NextResponse.json({ tuneName: tune.name, abc, rawAbc, hymnaryUrl: `https://hymnary.org/media/fetch/${fetchId}` })
+    } catch (err) {
+      return NextResponse.json({ error: String(err) }, { status: 500 })
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true })
+    }
+  }
+
+  if (mode === 'ocr-text') {
+    const pages = solfegePages.length > 0 ? solfegePages : staffPages
+    if (pages.length === 0) return NextResponse.json({ error: `No image for "${tune.name}" (slug: ${slug})` }, { status: 404 })
+    try {
+      const result = await transcribeOnly(tune.name, pages)
+      return NextResponse.json({ tuneName: tune.name, pageCount: pages.length, ...result })
+    } catch (err) {
+      return NextResponse.json({ error: String(err) }, { status: 500 })
+    }
+  }
+
+  if (mode === 'staff') {
+    const pages = staffPages.length > 0 ? staffPages : solfegePages
+    if (pages.length === 0) return NextResponse.json({ error: `No image for "${tune.name}" (slug: ${slug})` }, { status: 404 })
+    try {
+      const result = await extractStaffToAbc(tune.name, pages[0])
+      return NextResponse.json({ tuneName: tune.name, pageCount: pages.length, ...result })
+    } catch (err) {
+      return NextResponse.json({ error: String(err) }, { status: 500 })
+    }
+  }
+
+  // default: solfege (V3 parser)
+  const pages = solfegePages.length > 0 ? solfegePages : staffPages
+  if (pages.length === 0) return NextResponse.json({ error: `No image for "${tune.name}" (slug: ${slug})` }, { status: 404 })
+  try {
+    const result = await extractTuneV2(tune.name, pages)
+    return NextResponse.json({ tuneName: tune.name, pageCount: pages.length, ...result })
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 })
+  }
+}
