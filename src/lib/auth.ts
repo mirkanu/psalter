@@ -4,6 +4,8 @@ import { admin } from 'better-auth/plugins'
 import { db } from '@/db'
 import * as schema from '@/db/schema'
 
+const AUTH_URL = process.env.BETTER_AUTH_URL ?? 'http://localhost:3005'
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: 'pg',
@@ -24,5 +26,15 @@ export const auth = betterAuth({
   },
   plugins: [admin()],
   secret: process.env.BETTER_AUTH_SECRET!,
-  baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3005',
+  baseURL: AUTH_URL,
+  // Allow logins from both the canonical production domain AND any active
+  // Vercel preview deployment. baseURL alone is enough for cookie scoping,
+  // but Better Auth rejects requests whose Origin header isn't in the trusted
+  // list — so Vercel preview URLs need to be added explicitly.
+  // Patterns use Better Auth's wildcard syntax (* and ?), NOT regex.
+  // See .planning/phases/17-vercel-neon-migration/17-02-SUMMARY.md
+  trustedOrigins: [
+    AUTH_URL,
+    'https://*.vercel.app',
+  ],
 })
