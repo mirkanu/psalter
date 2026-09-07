@@ -310,3 +310,69 @@ $ curl ... -b cookies .../api/auth/get-session
 $ curl ... -b cookies .../dev/melisma-editor   → 200
 $ curl ...           .../dev/melisma-editor   → 307
 ```
+
+## Addendum (2026-09-07, post-Wave-2 user report — empty sing view)
+
+The user reported that opening `/psalms/23` on Vercel loaded an empty view, while `/psalms`, `/tunes`, `/daily` etc. all worked. Coordinator investigation surfaced a critical data-parity gap: the initial Airtable → Neon migration had not copied 8 columns of post-migration annotation data that lives only on the live Hetzner DB.
+
+### The bug
+
+`scripts/migrate-airtable.ts` correctly migrated every column present in Airtable. But 8 columns of the live schema are populated by LATER scripts that ran against Hetzner (e.g. `apply-abc-notation.ts`, `bulk-ocr-text.ts`, `apply-tune-fixes.ts`, `annotate-phrase-breaks.ts`, manual structured-lyrics editor). Those scripts were never re-run against Neon. Row counts matched because the rows were present — but the cells inside them were empty.
+
+| Table.column | Hetzner populated | Neon populated |
+|---|---:|---:|
+| `tunes.abc_notation` | 147 | **0** |
+| `tunes.abc_notation_ocr` | 144 | **0** |
+| `tunes.abc_satb` | 144 | **0** |
+| `tunes.solfege_ocr_text` | 144 | **0** |
+| `tunes.solfege_soprano_edited` | 33 | **0** |
+| `tunes.melisma_positions` | 77 | **0** |
+| `tunes.phrase_shape_override` | 4 | **0** |
+| `psalm_versions.lyrics_structured` | 182 | **0** |
+
+The empty-view symptom traced through:
+- `SingingView` receives `primaryTune` with `abcNotation = ''` → `abcjs.renderAbc('', …)` produces an SVG with viewBox `0 0 432 37.56` (a flat single-line stub).
+- `SingingView` receives `lyricsStructured = null` → falls back to no lyrics render.
+- The header / `Psalm 23` / `Crimond / Stanza 1 / 2` block renders fine because it lives in `PsalmTopBar` (hardcoded labels).
+
+### The fix
+
+`scripts/hetzner-to-neon-content-patch.ts` — a one-shot, idempotent Hetzner → Neon content patcher. Reads each affected row from Hetzner (read-only), UPDATEs the missing columns in Neon by primary-key `id`. Supports `--dry-run`. Pre/post parity report.
+
+### Verification
+
+```
+--- Pre-patch ---
+[tunes] abc_notation      Hetzner=147  Neon=0
+[psalm_versions] lyrics_structured  Hetzner=182  Neon=0
+
+--- Post-patch ---
+[tunes] abc_notation      Hetzner=147  Neon=147
+[tunes] abc_satb          Hetzner=144  Neon=144
+[tunes] melisma_positions Hetzner=77   Neon=77
+[psalm_versions] lyrics_structured  Hetzner=182  Neon=182
+```
+
+End-to-end re-render of `/psalms/23` on Vercel (Playwright Chromium, viewport 390×844):
+
+| Metric | Before | After |
+|---|---:|---:|
+| `<main>.innerText.length` | 31 | 380 |
+| `<main>.innerHTML.length` | 8,772 | 82,347 |
+| `abcjs-lyric` elements | 0 | 34 |
+| Staff SVG `viewBox` | `0 0 432 37.56` (flat stub) | `0 0 578.65 597.93` (full page) |
+
+Spot checks: `/psalms/1` (28 lyric els), `/psalms/119` (34 lyric els), `/tunes/crimond` (full tune page with notation/key/BPM tabs).
+
+### Lesson for the migration
+
+Row count parity (172 = 172, 184 = 184) is **necessary but not sufficient**. We needed *content* parity on the columns the rendered UI actually reads. The next migration plan should add a column-level parity scan with non-empty counts before declaring any wave complete. The patch script leaves this as a re-runnable tool, so future schema/annotation additions can be back-filled the same way.
+
+### Safety record
+
+- Hetzner `psalter-db`: **read-only** via this script (no INSERT/UPDATE/DELETE).
+- `public/tunes/`: untouched.
+- Tunnel ingress, DNS, env file, `psalter-db` container, PM2 process: untouched.
+- No secrets hardcoded in the script — both URLs come from env (`DATABASE_URL` from `.env`, `NEON_DATABASE_URL` from `/tmp/17-01-neon.txt`).
+
+**Wave 3 (DNS cutover) must NOT execute until the column parity scan is included in the 17-03 acceptance criteria.**
