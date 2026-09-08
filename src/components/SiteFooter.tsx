@@ -28,6 +28,8 @@ export function SiteFooter() {
                 non-admin users (gated inside DeployStatus by useSession).
                 Hovering shows the full commit sha + subject for traceability. */}
             <DeployStatus />
+          </div>
+          <div className="flex items-center gap-3">
             <a
               href="https://github.com/mirkanu/psalter"
               target="_blank"
@@ -38,8 +40,8 @@ export function SiteFooter() {
             >
               <GithubMark className="size-4" />
             </a>
+            <a href="https://gsdlabs.dev" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Made by GSD Labs</a>
           </div>
-          <a href="https://gsdlabs.dev" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Made by GSD Labs</a>
         </div>
       </footer>
 
