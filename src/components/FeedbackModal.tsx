@@ -66,9 +66,9 @@ export function FeedbackModal({ open, onClose }: FeedbackModalProps) {
             href="https://github.com/mirkanu/psalter/issues"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 underline hover:text-foreground"
+            className="inline align-baseline underline hover:text-foreground whitespace-nowrap"
           >
-            <GithubMark className="size-3.5 shrink-0 align-[-2px]" />
+            <GithubMark className="inline-block size-3.5 -translate-y-[0.5px] mr-0.5 align-baseline" />
             open an issue
           </a>
           {' '}instead — it&apos;s easier to track.
