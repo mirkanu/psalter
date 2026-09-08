@@ -184,15 +184,6 @@ export function SiteHeader() {
               >
                 <Search className="size-4" />
               </button>
-              <a
-                href="https://github.com/mirkanu/psalter"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="GitHub"
-                className="p-2 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground active:bg-muted active:translate-y-px transition-all duration-75"
-              >
-                <GithubMark className="size-4" />
-              </a>
               <ThemeToggle />
             </nav>
 
@@ -206,15 +197,6 @@ export function SiteHeader() {
               >
                 <Search className="size-4" />
               </button>
-              <a
-                href="https://github.com/mirkanu/psalter"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="GitHub"
-                className="p-2 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground active:bg-muted active:translate-y-px transition-all duration-75"
-              >
-                <GithubMark className="size-4" />
-              </a>
               <ThemeToggle />
               <Sheet>
                 <SheetTrigger

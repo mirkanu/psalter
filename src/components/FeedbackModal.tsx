@@ -68,7 +68,7 @@ export function FeedbackModal({ open, onClose }: FeedbackModalProps) {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 underline hover:text-foreground"
           >
-            <GithubMark className="size-3.5 shrink-0 -translate-y-[0.5px]" />
+            <GithubMark className="size-3.5" />
             open an issue
           </a>
           {' '}instead — it&apos;s easier to track.
