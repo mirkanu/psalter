@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Github } from 'lucide-react'
+import { GithubMark } from '@/components/GithubMark'
 
 interface FeedbackModalProps {
   open: boolean
@@ -68,7 +68,7 @@ export function FeedbackModal({ open, onClose }: FeedbackModalProps) {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 underline hover:text-foreground"
           >
-            <Github className="size-3.5" />
+            <GithubMark className="size-3.5" />
             open an issue
           </a>
           {' '}instead — it&apos;s easier to track.
