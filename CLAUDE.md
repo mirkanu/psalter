@@ -2,7 +2,7 @@
 
 ## Project
 
-Rebuild of **psalter.cprc.co.uk** — a Scottish Psalter website for CPRC congregation and precentors. Migrating from Airtable + Softr to Next.js 15 + PostgreSQL + abcjs notation rendering.
+Rebuild of **psalter.gsdlabs.dev** — a Scottish Psalter website for CPRC congregation and precentors. Migrating from Airtable + Softr to Next.js 15 + PostgreSQL + abcjs notation rendering.
 
 **Deployed at:** `psalter.gsdlabs.dev` (Hetzner VPS, port 3005, Cloudflare Tunnel)
 

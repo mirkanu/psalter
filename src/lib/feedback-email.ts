@@ -13,7 +13,7 @@
  */
 import { sendEmail, type SendEmailResult } from './email'
 
-export const DEFAULT_FEEDBACK_TO_ADDRESS = 'manuelkuhs@gmail.com'
+export const DEFAULT_FEEDBACK_TO_ADDRESS = 'psalter-feedback@gsdlabs.dev'
 export const MAX_SUBJECT_LENGTH = 120
 
 export type FeedbackEmailInput = {

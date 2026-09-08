@@ -46,12 +46,12 @@ describe('getFeedbackToAddress', () => {
 
   it('returns the default when unset', () => {
     vi.stubEnv('PSALTER_FEEDBACK_TO_ADDRESS', undefined as unknown as string)
-    expect(getFeedbackToAddress()).toBe('manuelkuhs@gmail.com')
+    expect(getFeedbackToAddress()).toBe('psalter-feedback@gsdlabs.dev')
   })
 
   it('returns the default when empty string', () => {
     vi.stubEnv('PSALTER_FEEDBACK_TO_ADDRESS', '')
-    expect(getFeedbackToAddress()).toBe('manuelkuhs@gmail.com')
+    expect(getFeedbackToAddress()).toBe('psalter-feedback@gsdlabs.dev')
   })
 
   it('returns the env value when set', () => {
