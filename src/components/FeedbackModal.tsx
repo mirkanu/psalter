@@ -60,15 +60,15 @@ export function FeedbackModal({ open, onClose }: FeedbackModalProps) {
       <DialogContent className="sm:max-w-lg">
         <DialogHeader><DialogTitle>Send Feedback</DialogTitle></DialogHeader>
 
-        <p className="text-xs text-muted-foreground -mt-2">
+        <p className="text-xs text-muted-foreground -mt-2 leading-relaxed">
           If you&apos;re familiar with GitHub,{' '}
           <a
             href="https://github.com/mirkanu/psalter/issues"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline align-baseline underline hover:text-foreground whitespace-nowrap"
+            className="inline align-middle underline underline-offset-2 hover:text-foreground whitespace-nowrap"
           >
-            <GithubMark className="inline-block size-3.5 -translate-y-[0.5px] mr-0.5 align-baseline" />
+            <GithubMark className="inline-block size-3.5 mr-0.5 align-[-2px]" />
             open an issue
           </a>
           {' '}instead — it&apos;s easier to track.
