@@ -1,0 +1,33 @@
+CPRC Psalter Source-Available Licence v1.0
+Copyright (c) 2026 Manuel Kuhs. All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to view
+the source code, to fork the Software on GitHub at github.com/mirkanu/psalter,
+and to submit modifications back to that repository as pull requests, subject
+to the following conditions:
+
+1. No independent deployment. You may not, without prior written permission from
+   the copyright holder, deploy, host, publish, or make publicly accessible any
+   modified or unmodified version of the Software on any infrastructure you
+   control or on behalf of any third party. Preview deployments created
+   automatically by GitHub or by the copyright holder's hosting provider
+   (Vercel) for the purpose of reviewing pull requests are permitted.
+
+2. Contribution terms. By submitting a pull request, issue, or any other
+   contribution to the project at github.com/mirkanu/psalter, you agree to the
+   Contribution Terms set out in CONTRIBUTING.md. Accepted contributions are
+   governed by the copyright holder's licence terms in effect at the time of
+   acceptance.
+
+3. No trademark licence. This licence does not grant permission to use the
+   trade names, trademarks, service marks, or product names of the copyright
+   holder, except as required for describing the origin of the work.
+
+4. Disclaimer. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+   NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR
+   OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+   OTHER DEALINGS IN THE SOFTWARE.
