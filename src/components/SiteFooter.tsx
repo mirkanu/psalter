@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { FeedbackModal } from '@/components/FeedbackModal'
 import { DeployStatus } from '@/components/DeployStatus'
+import { GithubMark } from '@/components/GithubMark'
 
 export function SiteFooter() {
   const [open, setOpen] = useState<'about' | 'copyright' | 'feedback' | null>(null)
@@ -28,7 +29,19 @@ export function SiteFooter() {
                 Hovering shows the full commit sha + subject for traceability. */}
             <DeployStatus />
           </div>
-          <a href="https://gsdlabs.dev" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Made by GSD Labs</a>
+          <div className="flex items-center gap-3">
+            <a
+              href="https://github.com/mirkanu/psalter"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="View source on GitHub"
+              title="View source on GitHub"
+              className="inline-flex items-center justify-center rounded-md size-7 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors active:translate-y-px"
+            >
+              <GithubMark className="size-4 mr-1" />
+            </a>
+            <a href="https://gsdlabs.dev" target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-foreground transition-colors active:bg-muted active:translate-y-px transition-all duration-75">Made by GSD Labs</a>
+          </div>
         </div>
       </footer>
 
