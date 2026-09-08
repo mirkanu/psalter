@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import { GithubMark } from '@/components/GithubMark'
 
 interface FeedbackModalProps {
   open: boolean
@@ -58,6 +59,20 @@ export function FeedbackModal({ open, onClose }: FeedbackModalProps) {
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader><DialogTitle>Send Feedback</DialogTitle></DialogHeader>
+
+        <p className="text-xs text-muted-foreground -mt-2 leading-relaxed">
+          If you&apos;re familiar with GitHub,{' '}
+          <a
+            href="https://github.com/mirkanu/psalter/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline align-middle underline underline-offset-2 hover:text-foreground whitespace-nowrap"
+          >
+            <GithubMark className="inline-block size-3.5 mr-0.5 align-[-2px]" />
+            open an issue
+          </a>
+          {' '}instead — it&apos;s easier to track.
+        </p>
         {status === 'success' ? (
           <div className="space-y-3 text-center py-4">
             <h3 className="font-semibold">Thank you for your feedback</h3>
