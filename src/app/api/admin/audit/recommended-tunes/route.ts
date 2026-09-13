@@ -29,6 +29,7 @@ export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 interface RecommendedRow {
+  [key: string]: unknown
   tune_id: number
   name: string
   psalm_version_count: number
@@ -38,6 +39,7 @@ interface RecommendedRow {
 }
 
 interface CountRow {
+  [key: string]: unknown
   count: number
 }
 
