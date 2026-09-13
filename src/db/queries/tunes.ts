@@ -201,6 +201,7 @@ export async function enrichAlternateTunesToTuneRows(
       numInPrcaPsalter: null,
       moods: [],
       recommendedPsalmIds: [],
+      recommendedPsalmVariantCount: {},
       soundcloudUrl: alt.soundcloudUrl,
       solfegeJpgUrl: alt.solfegeJpgUrl,
       youtubeUrl: alt.youtubeUrl,
