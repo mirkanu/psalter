@@ -22,11 +22,24 @@
 
 import { NextResponse } from 'next/server'
 import { db } from '@/db'
-import { sql, eq, desc, isNotNull, and, ne } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import { getAdminSessionOr401 } from '@/lib/admin-auth'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
+
+interface RecommendedRow {
+  tune_id: number
+  name: string
+  psalm_version_count: number
+  abc_present: boolean
+  latest_decision_status: 'approved' | 'not_approved' | null
+  latest_decision_at: string | null
+}
+
+interface CountRow {
+  count: number
+}
 
 export async function GET() {
   const { res: authRes } = await getAdminSessionOr401()
@@ -37,14 +50,7 @@ export async function GET() {
   //   - psalm_version row count (how many psalm versions point to it)
   //   - whether ABC notation is present (abc_notation IS NOT NULL and length > 0)
   //   - latest non-null melisma decision row (status + created_at)
-  const recommendedRows = await db.execute<{
-    tune_id: number
-    name: string
-    psalm_version_count: number
-    abc_present: boolean
-    latest_decision_status: 'approved' | 'not_approved' | null
-    latest_decision_at: string | null
-  }>(sql`
+  const recommendedRows = (await db.execute<RecommendedRow>(sql`
     WITH latest_decision AS (
       SELECT DISTINCT ON (tune_id)
         tune_id,
@@ -66,9 +72,7 @@ export async function GET() {
     LEFT JOIN latest_decision ld ON ld.tune_id = t.id
     GROUP BY t.id, t.name, t.abc_notation, ld.status, ld.created_at
     ORDER BY (ld.status = 'approved') DESC NULLS LAST, t.name ASC
-  `)
-
-  const rows = (recommendedRows as unknown as { rows: Array<any> }).rows ?? []
+  `)) as unknown as RecommendedRow[]
 
   const approved: Array<{
     tuneId: number
@@ -85,7 +89,7 @@ export async function GET() {
     latestDecisionStatus: 'approved' | 'not_approved' | null
   }> = []
 
-  for (const r of rows) {
+  for (const r of recommendedRows) {
     if (r.latest_decision_status === 'approved') {
       approved.push({
         tuneId: Number(r.tune_id),
@@ -106,16 +110,14 @@ export async function GET() {
   }
 
   // Total psalm_version_tunes row count — context for how many psalm→tune edges exist.
-  const totalRow = await db.execute<{ count: number }>(sql`
+  const totalRows = (await db.execute<CountRow>(sql`
     SELECT COUNT(*)::int AS count FROM psalm_version_tunes
-  `)
-  const psalmVersionRowCount = Number(
-    (totalRow as unknown as { rows: Array<{ count: number }> }).rows[0]?.count ?? 0,
-  )
+  `)) as unknown as CountRow[]
+  const psalmVersionRowCount = Number(totalRows[0]?.count ?? 0)
 
   return NextResponse.json({
     totals: {
-      recommendedTuneCount: rows.length,
+      recommendedTuneCount: recommendedRows.length,
       approvedCount: approved.length,
       notApprovedCount: notApproved.length,
       psalmVersionRowCount,
