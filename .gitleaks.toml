@@ -1,0 +1,70 @@
+title = "psalter — custom secret patterns"
+
+# Extends (not replaces) the built-in gitleaks rules with patterns
+# psalter specifically needs to catch. Built-in rules already detect
+# AWS keys, GitHub PATs, Slack tokens, Stripe keys, JWTs, and bare sk-ant-...
+
+[extend]
+useDefault = true
+
+# ---- Global allowlist ----
+# Airtable base/table/record IDs are not secrets — they are public
+# references to objects the app needs to talk to. Allow only the exact
+# ID-shaped patterns, NOT arbitrary 17-char strings next to "airtable".
+[allowlist]
+description = "Airtable IDs (bases, tables, records) are not secrets"
+regexes = [
+  '''app[A-Za-z0-9]{14}\b''',
+  '''tbl[A-Za-z0-9]{14}\b''',
+  '''rec[A-Za-z0-9]{14}\b''',
+]
+
+# ---- Custom: psalter-specific env-var names ----
+[[rules]]
+id = "psalter-anthropic-env"
+description = "psalter Anthropic API key via env var"
+regex = '''(?i)(?:PSALTER_)?ANTHROPIC_API_KEY\s*=\s*['"]?(sk-ant-[A-Za-z0-9_-]{20,})['"]?'''
+keywords = ["anthropic", "PSALTER_ANTHROPIC"]
+tags = ["secret", "anthropic"]
+
+[[rules]]
+id = "psalter-neon-env"
+description = "psalter Neon DB URL via env var (production)"
+regex = '''(?i)(?:PSALTER_)?NEON_DATABASE_URL\s*=\s*['"]?(postgres(?:ql)?://[^\s'"<>]+)['"]?'''
+keywords = ["neon", "PSALTER_NEON"]
+tags = ["secret", "neon"]
+
+[[rules]]
+id = "psalter-airtable-env"
+description = "psalter Airtable PAT via env var"
+regex = '''(?i)AIRTABLE_PAT\s*=\s*['"]?([A-Za-z0-9]{17,})['"]?'''
+keywords = ["airtable"]
+tags = ["secret", "airtable"]
+  [rules.allowlist]
+  paths = [
+    '''(?:^|/)tests/.*\.(ts|js|mjs|tsx|jsx)$''',
+    '''(?:^|/)scripts/.*\.(ts|js|mjs|tsx|jsx)$''',
+    '''\.planning/.*\.md$''',
+    '''src/db/schema\.ts$''',
+  ]
+
+[[rules]]
+id = "psalter-vercel-env"
+description = "psalter Vercel token via env var"
+regex = '''(?i)VERCEL_TOKEN\s*=\s*['"]?([A-Za-z0-9]{24,})['"]?'''
+keywords = ["vercel"]
+tags = ["secret", "vercel"]
+
+# Catch any postgres connection string. Go's regexp (RE2) does not
+# support lookahead, so we whitelist localhost/loopback via per-rule
+# allowlist instead of a negative lookahead.
+[[rules]]
+id = "psalter-neon-connstring"
+description = "postgres connection string (allowlist dev)"
+regex = '''postgres(?:ql)?://[^:\s'"<>]+:[^@\s'"<>]+@[^\s'"<>]+'''
+keywords = ["postgres://", "postgresql://"]
+tags = ["secret", "neon"]
+  [rules.allowlist]
+  regexes = [
+    '''postgres(?:ql)?://[^:\s'"<>]+:[^@\s'"<>]+@(?:localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?(?:/[^\s'"<>]*)?''',
+  ]
