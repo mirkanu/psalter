@@ -28,6 +28,12 @@ export interface TuneRow {
   numInPrcaPsalter: number | null
   moods: string[]
   recommendedPsalmIds: number[]
+  /**
+   * #15: psalmId (as string) -> { count, variants }. Lets the UI collapse duplicate
+   * psalmIds (e.g. psalm 119a + 119b) and label the row '119 (+1 variant)', while still
+   * allowing a search for '119b' to match via variant label.
+   */
+  recommendedPsalmVariantCount: Record<string, { count: number; variants: string[] }>
   soundcloudUrl: string | null
   solfegeJpgUrl: string | null
   youtubeUrl: string | null
@@ -331,7 +337,12 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
       if (!q) return true
       if (isNum) {
         const n = parseInt(q, 10)
+        // #15: also match a variant label, so searching '119b' finds tunes
+        // that have multiple psalm 119 versions (a, b, ...).
+        const variants = t.recommendedPsalmVariantCount[String(n)]?.variants ?? []
+        const matchesVariant = variants.some((v) => v.startsWith(q))
         return (
+          matchesVariant ||
           (t.numberIn1979RpPsalter != null && String(t.numberIn1979RpPsalter).includes(q)) ||
           (t.numInPrcaPsalter != null && String(t.numInPrcaPsalter).includes(q)) ||
           t.recommendedPsalmIds.includes(n)
@@ -505,7 +516,6 @@ export function TuneTable({ tunes, onSelectTune, hideExport, initialMeter, hideM
           <td className="px-3 py-2.5 w-[27%] overflow-hidden">
             {tune.recommendedPsalmIds.length > 0 ? (
               <span className="text-muted-foreground font-mono text-xs break-words">
-                <span className="text-foreground font-semibold mr-1.5">{tune.recommendedPsalmIds.length}</span>
                 {psalmDisplay}
               </span>
             ) : <span className="text-muted-foreground">—</span>}

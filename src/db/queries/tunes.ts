@@ -62,7 +62,7 @@ export async function fetchAllTunes() {
       psalmVersionTunes: {
         with: {
           psalmVersion: {
-            columns: {},
+            columns: { psalterNumber: true },
             with: { psalm: { columns: { id: true } } },
           },
         },
@@ -96,13 +96,40 @@ export async function fetchAllTunes() {
       weightedHistoricalFrequency: t.weightedHistoricalFrequency ?? 0,
       ...deriveTuneJpgPages(t.name),   // -> staffPages: string[], solfegePages: string[]
       moods: t.tuneMoods.map((tm) => tm.mood.name).filter(Boolean) as string[],
-      recommendedPsalmIds: [
-        ...new Set(
-          t.psalmVersionTunes
-            .map((pvt) => pvt.psalmVersion?.psalm?.id)
-            .filter((id): id is number => id != null)
+      // #15: collapse duplicate psalmIds (e.g. 119a + 119b) but keep the variant labels
+      // so the UI can show '119 (+1 variant)' and a search for '119b' works.
+      recommendedPsalmIds: Array.from(
+        t.psalmVersionTunes.reduce<Map<number, { count: number; variants: string[] }>>(
+          (acc, pvt) => {
+            const psalmId = pvt.psalmVersion?.psalm?.id
+            const variant = pvt.psalmVersion?.psalterNumber
+            if (psalmId == null) return acc
+            const cur = acc.get(psalmId) ?? { count: 0, variants: [] }
+            cur.count += 1
+            if (variant) cur.variants.push(variant)
+            return acc.set(psalmId, cur)
+          },
+          new Map(),
         ),
-      ].sort((a, b) => a - b),
+        ([psalmId]) => psalmId,
+      ).sort((a, b) => a - b),
+      recommendedPsalmVariantCount: Object.fromEntries(
+        Array.from(
+          t.psalmVersionTunes.reduce<Map<number, { count: number; variants: string[] }>>(
+            (acc, pvt) => {
+              const psalmId = pvt.psalmVersion?.psalm?.id
+              const variant = pvt.psalmVersion?.psalterNumber
+              if (psalmId == null) return acc
+              const cur = acc.get(psalmId) ?? { count: 0, variants: [] }
+              cur.count += 1
+              if (variant) cur.variants.push(variant)
+              return acc.set(psalmId, cur)
+            },
+            new Map(),
+          ),
+          ([psalmId, info]) => [String(psalmId), info],
+        ),
+      ),
     }))
     .sort((a, b) => b.recommendedPsalmIds.length - a.recommendedPsalmIds.length || a.name.localeCompare(b.name))
 }

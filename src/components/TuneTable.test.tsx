@@ -21,6 +21,7 @@ function makeTuneRow(overrides: Partial<TuneRow> = {}): TuneRow {
     numInPrcaPsalter: null,
     moods: [],
     recommendedPsalmIds: [],
+    recommendedPsalmVariantCount: {},
     soundcloudUrl: null,
     solfegeJpgUrl: null,
     youtubeUrl: null,
