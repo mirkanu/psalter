@@ -29,7 +29,7 @@ function readDismissed(): boolean {
  * for first-time desktop visitors without obscuring page content.
  */
 export function DesktopOptimisedBanner() {
-  const isDesktop = useMediaQuery('(min-width: 768px)')
+  const isDesktop = useMediaQuery('(min-width: 1024px)')
   // Read the dismissal flag at mount (SSR-safe: returns true on the server,
   // so the SSR markup never includes the banner). After hydration on the
   // client, the initializer runs once and returns the stored value.

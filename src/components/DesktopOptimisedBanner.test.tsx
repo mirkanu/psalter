@@ -73,3 +73,16 @@ describe('DesktopOptimisedBanner (quick task 260817-p17)', () => {
     expect(() => render(<DesktopOptimisedBanner />)).not.toThrow()
   })
 })
+
+// Issue #14: don't show the "Optimised for phone" badge on tablets.
+// Threshold was raised from 768px to 1024px so a 768-1023px tablet
+// viewport matches desktop and never sees the banner.
+describe('DesktopOptimisedBanner (issue #14 — tablet guard)', () => {
+  it('does not render the banner on a tablet viewport (min-width:1024px -> false at 900px)', async () => {
+    stubMatchMedia(false)
+    const { container } = render(<DesktopOptimisedBanner />)
+    await waitFor(() => {
+      expect(container.querySelector('[role="status"]')).toBeNull()
+    })
+  })
+})
