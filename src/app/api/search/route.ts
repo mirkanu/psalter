@@ -4,6 +4,7 @@ import { psalmVersions, tunes } from '@/db/schema'
 import { ilike, or, eq, asc } from 'drizzle-orm'
 import { buildSnippet } from '@/lib/search-utils'
 import { tuneNameToSlug } from '@/lib/tune-slug'
+import { deriveVersionSlug, stripStar } from '@/lib/psalm-slugs'
 
 export const runtime = 'nodejs'
 
@@ -21,6 +22,13 @@ export interface SearchResult {
   meter?: string | null
 }
 
+// Match "119:1-8 (1)" → verseRange "1-8"
+function parse119Range(psalterNumber: string | null): string | null {
+  if (!psalterNumber) return null
+  const m = psalterNumber.match(/(\d+):(\d+-\d+)/)
+  return m ? m[2] : null
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -31,28 +39,62 @@ export async function GET(request: Request) {
     }
 
     const isNumeric = /^\d+$/.test(q)
+    // "119-1-8" or "119:1-8" → Psalm 119 section lookup
+    const sectionMatch = q.match(/^(\d+)[:-](\d+)-(\d+)$/)
     const qLower = q.toLowerCase()
 
     // Search psalms
     const psalmMatches: SearchResult[] = []
 
-    if (isNumeric) {
+    if (sectionMatch) {
+      const [, idStr, vs, ve] = sectionMatch
+      const targetId = parseInt(idStr, 10)
+      const verseRange = `${vs}-${ve}`
+      const rows = await db.query.psalmVersions.findMany({
+        where: eq(psalmVersions.psalmId, targetId),
+        orderBy: [asc(psalmVersions.id)],
+        limit: 30,
+      })
+      const match = rows.find((v) =>
+        v.psalterNumber?.includes(`${targetId}:${verseRange}`)
+      )
+      if (match) {
+        const slug = `${targetId}-${verseRange}`
+        psalmMatches.push({
+          type: 'psalm',
+          relevance: 0,
+          id: targetId,
+          slug,
+          firstLine: match.firstLine ?? null,
+          snippet: `verses ${verseRange}`,
+          isRecommended: false,
+        })
+      }
+    } else if (isNumeric) {
       const targetId = parseInt(q, 10)
+      // No limit: psalm 119 has 22 sections. Cap at 30 to stay safe.
       const rows = await db.query.psalmVersions.findMany({
         where: eq(psalmVersions.psalmId, targetId),
         with: { psalm: true },
         orderBy: [asc(psalmVersions.id)],
+        limit: 30,
       })
       const multiVersion = rows.length > 1
       rows.forEach((v, i) => {
-        const suffix = multiVersion ? (i === 0 ? 'a' : 'b') : ''
+        const rawSlug = deriveVersionSlug(
+          targetId,
+          v.psalterNumber,
+          multiVersion
+        )
+        const slug = stripStar(rawSlug)
+        const range = parse119Range(v.psalterNumber)
         psalmMatches.push({
           type: 'psalm',
           relevance: 1, // exact number match
           id: targetId,
-          slug: multiVersion ? `${targetId}${suffix}` : String(targetId),
+          slug,
           firstLine: v.firstLine ?? null,
-          snippet: null,
+          snippet: range ? `verses ${range}` : null,
           isRecommended: i === 0,
         })
       })
@@ -80,15 +122,18 @@ export async function GET(request: Request) {
       byPsalm.forEach((versions, psalmId) => {
         const multiVersion = versions.length > 1
         versions.forEach((v, i) => {
-          const suffix = multiVersion ? (i === 0 ? 'a' : 'b') : ''
+          const rawSlug = deriveVersionSlug(psalmId, v.psalterNumber, multiVersion)
+          const slug = stripStar(rawSlug)
           const snippet = buildSnippet(v.lyricsImportedRaw, q) ?? buildSnippet(v.firstLine, q)
           const firstLineLower = (v.firstLine ?? '').toLowerCase()
-          const relevance = firstLineLower.includes(qLower) ? 2 : 3
+          const firstLineStartsWith = firstLineLower.startsWith(qLower)
+          const firstLineContains = firstLineLower.includes(qLower)
+          const relevance = firstLineStartsWith ? 0 : firstLineContains ? 1 : 2
           psalmMatches.push({
             type: 'psalm',
             relevance,
             id: psalmId,
-            slug: `${psalmId}${suffix}`,
+            slug,
             firstLine: v.firstLine ?? null,
             snippet,
             isRecommended: i === 0,
@@ -118,7 +163,7 @@ export async function GET(request: Request) {
       }
     })
 
-    const results = [...tuneMatches, ...psalmMatches]
+    const results = [...psalmMatches, ...tuneMatches]
       .sort((a, b) => a.relevance - b.relevance)
       .slice(0, 15)
 

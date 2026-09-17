@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { X, BookOpen, Music, Search } from 'lucide-react'
 import { renderSnippet } from '@/lib/search-utils'
+import { slugToDisplayTitle } from '@/lib/psalm-slugs'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 
 interface SearchResult {
@@ -138,7 +139,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                     <BookOpen className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                     <div className="min-w-0">
                       <span className="text-sm font-medium text-foreground">
-                        Psalm {(result.slug ?? '').replace(/([0-9]+)([ab])/, '$1 ($2)')}
+                        Psalm {result.slug ? slugToDisplayTitle(result.slug) : ''}
                       </span>
                       {result.firstLine && (
                         <span className="text-sm text-muted-foreground ml-2">{renderSnippet(result.firstLine, query)}</span>
