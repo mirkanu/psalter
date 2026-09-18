@@ -16,6 +16,10 @@ interface SearchResult {
   firstLine?: string | null
   snippet?: string | null
   isRecommended?: boolean
+  /** Psalm 119 stanza letter (a–v), when the result resolves to a single stanza. */
+  stanzaLetter?: string | null
+  /** Verse range of the matched psalm 119 stanza, when applicable (e.g. "1-8"). */
+  verseRange?: string | null
   // Tune fields
   name?: string | null
   meter?: string | null
@@ -129,6 +133,15 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
             {!loading && hasResults && results.map((result, i) => {
               const isSelected = i === selectedIdx
               if (result.type === 'psalm') {
+                // Psalm 119 stanzas get a "Psalm 119a" title so users see the
+                // alphabetic convention at a glance. The redundant "verses 1-8"
+                // snippet is hidden in that case — the stanza letter carries the
+                // same info. For non-119 psalms the title falls back to the
+                // existing slug→display conversion.
+                const showStanzaLetter = !!result.stanzaLetter && result.id === 119
+                const title = showStanzaLetter
+                  ? `Psalm ${result.id}${result.stanzaLetter}`
+                  : `Psalm ${result.slug ? slugToDisplayTitle(result.slug) : ''}`
                 return (
                   <button
                     key={`psalm-${result.id}-${result.slug}`}
@@ -139,7 +152,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                     <BookOpen className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                     <div className="min-w-0">
                       <span className="text-sm font-medium text-foreground">
-                        Psalm {result.slug ? slugToDisplayTitle(result.slug) : ''}
+                        {renderSnippet(title, query)}
                       </span>
                       {result.firstLine && (
                         <span className="text-sm text-muted-foreground ml-2">{renderSnippet(result.firstLine, query)}</span>

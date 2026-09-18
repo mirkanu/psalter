@@ -4,6 +4,9 @@ import {
   parseSlug,
   slugToDisplayTitle,
   stripStar,
+  verseRangeToLetter,
+  stanzaForVerse,
+  stanzaLetterFromRange,
 } from '@/lib/psalm-slugs'
 
 // Regression coverage for issue #34 / #25: psalm 119 section lookup.
@@ -67,6 +70,57 @@ describe('stripStar', () => {
   })
 })
 
+describe('verseRangeToLetter — psalm 119 stanza letter', () => {
+  it('returns "a" for 1-8', () => {
+    expect(verseRangeToLetter('1-8')).toBe('a')
+  })
+  it('returns "b" for 9-16', () => {
+    expect(verseRangeToLetter('9-16')).toBe('b')
+  })
+  it('returns "v" for 169-176', () => {
+    expect(verseRangeToLetter('169-176')).toBe('v')
+  })
+  it('returns null for non-aligned ranges', () => {
+    expect(verseRangeToLetter('1-7')).toBeNull()
+    expect(verseRangeToLetter('2-9')).toBeNull()
+    expect(verseRangeToLetter('177-184')).toBeNull()
+  })
+  it('returns null for null/empty input', () => {
+    expect(verseRangeToLetter(null)).toBeNull()
+    expect(verseRangeToLetter('')).toBeNull()
+  })
+})
+
+describe('stanzaLetterFromRange — psalmId guard', () => {
+  it('returns the letter for psalm 119 ranges', () => {
+    expect(stanzaLetterFromRange('1-8', 119)).toBe('a')
+    expect(stanzaLetterFromRange('9-16', 119)).toBe('b')
+  })
+  it('returns null for non-119 psalms even if range happens to be 8 verses', () => {
+    expect(stanzaLetterFromRange('1-8', 1)).toBeNull()
+  })
+})
+
+describe('stanzaForVerse — single-verse lookup', () => {
+  it('maps verse 1 to stanza 1-8', () => {
+    expect(stanzaForVerse(1)).toBe('1-8')
+  })
+  it('maps verse 8 to stanza 1-8', () => {
+    expect(stanzaForVerse(8)).toBe('1-8')
+  })
+  it('maps verse 9 to stanza 9-16', () => {
+    expect(stanzaForVerse(9)).toBe('9-16')
+  })
+  it('maps verse 176 to stanza 169-176', () => {
+    expect(stanzaForVerse(176)).toBe('169-176')
+  })
+  it('returns null for verses outside 1-176', () => {
+    expect(stanzaForVerse(0)).toBeNull()
+    expect(stanzaForVerse(177)).toBeNull()
+    expect(stanzaForVerse(-5)).toBeNull()
+  })
+})
+
 // Regex from src/app/api/search/route.ts: matches "119-1-8" or "119:1-8".
 // Locking in to prevent regressions from refactors.
 describe('search route section regex', () => {
@@ -95,5 +149,59 @@ describe('search route section regex', () => {
 
   it('does not match "1-8" (missing psalm id)', () => {
     expect(sectionMatch('1-8')).toBeNull()
+  })
+})
+
+// Regression coverage for the search route's query parsing (Plan 04.x search UX).
+// Mirrors the regex order in src/app/api/search/route.ts so refactors are caught.
+describe('search route query parsing', () => {
+  function parseQuery(q: string) {
+    const compact = q.replace(/\s+/g, '')
+    return {
+      sectionMatch: compact.match(/^(\d+)[:-](\d+)-(\d+)$/),
+      singleVerseMatch: compact.match(/^(\d+):(\d+)$/),
+      stanzaLetterMatch: compact.match(/^(\d+)([a-z])$/),
+      isPlainNumber: /^\d+$/.test(compact),
+    }
+  }
+
+  it('matches "119:1-9" as a section', () => {
+    const r = parseQuery('119:1-9')
+    expect(r.sectionMatch?.[1]).toBe('119')
+    expect(r.sectionMatch?.[2]).toBe('1')
+    expect(r.sectionMatch?.[3]).toBe('9')
+  })
+
+  it('matches "119-1-9" as a section (slash or hyphen)', () => {
+    expect(parseQuery('119-1-9').sectionMatch).not.toBeNull()
+  })
+
+  it('parses "119:1" as single verse lookup, not section', () => {
+    const r = parseQuery('119:1')
+    expect(r.sectionMatch).toBeNull()
+    expect(r.singleVerseMatch).not.toBeNull()
+  })
+
+  it('parses "119a" as stanza letter lookup', () => {
+    const r = parseQuery('119a')
+    expect(r.singleVerseMatch).toBeNull()
+    expect(r.sectionMatch).toBeNull()
+    expect(r.stanzaLetterMatch).not.toBeNull()
+  })
+
+  it('parses "119 a" as stanza letter lookup (whitespace tolerated)', () => {
+    expect(parseQuery('119 a').stanzaLetterMatch?.[2]).toBe('a')
+  })
+
+  it('parses bare "119" as a plain psalm number', () => {
+    const r = parseQuery('119')
+    expect(r.isPlainNumber).toBe(true)
+    expect(r.sectionMatch).toBeNull()
+    expect(r.singleVerseMatch).toBeNull()
+    expect(r.stanzaLetterMatch).toBeNull()
+  })
+
+  it('does not promote "1-9" (no psalm id) to a section match', () => {
+    expect(parseQuery('1-9').sectionMatch).toBeNull()
   })
 })
