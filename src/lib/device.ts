@@ -33,3 +33,13 @@ export function isPhoneDevice(): boolean {
   if (/Android/.test(ua)) return /Mobile/.test(ua)
   return false
 }
+
+/**
+ * Android heuristic. Catches phones and tablets alike — fine for "this is
+ * an Android browser" prompts (e.g. the Install menu OS hint), where we
+ * don't need phone-vs-tablet precision.
+ */
+export function isAndroidDevice(): boolean {
+  if (typeof navigator === 'undefined') return false
+  return /Android/.test(navigator.userAgent)
+}

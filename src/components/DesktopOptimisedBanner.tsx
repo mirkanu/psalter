@@ -1,8 +1,9 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { isPhoneDevice } from '@/lib/device'
 
 const STORAGE_KEY = 'psalter.desktopBannerDismissed'
 
@@ -22,6 +23,12 @@ function readDismissed(): boolean {
  * phone-first. Dismissal is permanent per browser (localStorage, not
  * sessionStorage/state) — once closed it never returns, even after reload.
  *
+ * Issue #14: phone detection. The "phone-first" hint must NOT show on a
+ * phone regardless of viewport. Phones in landscape exceed 768px wide, so a
+ * pure `min-width: 768px` media query incorrectly fires there. Combine the
+ * viewport check with a UA phone sniff (effect-gated so the SSR markup —
+ * isPhone=false — never includes the banner for phone visitors).
+ *
  * Fixed positioning is required (not document flow): `/psalms/[id]` uses
  * `h-[calc(100vh-3.5rem)]` fixed-height math keyed to the 56px SiteHeader,
  * and an in-flow banner would overflow that layout. Top-centre placement
@@ -29,7 +36,11 @@ function readDismissed(): boolean {
  * for first-time desktop visitors without obscuring page content.
  */
 export function DesktopOptimisedBanner() {
-  const isDesktop = useMediaQuery('(min-width: 768px)')
+  const isDesktopViewport = useMediaQuery('(min-width: 768px)')
+  const [isPhone, setIsPhone] = useState(false)
+  useEffect(() => {
+    setIsPhone(isPhoneDevice())
+  }, [])
   // Read the dismissal flag at mount (SSR-safe: returns true on the server,
   // so the SSR markup never includes the banner). After hydration on the
   // client, the initializer runs once and returns the stored value.
@@ -45,7 +56,8 @@ export function DesktopOptimisedBanner() {
     }
   }, [])
 
-  if (!isDesktop || dismissed) return null
+  // Hide on phones regardless of viewport (landscape phones exceed 768px).
+  if (!isDesktopViewport || isPhone || dismissed) return null
 
   return (
     <div

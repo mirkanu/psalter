@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils'
 import { useChromeHidden } from '@/lib/chrome-hidden-store'
 import { authClient } from '@/lib/auth-client'
 import { DeployStatus } from '@/components/DeployStatus'
+import { isIOSDevice, isAndroidDevice, isPhoneDevice } from '@/lib/device'
 import Image from 'next/image'
 
 const navLinks = [
@@ -41,6 +42,15 @@ function useIsStandalone() {
     setIsStandalone(standalone)
   }, [])
   return isStandalone
+}
+
+// #17 — only expose the Install menu entry on phones (Android or iOS),
+// not on tablets or desktops. SSR-safe via the same useState(false) +
+// useEffect pattern as useIsStandalone; the menu is hidden until we know.
+function useIsPhone() {
+  const [isPhone, setIsPhone] = useState(false)
+  useEffect(() => { setIsPhone(isPhoneDevice()) }, [])
+  return isPhone
 }
 
 // UAT v6 reversal: user explicitly wants the global SiteHeader visible on the
@@ -80,6 +90,7 @@ function ThemeToggle() {
 export function SiteHeader() {
   const pathname = usePathname()
   const isStandalone = useIsStandalone()
+  const isPhone = useIsPhone()
   const router = useRouter()
   const [searchOpen, setSearchOpen] = useState(false)
   const [footerOpen, setFooterOpen] = useState<'about' | 'copyright' | 'feedback' | 'install' | null>(null)
@@ -246,7 +257,7 @@ export function SiteHeader() {
                       <span>GitHub</span>
                       <GithubMark className="size-4" />
                     </SheetClose>
-                    {!isStandalone && (
+                    {!isStandalone && isPhone && (
                       <SheetClose
                         render={<button onClick={() => setFooterOpen('install')} className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted px-3 py-2 rounded-md text-left transition-colors w-full" />}
                       >
@@ -326,6 +337,15 @@ export function SiteHeader() {
         <Dialog open onOpenChange={(v) => !v && setFooterOpen(null)}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader><DialogTitle>Install on your phone</DialogTitle></DialogHeader>
+            <div className="text-sm text-muted-foreground">
+              {isIOSDevice() ? (
+                <p>In Safari, tap <span className="font-medium text-foreground">Share</span> then <span className="font-medium text-foreground">Add to Home Screen</span>.</p>
+              ) : isAndroidDevice() ? (
+                <p>In Chrome, tap the <span className="font-medium text-foreground">menu (⋮)</span> then <span className="font-medium text-foreground">Install app</span> (or &ldquo;Add to Home screen&rdquo;).</p>
+              ) : (
+                <p>Open this site on your phone to install it as a home-screen app.</p>
+              )}
+            </div>
             <div className="space-y-3 text-sm text-muted-foreground">
               <p>The Psalter works as a Progressive Web App — once installed it opens full-screen, loads faster, and is reachable from your home screen just like a native app.</p>
               <p>

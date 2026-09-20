@@ -72,4 +72,28 @@ describe('DesktopOptimisedBanner (quick task 260817-p17)', () => {
     })
     expect(() => render(<DesktopOptimisedBanner />)).not.toThrow()
   })
+
+  // Issue #14: landscape phones exceed 768px wide, so a viewport-only check
+  // would still fire. The phone UA sniff must override viewport width.
+  it('does not render on a desktop-sized viewport if the UA reports an iPhone (#14)', async () => {
+    stubMatchMedia(true)
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+    )
+    const { container } = render(<DesktopOptimisedBanner />)
+    await waitFor(() => {
+      expect(container.querySelector('[role="status"]')).toBeNull()
+    })
+  })
+
+  it('does not render on a desktop-sized viewport if the UA reports an Android phone (#14)', async () => {
+    stubMatchMedia(true)
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+      'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Mobile Safari/537.36',
+    )
+    const { container } = render(<DesktopOptimisedBanner />)
+    await waitFor(() => {
+      expect(container.querySelector('[role="status"]')).toBeNull()
+    })
+  })
 })

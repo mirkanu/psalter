@@ -1,33 +1,34 @@
 'use client'
 
 import { useState } from 'react'
-import { FeedbackModalClient } from '@/components/FeedbackModalClient'
+import { FeedbackModal } from '@/components/FeedbackModal'
 
 /**
- * Inline note on the /precent login screen inviting users without an
- * account to request access via the feedback form (issue #10).
+ * Shown on /login below the sign-in card. Public-beta visitors without an
+ * account have no other path to ask for one (the global site footer that
+ * hosts the Feedback link is hidden below md, and the mobile menu's feedback
+ * entry is not obvious). Tapping the button opens the same FeedbackModal the
+ * header/footer use, so submissions land in the same inbox and pick up the
+ * same rate-limit + email pipeline as every other feedback message.
  *
- * The FeedbackModal is the same one the site header / footer uses; we
- * import the dynamic lazy wrapper here so the login page does not pull
- * the feedback dialog into its critical path.
+ * Issue #10.
  */
 export function AccountRequestNote() {
   const [open, setOpen] = useState(false)
-
   return (
-    <div className="mt-6 text-center text-sm text-muted-foreground">
-      <p>
-        Don&rsquo;t have an account yet?{' '}
+    <>
+      <p className="mt-4 text-sm text-muted-foreground">
+        Need an account?{' '}
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="font-medium text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+          className="underline hover:text-foreground transition-colors"
         >
-          Submit feedback
+          Open a feedback ticket
         </button>{' '}
-        requesting one.
+        to request one.
       </p>
-      <FeedbackModalClient open={open} onClose={() => setOpen(false)} />
-    </div>
+      <FeedbackModal open={open} onClose={() => setOpen(false)} />
+    </>
   )
 }
