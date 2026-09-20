@@ -274,7 +274,7 @@ export function PlayMiniBar({
               id="audio-source-tour"
               role="dialog"
               aria-modal="false"
-              aria-label="Tap the toggle to switch from digital piano audio to a full recording"
+              aria-label="Tap to change audio format"
               className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50"
             >
               <div className="bg-popover text-popover-foreground rounded-lg px-3 py-2 text-xs shadow-lg border whitespace-nowrap">
