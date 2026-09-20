@@ -10,6 +10,8 @@ import Script from "next/script";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ToastTapDismiss } from "@/components/ToastTapDismiss";
 import { DesktopOptimisedBanner } from "@/components/DesktopOptimisedBanner";
+import { InstallDialogHost } from "@/components/InstallDialogHost";
+import { InstallAsAppBanner } from "@/components/InstallAsAppBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -98,6 +100,8 @@ export default function RootLayout({
               tree does not affect layout — placing it last keeps it above
               other content in paint order. */}
           <DesktopOptimisedBanner />
+          <InstallAsAppBanner />
+          <InstallDialogHost />
           {process.env.NEXT_PUBLIC_PSALTER_UMAMI_WEBSITE_ID && (
             <Script
               src="https://umami.gsdlabs.dev/script.js"
