@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/u
 import { Checkbox } from "@/components/ui/checkbox"
 import { PsalmNumberBox } from "./PsalmNumberBox"
 import { buildSnippet } from "@/lib/search-utils"
+import { verseRangeToLetter } from "@/lib/psalm-slugs"
 
 export interface PsalmRow {
   id: number
@@ -378,21 +379,32 @@ export function PsalmListingGrid({ psalms, onSelect, hideExport }: PsalmListingG
                 {is119 ? 'Psalm 119, verses:' : `Psalm ${id}`}
               </p>
               <div className="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-2">
-                {entries.map((psalm) => (
-                  <PsalmNumberBox
-                    key={psalm.slug}
-                    psalm={{ ...psalm, displayLabel: is119 ? psalm.displayLabel.replace(/^119:/, '') : psalm.displayLabel }}
-                    isTopResult={false}
-                    showFirstLine={showFirstLine}
-                    // Gap 3: an expanded group always shows each version's meter — that is the whole point of
-                    // opening it — regardless of the Advanced Filters "Show meter" preference.
-                    showMeter={true}
-                    showRecommendedTune={showRecommendedTune}
-                    snippet={psalm.snippet ?? null}
-                    query={trimmedQuery}
-                    onClick={onSelect ? () => onSelect(psalm) : undefined}
-                  />
-                ))}
+                {entries.map((psalm) => {
+                  // Psalm 119 stanzas: append the alphabetic stanza letter so the
+                  // box reads "1-8 (a)" instead of just "1-8". Other psalms pass
+                  // through unchanged.
+                  let displayLabel = psalm.displayLabel
+                  if (is119) {
+                    const stripped = displayLabel.replace(/^119:/, '')
+                    const letter = verseRangeToLetter(stripped)
+                    displayLabel = letter ? `${stripped} (${letter})` : stripped
+                  }
+                  return (
+                    <PsalmNumberBox
+                      key={psalm.slug}
+                      psalm={{ ...psalm, displayLabel }}
+                      isTopResult={false}
+                      showFirstLine={showFirstLine}
+                      // Gap 3: an expanded group always shows each version's meter — that is the whole point of
+                      // opening it — regardless of the Advanced Filters "Show meter" preference.
+                      showMeter={true}
+                      showRecommendedTune={showRecommendedTune}
+                      snippet={psalm.snippet ?? null}
+                      query={trimmedQuery}
+                      onClick={onSelect ? () => onSelect(psalm) : undefined}
+                    />
+                  )
+                })}
               </div>
               {!is119 && entries.some(p => p.displayLabel.endsWith('*')) && (
                 <p className="text-[10px] text-muted-foreground mt-2">* recommended</p>
