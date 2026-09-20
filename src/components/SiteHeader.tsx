@@ -12,8 +12,10 @@ import { GlobalSearchClient } from '@/components/GlobalSearchClient'
 import { FeedbackModalClient } from '@/components/FeedbackModalClient'
 import { cn } from '@/lib/utils'
 import { useChromeHidden } from '@/lib/chrome-hidden-store'
+import { openInstallDialog } from '@/lib/install-dialog-store'
 import { authClient } from '@/lib/auth-client'
 import { DeployStatus } from '@/components/DeployStatus'
+import { isPhoneDevice } from '@/lib/device'
 import Image from 'next/image'
 
 const navLinks = [
@@ -29,6 +31,16 @@ const navLinks = [
 // iOS Safari), the Install menu entry is meaningless and is hidden from
 // the mobile Sheet's footer-menu block. SSR-safe — matchMedia is only
 // consulted on the client after mount.
+// 260917-#17: auto-detect phones so the 'Install on phone' menu item
+// only shows on actual phones (and iPad). Desktops, tablets wider than a
+// phone, and the installed-PWA path all hide it. SSR-safe — window is only
+// touched after mount, with a sensible default until then.
+function useIsPhone() {
+  const [isPhone, setIsPhone] = useState(false)
+  useEffect(() => setIsPhone(isPhoneDevice()), [])
+  return isPhone
+}
+
 function useIsStandalone() {
   const [isStandalone, setIsStandalone] = useState(false)
   useEffect(() => {
@@ -80,6 +92,7 @@ function ThemeToggle() {
 export function SiteHeader() {
   const pathname = usePathname()
   const isStandalone = useIsStandalone()
+  const isPhone = useIsPhone()
   const router = useRouter()
   const [searchOpen, setSearchOpen] = useState(false)
   const [footerOpen, setFooterOpen] = useState<'about' | 'copyright' | 'feedback' | 'install' | null>(null)
@@ -246,9 +259,9 @@ export function SiteHeader() {
                       <span>GitHub</span>
                       <GithubMark className="size-4" />
                     </SheetClose>
-                    {!isStandalone && (
+                    {!isStandalone && isPhone && (
                       <SheetClose
-                        render={<button onClick={() => setFooterOpen('install')} className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted px-3 py-2 rounded-md text-left transition-colors w-full" />}
+                        render={<button onClick={openInstallDialog} className="text-sm text-muted-foreground hover:text-foreground hover:bg-muted px-3 py-2 rounded-md text-left transition-colors w-full" />}
                       >
                         Install on phone
                       </SheetClose>
@@ -322,28 +335,6 @@ export function SiteHeader() {
 
       <FeedbackModalClient open={footerOpen === 'feedback'} onClose={() => setFooterOpen(null)} />
 
-      {footerOpen === 'install' && (
-        <Dialog open onOpenChange={(v) => !v && setFooterOpen(null)}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader><DialogTitle>Install on your phone</DialogTitle></DialogHeader>
-            <div className="space-y-3 text-sm text-muted-foreground">
-              <p>The Psalter works as a Progressive Web App — once installed it opens full-screen, loads faster, and is reachable from your home screen just like a native app.</p>
-              <p>
-                Step-by-step instructions for every major browser and platform (kept up to date by MDN):{' '}
-                <a
-                  href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Installing"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-foreground"
-                >
-                  MDN &mdash; Installing PWAs
-                </a>
-                .
-              </p>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
     </>
   )
 }

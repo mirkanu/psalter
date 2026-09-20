@@ -2206,7 +2206,7 @@ export function NotationRenderer({
   // page navigation now flanks the image itself (left/right of the JPEG)
   // instead of living in a separate row below it — maximizes the JPEG's
   // display size and frees vertical space for lyrics underneath.
-  function renderScannedPages(pages: string[], fallbackUrl: string | null, altText: string, emptyMessage = 'Score image not available') {
+  function renderScannedPages(pages: string[], fallbackUrl: string | null, altText: string, emptyMessage = 'Score image not available', options?: { hidePagination?: boolean }) {
     const hasMultiPages = pages.length > 1
     const currentSrc = pages[pageIndex] ?? fallbackUrl ?? null
 
@@ -2276,7 +2276,7 @@ export function NotationRenderer({
         >
           {image}
         </div>
-        {hasMultiPages && (
+        {hasMultiPages && !options?.hidePagination && (
           <div className="flex items-center justify-center gap-1">
             {navButton('prev')}
             <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap px-1">
@@ -2442,12 +2442,19 @@ export function NotationRenderer({
       (tunePageMode && !abc.trim()) ||
       isSplit
 
+    // #18: when the split-half mobile pagination block is also rendered
+    // (inside the lyrics slot, as `paginationBlock`), suppress the duplicate
+    // per-page "Page X of Y" inside the image block. The pagination block is
+    // the single source of truth for "Page 1 of 2".
+    const hideImagePagination =
+      shouldSplitHalfMobile && !!splitAbcFirst && !!splitAbcSecond
     const notationBlock: ReactNode = forceStaffJpgFallback
       ? renderScannedPages(
           activePages('staff-split', staffPages, solfegePages),
           scoreJpgUrl,
           `Staff notation for ${tuneName}`,
           tunePageMode ? 'Staff notation not available for this tune yet' : undefined,
+          { hidePagination: hideImagePagination },
         ).imageBlock
       : shouldSplitHalfMobile && splitAbcFirst && splitAbcSecond ? (
         // 2026-09-02: split-half mobile staff-split for tunes >5 phrases.
