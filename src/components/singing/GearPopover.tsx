@@ -229,7 +229,7 @@ export function GearPopover({
               'h-10 rounded-md text-sm font-semibold active:scale-[0.95] transition-[transform,background,color] duration-75 motion-reduce:transition-none',
               musicNotesBlocked && 'opacity-40',
               isMusicNotes
-                ? 'bg-foreground text-background'
+                ? 'bg-primary text-primary-foreground'
                 : 'hover:bg-muted text-muted-foreground',
             ].join(' ')}
           >
@@ -244,7 +244,7 @@ export function GearPopover({
             className={[
               'h-10 rounded-md text-sm font-semibold active:scale-[0.95] transition-[transform,background,color] duration-75 motion-reduce:transition-none',
               !isMusicNotes
-                ? 'bg-foreground text-background'
+                ? 'bg-primary text-primary-foreground'
                 : 'hover:bg-muted text-muted-foreground',
             ].join(' ')}
           >
@@ -270,7 +270,7 @@ export function GearPopover({
                     'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
                     !staffAvailable && 'opacity-40 cursor-not-allowed',
                     isStaff && staffAvailable
-                      ? 'bg-foreground text-background'
+                      ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:bg-muted',
                   ].join(' ')}
                 >
@@ -288,7 +288,7 @@ export function GearPopover({
                     'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
                     !solfegeSplitAvailable && 'opacity-40 cursor-not-allowed',
                     !isStaff && solfegeSplitAvailable
-                      ? 'bg-foreground text-background'
+                      ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:bg-muted',
                   ].join(' ')}
                 >
@@ -314,7 +314,7 @@ export function GearPopover({
                     'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
                     inlineLayoutDisabled && 'opacity-40 cursor-not-allowed',
                     !isSplit
-                      ? 'bg-foreground text-background'
+                      ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:bg-muted',
                   ].join(' ')}
                 >
@@ -330,7 +330,7 @@ export function GearPopover({
                   className={[
                     'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
                     isSplit
-                      ? 'bg-foreground text-background'
+                      ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:bg-muted',
                   ].join(' ')}
                 >
@@ -360,7 +360,7 @@ export function GearPopover({
                     className={[
                       'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
                       !showOriginal
-                        ? 'bg-foreground text-background'
+                        ? 'bg-primary text-primary-foreground'
                         : 'text-muted-foreground hover:bg-muted',
                     ].join(' ')}
                   >
@@ -376,7 +376,7 @@ export function GearPopover({
                     className={[
                       'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
                       showOriginal
-                        ? 'bg-foreground text-background'
+                        ? 'bg-primary text-primary-foreground'
                         : 'text-muted-foreground hover:bg-muted',
                     ].join(' ')}
                   >

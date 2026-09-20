@@ -8,8 +8,8 @@
  *   - desktop browser tab              → DesktopOptimisedBanner ("optimised
  *                                        for phones, please rotate / grab
  *                                        your phone")
- *   - phone browser tab (no PWA yet)   → InstallAsAppBanner ("install as an
- *                                        app for full-screen, faster loads")
+ *   - phone browser tab (no PWA yet)   → InstallAsAppBanner (orange-tinted
+ *                                        brand banner inviting a PWA install)
  *   - desktop OR phone running as PWA  → no banner (the PWA is already the
  *                                        "installed app" form; nothing to
  *                                        tell the user to do)
@@ -26,7 +26,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
-import { X } from 'lucide-react'
+import { Smartphone, X } from 'lucide-react'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { isPhoneDevice, isStandaloneDisplayMode } from '@/lib/device'
 import { openInstallDialog } from '@/lib/install-dialog-store'
@@ -99,22 +99,29 @@ export function InstallAsAppBanner(): React.ReactElement | null {
   return (
     <div
       role="status"
-      className="fixed top-14 left-1/2 -translate-x-1/2 z-40 max-w-md bg-muted border border-border rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 text-sm text-muted-foreground"
+      className="fixed top-14 left-1/2 -translate-x-1/2 z-40 w-[calc(100vw-1.5rem)] max-w-md rounded-xl border border-primary/30 bg-gradient-to-r from-primary/15 via-primary/10 to-primary/5 backdrop-blur-md shadow-xl shadow-primary/10 px-3.5 py-2.5 flex items-center gap-3 text-sm text-foreground"
     >
-      <button
-        type="button"
-        onClick={handleInstall}
-        className="font-medium text-foreground underline-offset-2 hover:underline"
+      <span
+        aria-hidden="true"
+        className="grid place-items-center size-8 shrink-0 rounded-full bg-primary/15 text-primary"
       >
-        Install as an app
-      </button>
-      <span aria-hidden="true">·</span>
-      <span>Tap to see how.</span>
+        <Smartphone className="size-4" />
+      </span>
+      <div className="min-w-0 flex-1 flex items-baseline gap-2 flex-wrap">
+        <button
+          type="button"
+          onClick={handleInstall}
+          className="font-semibold text-primary underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"
+        >
+          Install as an app
+        </button>
+        <span className="text-muted-foreground">for full-screen and faster loads.</span>
+      </div>
       <button
         type="button"
         aria-label="Dismiss"
         onClick={handleDismiss}
-        className="shrink-0 p-1 rounded-md hover:bg-background transition-colors"
+        className="shrink-0 -mr-1 p-1.5 rounded-full text-muted-foreground hover:bg-primary/15 hover:text-foreground focus-visible:bg-primary/15 focus-visible:text-foreground transition-colors"
       >
         <X className="size-4" />
       </button>
