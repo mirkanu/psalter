@@ -81,9 +81,8 @@ export function LoginForm() {
                 onClick={() => setFeedbackOpen(true)}
                 className="underline underline-offset-2 hover:text-foreground transition-colors"
               >
-                Send a request
-              </button>{' '}
-              and I&apos;ll set one up.
+                Send a request for an account.
+              </button>
             </p>
           </form>
         </CardContent>
