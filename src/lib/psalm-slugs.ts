@@ -72,3 +72,67 @@ export function deriveVersionSlug(
 export function stripStar(slug: string): string {
   return slug.replace('*', '')
 }
+
+/**
+ * Maps a Psalm 119 verse range (or single verse) to its alphabetic stanza
+ * letter. Each stanza spans 8 verses starting at verse 1: 1-8 → "a",
+ * 9-16 → "b", …, 169-176 → "v".
+ *
+ * Returns null for ranges that don't align with an 119 stanza (i.e. the
+ * start is not 1 + 8*k, or the end is not start + 7, or the range is out
+ * of 1-176).
+ *
+ *   verseRangeToLetter('1-8')    → 'a'
+ *   verseRangeToLetter('9-16')   → 'b'
+ *   verseRangeToLetter('169-176')→ 'v'
+ *   verseRangeToLetter('1-7')    → null      // not 8 verses
+ *   verseRangeToLetter('177-180')→ null      // out of range
+ */
+
+export function verseRangeToLetter(verseRange: string | null | undefined): string | null {
+  if (!verseRange) return null
+  const m = verseRange.match(/^(\d+)-(\d+)$/)
+  if (!m) return null
+  const start = parseInt(m[1], 10)
+  const end = parseInt(m[2], 10)
+  if (start < 1 || end < start) return null
+  if ((end - start + 1) !== 8) return null
+  const stanzaIndex = Math.floor((start - 1) / 8)
+  if (stanzaIndex < 0 || stanzaIndex > 21) return null
+  if (stanzaIndex * 8 + 1 !== start) return null
+  return String.fromCharCode('a'.charCodeAt(0) + stanzaIndex)
+}
+
+/**
+ * Finds the Psalm 119 stanza that contains the given 1-based verse.
+ * Returns the verse range of the matching stanza, or null if the verse
+ * is outside 1-176.
+ *
+ *   stanzaForVerse(1)   → '1-8'
+ *   stanzaForVerse(2)   → '1-8'
+ *   stanzaForVerse(8)   → '1-8'
+ *   stanzaForVerse(9)   → '9-16'
+ *   stanzaForVerse(177) → null
+ */
+export function stanzaForVerse(verse: number): string | null {
+  if (!Number.isInteger(verse) || verse < 1 || verse > 176) return null
+  const stanzaIndex = Math.floor((verse - 1) / 8)
+  const start = stanzaIndex * 8 + 1
+  return `${start}-${start + 7}`
+}
+
+/**
+ * Convenience wrapper that only returns a stanza letter for Psalm 119 ranges.
+ * Other psalms have no alphabetic stanza convention, so callers that need
+ * "any psalm's range as a letter" should call `verseRangeToLetter` directly
+ * (it returns null for non-8-verse ranges).
+ */
+export function stanzaLetterFromRange(
+  verseRange: string | null | undefined,
+  psalmId: number,
+): string | null {
+  if (psalmId !== 119) return null
+  return verseRangeToLetter(verseRange)
+}
+
+
