@@ -1,8 +1,9 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { isPhoneDevice, isStandaloneDisplayMode } from '@/lib/device'
 
 const STORAGE_KEY = 'psalter.desktopBannerDismissed'
 
@@ -17,10 +18,30 @@ function readDismissed(): boolean {
   }
 }
 
+interface ClientHints {
+  isPhone: boolean
+  isStandalone: boolean
+}
+
+function readClient(): ClientHints {
+  if (typeof navigator === 'undefined' || typeof window === 'undefined') {
+    return { isPhone: false, isStandalone: false }
+  }
+  return {
+    isPhone: isPhoneDevice(),
+    isStandalone: isStandaloneDisplayMode(),
+  }
+}
+
 /**
  * Quick task 260817-p17: desktop-only banner telling visitors the site is
  * phone-first. Dismissal is permanent per browser (localStorage, not
  * sessionStorage/state) — once closed it never returns, even after reload.
+ *
+ * Hide on phones and on home-screen-installed PWA instances even when the
+ * viewport is ≥768px — those environments would see a confusing "optimised for
+ * phones" message despite already being on the phone-shaped target. Only show
+ * the banner to desktop visitors in a regular browser tab.
  *
  * Fixed positioning is required (not document flow): `/psalms/[id]` uses
  * `h-[calc(100vh-3.5rem)]` fixed-height math keyed to the 56px SiteHeader,
@@ -34,6 +55,17 @@ export function DesktopOptimisedBanner() {
   // so the SSR markup never includes the banner). After hydration on the
   // client, the initializer runs once and returns the stored value.
   const [dismissed, setDismissed] = useState(readDismissed)
+  // navigator / matchMedia are unavailable on the server — default to "not a
+  // phone, not standalone" so the SSR markup hides the banner, then resolve
+  // the real values in a post-mount effect.
+  const [client, setClient] = useState<ClientHints>(() => ({
+    isPhone: false,
+    isStandalone: false,
+  }))
+
+  useEffect(() => {
+    setClient(readClient())
+  }, [])
 
   const handleDismiss = useCallback(() => {
     setDismissed(true)
@@ -46,6 +78,7 @@ export function DesktopOptimisedBanner() {
   }, [])
 
   if (!isDesktop || dismissed) return null
+  if (client.isPhone || client.isStandalone) return null
 
   return (
     <div
