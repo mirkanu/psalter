@@ -75,6 +75,15 @@ export interface BuildNotationPropsOptions {
    * NotationRenderer.tsx for the full rationale.
    */
   tunePageMode?: boolean
+  /**
+   * Issue #15 (revised): force the digital abc to be empty even when the
+   * tune has abcNotation/abcSatb set in the DB. Used for non-Approved
+   * tunes on /tunes/[slug] — they should still show the JPG fallback (and
+   * keep the Notation tab visible), but the live abcjs staff is suppressed
+   * because its melisma positions are not manually implemented. Defaults
+   * to false (preserve existing behaviour).
+   */
+  hideAbc?: boolean
 }
 
 export type CoreNotationProps = Pick<
@@ -90,7 +99,10 @@ export function buildNotationRendererProps(
   ctx: NotationContext,
   options: BuildNotationPropsOptions = {},
 ): CoreNotationProps {
-  const raw = tune ? pickAbcWithMarkers(tune.abcSatb ?? null, tune.abcNotation ?? null) : null
+  const raw =
+    tune && !options.hideAbc
+      ? pickAbcWithMarkers(tune.abcSatb ?? null, tune.abcNotation ?? null)
+      : null
   return {
     abc: raw ? sopranoOnly(raw) : '',
     lyrics: ctx.lyrics,

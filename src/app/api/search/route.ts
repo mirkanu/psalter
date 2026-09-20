@@ -10,6 +10,7 @@ import {
   stanzaLetterFromRange,
   stripStar,
 } from '@/lib/psalm-slugs'
+import { matchPsalmRange, matchPsalmSingleVerse, matchStanzaLetter, matchPsalmNumber } from '@/lib/search-query'
 
 export const runtime = 'nodejs'
 
@@ -50,46 +51,60 @@ export async function GET(request: Request) {
     const qLower = q.toLowerCase()
     // Strip whitespace inside the query so "119:1-8" and "119 : 1 - 8" both match.
     const compact = q.replace(/\s+/g, '')
-    // "119-1-8" or "119:1-8" → Psalm 119 section lookup
-    const sectionMatch = compact.match(/^(\d+)[:-](\d+)-(\d+)$/)
-    // "119:1" / "119:2" → single verse lookup, narrowed to the enclosing stanza
-    const singleVerseMatch = compact.match(/^(\d+):(\d+)$/)
-    // "119a" / "119 a" → Psalm 119 stanza-letter lookup
-    const stanzaLetterMatch = compact.match(/^(\d+)([a-z])$/)
+    // Range/single-verse/stanza-letter/bare-number parsers are extracted to
+    // src/lib/search-query.ts so they can be unit-tested without booting
+    // the DB. See src/lib/search-query.test.ts. Issue #25 relies on this.
+    const sectionMatch = matchPsalmRange(compact)
+    const singleVerseMatch = matchPsalmSingleVerse(compact)
+    const stanzaLetterMatch = matchStanzaLetter(compact)
 
     // Search psalms
     const psalmMatches: SearchResult[] = []
 
     if (sectionMatch) {
-      const [, idStr, vs, ve] = sectionMatch
-      const targetId = parseInt(idStr, 10)
-      const verseRange = `${vs}-${ve}`
+      const { id: targetId, verseStart, verseEnd } = sectionMatch
+      const verseRange = `${verseStart}-${verseEnd}`
       const rows = await db.query.psalmVersions.findMany({
         where: eq(psalmVersions.psalmId, targetId),
         orderBy: [asc(psalmVersions.id)],
         limit: 30,
       })
-      const match = rows.find((v) =>
+      // Psalm 119 stanza-aligned ranges live in psalter_number (e.g. "119:1-8 (1)").
+      // When a user types a range that crosses stanza boundaries (e.g. "119:1-9"
+      // covers the whole of stanza a "1-8" plus verse 1 of stanza b), the exact
+      // match is empty. Fall back to every stanza the range overlaps — issue #25.
+      const matchedRanges: string[] = []
+      const exact = rows.find((v) =>
         v.psalterNumber?.includes(`${targetId}:${verseRange}`)
       )
-      if (match) {
-        const letter = stanzaLetterFromRange(verseRange, targetId)
+      if (exact) {
+        matchedRanges.push(verseRange)
+      } else if (targetId === 119 && Number.isFinite(verseStart) && Number.isFinite(verseEnd)) {
+        for (let v = verseStart; v <= verseEnd; v++) {
+          const r = stanzaForVerse(v)
+          if (r && !matchedRanges.includes(r)) matchedRanges.push(r)
+        }
+      }
+      matchedRanges.forEach((range) => {
+        const match = rows.find((v) =>
+          v.psalterNumber?.includes(`${targetId}:${range}`)
+        )
+        if (!match) return
+        const letter = stanzaLetterFromRange(range, targetId)
         psalmMatches.push({
           type: 'psalm',
           relevance: 0,
           id: targetId,
-          slug: `${targetId}-${verseRange}`,
+          slug: `${targetId}-${range}`,
           firstLine: match.firstLine ?? null,
-          snippet: `verses ${verseRange}`,
-          verseRange,
+          snippet: `verses ${range}`,
+          verseRange: range,
           stanzaLetter: letter,
           isRecommended: false,
         })
-      }
+      })
     } else if (singleVerseMatch) {
-      const [, idStr, vStr] = singleVerseMatch
-      const targetId = parseInt(idStr, 10)
-      const verse = parseInt(vStr, 10)
+      const { id: targetId, verse } = singleVerseMatch
       const verseRange = stanzaForVerse(verse)
       if (verseRange) {
         const rows = await db.query.psalmVersions.findMany({
@@ -116,8 +131,7 @@ export async function GET(request: Request) {
         }
       }
     } else if (stanzaLetterMatch) {
-      const [, idStr, letter] = stanzaLetterMatch
-      const targetId = parseInt(idStr, 10)
+      const { id: targetId, letter } = stanzaLetterMatch
       // Psalm 119 stanza letters: map "a" → verseRange "1-8", "b" → "9-16", etc.
       if (targetId === 119) {
         const stanzaIndex = letter.charCodeAt(0) - 'a'.charCodeAt(0)
@@ -169,8 +183,8 @@ export async function GET(request: Request) {
           })
         }
       }
-    } else if (/^\d+$/.test(compact)) {
-      const targetId = parseInt(compact, 10)
+    } else if (matchPsalmNumber(compact) !== null) {
+      const targetId = matchPsalmNumber(compact)!
       // No limit: psalm 119 has 22 sections. Cap at 30 to stay safe.
       const rows = await db.query.psalmVersions.findMany({
         where: eq(psalmVersions.psalmId, targetId),
@@ -200,6 +214,24 @@ export async function GET(request: Request) {
           isRecommended: i === 0,
         })
       })
+      // Issue #25: when the psalm has multiple sections (Psalm 119, 22
+      // stanzas; multi-version psalms with a/b), a bare-number query is
+      // ambiguous. Add a "whole psalm" entry at the top so users see a
+      // single canonical link to the full psalm before scrolling the
+      // stanza list. relevance -1 sorts above the section entries (0 / 1).
+      if (multiVersion && rows[0]?.psalm) {
+        psalmMatches.unshift({
+          type: 'psalm',
+          relevance: -1,
+          id: targetId,
+          slug: String(targetId),
+          firstLine: rows[0].psalm.bibleTitle ?? rows[0].firstLine ?? null,
+          snippet: null,
+          verseRange: null,
+          stanzaLetter: null,
+          isRecommended: false,
+        })
+      }
     } else {
       const lq = `%${q}%`
       const rows = await db.query.psalmVersions.findMany({

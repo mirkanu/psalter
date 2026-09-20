@@ -73,10 +73,12 @@ export function TunePageTabs(props: TunePageTabsProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  // Issue #15: when the tune is not Approved, the Notation tab is hidden.
-  // Default to Details and ignore any ?tab=notation deep link.
+  // Issue #15 (revised): the Notation tab is always rendered now (so JPEGs
+  // are visible for non-Approved tunes). ?tab=notation deep links are honoured
+  // for every tune. Default to Details when the URL omits ?tab= (matches
+  // current behaviour on /psalms/[slug]'s Study tab).
   const [activeTab, setActiveTab] = useState<TunePageTab>(() =>
-    isApproved ? parseTab(searchParams.get('tab')) : 'details',
+    parseTab(searchParams.get('tab')),
   )
 
   const handleTabChange = useCallback(
@@ -101,11 +103,15 @@ export function TunePageTabs(props: TunePageTabsProps) {
         <TabsTrigger value="details" className={TAB_TRIGGER_CLASS}>
           Details
         </TabsTrigger>
-        {isApproved && (
-          <TabsTrigger value="notation" className={TAB_TRIGGER_CLASS}>
-            Notation
-          </TabsTrigger>
-        )}
+        {/* Issue #15 (revised): Notation tab is ALWAYS rendered so JPEGs
+            remain visible for non-Approved tunes. The page passes
+            hideAbc: !isApproved to buildNotationRendererProps, which
+            suppresses the digital abc staff when the tune is not
+            approved; NotationRenderer (tunePageMode) then falls back to
+            staff-split / solfege-split JPEG leaf mode. */}
+        <TabsTrigger value="notation" className={TAB_TRIGGER_CLASS}>
+          Notation
+        </TabsTrigger>
       </TabsList>
 
         <TabsContent value="details" className="space-y-8">
@@ -145,28 +151,28 @@ export function TunePageTabs(props: TunePageTabsProps) {
           )}
         </TabsContent>
 
-        {isApproved && (
-          <TabsContent value="notation" className="space-y-6">
-            {/* Notation tab — simplified version of /psalms/[slug]'s main Sing view:
-                NotationRendererClient (via TuneScoreSection) emits the Staff/Solfège
-                toggle (tunePageMode suppresses A+/A-, Stanza nav, fullscreen, and the
-                bottom Play/Key/BPM bar — see buildNotationRendererProps' tunePageMode
-                option) followed by the score. Always rendered regardless of whether
-                this tune has digital abc — NotationRenderer's own tunePageMode JPG
-                fallback (staff-split / solfege-split) and "not available" message
-                cover the no-abc and no-image cases, so a single component handles
-                every tune instead of branching into a separate TuneDetailClient
-                fallback (removed 2026-08-16 — it duplicated the audio player that
-                now lives above the tabs). Audio lives ABOVE the tabs
-                (see /tunes/[slug]/page.tsx), not inside this tab — Phase 16 R3
-                user spec. */}
-            <TuneScoreSection
-              notationProps={notationProps}
-              staffPages={staffPages}
-              solfegePages={solfegePages}
-            />
-          </TabsContent>
-        )}
+        <TabsContent value="notation" className="space-y-6">
+          {/* Notation tab — simplified version of /psalms/[slug]'s main Sing view:
+              NotationRendererClient (via TuneScoreSection) emits the Staff/Solfège
+              toggle (tunePageMode suppresses A+/A-, Stanza nav, fullscreen, and the
+              bottom Play/Key/BPM bar — see buildNotationRendererProps' tunePageMode
+              option) followed by the score. Always rendered regardless of whether
+              this tune has digital abc — NotationRenderer's own tunePageMode JPG
+              fallback (staff-split / solfege-split) and "not available" message
+              cover the no-abc and no-image cases, so a single component handles
+              every tune instead of branching into a separate TuneDetailClient
+              fallback (removed 2026-08-16 — it duplicated the audio player that
+              now lives above the tabs). Audio lives ABOVE the tabs
+              (see /tunes/[slug]/page.tsx), not inside this tab — Phase 16 R3
+              user spec. For non-Approved tunes the page additionally passes
+              hideAbc: true so the live abcjs staff is suppressed but the JPEGs
+              still display (issue #15 revised 2026-09-20). */}
+          <TuneScoreSection
+            notationProps={notationProps}
+            staffPages={staffPages}
+            solfegePages={solfegePages}
+          />
+        </TabsContent>
     </Tabs>
   )
 }

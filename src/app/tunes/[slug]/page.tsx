@@ -161,6 +161,13 @@ export default async function TunePage({ params }: PageProps) {
       // Keeps Staff/Solfège toggle; routes both to their JPG-fallback modes
       // when there's no abcjs to render (many tunes lack digital notation).
       tunePageMode: true,
+      // Issue #15 (revised 2026-09-20): the Notation tab is ALWAYS shown
+      // (the user wants JPEGs visible for non-Approved tunes). Only the
+      // digital abc staff is suppressed for non-Approved tunes — their
+      // melismas are not yet manually implemented, so rendering abcjs
+      // would be misleading. With abc empty, NotationRenderer (tunePageMode)
+      // switches to its staff-split / solfege-split JPG-fallback leaf mode.
+      hideAbc: !isApproved,
     },
   )
 
