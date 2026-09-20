@@ -81,3 +81,57 @@ describe('SiteHeader — session gate regression tests', () => {
     }, { timeout: 50 })
   })
 })
+describe('SiteHeader — install menu gate (#17)', () => {
+  function setUA(ua: string) {
+    Object.defineProperty(navigator, 'userAgent', { value: ua, configurable: true })
+  }
+  function setStandalone(matches: boolean) {
+    window.matchMedia = ((query: string) => ({
+      matches: query === '(display-mode: standalone)' ? matches : false,
+      media: query,
+      onchange: null,
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia
+  }
+
+  it('shows "Install on phone" on an iPhone when not in standalone', async () => {
+    setUA('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1')
+    setStandalone(false)
+    useSessionMock.mockReturnValue(ANON_SESSION)
+    render(<SiteHeader />)
+    // open the mobile sheet so the footer menu block is in the DOM
+    const menuButton = screen.getByRole('button', { name: /open navigation menu/i })
+    menuButton.click()
+    await waitFor(() => {
+      expect(screen.queryAllByText('Install on phone').length).toBeGreaterThan(0)
+    })
+  })
+
+  it('hides "Install on phone" on a desktop UA', async () => {
+    setUA('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15')
+    setStandalone(false)
+    useSessionMock.mockReturnValue(ANON_SESSION)
+    render(<SiteHeader />)
+    const menuButton = screen.getByRole('button', { name: /open navigation menu/i })
+    menuButton.click()
+    await waitFor(() => {
+      expect(screen.queryByText('Install on phone')).toBeNull()
+    })
+  })
+
+  it('hides "Install on phone" on an installed PWA even on a phone UA', async () => {
+    setUA('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1')
+    setStandalone(true)
+    useSessionMock.mockReturnValue(ANON_SESSION)
+    render(<SiteHeader />)
+    const menuButton = screen.getByRole('button', { name: /open navigation menu/i })
+    menuButton.click()
+    await waitFor(() => {
+      expect(screen.queryByText('Install on phone')).toBeNull()
+    })
+  })
+})
