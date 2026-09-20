@@ -235,19 +235,50 @@ export function PlayMiniBar({
             type="button"
             onClick={() => { setAudioSource((s) => (s === 'abc' ? 'soundcloud' : 'abc')); dismissTour() }}
             aria-label={audioSource === 'abc' ? 'Switch to recording' : 'Switch to digital audio'}
+            aria-describedby={showTour ? 'audio-source-tour' : undefined}
             data-audio-source-toggle
+            data-mode={audioSource}
             className={cn(
-              "h-9 w-9 inline-flex items-center justify-center rounded-md active:scale-[0.90] transition-[transform,color] duration-75 shrink-0",
-              isScMode ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
+              // 260918-#13: permanent 1.5px ring around the toggle makes it
+              // discoverable in both modes (was invisible until the user
+              // happened to notice the icon swap). The ring uses the brand
+              // primary in SC mode and the muted ring in ABC mode.
+              "relative h-9 w-9 inline-flex items-center justify-center rounded-md active:scale-[0.90] transition-[transform,color,background-color,box-shadow] duration-75 shrink-0 border-2",
+              isScMode
+                ? "bg-foreground text-background border-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground border-muted-foreground/40 hover:border-foreground/70",
             )}
           >
             {isScMode ? <Piano className="h-4 w-4" /> : <Film className="h-4 w-4" />}
+            {/* 260918-#13: arrow indicator directly under the toggle. Visible
+                whenever the toggle renders so users know it's interactive and
+                points to where the popup will appear. */}
+            <span
+              aria-hidden
+              className={cn(
+                "absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[5px]",
+                isScMode ? "border-t-foreground" : "border-t-muted-foreground/60",
+              )}
+            />
           </button>
-          {/* B(f): One-time tour */}
+          {/* B(f): One-time tour. 260918-#13: also pinned to the toggle
+              (mb-3 lines up under the toggle's bottom edge + the new -bottom-2
+              arrow indicator, so the visual arrow and the popup stack on the
+              same vertical axis). role=dialog + aria-modal gives screen
+              readers a clear announcement; id is referenced by
+              aria-describedby on the toggle so the description is announced
+              when the popup is up. The popup is auto-dismissed on click of
+              the toggle too (see setAudioSource handler). */}
           {showScToggle && showTour && (
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50">
+            <div
+              id="audio-source-tour"
+              role="dialog"
+              aria-modal="false"
+              aria-label="Tap the toggle to switch from digital piano audio to a full recording"
+              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50"
+            >
               <div className="bg-popover text-popover-foreground rounded-lg px-3 py-2 text-xs shadow-lg border whitespace-nowrap">
-                <p className="font-medium">Switch to full recording with singing</p>
+                <p className="font-medium">Tap here to switch to the full recording</p>
                 <button
                   onClick={dismissTour}
                   className="mt-1 text-muted-foreground hover:text-foreground underline"
