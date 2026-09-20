@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
 import { useChromeHidden } from '@/lib/chrome-hidden-store'
 import { authClient } from '@/lib/auth-client'
 import { DeployStatus } from '@/components/DeployStatus'
-import { isPhoneDevice } from '@/lib/device'
+import { isPhoneDevice, isIOSDevice, isAndroidPhoneDevice } from '@/lib/device'
 import Image from 'next/image'
 
 const navLinks = [
@@ -92,6 +92,10 @@ export function SiteHeader() {
   const pathname = usePathname()
   const isStandalone = useIsStandalone()
   const isPhone = useIsPhone()
+  const [isAndroidPhone, setIsAndroidPhone] = useState(false)
+  useEffect(() => setIsAndroidPhone(isAndroidPhoneDevice()), [])
+  const [isIOS, setIsIOS] = useState(false)
+  useEffect(() => setIsIOS(isIOSDevice()), [])
   const router = useRouter()
   const [searchOpen, setSearchOpen] = useState(false)
   const [footerOpen, setFooterOpen] = useState<'about' | 'copyright' | 'feedback' | 'install' | null>(null)
@@ -338,10 +342,26 @@ export function SiteHeader() {
         <Dialog open onOpenChange={(v) => !v && setFooterOpen(null)}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader><DialogTitle>Install on your phone</DialogTitle></DialogHeader>
-            <div className="space-y-3 text-sm text-muted-foreground">
-              <p>The Psalter works as a Progressive Web App — once installed it opens full-screen, loads faster, and is reachable from your home screen just like a native app.</p>
+            <div className="space-y-3 text-sm text-muted-foreground" data-install-instructions data-platform={isIOS ? 'ios' : isAndroidPhone ? 'android' : 'unknown'}>
+              {isIOS ? (
+                <ol className="list-decimal pl-5 space-y-1">
+                  <li>Open this site in Safari.</li>
+                  <li>Tap the <strong>Share</strong> button (square with an arrow).</li>
+                  <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
+                  <li>Confirm the name and tap <strong>Add</strong>.</li>
+                </ol>
+              ) : isAndroidPhone ? (
+                <ol className="list-decimal pl-5 space-y-1">
+                  <li>Open this site in Chrome.</li>
+                  <li>Tap the <strong>three-dot menu</strong> in the top-right.</li>
+                  <li>Tap <strong>Install app</strong> (or &ldquo;Add to Home screen&rdquo;).</li>
+                  <li>Follow the prompt to confirm.</li>
+                </ol>
+              ) : (
+                <p>The Psalter works as a Progressive Web App &mdash; once installed it opens full-screen, loads faster, and is reachable from your home screen just like a native app.</p>
+              )}
               <p>
-                Step-by-step instructions for every major browser and platform (kept up to date by MDN):{' '}
+                More detail for every browser:{' '}
                 <a
                   href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Installing"
                   target="_blank"

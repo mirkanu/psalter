@@ -9,6 +9,20 @@ export function isIOSDevice(): boolean {
 }
 
 /**
+ * Android detection — kept conservative. Android phones include a "Mobile"
+ * token in the UA that Android tablets typically omit; this helper returns
+ * true for the phone-shaped case (used by #17 to pick Chrome-specific
+ * install instructions) and false for iOS, desktop, and Android tablets.
+ * For "any Android" (phone or tablet), use the bare `/Android/` UA match
+ * at the call site instead.
+ */
+export function isAndroidPhoneDevice(): boolean {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent
+  return /Android/.test(ua) && /Mobile/.test(ua)
+}
+
+/**
  * True when the site is running as an installed home-screen app rather than
  * a normal Safari/Chrome tab. `navigator.standalone` is the iOS Safari-specific
  * flag; `display-mode: standalone` covers other standalone-capable browsers.
