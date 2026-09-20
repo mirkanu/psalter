@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { notFound, permanentRedirect } from "next/navigation"
 import type { Metadata } from "next"
-import { fetchTuneDetail, fetchTuneBySlug, fetchTuneSlugs } from "@/db/queries/tunes"
+import { fetchTuneDetail, fetchTuneBySlug, fetchTuneSlugs, fetchTuneMelismaStatus } from "@/db/queries/tunes"
 import { fetchPsalmsByMeter, fetchPsalmListRows } from "@/db/queries/psalms"
 import { deriveVersionSlug, stripStar } from "@/lib/psalm-slugs"
 import { tuneNameToSlug, isNumericTuneSlug } from "@/lib/tune-slug"
@@ -99,6 +99,11 @@ export default async function TunePage({ params }: PageProps) {
   const allPsalmRows = await fetchPsalmListRows()
 
   const moods = tune.tuneMoods.map((tm) => tm.mood.name).filter(Boolean) as string[]
+  // Issue #15: hide notation on /tunes/[slug] for tunes that are not
+  // explicitly Approved in the melisma editor. Manual override lives at
+  // https://psalter.gsdlabs.dev/dev/melisma-editor.
+  const latestMelismaStatus = await fetchTuneMelismaStatus(tune.id)
+  const isApproved = latestMelismaStatus === 'approved'
   const rawAbc = pickAbcWithMarkers(tune.abcSatb, tune.abcNotation)
   const bestAbc = rawAbc ? sopranoOnly(rawAbc) : null
 
@@ -205,6 +210,7 @@ export default async function TunePage({ params }: PageProps) {
         hasFamousHymn={tune.hasFamousHymn ?? false}
         famousHymn={tune.famousHymn}
         precentingComment={tune.precentingComment}
+        isApproved={isApproved}
         notationProps={notationProps}
         staffPages={staffPages}
         solfegePages={solfegePages}

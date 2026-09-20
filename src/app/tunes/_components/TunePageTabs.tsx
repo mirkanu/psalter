@@ -37,6 +37,9 @@ export interface TunePageTabsProps {
   precentingComment: string | null
   /** Server-built core props from buildNotationRendererProps() — JSON-serialisable, no callbacks. */
   notationProps: CoreNotationProps
+  /** Issue #15: when false, hide the Notation tab so non-Approved tunes
+   *  cannot render staff/solfege artwork on /tunes/[slug]. */
+  isApproved: boolean
   staffPages: string[]
   solfegePages: string[]
 }
@@ -62,6 +65,7 @@ export function TunePageTabs(props: TunePageTabsProps) {
     famousHymn,
     precentingComment,
     notationProps,
+    isApproved,
     staffPages,
     solfegePages,
   } = props
@@ -69,7 +73,11 @@ export function TunePageTabs(props: TunePageTabsProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const [activeTab, setActiveTab] = useState<TunePageTab>(() => parseTab(searchParams.get('tab')))
+  // Issue #15: when the tune is not Approved, the Notation tab is hidden.
+  // Default to Details and ignore any ?tab=notation deep link.
+  const [activeTab, setActiveTab] = useState<TunePageTab>(() =>
+    isApproved ? parseTab(searchParams.get('tab')) : 'details',
+  )
 
   const handleTabChange = useCallback(
     (value: string) => {
@@ -93,9 +101,11 @@ export function TunePageTabs(props: TunePageTabsProps) {
         <TabsTrigger value="details" className={TAB_TRIGGER_CLASS}>
           Details
         </TabsTrigger>
-        <TabsTrigger value="notation" className={TAB_TRIGGER_CLASS}>
-          Notation
-        </TabsTrigger>
+        {isApproved && (
+          <TabsTrigger value="notation" className={TAB_TRIGGER_CLASS}>
+            Notation
+          </TabsTrigger>
+        )}
       </TabsList>
 
         <TabsContent value="details" className="space-y-8">
@@ -135,26 +145,28 @@ export function TunePageTabs(props: TunePageTabsProps) {
           )}
         </TabsContent>
 
-        <TabsContent value="notation" className="space-y-6">
-          {/* Notation tab — simplified version of /psalms/[slug]'s main Sing view:
-              NotationRendererClient (via TuneScoreSection) emits the Staff/Solfège
-              toggle (tunePageMode suppresses A+/A-, Stanza nav, fullscreen, and the
-              bottom Play/Key/BPM bar — see buildNotationRendererProps' tunePageMode
-              option) followed by the score. Always rendered regardless of whether
-              this tune has digital abc — NotationRenderer's own tunePageMode JPG
-              fallback (staff-split / solfege-split) and "not available" message
-              cover the no-abc and no-image cases, so a single component handles
-              every tune instead of branching into a separate TuneDetailClient
-              fallback (removed 2026-08-16 — it duplicated the audio player that
-              now lives above the tabs). Audio lives ABOVE the tabs
-              (see /tunes/[slug]/page.tsx), not inside this tab — Phase 16 R3
-              user spec. */}
-          <TuneScoreSection
-            notationProps={notationProps}
-            staffPages={staffPages}
-            solfegePages={solfegePages}
-          />
-        </TabsContent>
+        {isApproved && (
+          <TabsContent value="notation" className="space-y-6">
+            {/* Notation tab — simplified version of /psalms/[slug]'s main Sing view:
+                NotationRendererClient (via TuneScoreSection) emits the Staff/Solfège
+                toggle (tunePageMode suppresses A+/A-, Stanza nav, fullscreen, and the
+                bottom Play/Key/BPM bar — see buildNotationRendererProps' tunePageMode
+                option) followed by the score. Always rendered regardless of whether
+                this tune has digital abc — NotationRenderer's own tunePageMode JPG
+                fallback (staff-split / solfege-split) and "not available" message
+                cover the no-abc and no-image cases, so a single component handles
+                every tune instead of branching into a separate TuneDetailClient
+                fallback (removed 2026-08-16 — it duplicated the audio player that
+                now lives above the tabs). Audio lives ABOVE the tabs
+                (see /tunes/[slug]/page.tsx), not inside this tab — Phase 16 R3
+                user spec. */}
+            <TuneScoreSection
+              notationProps={notationProps}
+              staffPages={staffPages}
+              solfegePages={solfegePages}
+            />
+          </TabsContent>
+        )}
     </Tabs>
   )
 }

@@ -25,6 +25,7 @@ afterEach(() => {
   cleanup()
   vi.clearAllMocks()
   useSearchParamsMock.mockReturnValue(new URLSearchParams())
+
 })
 
 const baseNotationProps = {} as CoreNotationProps
@@ -41,6 +42,7 @@ function baseProps(overrides: Partial<TunePageTabsProps> = {}): TunePageTabsProp
     famousHymn: null,
     precentingComment: null,
     notationProps: baseNotationProps,
+    isApproved: true,
     staffPages: [],
     solfegePages: [],
     ...overrides,
@@ -112,5 +114,20 @@ describe('TunePageTabs', () => {
     useSearchParamsMock.mockReturnValue(new URLSearchParams('tab=notation'))
     render(<TunePageTabs {...baseProps({ staffPages: [], solfegePages: [] })} />)
     expect(screen.getByTestId('tune-score-section')).toBeTruthy()
+  })
+
+  // Issue #15: hide notation on /tunes/[slug] for tunes that are not Approved.
+  it('hides the Notation tab when isApproved is false', () => {
+    render(<TunePageTabs {...baseProps({ isApproved: false })} />)
+    expect(screen.queryByRole('tab', { name: 'Notation' })).toBeNull()
+    expect(screen.queryByTestId('tune-score-section')).toBeNull()
+  })
+
+  it('ignores ?tab=notation when isApproved is false (defaults to Details)', () => {
+    useSearchParamsMock.mockReturnValue(new URLSearchParams('tab=notation'))
+    render(<TunePageTabs {...baseProps({ isApproved: false })} />)
+    const detailsTab = screen.getByRole('tab', { name: 'Details' })
+    expect(detailsTab.getAttribute('data-active')).not.toBeNull()
+    expect(screen.queryByTestId('tune-score-section')).toBeNull()
   })
 })
