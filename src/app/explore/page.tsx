@@ -100,7 +100,7 @@ export default async function ExplorePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
       <div className="mb-4">
-        <h1 className="font-sans text-3xl md:text-4xl font-semibold text-foreground mb-2">
+        <h1 className="font-sans text-3xl md:text-4xl font-semibold text-foreground mb-2 relative inline-block after:content-[''] after:absolute after:left-0 after:right-0 after:-bottom-1 after:h-1 after:rounded-full after:bg-primary">
           Explore
         </h1>
         <p className="text-muted-foreground text-base">
