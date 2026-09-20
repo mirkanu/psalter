@@ -116,18 +116,28 @@ describe('TunePageTabs', () => {
     expect(screen.getByTestId('tune-score-section')).toBeTruthy()
   })
 
-  // Issue #15: hide notation on /tunes/[slug] for tunes that are not Approved.
-  it('hides the Notation tab when isApproved is false', () => {
+  // Issue #15 (revised 2026-09-20): the Notation tab is ALWAYS rendered so
+  // JPEGs remain visible for non-Approved tunes. Only the digital abc staff
+  // is suppressed for non-Approved tunes — that suppression happens in the
+  // /tunes/[slug] page via buildNotationRendererProps' hideAbc option
+  // (tested separately in notation-renderer-props.test.ts). TunePageTabs is
+  // responsible only for tab visibility, which is now invariant.
+  it('still renders the Notation tab when isApproved is false (JPEGs must show)', () => {
     render(<TunePageTabs {...baseProps({ isApproved: false })} />)
-    expect(screen.queryByRole('tab', { name: 'Notation' })).toBeNull()
+    expect(screen.getByRole('tab', { name: 'Notation' })).toBeTruthy()
     expect(screen.queryByTestId('tune-score-section')).toBeNull()
   })
 
-  it('ignores ?tab=notation when isApproved is false (defaults to Details)', () => {
+  it('renders TuneScoreSection in the Notation tab when isApproved is false (and tab=notation)', () => {
     useSearchParamsMock.mockReturnValue(new URLSearchParams('tab=notation'))
+    render(<TunePageTabs {...baseProps({ isApproved: false })} />)
+    expect(screen.getByTestId('tune-score-section')).toBeTruthy()
+  })
+
+  it('defaults to Details when ?tab= is absent regardless of isApproved', () => {
+    useSearchParamsMock.mockReturnValue(new URLSearchParams())
     render(<TunePageTabs {...baseProps({ isApproved: false })} />)
     const detailsTab = screen.getByRole('tab', { name: 'Details' })
     expect(detailsTab.getAttribute('data-active')).not.toBeNull()
-    expect(screen.queryByTestId('tune-score-section')).toBeNull()
   })
 })
