@@ -278,7 +278,7 @@ export function PlayMiniBar({
               className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50"
             >
               <div className="bg-popover text-popover-foreground rounded-lg px-3 py-2 text-xs shadow-lg border whitespace-nowrap">
-                <p className="font-medium">Tap here to switch to the full recording</p>
+                <p className="font-medium">Tap here to change audio format</p>
                 <button
                   onClick={dismissTour}
                   className="mt-1 text-muted-foreground hover:text-foreground underline"
