@@ -154,6 +154,18 @@ export interface NotationRendererProps {
    */
   lyricsStructured: StructuredLyrics | null
   /**
+   * Optional psalm subtitle/inscription (e.g. "To the chief Musician, for
+   * the sons of Korah, A Song upon Alamoth."). Rendered above the lyrics
+   * in the lyrics-only, solfege, staff, and split-leaf views. Pass `null`
+   * (or omit) when no subtitle is available for the psalm.
+   *
+   * Sourced from `psalms.bibleTitle` — already wired through
+   * `fetchPsalmDetail()` and exposed on the singing view, study tab, and
+   * /psalms/[id]/page. Passed through `buildNotationRendererProps()`
+   * when callers opt in (opt-in keeps /tunes/[slug] unaffected).
+   */
+  subtitle?: string | null
+  /**
    * Plan 04.9.6-05 (D-11): canonical signal driving stanza-cycle pairing.
    * Replaces the Plan-04 transitional meter-string heuristic.
    */
@@ -498,6 +510,7 @@ export function NotationRenderer({
   staffPages = [],
   solfegePages = [],
   staffInlineApproved = true,
+  subtitle = null,
 }: NotationRendererProps) {
   // chromeless mode permanently disables the FS overlay; the singing view IS the fullscreen.
   const allowFullscreen = !chromeless
@@ -2188,8 +2201,11 @@ export function NotationRenderer({
       // 2026-09-04: tighten the gap between the AbcPlayer (which renders
       // the "Page x of y" label inside its showOriginal block) and the
       // lyrics below. mt-2 (8px) reads better on mobile than mt-4 (16px).
-      <div className="mt-2 max-h-[60vh] overflow-y-auto overscroll-y-none">
-        <StanzaList stanzas={stanzas} />
+      <div className="lyrics-block mt-2 max-h-[60vh] overflow-y-auto overscroll-y-none">
+        {subtitle && (
+          <p className="lyrics-subtitle psalm-subtitle italic">{subtitle}</p>
+        )}
+        <StanzaList stanzas={stanzas} stanzaMeter={stanzaMeter} />
       </div>
     ) : null
 
@@ -2296,16 +2312,13 @@ export function NotationRenderer({
   // changes propagate to both call sites automatically.
   function renderLyricsContent(): ReactNode {
     if (!showLyrics || stanzas.length === 0) return null
-    // chromeless = sing page; px-4 = horizontal gutter, pt-4 = breathing room
-    // above the first stanza, pb-44 = clearance for the floating playback
-    // bar so the last stanza can scroll above it. Outside chromeless (e.g.
-    // /tunes/[id]) the container governs its own spacing.
-    return chromeless ? (
-      <div className="px-4 pt-4 pb-44 space-y-4">
-        <StanzaList stanzas={stanzas} />
+    return (
+      <div className="lyrics-block">
+        {subtitle && (
+          <p className="lyrics-subtitle psalm-subtitle italic">{subtitle}</p>
+        )}
+        <StanzaList stanzas={stanzas} stanzaMeter={stanzaMeter} />
       </div>
-    ) : (
-      <StanzaList stanzas={stanzas} />
     )
   }
 

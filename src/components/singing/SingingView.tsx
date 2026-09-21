@@ -95,6 +95,14 @@ interface Props {
    * keep the existing generic message).
    */
   isRecommendedVersion?: boolean
+  /**
+   * 2026-09-21 (m2-followups): psalm superscription / subtitle (e.g.
+   * "To the chief Musician… A Song upon Alamoth") — surfaced from
+   * `psalms.bibleTitle` by the /precent route's PsalmRow. Rendered in the
+   * orange accent above the lyrics (lyrics-only + split-leaf + inline
+   * staff digital) so it mirrors the title bar.
+   */
+  subtitle?: string | null
 }
 
 function readStoredViewMode(showLyrics: boolean): ViewMode {
@@ -121,6 +129,7 @@ function readStoredSize(key: string): number {
 
 export function SingingView({
   psalm,
+  subtitle: subtitleProp = null,
   currentSlug,
   prevSlug,
   nextSlug,
@@ -1185,7 +1194,7 @@ export function SingingView({
                     solfegeJpgUrl: solfegeJpgUrl,
                   }
                 : null,
-              { lyrics, stanzaMeter, lyricsStructured },
+              { lyrics, stanzaMeter, lyricsStructured, subtitle: subtitleProp },
               { showLyrics, onViewModeChange: setViewMode, fallbackTuneName: '' },
             )}
             // SingingView deliberately renders the RAW abcNotation rather than the helper's
@@ -1428,7 +1437,7 @@ export function SingingView({
                     solfegeJpgUrl: solfegeJpgUrl,
                   }
                 : null,
-              { lyrics, stanzaMeter, lyricsStructured },
+              { lyrics, stanzaMeter, lyricsStructured, subtitle: subtitleProp },
               { showLyrics, onViewModeChange: setViewMode, fallbackTuneName: '' },
             )}
             abc={abc}
