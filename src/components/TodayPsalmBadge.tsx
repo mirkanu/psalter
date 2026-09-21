@@ -1,7 +1,17 @@
 import Link from "next/link"
 import { Music2 } from "lucide-react"
 import { formatPsalmRef } from "@/lib/daily"
-import type { DailyReadingWithPsalm } from "@/db/queries/daily"
+
+/** Structural subset of DailyReadingWithPsalm that TodayPsalmBadge actually
+ *  reads (dayNumber is unused — psalmId, verse range, psalm.id). Lets the
+ *  homepage wire in the narrower fetchAllDailyReadingsMinimal() projection
+ *  without widening DailyReadingWithPsalm itself (Neon egress — issue #51). */
+export interface TodayPsalmReading {
+  psalmId: number | null
+  startingVerse: number | null
+  endingVerse: number | null
+  psalm: { id: number; bibleTitle?: string | null } | null
+}
 
 /**
  * Highlighted, clickable "today's psalm" pill for the homepage Daily card,
@@ -10,7 +20,7 @@ import type { DailyReadingWithPsalm } from "@/db/queries/daily"
  * CardContent, not nested inside the card's own /daily link) so this can be
  * its own link to /psalms/{id} without creating a nested anchor.
  */
-export function TodayPsalmBadge({ reading }: { reading: DailyReadingWithPsalm | null }) {
+export function TodayPsalmBadge({ reading }: { reading: TodayPsalmReading | null }) {
   if (!reading) return null
 
   const psalmId = reading.psalm?.id ?? reading.psalmId

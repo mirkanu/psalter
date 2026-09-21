@@ -5,10 +5,20 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { formatPsalmRef, calendarDateToDayOfYear } from "@/lib/daily"
-import type { DailyReadingWithPsalm } from "@/db/queries/daily"
+
+/** Structural subset of DailyReadingWithPsalm that DailyCalendarClient reads:
+ *  dayNumber + psalmId + verse range + psalm.id. Lets the page wire in the
+ *  narrower fetchAllDailyReadingsMinimal() projection (Neon egress — issue #51). */
+export interface DailyCalendarReading {
+  dayNumber: number
+  psalmId: number | null
+  startingVerse: number | null
+  endingVerse: number | null
+  psalm: { id: number; bibleTitle?: string | null } | null
+}
 
 interface DailyCalendarClientProps {
-  readings: DailyReadingWithPsalm[]  // all 365 rows
+  readings: DailyCalendarReading[]  // all 365 rows
   todayDay: number                    // day-of-year 1-365 from server
 }
 
@@ -34,7 +44,7 @@ export function DailyCalendarClient({ readings, todayDay }: DailyCalendarClientP
   const now = new Date()
 
   // Build lookup by day-of-year once
-  const byDay = new Map<number, DailyReadingWithPsalm>(
+  const byDay = new Map<number, DailyCalendarReading>(
     readings.map((r) => [r.dayNumber, r])
   )
 
