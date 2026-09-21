@@ -277,17 +277,31 @@ html, body {
   font-size: calc(var(--staff-base-size, 14px) * 1.6);
 }
 
-/* ISSUE-54: lyrics-only mode used to render flush against the left edge of
-   the viewport with no internal padding. Give the lyrics-block breathing
-   room and centre each verse line's text within its column so the lyrics
-   sit inside their display port rather than hugging the edge. The
-   verse-number/verse-text 2-column grid is preserved; only block padding
-   and inner alignment change. */
-[data-notation-body][data-view-mode="lyrics"] .lyrics-block {
-  padding: 1.25rem 1.5rem 1.5rem;
+/* ISSUE-54 follow-up: lyrics-only and the lyrics half of split-leaf
+   (staff-split, solfege-split) share the same renderLyricsContent() code
+   path in NotationRenderer.tsx, so this rule block governs all three.
+   The lyrics-box is centred on screen with max-width + margin-inline:auto
+   so the psalm subtitle, verse numbers and lyrics live inside one centred
+   column instead of hugging the viewport edge. Inner verse text stays
+   LEFT-aligned (the previous look); the horizontal padding is only there
+   to keep a single overflowing line from butting against the viewport
+   edge and is mirrored on both sides so the box stays symmetric even when
+   text overflows. Top padding is reduced ~25% from the previous 1.25rem
+   flush-against-the-edge fix. Verse numbers render at full size (1em)
+   instead of superscript-style so they read as part of the line. */
+[data-notation-body][data-view-mode="lyrics"] .lyrics-block,
+[data-notation-body][data-view-mode="staff-split"] .lyrics-block,
+[data-notation-body][data-view-mode="solfege-split"] .lyrics-block {
+  max-width: 36rem;
+  margin-inline: auto;
+  padding-block: 0.95rem 1.5rem;
+  padding-inline: clamp(0rem, 4vw, 2rem);
 }
-[data-notation-body][data-view-mode="lyrics"] .lyrics-block .verse-text {
-  text-align: center;
+[data-notation-body][data-view-mode="lyrics"] .lyrics-block .verse-number,
+[data-notation-body][data-view-mode="staff-split"] .lyrics-block .verse-number,
+[data-notation-body][data-view-mode="solfege-split"] .lyrics-block .verse-number {
+  font-size: 1em;
+  vertical-align: baseline;
 }
 
 /* MOBILE-04 (Phase 04.9.15 Plan 05): shrinking the repeated clef +
