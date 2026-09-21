@@ -205,6 +205,7 @@ export default async function PsalmPage({ params }: PageProps) {
     <div className="max-w-4xl mx-auto">
       <SingingView
         psalm={psalm}
+        subtitle={psalm?.bibleTitle ?? null}
         currentSlug={slug}
         prevSlug={prev}
         nextSlug={next}
