@@ -1,4 +1,8 @@
-export const dynamic = 'force-dynamic'
+// All 365 day-pages are pre-rendered at build time and only re-rendered when
+// the psalm assignment for a given day changes (revalidate = 1 day).
+// (Neon egress — issue #51, phase B.)
+export const dynamicParams = false
+export const revalidate = 86400
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
