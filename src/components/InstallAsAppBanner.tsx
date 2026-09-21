@@ -16,7 +16,7 @@
  *   - dismissed banner                 → no banner (per-browser localStorage
  *                                        flag, never returns)
  *
- * Layout mirrors DesktopOptimisedBanner verbatim: fixed top-14, centred,
+ * Layout mirrors DesktopOptimisedBanner verbatim: fixed top-16 (one Tailwind step below the header) so the banner breathes below the nav, centred,
  * muted surface, dismiss X button. Same accessibility role="status". Same
  * styling rationale — `/psalms/[id]` uses fixed-height math keyed to the
  * 56px SiteHeader, so this is also fixed-positioned to stay out of the
@@ -99,7 +99,7 @@ export function InstallAsAppBanner(): React.ReactElement | null {
   return (
     <div
       role="status"
-      className="fixed top-14 left-1/2 -translate-x-1/2 z-40 w-[calc(100vw-1.5rem)] max-w-md rounded-xl border border-primary/30 bg-gradient-to-r from-primary/15 via-primary/10 to-primary/5 backdrop-blur-md shadow-xl shadow-primary/10 px-3.5 py-2.5 flex items-center gap-3 text-sm text-foreground"
+      className="fixed top-16 left-1/2 -translate-x-1/2 z-40 w-[calc(100vw-1.5rem)] max-w-md rounded-xl border border-primary/30 bg-gradient-to-r from-primary/15 via-primary/10 to-primary/5 backdrop-blur-md shadow-xl shadow-primary/10 px-3.5 py-2.5 flex items-center gap-3 text-sm text-foreground"
     >
       <span
         aria-hidden="true"
