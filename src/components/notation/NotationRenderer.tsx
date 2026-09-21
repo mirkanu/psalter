@@ -2203,7 +2203,7 @@ export function NotationRenderer({
       // lyrics below. mt-2 (8px) reads better on mobile than mt-4 (16px).
       <div className="lyrics-block mt-2 max-h-[60vh] overflow-y-auto overscroll-y-none">
         {subtitle && (
-          <p className="lyrics-subtitle text-primary italic">{subtitle}</p>
+          <p className="lyrics-subtitle psalm-subtitle italic">{subtitle}</p>
         )}
         <StanzaList stanzas={stanzas} stanzaMeter={stanzaMeter} />
       </div>
@@ -2315,7 +2315,7 @@ export function NotationRenderer({
     return (
       <div className="lyrics-block">
         {subtitle && (
-          <p className="lyrics-subtitle text-primary italic">{subtitle}</p>
+          <p className="lyrics-subtitle psalm-subtitle italic">{subtitle}</p>
         )}
         <StanzaList stanzas={stanzas} stanzaMeter={stanzaMeter} />
       </div>
