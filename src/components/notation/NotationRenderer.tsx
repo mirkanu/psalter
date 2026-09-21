@@ -2558,7 +2558,10 @@ export function NotationRenderer({
           )}
         </div>
       ) : (
-        <div ref={staffRef} style={applyMinHeight ? { minHeight: minStaffHeight } : undefined}>
+        <div ref={staffRef} style={applyMinHeight ? { minHeight: minStaffHeight } : undefined} className="flex flex-col gap-2">
+          {subtitle && (
+            <p className="lyrics-subtitle psalm-subtitle italic">{subtitle}</p>
+          )}
           <AbcPlayer
             abc={abcForView}
             scale={scale}
