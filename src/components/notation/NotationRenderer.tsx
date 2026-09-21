@@ -2291,6 +2291,24 @@ export function NotationRenderer({
     return { imageBlock }
   }
 
+  // Shared lyrics body used by BOTH the Lyrics Only view AND the lyrics
+  // half of split-leaf (staff-split / solfege-split). Centralised so spacing
+  // changes propagate to both call sites automatically.
+  function renderLyricsContent(): ReactNode {
+    if (!showLyrics || stanzas.length === 0) return null
+    // chromeless = sing page; px-4 = horizontal gutter, pt-4 = breathing room
+    // above the first stanza, pb-44 = clearance for the floating playback
+    // bar so the last stanza can scroll above it. Outside chromeless (e.g.
+    // /tunes/[id]) the container governs its own spacing.
+    return chromeless ? (
+      <div className="px-4 pt-4 pb-44 space-y-4">
+        <StanzaList stanzas={stanzas} />
+      </div>
+    ) : (
+      <StanzaList stanzas={stanzas} />
+    )
+  }
+
   // ── Split-leaf layout (Task 1 + Task 2, Phase 04.9.14 Plan 01) ────────────
   // Desktop (≥768px, all callers): lyrics stack UNDER notation — single
   // column, no side-by-side grid (CONTEXT "Desktop Lyrics Stacking Decision").
@@ -2651,7 +2669,7 @@ export function NotationRenderer({
             chromeless && 'pb-44',
           )}
         >
-          <StanzaList stanzas={stanzas} />
+          {renderLyricsContent()}
         </div>
       ) : null
       // 2026-09-05: prepend the split-half pagination indicator to the
@@ -2703,7 +2721,7 @@ export function NotationRenderer({
             ? (chromeless ? 'h-full overflow-y-auto overscroll-y-none pb-44' : 'h-full overflow-y-auto md:h-auto md:max-h-[80vh] overscroll-y-none')
             : (chromeless ? '' : 'max-h-[60vh] overflow-y-auto overscroll-y-none')
         }>
-        <StanzaList stanzas={stanzas} />
+        {renderLyricsContent()}
       </div>
     ) : null
 
@@ -2739,13 +2757,13 @@ export function NotationRenderer({
     // only) roughly the height of a stanza, so the last lines can be
     // scrolled fully above the bottom bar even if the scroll-hide auto-hide
     // timing isn't perfect.
+    // Lyrics-only view — uses the shared renderLyricsContent() helper so
+    // padding/gutters stay in lockstep with the lyrics half of split-leaf.
     viewArea =
       stanzas.length === 0 ? (
-        <p className="text-sm text-muted-foreground italic">No lyrics available.</p>
+        <p className="px-4 pt-4 text-sm text-muted-foreground italic">No lyrics available.</p>
       ) : (
-        <div className={chromeless ? 'px-4 pt-4 pb-44 space-y-4' : ''}>
-          <StanzaList stanzas={stanzas} />
-        </div>
+        renderLyricsContent()
       )
   }
 
