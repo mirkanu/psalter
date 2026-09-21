@@ -167,6 +167,7 @@ export default async function PrecentSingPage({ params }: PageProps) {
         stanzaMeter={stanzaMeter}
         lyrics={lyrics}
         lyricsStructured={lyricsStructured}
+        subtitle={psalm.bibleTitle ?? null}
         psalmListRows={psalmListRows}
         studyHref={`/psalms/${psalm.id}/study`}
         versePartLabel={versePartLabel}
