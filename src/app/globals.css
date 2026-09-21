@@ -277,6 +277,19 @@ html, body {
   font-size: calc(var(--staff-base-size, 14px) * 1.6);
 }
 
+/* ISSUE-54: lyrics-only mode used to render flush against the left edge of
+   the viewport with no internal padding. Give the lyrics-block breathing
+   room and centre each verse line's text within its column so the lyrics
+   sit inside their display port rather than hugging the edge. The
+   verse-number/verse-text 2-column grid is preserved; only block padding
+   and inner alignment change. */
+[data-notation-body][data-view-mode="lyrics"] .lyrics-block {
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+[data-notation-body][data-view-mode="lyrics"] .lyrics-block .verse-text {
+  text-align: center;
+}
+
 /* MOBILE-04 (Phase 04.9.15 Plan 05): shrinking the repeated clef +
    key-signature glyph group on every row of the mobile inline Staff view is
    now handled entirely in JS (see AbcPlayer.tsx's post-render
