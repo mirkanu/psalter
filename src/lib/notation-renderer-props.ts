@@ -44,6 +44,12 @@ export interface NotationContext {
   lyrics: string
   stanzaMeter: string | null
   lyricsStructured: StructuredLyrics | null
+  /**
+   * Psalm subtitle / superscription (e.g. "A Prayer of the afflicted…").
+   * Optional psalm-level metadata that the renderer surfaces at the top
+   * of the lyrics panel in orange italics when present.
+   */
+  subtitle?: string | null
 }
 
 export interface BuildNotationPropsOptions {
@@ -91,7 +97,7 @@ export type CoreNotationProps = Pick<
   | 'abc' | 'lyrics' | 'scoreJpgUrl' | 'solfegeJpgUrl' | 'tuneName' | 'tuneMeter'
   | 'phraseShapeOverride' | 'stanzaMeter' | 'lyricsStructured' | 'doubleLength'
   | 'meterVariant' | 'solfegeOcrText' | 'showLyrics' | 'onViewModeChange' | 'melismaPositions'
-  | 'renderWLineUnderStaff' | 'tunePageMode'
+  | 'renderWLineUnderStaff' | 'tunePageMode' | 'subtitle'
 >
 
 export function buildNotationRendererProps(
@@ -121,5 +127,6 @@ export function buildNotationRendererProps(
     melismaPositions: tune?.melismaPositions ?? null,
     onViewModeChange: options.onViewModeChange,
     tunePageMode: options.tunePageMode ?? false,
+    subtitle: ctx.subtitle ?? null,
   }
 }

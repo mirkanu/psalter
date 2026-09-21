@@ -214,18 +214,55 @@ html, body {
 .abcjs-current-note path { fill: #2563eb !important; }
 .abcjs-current-note rect { fill: #2563eb !important; }
 
-/* Phase 4.9.2 — dynamic notation sizing (D-05/D-06/D-17) */
+/* Phase 4.9.2 — dynamic notation sizing (D-05/D-06/D-17). StanzaList renders
+   each line as a grid row: an invisible verse-number column on the left (so
+   verse numbers always left-align in their own column even when the line
+   itself is indented), and a lyrics column on the right. */
+.verse-line {
+  display: grid;
+  grid-template-columns: 2.25ch 1fr;
+  column-gap: 0.5ch;
+  align-items: start;
+  font-size: var(--staff-base-size, 14px);
+  line-height: 1.45;
+}
 .verse-text {
   font-size: var(--staff-base-size, 14px);
+  line-height: 1.45;
 }
 .verse-number {
-  font-size: calc(var(--staff-base-size, 14px) * 0.5);
-  vertical-align: super;
-  line-height: 1;
+  font-size: calc(var(--staff-base-size, 14px) * 0.6);
+  line-height: 1.45;
+  color: var(--psalter-accent, #d97706);
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+/* CM stanza: indent lines 2 and 4 of each stanza. Other metres (LM/SM/CM+)
+   have their own line structures and stay flush-left for now — see
+   plan-milestone-2-public-beta.md §lyrics-display for the longer-term plan. */
+.verse-line.cm-indent-2,
+.verse-line.cm-indent-4 {
+  padding-left: 4ch;
+}
+/* Psalm subtitle (italic orange) — rendered above lyrics in both Lyrics Only
+   and Split Leaf views, AND above the inline-staff abc when the lyrics live
+   beneath the staff. */
+.psalm-subtitle {
+  color: var(--psalter-accent, #d97706);
+  font-style: italic;
+  font-size: var(--staff-base-size, 14px);
+  line-height: 1.45;
+  margin: 0 0 0.6em 0;
+  white-space: pre-line;
 }
 /* 260517-cm0 #4a — in chromeless lyrics/solfège views, scale verse text up so
    readers see a comfortable size when staff context is absent. The 1.6x multiplier
    on baseSize=14 yields 22px, matching prose body sizes; A+/A− still adjusts. */
+[data-notation-body][data-view-mode="lyrics"] .verse-line,
+[data-notation-body][data-view-mode="solfege"] .verse-line {
+  font-size: calc(var(--staff-base-size, 14px) * 1.6);
+}
 [data-notation-body][data-view-mode="lyrics"] .verse-text,
 [data-notation-body][data-view-mode="solfege"] .verse-text {
   font-size: calc(var(--staff-base-size, 14px) * 1.6);
@@ -234,6 +271,10 @@ html, body {
 [data-notation-body][data-view-mode="lyrics"] .verse-number,
 [data-notation-body][data-view-mode="solfege"] .verse-number {
   font-size: calc(var(--staff-base-size, 14px) * 0.85);
+}
+[data-notation-body][data-view-mode="lyrics"] .psalm-subtitle,
+[data-notation-body][data-view-mode="solfege"] .psalm-subtitle {
+  font-size: calc(var(--staff-base-size, 14px) * 1.6);
 }
 
 /* MOBILE-04 (Phase 04.9.15 Plan 05): shrinking the repeated clef +
