@@ -293,7 +293,14 @@ html, body {
 [data-notation-body][data-view-mode="lyrics"] .lyrics-block,
 [data-notation-body][data-view-mode="staff-split"] .lyrics-block,
 [data-notation-body][data-view-mode="solfege-split"] .lyrics-block {
-  max-width: 36rem;
+  /* min(36rem, 100%) so the block never exceeds its pane: lyrics-only
+     leaf is wider than 36rem so the block stays at 36rem and
+     margin-inline:auto centres it on screen; split-leaf lyrics pane is
+     narrower than 36rem on most viewports so the block fills the pane
+     and margin-inline:auto collapses to zero. Either way the block sits
+     flush with its leaf and reads as centred within that leaf, never
+     spilling past it. */
+  max-width: min(36rem, 100%);
   margin-inline: auto;
   padding-block: 0.95rem 1.5rem;
   padding-inline: clamp(0rem, 4vw, 2rem);
@@ -316,7 +323,10 @@ html, body {
    so a long subtitle line wraps inside the same centred column. */
 [data-notation-body][data-view-mode="staff"] .lyrics-subtitle,
 [data-notation-body][data-view-mode="staff"] .psalm-subtitle {
-  max-width: 36rem;
+  /* Same min(...) guard as .lyrics-block above so the staff-inline
+     subtitle never exceeds the viewport and stays centred in the same
+     column as the lyrics + verse numbers below it. */
+  max-width: min(36rem, 100%);
   margin-inline: auto;
   padding-inline: clamp(0rem, 4vw, 2rem);
 }
