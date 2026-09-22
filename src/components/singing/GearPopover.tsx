@@ -344,7 +344,7 @@ export function GearPopover({
           role="region"
           id="settings-panel-music-notes"
           aria-labelledby="settings-tab-music-notes"
-          className="rounded-md border border-border/40 p-2 space-y-2"
+          className="rounded-md border border-primary/30 bg-primary/[0.04] p-2 pl-3 space-y-2 border-l-4 border-l-primary/60"
         >
           <span className="sr-only">Music notation settings (Notation, Layout)</span>
           {/* Sub-toggle A: Notation type */}
