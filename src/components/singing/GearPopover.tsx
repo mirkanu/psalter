@@ -78,7 +78,6 @@ export function GearPopover({
   const isMusicNotes = viewMode !== 'lyrics'
   const isStaff = viewMode === 'staff' || viewMode === 'staff-split'
   const isSplit = viewMode === 'staff-split' || viewMode === 'solfege-split'
-  const inlineLayoutDisabled = computeInlineLayoutDisabled({ isStaff, staffInlineApproved, solfegeInlineAvailable })
 
   // Issue #59 point 3 — derive visual 'active' state for the sub-toggles so
   // they still show which family/layout the user is currently in, even from
@@ -99,13 +98,27 @@ export function GearPopover({
   const notationSolfegeActive = solfegeSplitAvailable && isMusicNotes && (!isStaff || rememberedNotation === 'solfege')
   const layoutInlineActive = isMusicNotes && (!isSplit || rememberedLayout === 'inline')
   const layoutSplitActive = isMusicNotes && (isSplit || rememberedLayout === 'split-leaf')
-  // The Inline layout button's tooltip is meaningless while in Lyrics Only
-  // (isStaff is false because viewMode === 'lyrics'), so pick the right copy
-  // based on the remembered notation family in that case.
-  const inlineLayoutDisabledTitle =
-    (isStaff || rememberedNotation === 'staff')
-      ? "Inline Staff notation isn't approved for this tune yet"
-      : 'Inline Solfège coming soon'
+  // Issue #59 follow-up: the Inline layout button's gating and tooltip need
+  // to agree with what handleLayoutChange actually does. When invoked from
+  // Lyrics Only we fall back to the remembered notation family, so the
+  // aria-disabled and title must use the same effective family — otherwise
+  // the button can be greyed out and warn "not approved for this tune" even
+  // though the underlying click would resolve to Staff (where inline IS
+  // approved) and switch successfully.
+  const effectiveNotationForLayout: 'staff' | 'solfege' = inLyricsOnly
+    ? (rememberedNotation ?? 'staff')
+    : (isStaff ? 'staff' : 'solfege')
+  const effectiveIsStaffForLayout = effectiveNotationForLayout === 'staff'
+  const inlineLayoutDisabledEffective = computeInlineLayoutDisabled({
+    isStaff: effectiveIsStaffForLayout,
+    staffInlineApproved,
+    solfegeInlineAvailable,
+  })
+  const inlineLayoutDisabledTitle = inlineLayoutDisabledEffective
+    ? (effectiveIsStaffForLayout
+        ? "Inline Staff notation isn't approved for this tune yet"
+        : 'Inline Solfège coming soon')
+    : undefined
   // 260717-mwv checkpoint round 1 (item 3b): a tune IS active but has zero
   // notation in any form — grey out "Music Notes" entirely rather than
   // letting the user navigate into a blank view. Tapping it anyway still
@@ -379,10 +392,10 @@ export function GearPopover({
                   aria-label="Inline"
                   title={inlineLayoutDisabledTitle}
                   onClick={() => handleLayoutChange('inline')}
-                  aria-disabled={inlineLayoutDisabled ? 'true' : undefined}
+                  aria-disabled={inlineLayoutDisabledEffective ? 'true' : undefined}
                   className={[
                     'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
-                    inlineLayoutDisabled && 'opacity-40 cursor-not-allowed',
+                    inlineLayoutDisabledEffective && 'opacity-40 cursor-not-allowed',
                     layoutInlineActive
                       ? 'bg-foreground text-background'
                       : 'text-muted-foreground hover:bg-muted',
