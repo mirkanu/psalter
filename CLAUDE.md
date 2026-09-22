@@ -52,6 +52,11 @@ Never store raw `airtableusercontent.com` URLs in the database — they expire i
 ### Static rendering
 Public psalm and tune pages use `generateStaticParams` — no runtime DB queries on the read path.
 
+## Mobile-first layout (binding)
+
+The psalter is a **mobile-first** site. Always design + verify CSS at phone widths first (<=390px), then scale up to tablet/desktop. Centring, padding, and max-width rules MUST work on a 360-390px viewport, not just on desktop. After any visual/CSS change, re-screenshot at **mobile (390), tablet (768), and desktop (1440)** before considering the change done. The Playwright measure-lyrics script enforces block.mid === parent.mid for .lyrics-block and .lyrics-subtitle across all four view modes (lyrics, staff-split, solfege-split, staff) -- it must pass at every viewport, not just desktop.
+
+## Data Sources
 ## Data Sources
 
 - **Airtable base:** `appY3dB1EHtex0fUJ` ("CPRC Psalter")
