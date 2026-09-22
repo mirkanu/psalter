@@ -339,12 +339,13 @@ export function GearPopover({
             or Layout from Lyrics Only switches into the corresponding Music Notes
             view with the last-selected layout remembered in localStorage (the
             same `psalter-score-mode-last-music` key the top-level Music Notes
-            button reads). */}
+            button reads). The connector notch (::before) visually attaches this
+            panel to the active Music Notes tab. */}
         <div
           role="region"
           id="settings-panel-music-notes"
           aria-labelledby="settings-tab-music-notes"
-          className="rounded-md border border-primary/30 bg-primary/[0.04] p-2 pl-3 space-y-2 border-l-4 border-l-primary/60"
+          className="relative rounded-md border border-primary/30 bg-primary/[0.04] p-2 pl-3 space-y-2 border-l-4 border-l-primary/60 before:content-[''] before:absolute before:-top-1 before:left-3 before:w-8 before:h-1 before:bg-primary/60 before:rounded-t-sm"
         >
           <span className="sr-only">Music notation settings (Notation, Layout)</span>
           {/* Sub-toggle A: Notation type */}
