@@ -79,6 +79,26 @@ export function GearPopover({
   const isStaff = viewMode === 'staff' || viewMode === 'staff-split'
   const isSplit = viewMode === 'staff-split' || viewMode === 'solfege-split'
   const inlineLayoutDisabled = computeInlineLayoutDisabled({ isStaff, staffInlineApproved, solfegeInlineAvailable })
+
+  // Issue #59 point 3 — derive visual 'active' state for the sub-toggles so
+  // they still show which family/layout the user is currently in, even from
+  // Lyrics Only where the live viewMode reports neither staff nor split. The
+  // remembered state comes from the same localStorage key handleMainMusicNotes
+  // reads, so tapping Music Notes after a sub-toggle matches the user's last
+  // selection.
+  const rememberedLayout: 'inline' | 'split-leaf' | null = viewMode === 'lyrics' ? rememberLastLayout() : null
+  const rememberedNotation: 'staff' | 'solfege' | null = viewMode === 'lyrics' ? rememberLastNotation() : null
+  const notationStaffActive = staffAvailable && (isStaff || rememberedNotation === 'staff')
+  const notationSolfegeActive = solfegeSplitAvailable && (!isStaff || rememberedNotation === 'solfege')
+  const layoutInlineActive = !isSplit || rememberedLayout === 'inline'
+  const layoutSplitActive = isSplit || rememberedLayout === 'split-leaf'
+  // The Inline layout button's tooltip is meaningless while in Lyrics Only
+  // (isStaff is false because viewMode === 'lyrics'), so pick the right copy
+  // based on the remembered notation family in that case.
+  const inlineLayoutDisabledTitle =
+    (isStaff || rememberedNotation === 'staff')
+      ? "Inline Staff notation isn't approved for this tune yet"
+      : 'Inline Solfège coming soon'
   // 260717-mwv checkpoint round 1 (item 3b): a tune IS active but has zero
   // notation in any form — grey out "Music Notes" entirely rather than
   // letting the user navigate into a blank view. Tapping it anyway still
@@ -124,15 +144,31 @@ export function GearPopover({
       toast('Coming soon', { description: "Solfège isn't available for this tune" })
       return
     }
+    // Issue #59 point 3: from Lyrics Only, read the last layout from
+    // localStorage (the same 'psalter-score-mode-last-music' key the top-level
+    // Music Notes button writes/reads). Otherwise honour the current view's
+    // layout. Solfège always renders split-leaf — there is no inline solfège.
+    const fromLyrics = viewMode === 'lyrics'
+    const lastLayout = fromLyrics ? rememberLastLayout() : (isSplit ? 'split-leaf' : 'inline')
+    const wantSplit = lastLayout === 'split-leaf'
     const newMode: ViewMode =
       notation === 'solfege'
-        ? 'solfege-split'                       // inline solfege never exists — always split
-        : (isSplit ? 'staff-split' : 'staff')
+        ? (wantSplit ? 'solfege-split' : 'staff-split')
+        : (wantSplit ? 'staff-split' : 'staff')
     onViewModeChange(newMode)
   }
 
   const handleLayoutChange = (layout: 'inline' | 'split-leaf') => {
-    if (layout === 'inline' && !isStaff && !solfegeInlineAvailable) {
+    // Issue #59 point 3: when invoked from Lyrics Only, default the notation
+    // family to Staff (no solfège inline either way). The user's last staff
+    // choice is read from the same localStorage key the Music Notes button
+    // uses so the round-trip stays consistent.
+    const fromLyrics = viewMode === 'lyrics'
+    const effectiveNotation: 'staff' | 'solfege' = fromLyrics
+      ? (rememberLastNotation())
+      : (isStaff ? 'staff' : 'solfege')
+    const effectiveIsStaff = effectiveNotation === 'staff'
+    if (layout === 'inline' && !effectiveIsStaff && !solfegeInlineAvailable) {
       toast('Coming soon', { description: 'Inline Solfège notation is not yet available — Split-Leaf shows the scanned Solfège' })
       return
     }
@@ -141,14 +177,37 @@ export function GearPopover({
     // tap still reaches this handler and can explain why, generalizing the
     // "tap a disabled Music Notes control to see why" pattern beyond just
     // the top-level Music Notes toggle (MOBILE-08 gate).
-    if (layout === 'inline' && isStaff && !staffInlineApproved) {
+    if (layout === 'inline' && effectiveIsStaff && !staffInlineApproved) {
       toast("Inline Staff notation isn't approved for this tune yet — showing Split-Leaf. Pick a different view in Settings.")
       return
     }
-    const newMode: ViewMode = isStaff
+    const newMode: ViewMode = effectiveIsStaff
       ? (layout === 'split-leaf' ? 'staff-split' : 'staff')
       : (layout === 'split-leaf' ? 'solfege-split' : 'solfege')
     onViewModeChange(newMode)
+  }
+
+  // Issue #59 point 3 — helpers used by the sub-toggle handlers when the user
+  // taps Notation or Layout from Lyrics Only. Reads the same
+  // 'psalter-score-mode-last-music' key that handleMainMusicNotes reads (so
+  // the round-trip stays in sync) and the broader 'psalter-score-mode' key
+  // to recover the last notation family (staff vs. solfège).
+  //
+  // NOTE: SingingView only writes 'psalter-score-mode-last-music' while
+  // viewMode !== 'lyrics', and writes 'psalter-score-mode' on every viewMode
+  // change — so we read 'psalter-score-mode' for notation family (which may
+  // be 'lyrics' on first visit, in which case we default to Staff).
+  function rememberLastLayout(): 'inline' | 'split-leaf' {
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('psalter-score-mode-last-music') : null
+    if (stored === 'staff' || stored === 'solfege') return 'inline'
+    // staff-split, solfege-split, anything else → split-leaf
+    return 'split-leaf'
+  }
+
+  function rememberLastNotation(): 'staff' | 'solfege' {
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('psalter-score-mode') : null
+    if (stored === 'solfege' || stored === 'solfege-split') return 'solfege'
+    return 'staff'
   }
 
   const handleMainMusicNotes = () => {
@@ -252,10 +311,14 @@ export function GearPopover({
           </button>
         </div>
 
-        {/* Sub-toggles — only rendered when Music Notes is active (A1: no gap) */}
-        {isMusicNotes && (
-          <>
-            {/* Sub-toggle A: Notation type */}
+        {/* Sub-toggles — always rendered so the user can pick Notation / Layout
+            directly even from Lyrics Only (issue #59, point 3). Tapping Notation
+            or Layout from Lyrics Only switches into the corresponding Music Notes
+            view with the last-selected layout remembered in localStorage (the
+            same `psalter-score-mode-last-music` key the top-level Music Notes
+            button reads). */}
+        <>
+          {/* Sub-toggle A: Notation type */}
             <div role="radiogroup" aria-label="Notation type" data-settings-sub="notation">
               <span className="text-xs text-muted-foreground">Notation:</span>
               <div className="flex items-center gap-1 mt-1">
@@ -269,8 +332,8 @@ export function GearPopover({
                   className={[
                     'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
                     !staffAvailable && 'opacity-40 cursor-not-allowed',
-                    isStaff && staffAvailable
-                      ? 'bg-primary text-primary-foreground'
+                    notationStaffActive
+                      ? 'bg-foreground text-background'
                       : 'text-muted-foreground hover:bg-muted',
                   ].join(' ')}
                 >
@@ -287,8 +350,8 @@ export function GearPopover({
                   className={[
                     'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
                     !solfegeSplitAvailable && 'opacity-40 cursor-not-allowed',
-                    !isStaff && solfegeSplitAvailable
-                      ? 'bg-primary text-primary-foreground'
+                    notationSolfegeActive
+                      ? 'bg-foreground text-background'
                       : 'text-muted-foreground hover:bg-muted',
                   ].join(' ')}
                 >
@@ -307,14 +370,14 @@ export function GearPopover({
                   role="radio"
                   aria-checked={!isSplit}
                   aria-label="Inline"
-                  title={isStaff ? "Inline Staff notation isn't approved for this tune yet" : "Inline Solfège coming soon"}
+                  title={inlineLayoutDisabledTitle}
                   onClick={() => handleLayoutChange('inline')}
                   aria-disabled={inlineLayoutDisabled ? 'true' : undefined}
                   className={[
                     'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
                     inlineLayoutDisabled && 'opacity-40 cursor-not-allowed',
-                    !isSplit
-                      ? 'bg-primary text-primary-foreground'
+                    layoutInlineActive
+                      ? 'bg-foreground text-background'
                       : 'text-muted-foreground hover:bg-muted',
                   ].join(' ')}
                 >
@@ -329,8 +392,8 @@ export function GearPopover({
                   onClick={() => handleLayoutChange('split-leaf')}
                   className={[
                     'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
-                    isSplit
-                      ? 'bg-primary text-primary-foreground'
+                    layoutSplitActive
+                      ? 'bg-foreground text-background'
                       : 'text-muted-foreground hover:bg-muted',
                   ].join(' ')}
                 >
@@ -360,7 +423,7 @@ export function GearPopover({
                     className={[
                       'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
                       !showOriginal
-                        ? 'bg-primary text-primary-foreground'
+                        ? 'bg-foreground text-background'
                         : 'text-muted-foreground hover:bg-muted',
                     ].join(' ')}
                   >
@@ -376,7 +439,7 @@ export function GearPopover({
                     className={[
                       'h-8 inline-flex items-center gap-1.5 px-2 rounded-md text-sm active:scale-[0.90] transition-[transform,background,color] duration-75',
                       showOriginal
-                        ? 'bg-primary text-primary-foreground'
+                        ? 'bg-foreground text-background'
                         : 'text-muted-foreground hover:bg-muted',
                     ].join(' ')}
                   >
@@ -386,8 +449,7 @@ export function GearPopover({
                 </div>
               </div>
             )}
-          </>
-        )}
+        </>
 
         <Separator className="my-2" />
 
