@@ -277,52 +277,56 @@ html, body {
   font-size: calc(var(--staff-base-size, 14px) * 1.6);
 }
 
-/* ISSUE-54 follow-up + centring: lyrics-only and the lyrics half of
-   split-leaf (staff-split, solfege-split) share the same
-   renderLyricsContent() code path in NotationRenderer.tsx, so this rule
-   block governs all three. The lyrics-block is centred on screen with
-   max-width + margin-inline:auto so the psalm subtitle, verse numbers and
-   lyrics live inside one centred column instead of hugging the viewport
-   edge. Inner verse text stays LEFT-aligned (the previous look); the
-   horizontal padding is only there to keep a single overflowing line from
-   butting against the viewport edge and is mirrored on both sides so the
-   box stays symmetric even when text overflows. Top padding is reduced
-   ~25% from the previous 1.25rem flush-against-the-edge fix. Verse
-   numbers render at full size (1em) instead of superscript-style so they
-   read as part of the line. */
+/* Centred lyrics column (consolidated). The same renderLyricsContent()
+   code path in NotationRenderer.tsx is used in three places:
+     - Lyrics Only view    (data-view-mode="lyrics")
+     - Split-Leaf lyrics   (data-view-mode="staff-split" / "solfege-split")
+     - Inline Staff view   (data-view-mode="staff", without the lyrics-block
+       wrapper — renderLyricsContent() is rendered directly above the
+       staff, so the subtitle/verse-number/lyrics stack lives in the
+       .lyrics-subtitle and .psalm-subtitle elements)
+   So one selector list governs all three: .lyrics-block (where the box
+   wraps the stack) and .lyrics-subtitle / .psalm-subtitle (where it
+   doesn't). Same max-width + margin-inline:auto + padding-inline values
+   so the stack stays in a single 36rem-centred column on desktop and
+   fills the viewport with a 2rem/0.5rem gutter on mobile, regardless of
+   which view-mode or class wraps it. Inner verse text remains
+   LEFT-aligned; only the wrapping box is centred. */
 [data-notation-body][data-view-mode="lyrics"] .lyrics-block,
+[data-notation-body][data-view-mode="solfege"] .lyrics-block,
 [data-notation-body][data-view-mode="staff-split"] .lyrics-block,
-[data-notation-body][data-view-mode="solfege-split"] .lyrics-block {
-  /* ISSUE-54 follow-up + centring: lyrics-only and the lyrics half of
-     split-leaf (staff-split, solfege-split) share the same
-     renderLyricsContent() code path in NotationRenderer.tsx, so this rule
-     block governs all three. The lyrics-block is centred on screen with
-     max-width + margin-inline:auto so the psalm subtitle, verse numbers and
-     lyrics live inside one centred column instead of hugging the viewport
-     edge. Inner verse text stays LEFT-aligned (the previous look); the
-     horizontal padding is only there to keep a single overflowing line from
-     butting against the viewport edge and is mirrored on both sides so the
-     box stays symmetric even when text overflows. On mobile (<768px) the
-     block fills the viewport with 1rem gutter on each side, so the
-     centred column is the full viewport minus 2rem of inset padding
-     (max-width = calc(100% - 2rem) overrides the 36rem cap below 768px).
-     At >=768px the 36rem cap takes over and margin-inline:auto centres the
-     narrower block inside the wider leaf. */
-  padding-block: 0.95rem 1.5rem;
-  padding-inline: clamp(0rem, 4vw, 2rem);
+[data-notation-body][data-view-mode="solfege-split"] .lyrics-block,
+[data-notation-body][data-view-mode="staff"] .lyrics-subtitle,
+[data-notation-body][data-view-mode="staff"] .psalm-subtitle {
   max-width: min(36rem, calc(100% - 2rem));
   margin-inline: auto;
+  padding-inline: clamp(0rem, 4vw, 2rem);
+}
+[data-notation-body][data-view-mode="lyrics"] .lyrics-block,
+[data-notation-body][data-view-mode="solfege"] .lyrics-block,
+[data-notation-body][data-view-mode="staff-split"] .lyrics-block,
+[data-notation-body][data-view-mode="solfege-split"] .lyrics-block {
+  padding-block: 0.95rem 1.5rem;
+}
+[data-notation-body][data-view-mode="staff"] .lyrics-subtitle,
+[data-notation-body][data-view-mode="staff"] .psalm-subtitle {
+  padding-block: 0.5rem 0.5rem;
+  margin-block: 0;
 }
 
 @media (max-width: 767px) {
   [data-notation-body][data-view-mode="lyrics"] .lyrics-block,
+  [data-notation-body][data-view-mode="solfege"] .lyrics-block,
   [data-notation-body][data-view-mode="staff-split"] .lyrics-block,
-  [data-notation-body][data-view-mode="solfege-split"] .lyrics-block {
+  [data-notation-body][data-view-mode="solfege-split"] .lyrics-block,
+  [data-notation-body][data-view-mode="staff"] .lyrics-subtitle,
+  [data-notation-body][data-view-mode="staff"] .psalm-subtitle {
     /* On phones, drop the 36rem cap so margin-inline:auto centres a block
-       that already fills the viewport (100% - 2rem). Without this override
-       the block is wider than the viewport on narrow screens and hugs
-       the left edge instead of being centred. */
+       that already fills the viewport (100% - 2rem). Tighten the gutter
+       so the centred column hugs the viewport edge instead of leaving the
+       lyrics stranded in a sea of empty space. */
     max-width: calc(100% - 2rem);
+    padding-inline: 0.5rem;
   }
 }
 [data-notation-body][data-view-mode="lyrics"] .lyrics-block .verse-number,
@@ -330,36 +334,6 @@ html, body {
 [data-notation-body][data-view-mode="solfege-split"] .lyrics-block .verse-number {
   font-size: 1em;
   vertical-align: baseline;
-}
-
-/* ISSUE-54 follow-up + centring: psalm subtitles in the inline Staff view
-   (data-view-mode="staff") should sit in the same centred column as the
-   lyrics + verse numbers below them so the whole "subtitle + staff +
-   lyrics-below" stack reads as one centred block instead of the subtitle
-   floating against the viewport edge while the staff expands full-width.
-   .lyrics-subtitle is the only class that appears next to psalm-subtitle
-   inside renderLyricsContent(), so we mirror the lyrics-block centring
-   rule for it. Width + horizontal padding mirror the lyrics-block values
-   so a long subtitle line wraps inside the same centred column. */
-[data-notation-body][data-view-mode="staff"] .lyrics-subtitle,
-[data-notation-body][data-view-mode="staff"] .psalm-subtitle {
-  /* Same min(...) guard as .lyrics-block above so the staff-inline
-     subtitle never exceeds the viewport and stays centred in the same
-     column as the lyrics + verse numbers below it. Mobile override below
-     drops the 36rem cap on phones so the subtitle fills the viewport and
-     margin-inline:auto centres it. */
-  max-width: min(36rem, calc(100% - 2rem));
-  margin-inline: auto;
-  padding-inline: clamp(0rem, 4vw, 2rem);
-  padding-block: 0.5rem 0.5rem;
-  margin-block: 0 0.5rem;
-}
-
-@media (max-width: 767px) {
-  [data-notation-body][data-view-mode="staff"] .lyrics-subtitle,
-  [data-notation-body][data-view-mode="staff"] .psalm-subtitle {
-    max-width: calc(100% - 2rem);
-  }
 }
 
 /* MOBILE-04 (Phase 04.9.15 Plan 05): shrinking the repeated clef +
