@@ -1,0 +1,77 @@
+title = "psalter — custom secret patterns"
+
+# Extends (not replaces) the built-in gitleaks rules with patterns
+# psalter specifically needs to catch. Built-in rules already detect
+# AWS keys, GitHub PATs, Slack tokens, Stripe keys, JWTs, and bare sk-ant-...
+
+[extend]
+useDefault = true
+
+# ---- Global allowlist ----
+# Airtable base/table/record/view IDs are not secrets — they are public
+# references to objects the app needs to talk to.
+[allowlist]
+description = "Airtable IDs (bases, tables, records, views) are not secrets"
+regexes = [
+  '''app[A-Za-z0-9]{14}\b''',
+  '''tbl[A-Za-z0-9]{14}\b''',
+  '''rec[A-Za-z0-9]{14}\b''',
+  '''view[A-Za-z0-9]{14}\b''',
+]
+paths = [
+  '''\.env\.example$''',
+]
+
+# ---- Custom: psalter-specific env-var names ----
+# These rules catch "VARNAME=real-looking-value" forms so that pasting
+# a future credential into a tracked file (e.g. a docs sample, a
+# debug script, or even a rebase that re-introduces a previously
+# rotated secret) is blocked at PR time. Placeholder values are
+# explicitly excluded via per-rule allowlists.
+
+[[rules]]
+id = "psalter-anthropic-env"
+description = "psalter Anthropic API key via env var"
+regex = '''(?i)(?:PSALTER_)?ANTHROPIC_API_KEY\s*=\s*['"]?(sk-ant-[A-Za-z0-9_-]{20,})['"]?'''
+keywords = ["anthropic", "PSALTER_ANTHROPIC"]
+tags = ["secret", "anthropic"]
+  [rules.allowlist]
+  regexes = [
+    '''(?i)(?:PSALTER_)?ANTHROPIC_API_KEY\s*=\s*['"]?(?:your_|<|TODO|PLACEHOLDER)''',
+  ]
+  paths = [
+    '''\.env\.example$''',
+  ]
+
+[[rules]]
+id = "psalter-neon-env"
+description = "psalter Neon DB URL via env var"
+regex = '''(?i)(?:PSALTER_)?(?:NEON_)?DATABASE_URL\s*=\s*['"]?(postgres(?:ql)?://[^\s'"<>]+)['"]?'''
+keywords = ["postgres://", "postgresql://"]
+tags = ["secret", "neon"]
+  [rules.allowlist]
+  regexes = [
+    '''postgres(?:ql)?://[^:\s'"<>]+:[^@\s'"<>]+@(?:localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?(?:/[^\s'"<>]*)?''',
+    '''(?i)DATABASE_URL\s*=\s*['"]?(?:your_|<|TODO|PLACEHOLDER)''',
+  ]
+  paths = [
+    '''\.env\.example$''',
+  ]
+
+[[rules]]
+id = "psalter-airtable-env"
+description = "psalter Airtable PAT via env var"
+regex = '''(?i)AIRTABLE_PAT\s*=\s*['"]?(pat[A-Za-z0-9]{14}\.[A-Za-z0-9]{14})['"]?'''
+keywords = ["airtable"]
+tags = ["secret", "airtable"]
+  [rules.allowlist]
+  regexes = [
+    '''(?i)AIRTABLE_PAT\s*=\s*['"]?(?:your_|<|TODO|PLACEHOLDER)''',
+  ]
+  paths = [
+    '''(?:^|/)tests/.*\.(ts|js|mjs|tsx|jsx)$''',
+    '''(?:^|/)scripts/.*\.(ts|js|mjs|tsx|jsx)$''',
+    '''\.planning/.*\.md$''',
+    '''\.env\.example$''',
+    '''src/db/schema\.ts$''',
+  ]
