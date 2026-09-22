@@ -86,12 +86,19 @@ export function GearPopover({
   // remembered state comes from the same localStorage key handleMainMusicNotes
   // reads, so tapping Music Notes after a sub-toggle matches the user's last
   // selection.
-  const rememberedLayout: 'inline' | 'split-leaf' | null = viewMode === 'lyrics' ? rememberLastLayout() : null
-  const rememberedNotation: 'staff' | 'solfege' | null = viewMode === 'lyrics' ? rememberLastNotation() : null
-  const notationStaffActive = staffAvailable && (isStaff || rememberedNotation === 'staff')
-  const notationSolfegeActive = solfegeSplitAvailable && (!isStaff || rememberedNotation === 'solfege')
-  const layoutInlineActive = !isSplit || rememberedLayout === 'inline'
-  const layoutSplitActive = isSplit || rememberedLayout === 'split-leaf'
+  const inLyricsOnly = viewMode === 'lyrics'
+  const rememberedLayout: 'inline' | 'split-leaf' | null = inLyricsOnly ? rememberLastLayout() : null
+  const rememberedNotation: 'staff' | 'solfege' | null = inLyricsOnly ? rememberLastNotation() : null
+  // When Lyrics Only is active, the live viewMode reports neither staff nor
+  // split, so we must NOT fall back to the remembered sub-toggle selection —
+  // otherwise the buttons render as if one were already chosen. While in
+  // Lyrics Only, the sub-toggles are reachable but visually unselected; the
+  // first tap just switches into the corresponding Music Notes view using
+  // the remembered default.
+  const notationStaffActive = staffAvailable && isMusicNotes && (isStaff || rememberedNotation === 'staff')
+  const notationSolfegeActive = solfegeSplitAvailable && isMusicNotes && (!isStaff || rememberedNotation === 'solfege')
+  const layoutInlineActive = isMusicNotes && (!isSplit || rememberedLayout === 'inline')
+  const layoutSplitActive = isMusicNotes && (isSplit || rememberedLayout === 'split-leaf')
   // The Inline layout button's tooltip is meaningless while in Lyrics Only
   // (isStaff is false because viewMode === 'lyrics'), so pick the right copy
   // based on the remembered notation family in that case.
@@ -325,7 +332,7 @@ export function GearPopover({
                 <button
                   type="button"
                   role="radio"
-                  aria-checked={isStaff}
+                  aria-checked={!inLyricsOnly && isStaff}
                   aria-label="Staff"
                   onClick={() => handleNotationChange('staff')}
                   aria-disabled={!staffAvailable ? 'true' : undefined}
@@ -343,7 +350,7 @@ export function GearPopover({
                 <button
                   type="button"
                   role="radio"
-                  aria-checked={!isStaff}
+                  aria-checked={!inLyricsOnly && !isStaff}
                   aria-label="Solfege"
                   onClick={() => handleNotationChange('solfege')}
                   aria-disabled={!solfegeSplitAvailable ? 'true' : undefined}
@@ -368,7 +375,7 @@ export function GearPopover({
                 <button
                   type="button"
                   role="radio"
-                  aria-checked={!isSplit}
+                  aria-checked={!inLyricsOnly && !isSplit}
                   aria-label="Inline"
                   title={inlineLayoutDisabledTitle}
                   onClick={() => handleLayoutChange('inline')}
@@ -387,7 +394,7 @@ export function GearPopover({
                 <button
                   type="button"
                   role="radio"
-                  aria-checked={isSplit}
+                  aria-checked={!inLyricsOnly && isSplit}
                   aria-label="Split-Leaf"
                   onClick={() => handleLayoutChange('split-leaf')}
                   className={[
