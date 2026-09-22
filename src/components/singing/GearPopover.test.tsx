@@ -34,24 +34,26 @@ function renderGearPopover(overrides: Partial<React.ComponentProps<typeof GearPo
   return render(<GearPopover {...defaultProps} {...overrides} />)
 }
 
-// 2026-09-05: The "Score: Digital | Original scan" sub-toggle is HIDDEN in the
-// gear menu because Staff split-leaf now ALWAYS renders the scanned JPG
-// (forceStaffJpgFallback in NotationRenderer.tsx). The JSX block and its
-// showScoreSourceRow derivation are preserved (gated on `false &&`) for
-// future re-activation — see [[project-staff-split-leaf-disabled]]. Tests
-// below verify the row is currently NOT rendered in any configuration that
-// previously would have shown it.
-describe('GearPopover — Score: Digital / Original scan row (hidden 2026-09-05)', () => {
-  it('is hidden in APPROVED Staff Split-Leaf even when a scan exists', () => {
+// Issue #59 (260916-kk1): re-activate the "Score: Digital | Original scan"
+// sub-toggle. The row renders ONLY when Staff inline is available — i.e.
+// staff notation exists AND the tune is precentor-approved. Using the
+// `inlineLayoutDisabled` helper keeps a single source of truth between
+// the Digital button's clickability and the Inline Staff layout button.
+describe('GearPopover — Score: Digital / Original scan row (#59)', () => {
+  it('is VISIBLE in APPROVED Staff Split-Leaf when a scan exists, with Digital enabled', () => {
     renderGearPopover({
       viewMode: 'staff-split',
       staffInlineApproved: true,
       originalScanAvailable: true,
     })
-    expect(document.querySelector('[data-settings-sub="score-source"]')).toBeNull()
+    const row = document.querySelector('[data-settings-sub="score-source"]')
+    expect(row).not.toBeNull()
+    const digital = screen.getByRole('radio', { name: 'Digital' })
+    expect(digital.getAttribute('aria-disabled')).toBeNull()
+    expect(digital.getAttribute('aria-checked')).toBe('true')
   })
 
-  it('is hidden in INLINE Staff layout', () => {
+  it('is HIDDEN in INLINE Staff layout', () => {
     renderGearPopover({
       viewMode: 'staff',
       staffInlineApproved: true,
@@ -60,22 +62,22 @@ describe('GearPopover — Score: Digital / Original scan row (hidden 2026-09-05)
     expect(document.querySelector('[data-settings-sub="score-source"]')).toBeNull()
   })
 
-  it('is hidden when originalScanAvailable is false', () => {
+  it('is HIDDEN when originalScanAvailable is false', () => {
     renderGearPopover({ originalScanAvailable: false })
     expect(document.querySelector('[data-settings-sub="score-source"]')).toBeNull()
   })
 
-  it('is hidden in Lyrics Only view mode', () => {
+  it('is HIDDEN in Lyrics Only view mode', () => {
     renderGearPopover({ viewMode: 'lyrics', originalScanAvailable: true })
     expect(document.querySelector('[data-settings-sub="score-source"]')).toBeNull()
   })
 
-  it('is hidden in Solfège Split-Leaf', () => {
+  it('is HIDDEN in Solfège Split-Leaf', () => {
     renderGearPopover({ viewMode: 'solfege-split', originalScanAvailable: true })
     expect(document.querySelector('[data-settings-sub="score-source"]')).toBeNull()
   })
 
-  it('is hidden in unapproved Staff Split-Leaf', () => {
+  it('is HIDDEN in unapproved Staff Split-Leaf (scan is already force-shown)', () => {
     renderGearPopover({
       viewMode: 'staff-split',
       staffInlineApproved: false,
@@ -84,13 +86,16 @@ describe('GearPopover — Score: Digital / Original scan row (hidden 2026-09-05)
     expect(document.querySelector('[data-settings-sub="score-source"]')).toBeNull()
   })
 
-  it('does not render the Digital or Original scan radio buttons', () => {
+  it('DISABLES Digital in approved Staff Split-Leaf when staff notation is unavailable', () => {
     renderGearPopover({
       viewMode: 'staff-split',
       staffInlineApproved: true,
       originalScanAvailable: true,
+      staffAvailable: false,
     })
-    expect(screen.queryByRole('radio', { name: 'Digital' })).toBeNull()
-    expect(screen.queryByRole('radio', { name: 'Original scan' })).toBeNull()
+    const row = document.querySelector('[data-settings-sub="score-source"]')
+    expect(row).not.toBeNull()
+    const digital = screen.getByRole('radio', { name: 'Digital' })
+    expect(digital.getAttribute('aria-disabled')).toBe('true')
   })
 })
