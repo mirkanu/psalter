@@ -302,6 +302,8 @@ export function GearPopover({
             aria-checked={isMusicNotes}
             aria-disabled={musicNotesBlocked ? 'true' : undefined}
             data-settings-main="music-notes"
+            id="settings-tab-music-notes"
+            aria-controls="settings-panel-music-notes"
             title={musicNotesBlocked ? 'No staff or solfège notation available for this tune' : undefined}
             onClick={handleMainMusicNotes}
             className={[
@@ -319,6 +321,7 @@ export function GearPopover({
             role="radio"
             aria-checked={!isMusicNotes}
             data-settings-main="lyrics-only"
+            id="settings-tab-lyrics-only"
             onClick={() => onViewModeChange('lyrics')}
             className={[
               'h-10 rounded-md text-sm font-semibold active:scale-[0.95] transition-[transform,background,color] duration-75 motion-reduce:transition-none',
@@ -337,7 +340,13 @@ export function GearPopover({
             view with the last-selected layout remembered in localStorage (the
             same `psalter-score-mode-last-music` key the top-level Music Notes
             button reads). */}
-        <>
+        <div
+          role="region"
+          id="settings-panel-music-notes"
+          aria-labelledby="settings-tab-music-notes"
+          className="rounded-md border border-border/40 p-2 space-y-2"
+        >
+          <span className="sr-only">Music notation settings (Notation, Layout)</span>
           {/* Sub-toggle A: Notation type */}
             <div role="radiogroup" aria-label="Notation type" data-settings-sub="notation">
               <span className="text-xs text-muted-foreground">Notation:</span>
@@ -469,7 +478,8 @@ export function GearPopover({
                 </div>
               </div>
             )}
-        </>
+
+        </div>
 
         <Separator className="my-2" />
 

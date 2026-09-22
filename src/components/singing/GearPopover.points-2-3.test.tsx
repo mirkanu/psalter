@@ -320,3 +320,30 @@ describe('GearPopover — Inline button gating from Lyrics Only (regression for 
     expect(onViewModeChange).not.toHaveBeenCalled()
   })
 })
+
+describe('Music Notes tab panel association (WAI-ARIA tabs pattern)', () => {
+  it('Music Notes button has id + aria-controls pointing at the Notation/Layout panel', () => {
+    renderGearPopover({ viewMode: 'music' })
+    const tab = screen.getByRole('radio', { name: 'Music Notes' })
+    expect(tab.getAttribute('id')).toBe('settings-tab-music-notes')
+    expect(tab.getAttribute('aria-controls')).toBe('settings-panel-music-notes')
+  })
+
+  it('Lyrics Only button has its own id (not yet a panel — nothing to control)', () => {
+    renderGearPopover({ viewMode: 'lyrics' })
+    const tab = screen.getByRole('radio', { name: 'Lyrics Only' })
+    expect(tab.getAttribute('id')).toBe('settings-tab-lyrics-only')
+    expect(tab.getAttribute('aria-controls')).toBeNull()
+  })
+
+  it('Notation + Layout rows sit inside a region labelled by Music Notes', () => {
+    renderGearPopover({ viewMode: 'music' })
+    const panel = document.getElementById('settings-panel-music-notes')
+    expect(panel).not.toBeNull()
+    expect(panel!.tagName).toBe('DIV')
+    expect(panel!.getAttribute('role')).toBe('region')
+    expect(panel!.getAttribute('aria-labelledby')).toBe('settings-tab-music-notes')
+    expect(panel!.querySelector('[data-settings-sub="notation"]')).not.toBeNull()
+    expect(panel!.querySelector('[data-settings-sub="layout"]')).not.toBeNull()
+  })
+})
