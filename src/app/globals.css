@@ -293,17 +293,37 @@ html, body {
 [data-notation-body][data-view-mode="lyrics"] .lyrics-block,
 [data-notation-body][data-view-mode="staff-split"] .lyrics-block,
 [data-notation-body][data-view-mode="solfege-split"] .lyrics-block {
-  /* min(36rem, 100%) so the block never exceeds its pane: lyrics-only
-     leaf is wider than 36rem so the block stays at 36rem and
-     margin-inline:auto centres it on screen; split-leaf lyrics pane is
-     narrower than 36rem on most viewports so the block fills the pane
-     and margin-inline:auto collapses to zero. Either way the block sits
-     flush with its leaf and reads as centred within that leaf, never
-     spilling past it. */
-  max-width: min(36rem, 100%);
-  margin-inline: auto;
+  /* ISSUE-54 follow-up + centring: lyrics-only and the lyrics half of
+     split-leaf (staff-split, solfege-split) share the same
+     renderLyricsContent() code path in NotationRenderer.tsx, so this rule
+     block governs all three. The lyrics-block is centred on screen with
+     max-width + margin-inline:auto so the psalm subtitle, verse numbers and
+     lyrics live inside one centred column instead of hugging the viewport
+     edge. Inner verse text stays LEFT-aligned (the previous look); the
+     horizontal padding is only there to keep a single overflowing line from
+     butting against the viewport edge and is mirrored on both sides so the
+     box stays symmetric even when text overflows. On mobile (<768px) the
+     block fills the viewport with 1rem gutter on each side, so the
+     centred column is the full viewport minus 2rem of inset padding
+     (max-width = calc(100% - 2rem) overrides the 36rem cap below 768px).
+     At >=768px the 36rem cap takes over and margin-inline:auto centres the
+     narrower block inside the wider leaf. */
   padding-block: 0.95rem 1.5rem;
   padding-inline: clamp(0rem, 4vw, 2rem);
+  max-width: min(36rem, calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+@media (max-width: 767px) {
+  [data-notation-body][data-view-mode="lyrics"] .lyrics-block,
+  [data-notation-body][data-view-mode="staff-split"] .lyrics-block,
+  [data-notation-body][data-view-mode="solfege-split"] .lyrics-block {
+    /* On phones, drop the 36rem cap so margin-inline:auto centres a block
+       that already fills the viewport (100% - 2rem). Without this override
+       the block is wider than the viewport on narrow screens and hugs
+       the left edge instead of being centred. */
+    max-width: calc(100% - 2rem);
+  }
 }
 [data-notation-body][data-view-mode="lyrics"] .lyrics-block .verse-number,
 [data-notation-body][data-view-mode="staff-split"] .lyrics-block .verse-number,
@@ -325,10 +345,21 @@ html, body {
 [data-notation-body][data-view-mode="staff"] .psalm-subtitle {
   /* Same min(...) guard as .lyrics-block above so the staff-inline
      subtitle never exceeds the viewport and stays centred in the same
-     column as the lyrics + verse numbers below it. */
-  max-width: min(36rem, 100%);
+     column as the lyrics + verse numbers below it. Mobile override below
+     drops the 36rem cap on phones so the subtitle fills the viewport and
+     margin-inline:auto centres it. */
+  max-width: min(36rem, calc(100% - 2rem));
   margin-inline: auto;
   padding-inline: clamp(0rem, 4vw, 2rem);
+  padding-block: 0.5rem 0.5rem;
+  margin-block: 0 0.5rem;
+}
+
+@media (max-width: 767px) {
+  [data-notation-body][data-view-mode="staff"] .lyrics-subtitle,
+  [data-notation-body][data-view-mode="staff"] .psalm-subtitle {
+    max-width: calc(100% - 2rem);
+  }
 }
 
 /* MOBILE-04 (Phase 04.9.15 Plan 05): shrinking the repeated clef +
