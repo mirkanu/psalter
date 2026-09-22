@@ -17,6 +17,7 @@
  */
 
 import { useEffect, useState } from 'react'
+import { MoreHorizontal, MoreVertical } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -96,15 +97,34 @@ export function InstallDialogHost(): React.ReactElement | null {
         >
           {platform.isIOS ? (
             <ol className="list-decimal pl-5 space-y-1">
-              <li>Open this site in Safari.</li>
-              <li>Tap the <strong>Share</strong> button (square with an arrow).</li>
+              <li>
+                Open the page-actions menu (the{' '}
+                <MoreHorizontal
+                  className="inline align-[-0.125em] text-foreground"
+                  size={16}
+                  strokeWidth={2.25}
+                  aria-hidden
+                />{' '}
+                <strong>three-dot icon</strong> next to the reload button at
+                the right end of the Safari address bar).
+              </li>
+              <li>Tap <strong>Share</strong> in the menu.</li>
               <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
               <li>Confirm the name and tap <strong>Add</strong>.</li>
             </ol>
           ) : platform.isAndroidPhone ? (
             <ol className="list-decimal pl-5 space-y-1">
               <li>Open this site in Chrome.</li>
-              <li>Tap the <strong>three-dot menu</strong> in the top-right.</li>
+              <li>
+                Tap the{' '}
+                <MoreVertical
+                  className="inline align-[-0.125em] text-foreground"
+                  size={16}
+                  strokeWidth={2.25}
+                  aria-hidden
+                />{' '}
+                <strong>three-dot menu</strong> in the top-right.
+              </li>
               <li>Tap <strong>Install app</strong> (or &ldquo;Add to Home screen&rdquo;).</li>
               <li>Follow the prompt to confirm.</li>
             </ol>
