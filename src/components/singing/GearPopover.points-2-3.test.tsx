@@ -10,7 +10,7 @@
 // Split-Leaf from Lyrics Only should call onViewModeChange with the
 // appropriate Music Notes view (using the last-stored layout / notation
 // family from localStorage as the default for the unset axis).
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import { GearPopover } from './GearPopover'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
@@ -259,6 +259,64 @@ describe('GearPopover — issue #59 point 3 (sub-toggles from Lyrics Only)', () 
     }
     render(<GearPopover {...props} />)
     fireEvent.click(screen.getByRole('radio', { name: 'Staff' }))
+    expect(onViewModeChange).not.toHaveBeenCalled()
+  })
+})
+
+describe('GearPopover — Inline button gating from Lyrics Only (regression for ps105 false-disable)', () => {
+  // Regression: while Lyrics Only was active, the Inline layout button was
+  // fully greyed-out and warned "not available for this tune" even when the
+  // tune DID have approved inline staff (e.g. Ps 105). The disabled gate was
+  // reading the live viewMode (which is 'lyrics' in this case), not the
+  // effective notation family the sub-toggle handler would use. The disabled
+  // state must follow the effective (remembered) notation, not the live one.
+
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  it('Inline is NOT disabled in Lyrics Only when last notation=staff and staffInlineApproved=true', () => {
+    localStorage.setItem('psalter-score-mode-last-music', 'staff')
+    localStorage.setItem('psalter-score-mode', 'staff')
+    renderGearPopover({ viewMode: 'lyrics', staffInlineApproved: true })
+    const inline = screen.getByRole('radio', { name: 'Inline' })
+    expect(inline.getAttribute('aria-disabled')).not.toBe('true')
+    expect(inline.className).not.toContain('cursor-not-allowed')
+  })
+
+  it('Inline IS disabled in Lyrics Only when last notation=staff and staffInlineApproved=false', () => {
+    localStorage.setItem('psalter-score-mode-last-music', 'staff')
+    localStorage.setItem('psalter-score-mode', 'staff')
+    renderGearPopover({ viewMode: 'lyrics', staffInlineApproved: false })
+    const inline = screen.getByRole('radio', { name: 'Inline' })
+    expect(inline.getAttribute('aria-disabled')).toBe('true')
+    expect(inline.className).toContain('cursor-not-allowed')
+    expect(inline.getAttribute('title')).toMatch(/approved/i)
+  })
+
+  it('Inline IS disabled in Lyrics Only when last notation=solfege and solfegeInlineAvailable=false', () => {
+    localStorage.setItem('psalter-score-mode-last-music', 'solfege')
+    localStorage.setItem('psalter-score-mode', 'solfege')
+    renderGearPopover({
+      viewMode: 'lyrics',
+      staffInlineApproved: false,
+      solfegeInlineAvailable: false,
+    })
+    const inline = screen.getByRole('radio', { name: 'Inline' })
+    expect(inline.getAttribute('aria-disabled')).toBe('true')
+    expect(inline.getAttribute('title')).toMatch(/coming soon/i)
+  })
+
+  it('clicking disabled Inline from Lyrics Only (staff not approved) does NOT change viewMode', () => {
+    localStorage.setItem('psalter-score-mode-last-music', 'staff')
+    localStorage.setItem('psalter-score-mode', 'staff')
+    const onViewModeChange = vi.fn()
+    renderGearPopover({
+      viewMode: 'lyrics',
+      staffInlineApproved: false,
+      onViewModeChange,
+    })
+    fireEvent.click(screen.getByRole('radio', { name: 'Inline' }))
     expect(onViewModeChange).not.toHaveBeenCalled()
   })
 })
