@@ -14,7 +14,7 @@ import {
   getEditoriallyLinkedTuneIdsForPsalm,
   fetchPsalmListRows,
 } from '@/db/queries/psalms'
-import { fetchTunesByMeter, fetchTuneMelismaStatus, fetchPsalmVersionTuneTiers, enrichAlternateTunesToTuneRows, fetchTuneCount } from '@/db/queries/tunes'
+import { fetchTunesByMeterEnriched, fetchTuneMelismaStatus, fetchPsalmVersionTuneTiers, fetchTuneCount } from '@/db/queries/tunes'
 import { SingingView } from '@/components/singing/SingingView'
 import { parseSlug, deriveVersionSlug, stripStar, slugToDisplayTitle } from '@/lib/psalm-slugs'
 import { deriveTuneJpgPages } from '@/lib/tune-jpg-urls'
@@ -122,7 +122,7 @@ export default async function PsalmPage({ params }: PageProps) {
   // in the Sing view's tune picker before this fix — /precent's picker already stripped this
   // inline in SetDetail.tsx's handleTuneClick).
   const primaryMeter = stripDoubleMeterSuffix(activeVersion?.meter ?? rawTune?.meter ?? null)
-  const rawAlternateTunes = primaryMeter ? await fetchTunesByMeter(primaryMeter) : []
+  const alternateTunes = primaryMeter ? await fetchTunesByMeterEnriched(primaryMeter) : []
   // Phase 16 R3: enrich to full TuneRow shape so TunePickerDialog (Mode A, the
   // precentor-style table) receives all the metadata fields it reads
   // (`inPrcaPsalter`, `recommendedPsalmIds`, `moods`, `weightedHistoricalFrequency`,
@@ -130,7 +130,6 @@ export default async function PsalmPage({ params }: PageProps) {
   // number search, default sort, "Recommended for this psalm" highlight, and
   // the Recommended Psalms + In PRCA columns. See db/queries/tunes.ts for the
   // full breakage list.
-  const alternateTunes = await enrichAlternateTunesToTuneRows(rawAlternateTunes)
   // TSEL-01/D-13: per-psalm-version Backup/Historical tune ids for the tune-switcher sheet.
   // Mirrors src/app/psalms/[id]/study/page.tsx, which already does this for the Study tab.
   const tuneTiers = activeVersion ? await fetchPsalmVersionTuneTiers(activeVersion.id) : undefined
