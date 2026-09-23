@@ -1,9 +1,6 @@
-// ISR: regenerate the calendar at most once per hour. The "today" marker
-// is computed client-side in DailyCalendarClient, so server-side time isn't
-// baked into the cached HTML. (Neon egress — issue #51, phase B.)
-export const revalidate = 3600
+export const dynamic = 'force-dynamic'
 import type { Metadata } from "next"
-import { fetchAllDailyReadingsMinimal } from "@/db/queries/daily"
+import { fetchAllDailyReadings } from "@/db/queries/daily"
 import { getDayOfYear } from "@/lib/daily"
 import { DailyCalendarClient } from "@/components/DailyCalendarClient"
 
@@ -13,7 +10,7 @@ export const metadata: Metadata = {
 }
 
 export default async function DailyPage() {
-  const readings = await fetchAllDailyReadingsMinimal()
+  const readings = await fetchAllDailyReadings()
   const todayDay = getDayOfYear()
 
   return (
