@@ -1,9 +1,6 @@
-// ISR: regenerate the homepage at most once per hour. The "today" marker is
-// computed client-side in TodayPsalmBadge, so server-side time isn't baked
-// into the cached HTML. (Neon egress — issue #51, phase B.)
-export const revalidate = 3600
+export const dynamic = 'force-dynamic'
 import { Home, Library, CalendarDays, Music2, Church } from "lucide-react"
-import { fetchAllDailyReadingsMinimal } from "@/db/queries/daily"
+import { fetchAllDailyReadings } from "@/db/queries/daily"
 import { fetchPublishedPosts } from "@/db/queries/changelog"
 import { getDayOfYear } from "@/lib/daily"
 import { TodayPsalmBadge } from "@/components/TodayPsalmBadge"
@@ -13,7 +10,7 @@ import { ExploreHighlights } from "@/components/ExploreHighlights"
 
 export default async function HomePage() {
   const [readings, posts] = await Promise.all([
-    fetchAllDailyReadingsMinimal(),
+    fetchAllDailyReadings(),
     fetchPublishedPosts(),
   ])
   const todayDay = getDayOfYear()

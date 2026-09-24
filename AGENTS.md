@@ -1,10 +1,12 @@
 # CPRC Psalter — Project Guide
 
+This file is the canonical project guide for the `mirkanu/psalter` repository. It is intentionally short, neutral about tooling, and replaces the previous `CLAUDE.md`. Update it via PR when project state changes.
+
 ## Project
 
 Rebuild of **psalter.cprc.co.uk** — a Scottish Psalter website for CPRC congregation and precentors. Migrating from Airtable + Softr to Next.js 15 + PostgreSQL + abcjs notation rendering.
 
-**Deployed at:** `psalter.gsdlabs.dev` (Hetzner VPS, port 3005, Cloudflare Tunnel)
+**Deployed at:** `psalter.gsdlabs.dev` (Vercel — `mirkanu/psalter`, `psalter.gsdlabs.dev` custom domain; Neon Postgres for the database; Cloudflare R2 for object storage).
 
 ## Stack
 
@@ -14,11 +16,11 @@ Rebuild of **psalter.cprc.co.uk** — a Scottish Psalter website for CPRC congre
 | UI | shadcn/ui + Tailwind CSS 4 + lucide-react |
 | ORM | Drizzle ORM 0.45.2 + drizzle-kit 0.31.10 |
 | DB driver | postgres.js 3.4.9 |
-| Database | PostgreSQL 16 (psalter-db container) |
+| Database | PostgreSQL 16 (Neon — connection via `DATABASE_URL`) |
 | Auth | Better Auth 1.6.9 (precentor login, admin-created accounts only) |
 | Notation | abcjs 6.6.3 (client-only — `dynamic({ ssr: false })` required) |
-| Storage | Cloudflare R2 (tune score sheet JPGs) |
-| Deployment | Docker container → Cloudflare Tunnel → psalter.gsdlabs.dev |
+| Storage | Cloudflare R2 (tune score sheet JPGs, bucket `gsd-psalter`) |
+| Deployment | Vercel, custom domain `psalter.gsdlabs.dev` |
 
 ## Critical Reference Docs — READ FIRST
 
@@ -54,47 +56,24 @@ Public psalm and tune pages use `generateStaticParams` — no runtime DB queries
 
 ## Mobile-first layout (binding)
 
-The psalter is a **mobile-first** site. Always design + verify CSS at phone widths first (<=390px), then scale up to tablet/desktop. Centring, padding, and max-width rules MUST work on a 360-390px viewport, not just on desktop. After any visual/CSS change, re-screenshot at **mobile (390), tablet (768), and desktop (1440)** before considering the change done. The Playwright measure-lyrics script enforces block.mid === parent.mid for .lyrics-block and .lyrics-subtitle across all four view modes (lyrics, staff-split, solfege-split, staff) -- it must pass at every viewport, not just desktop.
+The psalter is a **mobile-first** site. Always design + verify CSS at phone widths first (<=390px), then scale up to tablet/desktop. Centring, padding, and max-width rules MUST work on a 360-390px viewport, not just on desktop. After any visual/CSS change, re-screenshot at **mobile (390), tablet (768), and desktop (1440)** before considering the change done. The Playwright measure-lyrics script enforces block.mid === parent.mid for .lyrics-block and .lyrics-subtitle across all four view modes (lyrics, staff-split, solfege-split, staff) — it must pass at every viewport, not just desktop.
 
-## Data Sources
 ## Data Sources
 
 - **Airtable base:** `appY3dB1EHtex0fUJ` ("CPRC Psalter")
-- **Airtable PAT:** stored in `.env` as `AIRTABLE_PAT`
-- **Key tables:** Psalms, Scottish Psalter (versification), Tunes, Psalm & Tune CPRC, Events, Verses, 365 Days, Topics (Nave's), Messianic Psalms
+- **Airtable PAT:** stored in `.env` as `AIRTABLE_PAT` (never commit)
+- **Key tables (legacy, for migration only):** Psalms, Scottish Psalter (versification), Tunes, Psalm & Tune CPRC, Events, Verses, 365 Days, Topics (Nave's), Messianic Psalms
 
-## GSD Workflow
+## Deployment — stay on preview
 
-All non-trivial work goes through GSD phases. Current roadmap: 6 phases.
+Free Vercel allows **unlimited preview deploys but limited production deploys** on lower tiers; production deploys happen whenever `main` is updated. Therefore: **commit and push iteration-by-iteration to preview branches; only push to `main` when a milestone (issue/PR scope) is fully done and reviewed.**
 
-```
-Phase 1: Foundation      — Schema + Airtable→PostgreSQL migration + R2 JPGs
-Phase 2: Public Browse   — Psalm list/detail (3 tabs), tune pages, daily plan
-Phase 3: Search          — Full-text, topic browse, meter filter
-Phase 4: Notation        — abcjs live SVG + hymnal layout + JPG fallback
-Phase 5: Precentor Portal — Auth, service events, set list, live service view
-Phase 6: Polish          — Skeletons, click feedback, OG images, Lighthouse 90+
-```
-
-Start Phase 1: `/gsd-plan-phase 1`
+Preview URLs follow the Vercel preview shape (`<deployment-id>-<git-branch>-<team-slug>.vercel.app` or the `*.vercel.app` form shown in the Vercel dashboard for the deployment). Production URL: `https://psalter.gsdlabs.dev`.
 
 ## Environment Variables
 
-See `.env` for:
-- `AIRTABLE_PAT` — Airtable Personal Access Token
-- `DATABASE_URL` — PostgreSQL connection string
-- Cloudflare R2 credentials (inherit from `/data/home/.env`: `CLOUDFLARE_API_KEY`, `CLOUDFLARE_EMAIL`)
+See `.env.example` for required keys. Never commit real values; local `.env` is gitignored.
 
-<!-- Stack (auto-managed by GSD Dashboard — do not edit manually) -->
-## Stack (auto-managed)
+## Workflow
 
-| Service | Key / Reference | Purpose |
-|---------|-----------------|---------|
-| Umami | `PSALTER_UMAMI_WEBSITE_ID` | Analytics (umami.gsdlabs.dev) |
-| BetterStack | monitor: `gsd-psalter` | Uptime monitoring |
-| Cloudflare R2 | bucket: `gsd-psalter` | Storage |
-| Sentry | `PSALTER_SENTRY_DSN` | Error tracking (sentry.io) |
-| Telegram | `POST http://localhost:4820/api/services/telegram/send-file` | File push to owner's Telegram |
-
-*Last updated: 2026-07-25T09:16:34.330Z — updated automatically on each stage transition.*
-<!-- /Stack -->
+Project tracking lives in **GitHub Issues and Milestones** on this repository. Planning documents (`.planning/research/*.md`) hold canonical reference material; day-to-day planning lives in issues. See [`Skills/github-workflow`](https://github.com/mirkanu/skills-public) — or the matching skill in this workspace — for the general comment-on-start / comment-on-finish / branching rules.
