@@ -86,10 +86,10 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // runtime: 'nodejs' — MANDATORY: auth.api.getSession opens a DB socket, which
-  // is not available on the edge runtime. /tunes/<id> rewrites also call
-  // fetchTuneSlugById which goes through the same DB connection.
-  runtime: 'nodejs',
+  // Proxy always runs on the Node.js runtime in Next.js 16, so no
+  // `runtime` export is allowed here. auth.api.getSession and
+  // fetchTuneSlugById both need DB access — that is exactly why we are
+  // not on edge.
   matcher: [
     '/dev',
     '/dev/:path*',
