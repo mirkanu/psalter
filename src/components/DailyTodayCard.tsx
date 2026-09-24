@@ -1,4 +1,4 @@
-import Link from "next/link"
+import Link from "@/components/Link"
 import { buttonVariants } from "@/components/ui/button"
 import { formatPsalmRef } from "@/lib/daily"
 import { cn } from "@/lib/utils"

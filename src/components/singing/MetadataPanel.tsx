@@ -1,5 +1,5 @@
 'use client'
-import Link from 'next/link'
+import Link from "@/components/Link"
 import { SheetClose } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import type { PsalmDetail } from '@/db/queries/psalms'

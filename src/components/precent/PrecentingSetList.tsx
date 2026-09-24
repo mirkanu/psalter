@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import Link from "@/components/Link"
 import { PlayCircle } from 'lucide-react'
 import {
   Table,
