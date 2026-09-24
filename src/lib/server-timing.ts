@@ -8,16 +8,18 @@ export type ServerTimer = {
 /**
  * Per-request Server-Timing accumulator.
  *
- * Each mark() records a delta since the previous mark (or the timer start).
- * serialize() emits the `name;dur=<ms>` form accepted by the Server-Timing spec,
- * one segment per mark, in mark order. Duplicates are kept (spec allows it);
- * the browser merges by name in the DevTools UI.
+ * Why request headers instead of response headers:
+ *   In Next.js 16 App Router, `headers().set('Server-Timing', ...)` inside a
+ *   Server Component is silently dropped — response headers are already
+ *   committed by the time the page renders. So we stash the timing into a
+ *   request header (`x-issue-72-server-timing`) and the proxy (proxy.ts)
+ *   lifts it onto the response.
  *
  * Usage (RSC page):
  *   const t = startTimings()
  *   const psalm = t.measure('fetchPsalmDetail', () => fetchPsalmDetail(id))
  *   const tunes = t.measure('fetchTunesByMeter', () => fetchTunesByMeter(meter))
- *   t.finish()   // appends the Server-Timing response header before send
+ *   await t.finish()
  */
 export function startTimings(): ServerTimer & {
   measure: <T>(name: string, fn: () => Promise<T>) => Promise<T>
@@ -48,7 +50,7 @@ export function startTimings(): ServerTimer & {
   const finish = async () => {
     mark('render')
     const h = await headers()
-    h.append('Server-Timing', serialize())
+    h.append('x-issue-72-server-timing', serialize())
   }
 
   return { mark, serialize, measure, finish }

@@ -82,7 +82,21 @@ export async function proxy(request: NextRequest) {
     return response
   }
 
-  return NextResponse.next()
+  // Issue #72: forward page-emitted Server-Timing into the response.
+  // Page components cannot modify response headers (they are committed
+  // before render), so the page sets the value as a request header
+  // (x-issue-72-server-timing) and we lift it onto the response here.
+  const response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
+  const pageTiming = request.headers.get('x-issue-72-server-timing')
+  if (pageTiming) {
+    response.headers.append('Server-Timing', pageTiming)
+  }
+  response.headers.append('Server-Timing', 'proxy;dur=0;desc="issue-72 edge"')
+  return response
 }
 
 export const config = {
