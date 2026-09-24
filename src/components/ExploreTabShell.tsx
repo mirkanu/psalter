@@ -2,7 +2,7 @@
 
 import { Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import Link from "next/link"
+import Link from "@/components/Link"
 import { Palette, BookOpen, Library, Users, ScrollText, Gem } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"

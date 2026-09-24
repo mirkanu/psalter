@@ -1,7 +1,7 @@
 'use client'
 import { useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import Link from "next/link"
+import Link from "@/components/Link"
 import { X } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"

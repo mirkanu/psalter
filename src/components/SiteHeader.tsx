@@ -1,6 +1,6 @@
 'use client'
 import { Fragment, useState, useEffect } from 'react'
-import Link from "next/link"
+import Link from "@/components/Link"
 import { usePathname, useRouter } from "next/navigation"
 import { Menu, Search, Moon, Sun, MonitorSmartphone } from 'lucide-react'
 import { GithubMark } from '@/components/GithubMark'
