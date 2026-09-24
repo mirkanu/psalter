@@ -1,38 +1,102 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getSessionCookie } from 'better-auth/cookies'
+import { auth } from '@/lib/auth'
+import { fetchTuneSlugById } from '@/db/queries/tunes'
+import { isNumericTuneSlug } from '@/lib/tune-slug'
 
 /**
- * Edge-side timing proxy for issue #72.
+ * Combined edge proxy for the psalter app.
  *
- * Why a proxy? In Next.js 16 App Router, `headers().set('Server-Timing', ...)`
- * inside a Server Component is silently dropped — the response headers are
- * already committed by the time the page renders. The proxy layer is the
- * ONLY place where we can attach a response header to the HTML response.
+ * Next.js 16 renamed `middleware.ts` to `proxy.ts`. Both files cannot exist
+ * at the same path; this file replaces the old `src/middleware.ts` and adds
+ * issue-72 Server-Timing instrumentation on the slow routes.
  *
- * What this measures:
- *   This proxy returns synchronously (no DB calls, no auth logic on the slow
- *   route — auth runs in the page itself). So we emit `dur=0` here as a
- *   sanity check: the proxy is *not* the bottleneck on /precent/[id]/sing/[pos].
- *   The browser DevTools Network panel will show `proxy;dur=0` alongside
- *   `cfEdge;dur=...` and `cfOrigin;dur=...`, which lets us prove the delay
- *   is in `cfOrigin` (Neon Postgres) rather than in our edge code.
- *
- * Header format: <name>;dur=<ms>;desc="..." — multiple values are
- * comma-separated by browsers. We append, never overwrite.
+ * What this file does:
+ *   1. /tunes/<id> → /tunes/<slug> 308 redirect (TUNE-05 — must be a real HTTP 308,
+ *      not a client-side redirect).
+ *   2. /api/dev/* — admin-gated JSON 401/403 (SEC-01/SEC-02).
+ *   3. /precent/* — auth-gated, redirects to /login when the session cookie
+ *      is missing (D-02).
+ *   4. /dev/* — admin-gated, redirects to /login or /admin-only (D-01).
+ *   5. Issue #72 instrumentation: append a `Server-Timing` header on /precent/*
+ *      and /psalms/[id] so the page server-render budget is visible in
+ *      DevTools alongside `cfEdge`/`cfOrigin`. The page component fills in
+ *      detailed sub-metric timings via `startTimings()`.
  */
 
-export function proxy(_request: NextRequest) {
-  const response = NextResponse.next()
-  response.headers.append('Server-Timing', 'proxy;dur=0;desc="issue-72 edge"')
-  return response
+export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // TUNE-05: legacy numeric tune ids must issue a real HTTP 308.
+  const tuneIdMatch = pathname.match(/^\/tunes\/(\d+)$/)
+  if (tuneIdMatch) {
+    const legacyId = Number(tuneIdMatch[1])
+    const slug = await fetchTuneSlugById(legacyId)
+    if (slug && !isNumericTuneSlug(slug)) {
+      return NextResponse.redirect(new URL(`/tunes/${slug}`, request.url), 308)
+    }
+    return NextResponse.next()
+  }
+
+  // SEC-01/SEC-02: /api/dev/* — admin-gated, must return JSON
+  if (pathname.startsWith('/api/dev')) {
+    const session = await auth.api.getSession({ headers: request.headers })
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (session.user.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    return NextResponse.next()
+  }
+
+  // D-02: /precent/* — auth-gated
+  if (pathname.startsWith('/precent')) {
+    const sessionCookie = getSessionCookie(request)
+    if (!sessionCookie) {
+      const callbackUrl = encodeURIComponent(pathname)
+      return NextResponse.redirect(new URL(`/login?callbackUrl=${callbackUrl}`, request.url))
+    }
+    const response = NextResponse.next()
+    response.headers.append('Server-Timing', 'proxy;dur=0;desc="issue-72 edge"')
+    return response
+  }
+
+  // D-01: /dev/* — admin-gated
+  if (pathname.startsWith('/dev')) {
+    const session = await auth.api.getSession({ headers: request.headers })
+    if (!session) {
+      const callbackUrl = encodeURIComponent(pathname)
+      return NextResponse.redirect(new URL(`/login?callbackUrl=${callbackUrl}`, request.url))
+    }
+    if (session.user.role !== 'admin') {
+      return NextResponse.redirect(new URL('/admin-only', request.url))
+    }
+    return NextResponse.next()
+  }
+
+  // Issue #72: instrument /psalms/[id] for server-side timing visibility.
+  if (pathname.startsWith('/psalms/')) {
+    const response = NextResponse.next()
+    response.headers.append('Server-Timing', 'proxy;dur=0;desc="issue-72 edge"')
+    return response
+  }
+
+  return NextResponse.next()
 }
 
 export const config = {
-  // Keep this matcher aligned with the issue-72 surface we want to measure:
-  // /precent/* is the page users complain about. /psalms/[id] is the
-  // comparable public route so we can see whether the slow path is
-  // specific to /precent or affects all RSC routes.
+  // runtime: 'nodejs' — MANDATORY: auth.api.getSession opens a DB socket, which
+  // is not available on the edge runtime. /tunes/<id> rewrites also call
+  // fetchTuneSlugById which goes through the same DB connection.
+  runtime: 'nodejs',
   matcher: [
+    '/dev',
+    '/dev/:path*',
+    '/api/dev/:path*',
+    '/precent',
     '/precent/:path*',
+    '/tunes/:id(\\d+)',
     '/psalms/:path*',
   ],
 }
