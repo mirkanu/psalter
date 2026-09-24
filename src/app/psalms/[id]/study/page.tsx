@@ -1,5 +1,4 @@
-// ISR: study view mirrors the sing view's cache cadence.
-export const revalidate = 86400
+export const dynamic = 'force-dynamic'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'

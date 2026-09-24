@@ -1,9 +1,4 @@
-// ISR: re-render at most once every 24h. Psalm metadata is editorial
-// and only changes when an admin re-saves the psalm, so a long cache horizon
-// is safe. Tune selection (?tune=…) lives on /psalms/[id]/sing and is a
-// Client Component, so the server-rendered HTML here does not depend on
-// query params.
-export const revalidate = 86400
+export const dynamic = 'force-dynamic'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { db } from '@/db'
