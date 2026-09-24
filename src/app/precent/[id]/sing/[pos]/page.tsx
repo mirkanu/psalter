@@ -15,6 +15,7 @@ import { deriveTuneJpgPages } from '@/lib/tune-jpg-urls'
 import { tuneNameToSlug } from '@/lib/tune-slug'
 import { deriveVersionSlug, stripStar } from '@/lib/psalm-slugs'
 import { stripDoubleMeterSuffix } from '@/lib/meter-abbrev'
+import { startTimings } from '@/lib/server-timing'
 
 interface PageProps {
   params: Promise<{ id: string; pos: string }>
@@ -27,17 +28,19 @@ export default async function PrecentSingPage({ params }: PageProps) {
 
   if (isNaN(setId) || isNaN(position) || position < 0) notFound()
 
-  const set = await db.query.precentingSets.findFirst({
+  const t = startTimings()
+
+  const set = await t.measure('fetchPrecentingSet', () => db.query.precentingSets.findFirst({
     where: eq(precentingSets.id, setId),
     with: { setItems: { orderBy: [asc(setItems.position)] } },
-  })
+  }))
   if (!set || !set.setItems[position]) notFound()
 
   const item = set.setItems[position]
   const total = set.setItems.length
 
   // Replicate /psalms/[id]/page.tsx data-fetch pipeline using item.psalmId
-  const psalm = await fetchPsalmDetail(item.psalmId)
+  const psalm = await t.measure('fetchPsalmDetail', () => fetchPsalmDetail(item.psalmId))
   if (!psalm) notFound()
 
   // Active version selection — prefer psalmVersionId if set (e.g. version b from paste), else first
@@ -65,14 +68,16 @@ export default async function PrecentSingPage({ params }: PageProps) {
   // version's meter can carry a trailing " D" that tunes.meter never does, so an un-stripped
   // fetchTunesByMeter finds zero matches for any Double-meter psalm.
   const primaryMeter = stripDoubleMeterSuffix(activeVersion?.meter ?? rawTune?.meter ?? null)
-  const rawAlternateTunes = primaryMeter ? await fetchTunesByMeter(primaryMeter) : []
+  const rawAlternateTunes = primaryMeter
+    ? await t.measure('fetchTunesByMeter', () => fetchTunesByMeter(primaryMeter))
+    : []
   // 2026-08-16 (Sing-view picker parity): enrich to full TuneRow shape so
   // SingingView's tune switcher — now TunePickerDialog's Mode A / full
   // TuneTable, same as /precent's own picker and the Study tab — has the
   // metadata fields it reads (inPrcaPsalter, recommendedPsalmIds, moods,
   // etc.). Mirrors /psalms/[id]/page.tsx; without this the Mood/RP#/PRCA#/
   // Famous Hymn/In PRCA columns silently render blank on this route only.
-  const enrichedAlternateTunes = await enrichAlternateTunesToTuneRows(rawAlternateTunes)
+  const enrichedAlternateTunes = await t.measure('enrichAlternateTunes', () => enrichAlternateTunesToTuneRows(rawAlternateTunes))
   const alternateTunes = enrichedAlternateTunes.map((t) => ({
     ...t,
     scoreJpgUrl: t.staffPages[0] ?? t.scoreJpgUrl,
@@ -80,10 +85,12 @@ export default async function PrecentSingPage({ params }: PageProps) {
   }))
   // TSEL-01/D-13: per-psalm-version Backup/Historical tune ids for the tune-switcher sheet.
   // Mirrors src/app/psalms/[id]/study/page.tsx, which already does this for the Study tab.
-  const tuneTiers = activeVersion ? await fetchPsalmVersionTuneTiers(activeVersion.id) : undefined
+  const tuneTiers = activeVersion
+    ? await t.measure('fetchPsalmVersionTuneTiers', () => fetchPsalmVersionTuneTiers(activeVersion.id))
+    : undefined
   // 2026-08-17: alternateTunes above is already meter-scoped, so its length isn't the true
   // catalog size the tune-picker's count text needs — see TuneTable's totalTuneCount doc.
-  const totalTuneCount = await fetchTuneCount()
+  const totalTuneCount = await t.measure('fetchTuneCount', () => fetchTuneCount())
 
   // Tune override: if item.tuneId is set, prefer the assigned tune as primaryTune
   let primaryTune: AlternateTune | null = null
@@ -111,11 +118,12 @@ export default async function PrecentSingPage({ params }: PageProps) {
   }
 
   if (primaryTune && primaryTuneNeedsMelismaStatus) {
-    primaryTune = { ...primaryTune, melismaStatus: await fetchTuneMelismaStatus(primaryTune.id) }
+    const mtId = primaryTune.id
+    primaryTune = { ...primaryTune, melismaStatus: await t.measure('fetchTuneMelismaStatus', () => fetchTuneMelismaStatus(mtId)) }
   }
 
-  const editorialSet = await getEditoriallyLinkedTuneIdsForPsalm(psalm.id)
-  const psalmListRows = await fetchPsalmListRows()
+  const editorialSet = await t.measure('getEditorialTuneIds', () => getEditoriallyLinkedTuneIdsForPsalm(psalm.id))
+  const psalmListRows = await t.measure('fetchPsalmListRows', () => fetchPsalmListRows())
 
   const lyrics = activeVersion?.lyricsImportedRaw ?? ''
   const lyricsStructured = (activeVersion?.lyricsStructured ?? null) as
@@ -149,6 +157,8 @@ export default async function PrecentSingPage({ params }: PageProps) {
 
   const precentingPrevHref = position > 0 ? `/precent/${setId}/sing/${position}` : null
   const precentingNextHref = position + 1 < total ? `/precent/${setId}/sing/${position + 2}` : null
+
+  await t.finish()
 
   return (
     <>

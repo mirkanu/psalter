@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
+import Link from "@/components/Link"
 import { ArrowLeft } from 'lucide-react'
 import type { Metadata } from 'next'
 import { db } from '@/db'

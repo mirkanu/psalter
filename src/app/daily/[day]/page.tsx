@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic'
-import Link from "next/link"
+import Link from "@/components/Link"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { fetchDailyReading } from "@/db/queries/daily"

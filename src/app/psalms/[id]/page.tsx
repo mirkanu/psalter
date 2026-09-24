@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic'
+import { startTimings } from "@/lib/server-timing"
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { db } from '@/db'
@@ -70,7 +71,8 @@ export default async function PsalmPage({ params }: PageProps) {
   const { psalmId, versionLetter, verseRange } = parsed
   if (!Number.isFinite(psalmId) || psalmId < 1 || psalmId > 150) notFound()
 
-  const psalm = await fetchPsalmDetail(psalmId)
+  const t = await startTimings()
+  const psalm = await t.measure('fetchPsalmDetail', () => fetchPsalmDetail(psalmId))
   if (!psalm) notFound()
 
   // Find the active version based on the slug — verbatim from prior version
@@ -117,7 +119,7 @@ export default async function PsalmPage({ params }: PageProps) {
   // in the Sing view's tune picker before this fix — /precent's picker already stripped this
   // inline in SetDetail.tsx's handleTuneClick).
   const primaryMeter = stripDoubleMeterSuffix(activeVersion?.meter ?? rawTune?.meter ?? null)
-  const rawAlternateTunes = primaryMeter ? await fetchTunesByMeter(primaryMeter) : []
+  const rawAlternateTunes = primaryMeter ? await t.measure('fetchTunesByMeter', () => fetchTunesByMeter(primaryMeter)) : []
   // Phase 16 R3: enrich to full TuneRow shape so TunePickerDialog (Mode A, the
   // precentor-style table) receives all the metadata fields it reads
   // (`inPrcaPsalter`, `recommendedPsalmIds`, `moods`, `weightedHistoricalFrequency`,
@@ -125,14 +127,14 @@ export default async function PsalmPage({ params }: PageProps) {
   // number search, default sort, "Recommended for this psalm" highlight, and
   // the Recommended Psalms + In PRCA columns. See db/queries/tunes.ts for the
   // full breakage list.
-  const alternateTunes = await enrichAlternateTunesToTuneRows(rawAlternateTunes)
+  const alternateTunes = await t.measure('enrichAlternateTunes', () => enrichAlternateTunesToTuneRows(rawAlternateTunes))
   // TSEL-01/D-13: per-psalm-version Backup/Historical tune ids for the tune-switcher sheet.
   // Mirrors src/app/psalms/[id]/study/page.tsx, which already does this for the Study tab.
-  const tuneTiers = activeVersion ? await fetchPsalmVersionTuneTiers(activeVersion.id) : undefined
+  const tuneTiers = activeVersion ? await t.measure('fetchPsalmVersionTuneTiers', () => fetchPsalmVersionTuneTiers(activeVersion.id)) : undefined
   // 2026-08-17: alternateTunes above is already meter-scoped (fetchTunesByMeter), so its length
   // isn't the true catalog size the tune-picker's count text needs — see TuneTable's
   // totalTuneCount doc.
-  const totalTuneCount = await fetchTuneCount()
+  const totalTuneCount = await t.measure('fetchTuneCount', () => fetchTuneCount())
 
   // Wrap primaryTune in TuneOption (AlternateTune) shape — used uniformly by SingingView
   const primaryTune = primaryTuneRow
@@ -185,9 +187,9 @@ export default async function PsalmPage({ params }: PageProps) {
           .filter((x): x is { slug: string; displayLabel: string; isCurrent: boolean } => x !== null)
       : []
 
-  const editorialSet = await getEditoriallyLinkedTuneIdsForPsalm(psalmId)
-  const psalmListRows = await fetchPsalmListRows()
-  const { prev, next } = await getPsalmNeighbors(slug)
+  const editorialSet = await t.measure('getEditorialTuneIds', () => getEditoriallyLinkedTuneIdsForPsalm(psalmId))
+  const psalmListRows = await t.measure('fetchPsalmListRows', () => fetchPsalmListRows())
+  const { prev, next } = await t.measure('getPsalmNeighbors', () => getPsalmNeighbors(slug))
 
   const lyrics = activeVersion?.lyricsImportedRaw ?? ''
   const lyricsStructured = (activeVersion?.lyricsStructured ?? null) as
@@ -200,6 +202,8 @@ export default async function PsalmPage({ params }: PageProps) {
   // psalterNumber values look like "119:45-85 (8)" or "119:1-8 (1)".
   const rangeMatch = activeVersion?.psalterNumber?.match(/^\d+:(\d+(?:-\d+)?)/) ?? null
   const versePartLabel = rangeMatch ? rangeMatch[1] : null
+
+  await t.finish()
 
   return (
     <div className="max-w-4xl mx-auto">
