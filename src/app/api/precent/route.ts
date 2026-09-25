@@ -19,7 +19,6 @@ export async function GET(req: Request) {
     where: eq(precentingSets.userId, targetUserId),
     orderBy: [desc(precentingSets.date)],
   })
-  revalidateTag('precent', 'max')
   return NextResponse.json(sets)
 }
 
@@ -68,5 +67,6 @@ export async function POST(req: Request) {
     })
     .returning({ id: precentingSets.id })
 
+  revalidateTag('precent', 'max')
   return NextResponse.json({ ok: true, id: row.id })
 }

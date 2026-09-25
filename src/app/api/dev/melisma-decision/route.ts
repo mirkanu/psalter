@@ -42,7 +42,6 @@ export async function GET(req: Request) {
   const tuneIdRaw = url.searchParams.get('tuneId')
   const tuneId = tuneIdRaw ? Number(tuneIdRaw) : NaN
   if (!Number.isFinite(tuneId) || tuneId <= 0) {
-    revalidateTag('precent', 'max')
     return NextResponse.json({ error: 'tuneId (positive number) required' }, { status: 400 })
   }
 
@@ -141,4 +140,5 @@ export async function POST(req: Request) {
     } satisfies DecisionEntry,
     currentStatus,
   })
+  revalidateTag('precent', 'max')
 }

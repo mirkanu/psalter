@@ -14,7 +14,6 @@ export async function PATCH(
   const { id } = await params
   const setId = parseInt(id)
   if (isNaN(setId)) {
-    revalidateTag('precent', 'max')
     return NextResponse.json({ error: 'invalid id' }, { status: 400 })
   }
 
@@ -74,6 +73,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'set not found' }, { status: 404 })
   }
 
+  revalidateTag('precent', 'max')
   return NextResponse.json({ ok: true })
 }
 
@@ -93,6 +93,8 @@ export async function DELETE(
   if (access.res) return access.res
 
   await db.delete(precentingSets).where(eq(precentingSets.id, setId))
+
+  revalidateTag('precent', 'max')
 
   return NextResponse.json({ ok: true })
 }

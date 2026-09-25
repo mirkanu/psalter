@@ -21,7 +21,6 @@
  */
 
 import { NextResponse } from 'next/server'
-import { revalidateTag } from 'next/cache'
 import { db } from '@/db'
 import { sql } from 'drizzle-orm'
 import { getAdminSessionOr401 } from '@/lib/admin-auth'
@@ -118,7 +117,6 @@ export async function GET() {
   `)) as unknown as CountRow[]
   const psalmVersionRowCount = Number(totalRows[0]?.count ?? 0)
 
-  revalidateTag('precent', 'max')
   return NextResponse.json({
     totals: {
       recommendedTuneCount: recommendedRows.length,

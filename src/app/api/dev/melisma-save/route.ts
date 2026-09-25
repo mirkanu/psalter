@@ -27,7 +27,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { db } from '@/db'
 import { tunes, psalmVersionTunes, psalmVersions } from '@/db/schema'
 import { eq } from 'drizzle-orm'
@@ -61,7 +61,6 @@ export async function POST(req: Request) {
   try {
     body = (await req.json()) as SaveBody
   } catch {
-    revalidateTag('precent', 'max')
     return NextResponse.json({ error: 'invalid JSON body' }, { status: 400 })
   }
 
@@ -184,6 +183,7 @@ export async function POST(req: Request) {
   for (const { psalmId } of linkedPsalms) {
     if (psalmId) revalidatePath(`/psalms/${psalmId}`)
   }
+  revalidateTag('precent', 'max')
 
   return NextResponse.json({
     ok: true,

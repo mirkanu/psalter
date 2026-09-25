@@ -15,7 +15,6 @@ export async function PATCH(
   const setId = parseInt(id)
   const itemIdNum = parseInt(itemId)
   if (isNaN(setId) || isNaN(itemIdNum)) {
-    revalidateTag('precent', 'max')
     return NextResponse.json({ error: 'invalid id' }, { status: 400 })
   }
 
@@ -65,6 +64,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'item not found' }, { status: 404 })
   }
 
+  revalidateTag('precent', 'max')
   return NextResponse.json({ ok: true })
 }
 
@@ -88,5 +88,6 @@ export async function DELETE(
     .delete(setItems)
     .where(and(eq(setItems.id, itemIdNum), eq(setItems.setId, setId)))
 
+  revalidateTag('precent', 'max')
   return NextResponse.json({ ok: true })
 }
