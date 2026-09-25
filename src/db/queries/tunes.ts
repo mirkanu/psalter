@@ -4,10 +4,11 @@ import { eq, asc, and, inArray, isNotNull, desc } from "drizzle-orm"
 import { tunes, tuneMelismaDecisions, psalmVersionTunes, psalmVersionHistoricalTunes } from "@/db/schema"
 import { deriveTuneJpgPages } from "@/lib/tune-jpg-urls"
 import { tuneNameToSlug } from "@/lib/tune-slug"
+import { unstable_cache } from "next/cache"
 
 export type MelismaStatus = 'approved' | 'not_approved'
 
-export async function fetchTuneMelismaStatus(tuneId: number): Promise<MelismaStatus | null> {
+const _fetchTuneMelismaStatus = async (tuneId: number): Promise<MelismaStatus | null> => {
   const rows = await db
     .select({ status: tuneMelismaDecisions.status })
     .from(tuneMelismaDecisions)
@@ -16,6 +17,13 @@ export async function fetchTuneMelismaStatus(tuneId: number): Promise<MelismaSta
     .limit(1)
   return (rows[0]?.status as MelismaStatus | undefined) ?? null
 }
+export const fetchTuneMelismaStatus = cache(async function fetchTuneMelismaStatus(tuneId: number) {
+  return await unstable_cache(
+    () => _fetchTuneMelismaStatus(tuneId),
+    ['tune-melisma-status', String(tuneId)],
+    { tags: ['precent'], revalidate: 86400 }
+  )()
+})
 
 export async function fetchTuneIds(): Promise<number[]> {
   const rows = await db.select({ id: tunes.id }).from(tunes).orderBy(asc(tunes.id))
@@ -35,12 +43,13 @@ function isPlaceholderTuneName(name: string): boolean {
  * mirrors fetchAllTunes()'s isPlaceholderTuneName exclusion exactly so this stays the same
  * number fetchAllTunes()'s callers (e.g. /precent's allTunes.length) already see.
  */
-export async function fetchTuneCount(): Promise<number> {
+const _fetchTuneCount = async (): Promise<number> => {
   const rows = await db.select({ name: tunes.name }).from(tunes)
   return rows.filter((r) => !isPlaceholderTuneName(r.name)).length
 }
+export const fetchTuneCount = cache(unstable_cache(_fetchTuneCount, ['tune-count'], { tags: ['precent'], revalidate: 86400 }))
 
-export async function fetchAllTunes() {
+const _fetchAllTunes = async () => {
   const rows = await db.query.tunes.findMany({
     columns: {
       id: true, name: true, meter: true, scoreJpgUrl: true,
@@ -106,6 +115,9 @@ export async function fetchAllTunes() {
     }))
     .sort((a, b) => b.recommendedPsalmIds.length - a.recommendedPsalmIds.length || a.name.localeCompare(b.name))
 }
+export const fetchAllTunes = cache(
+  unstable_cache(_fetchAllTunes, ['all-tunes'], { tags: ['precent'], revalidate: 86400 })
+)
 
 /**
  * Enrich AlternateTune[] (e.g. from fetchTunesByMeter) into the full TuneRow[]
@@ -134,33 +146,93 @@ type FetchAllTunesRow = Awaited<ReturnType<typeof fetchAllTunes>>[number]
 export type EnrichedTuneRow = FetchAllTunesRow &
   Pick<AlternateTune, 'melismaPositions' | 'melismaStatus' | 'historicalUsageCount'>
 
+/**
+ * Like fetchAllTunes(), but only for the supplied ids. Avoids pulling the full
+ * 600-row catalog for the /precent tune picker (issue #72). Returns the same
+ * `FetchAllTunesRow` shape, preserving `inPrcaPsalter`, `hasFamousHymn`,
+ * `recommendedPsalmIds`, `moods`, `meterVariant`, etc.
+ */
+async function fetchTunesByIds(ids: number[]) {
+  if (ids.length === 0) return []
+  const rows = await db.query.tunes.findMany({
+    where: inArray(tunes.id, ids),
+    columns: {
+      id: true, name: true, meter: true, scoreJpgUrl: true,
+      inPrcaPsalter: true, hasFamousHymn: true, famousHymn: true,
+      numberIn1979RpPsalter: true, numInPrcaPsalter: true, soundcloudUrl: true,
+      abcNotation: true,
+      abcSatb: true,
+      phraseShapeOverride: true,
+      meterVariant: true,
+      solfegeOcrText: true,
+      weightedHistoricalFrequency: true,
+      solfegeJpgUrl: true,
+      youtubeUrl: true,
+    },
+    with: {
+      tuneMoods: { with: { mood: { columns: { name: true } } } },
+      psalmVersionTunes: {
+        with: {
+          psalmVersion: {
+            columns: {},
+            with: { psalm: { columns: { id: true } } },
+          },
+        },
+      },
+    },
+  })
+  return rows
+    .filter((t) => !isPlaceholderTuneName(t.name))
+    .map((t) => ({
+      id: t.id,
+      name: t.name,
+      slug: tuneNameToSlug(t.name),
+      meter: t.meter,
+      scoreJpgUrl: t.scoreJpgUrl,
+      inPrcaPsalter: t.inPrcaPsalter ?? false,
+      hasFamousHymn: t.hasFamousHymn ?? false,
+      famousHymn: t.famousHymn,
+      numberIn1979RpPsalter: t.numberIn1979RpPsalter,
+      numInPrcaPsalter: t.numInPrcaPsalter,
+      soundcloudUrl: t.soundcloudUrl ?? null,
+      solfegeJpgUrl: t.solfegeJpgUrl ?? null,
+      youtubeUrl: t.youtubeUrl ?? null,
+      abcNotation: t.abcNotation ?? null,
+      abcSatb: t.abcSatb ?? null,
+      phraseShapeOverride: t.phraseShapeOverride ?? null,
+      doubleLength: (t.meterVariant ?? []).includes('double_length'),
+      meterVariant: t.meterVariant ?? [],
+      solfegeOcrText: t.solfegeOcrText ?? null,
+      weightedHistoricalFrequency: t.weightedHistoricalFrequency ?? 0,
+      ...deriveTuneJpgPages(t.name),
+      moods: t.tuneMoods.map((tm) => tm.mood.name).filter(Boolean) as string[],
+      recommendedPsalmIds: [
+        ...new Set(
+          t.psalmVersionTunes
+            .map((pvt) => pvt.psalmVersion?.psalm?.id)
+            .filter((id): id is number => id != null)
+        ),
+      ].sort((a, b) => a - b),
+    }))
+}
+
 export async function enrichAlternateTunesToTuneRows(
   alternates: AlternateTune[],
 ): Promise<EnrichedTuneRow[]> {
   if (alternates.length === 0) return []
-  const allTunes = await fetchAllTunes()
+  const rich = await fetchTunesByIds(alternates.map((a) => a.id))
   const byId = new Map<number, FetchAllTunesRow>()
-  for (const t of allTunes) byId.set(t.id, t)
-
-  // fetchAllTunes doesn't query `melismaPositions`/`melismaStatus`/
-  // `historicalUsageCount` — those live on AlternateTune. Index the input
-  // alternates by id so the rich-lookup path can layer those fields back on.
-  const altById = new Map<number, AlternateTune>()
-  for (const a of alternates) altById.set(a.id, a)
+  for (const t of rich) byId.set(t.id, t)
 
   return alternates.map((alt) => {
-    const rich = byId.get(alt.id)
     const extra: Pick<AlternateTune, 'melismaPositions' | 'melismaStatus' | 'historicalUsageCount'> = {
       melismaPositions: alt.melismaPositions,
       melismaStatus: alt.melismaStatus,
       historicalUsageCount: alt.historicalUsageCount,
     }
-    if (rich) return { ...rich, ...extra }
-    // Fallback: shape derived purely from AlternateTune, with the missing
-    // fields filled to safe defaults so TuneTable still renders. This path is
-    // hit only for tunes that exist in fetchTunesByMeter but not in
-    // fetchAllTunes — i.e. a stale cache or a tune added since the last
-    // fetchAllTunes call.
+    const hit = byId.get(alt.id)
+    if (hit) return { ...hit, ...extra }
+    // Fallback for tunes not in fetchTunesByIds — same shape, safe defaults.
     return {
       id: alt.id,
       name: alt.name,
@@ -195,7 +267,7 @@ export async function enrichAlternateTunesToTuneRows(
  * Memoised with React cache() so that generateMetadata and the page
  * component share a single DB query per request rather than making two.
  */
-export const fetchTuneDetail = cache(async function fetchTuneDetail(id: number) {
+const _fetchTuneDetail = async (id: number) => {
   return db.query.tunes.findFirst({
     where: eq(tunes.id, id),
     with: {
@@ -211,6 +283,13 @@ export const fetchTuneDetail = cache(async function fetchTuneDetail(id: number) 
       tuneMoods: { with: { mood: true } },
     },
   })
+}
+export const fetchTuneDetail = cache(async function fetchTuneDetail(id: number) {
+  return await unstable_cache(
+    () => _fetchTuneDetail(id),
+    ['tune-detail', String(id)],
+    { tags: ['precent'], revalidate: 86400 }
+  )()
 })
 
 export type TuneDetail = NonNullable<Awaited<ReturnType<typeof fetchTuneDetail>>>
@@ -278,7 +357,7 @@ export interface AlternateTune {
   historicalUsageCount: number
 }
 
-export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]> {
+const _fetchTunesByMeter = async (meter: string): Promise<AlternateTune[]> => {
   const rows = await db.query.tunes.findMany({
     where: eq(tunes.meter, meter),
     columns: {
@@ -325,6 +404,13 @@ export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]>
     }
   })
 }
+export const fetchTunesByMeter = cache(async function fetchTunesByMeter(meter: string) {
+  return await unstable_cache(
+    () => _fetchTunesByMeter(meter),
+    ['tunes-by-meter', meter],
+    { tags: ['precent'], revalidate: 86400 }
+  )()
+})
 
 export interface PsalmVersionTuneTiers {
   /** Tunes flagged psalmVersionTunes.isPrimary=true for THIS psalm version — the canonical
@@ -345,9 +431,7 @@ export interface PsalmVersionTuneTiers {
  * not "how popular is this tune overall". The global tunes.weightedHistoricalFrequency stat is
  * only a tie-breaker inside the fourth (Other) tier.
  */
-export const fetchPsalmVersionTuneTiers = cache(async function fetchPsalmVersionTuneTiers(
-  psalmVersionId: number,
-): Promise<PsalmVersionTuneTiers> {
+const _fetchPsalmVersionTuneTiers = async (psalmVersionId: number): Promise<PsalmVersionTuneTiers> => {
   const [recommendedRows, backupRows, historicalRows] = await Promise.all([
     db.select({ tuneId: psalmVersionTunes.tuneId })
       .from(psalmVersionTunes)
@@ -370,6 +454,13 @@ export const fetchPsalmVersionTuneTiers = cache(async function fetchPsalmVersion
     backupTuneIds: backupRows.map((r) => r.tuneId),
     historicalTuneIds: historicalRows.map((r) => r.tuneId),
   }
+}
+export const fetchPsalmVersionTuneTiers = cache(async function fetchPsalmVersionTuneTiers(psalmVersionId: number) {
+  return await unstable_cache(
+    () => _fetchPsalmVersionTuneTiers(psalmVersionId),
+    ['psalm-version-tune-tiers', String(psalmVersionId)],
+    { tags: ['precent'], revalidate: 86400 }
+  )()
 })
 
 /**
@@ -377,11 +468,18 @@ export const fetchPsalmVersionTuneTiers = cache(async function fetchPsalmVersion
  * the slug is not a DB column, so match in JS over the (172-row) name list and delegate to the
  * memoised fetchTuneDetail for the heavy relational load.
  */
-export const fetchTuneBySlug = cache(async function fetchTuneBySlug(slug: string) {
+const _fetchTuneBySlug = async (slug: string) => {
   const rows = await db.select({ id: tunes.id, name: tunes.name }).from(tunes)
   const match = rows.find((t) => !isPlaceholderTuneName(t.name) && tuneNameToSlug(t.name) === slug)
   if (!match) return undefined
   return fetchTuneDetail(match.id)
+}
+export const fetchTuneBySlug = cache(async function fetchTuneBySlug(slug: string) {
+  return await unstable_cache(
+    () => _fetchTuneBySlug(slug),
+    ['tune-by-slug', slug],
+    { tags: ['precent'], revalidate: 86400 }
+  )()
 })
 
 /** All tune slugs, for generateStaticParams. */

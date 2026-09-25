@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { db } from '@/db'
 import { precentingSets } from '@/db/schema'
 import { eq } from 'drizzle-orm'
@@ -72,6 +73,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'set not found' }, { status: 404 })
   }
 
+  revalidateTag('precent', 'max')
   return NextResponse.json({ ok: true })
 }
 
@@ -91,6 +93,8 @@ export async function DELETE(
   if (access.res) return access.res
 
   await db.delete(precentingSets).where(eq(precentingSets.id, setId))
+
+  revalidateTag('precent', 'max')
 
   return NextResponse.json({ ok: true })
 }

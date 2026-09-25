@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { db } from '@/db'
 import { setItems } from '@/db/schema'
 import { eq } from 'drizzle-orm'
@@ -58,5 +59,6 @@ export async function POST(
     return inserted
   })
 
+  revalidateTag('precent', 'max')
   return NextResponse.json({ ok: true, item: result })
 }

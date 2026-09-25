@@ -14,6 +14,7 @@
  */
 
 import { NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { db } from '@/db'
 import { tuneMelismaDecisions, tunes } from '@/db/schema'
 import { eq, desc, and, isNotNull } from 'drizzle-orm'
@@ -139,4 +140,5 @@ export async function POST(req: Request) {
     } satisfies DecisionEntry,
     currentStatus,
   })
+  revalidateTag('precent', 'max')
 }
