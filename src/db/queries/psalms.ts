@@ -1,4 +1,5 @@
 import { cache } from "react"
+import { unstable_cache } from "next/cache"
 import { db } from "@/db"
 import { eq, asc, sql, and } from "drizzle-orm"
 import { psalms, psalmVersions, psalmVersionTunes, tunes } from "@/db/schema"
@@ -14,7 +15,7 @@ export async function fetchPsalmIds(): Promise<number[]> {
  * Memoised with React cache() so that generateMetadata and the page
  * component share a single DB query per request rather than making two.
  */
-export const fetchPsalmDetail = cache(async function fetchPsalmDetail(id: number) {
+const _fetchPsalmDetail = async (id: number) => {
   return db.query.psalms.findFirst({
     where: eq(psalms.id, id),
     with: {
@@ -69,6 +70,13 @@ export const fetchPsalmDetail = cache(async function fetchPsalmDetail(id: number
       },
     },
   })
+}
+export const fetchPsalmDetail = cache(async function fetchPsalmDetail(id: number) {
+  return await unstable_cache(
+    () => _fetchPsalmDetail(id),
+    ['psalm-detail', String(id)],
+    { tags: ['precent'], revalidate: 86400 }
+  )()
 })
 
 export type PsalmDetail = NonNullable<Awaited<ReturnType<typeof fetchPsalmDetail>>>
@@ -120,7 +128,7 @@ export async function getEditoriallyLinkedTuneIdsForPsalm(psalmId: number): Prom
  * here so PsalmPickerModal call sites can reuse it without duplication.
  * Behaviour byte-identical to the prior inline query.
  */
-export async function fetchPsalmListRows(): Promise<PsalmRow[]> {
+const _fetchPsalmListRows = async (): Promise<PsalmRow[]> => {
   const rows = await db
     .select({
       id: psalms.id,
@@ -184,3 +192,6 @@ export async function fetchPsalmListRows(): Promise<PsalmRow[]> {
     }
   })
 }
+export const fetchPsalmListRows = cache(
+  unstable_cache(_fetchPsalmListRows, ['psalm-list-rows'], { tags: ['precent'], revalidate: 86400 })
+)

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { db } from '@/db'
 import { setItems } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
@@ -14,6 +15,7 @@ export async function PATCH(
   const setId = parseInt(id)
   const itemIdNum = parseInt(itemId)
   if (isNaN(setId) || isNaN(itemIdNum)) {
+    revalidateTag('precent')
     return NextResponse.json({ error: 'invalid id' }, { status: 400 })
   }
 

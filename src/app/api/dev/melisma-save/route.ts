@@ -61,6 +61,7 @@ export async function POST(req: Request) {
   try {
     body = (await req.json()) as SaveBody
   } catch {
+    revalidateTag('precent')
     return NextResponse.json({ error: 'invalid JSON body' }, { status: 400 })
   }
 

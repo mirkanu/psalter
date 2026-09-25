@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { db } from '@/db'
 import { setItems } from '@/db/schema'
 import { eq } from 'drizzle-orm'
@@ -13,6 +14,7 @@ export async function POST(
   const { id } = await params
   const setId = parseInt(id)
   if (isNaN(setId)) {
+    revalidateTag('precent')
     return NextResponse.json({ error: 'invalid set id' }, { status: 400 })
   }
 

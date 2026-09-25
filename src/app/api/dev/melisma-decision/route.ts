@@ -14,6 +14,7 @@
  */
 
 import { NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { db } from '@/db'
 import { tuneMelismaDecisions, tunes } from '@/db/schema'
 import { eq, desc, and, isNotNull } from 'drizzle-orm'
@@ -41,6 +42,7 @@ export async function GET(req: Request) {
   const tuneIdRaw = url.searchParams.get('tuneId')
   const tuneId = tuneIdRaw ? Number(tuneIdRaw) : NaN
   if (!Number.isFinite(tuneId) || tuneId <= 0) {
+    revalidateTag('precent')
     return NextResponse.json({ error: 'tuneId (positive number) required' }, { status: 400 })
   }
 

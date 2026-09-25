@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { db } from '@/db'
 import { precentingSets } from '@/db/schema'
 import { desc, eq } from 'drizzle-orm'
@@ -18,6 +19,7 @@ export async function GET(req: Request) {
     where: eq(precentingSets.userId, targetUserId),
     orderBy: [desc(precentingSets.date)],
   })
+  revalidateTag('precent')
   return NextResponse.json(sets)
 }
 
