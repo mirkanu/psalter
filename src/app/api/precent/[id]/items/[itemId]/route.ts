@@ -15,7 +15,7 @@ export async function PATCH(
   const setId = parseInt(id)
   const itemIdNum = parseInt(itemId)
   if (isNaN(setId) || isNaN(itemIdNum)) {
-    revalidateTag('precent')
+    revalidateTag('precent', 'max')
     return NextResponse.json({ error: 'invalid id' }, { status: 400 })
   }
 

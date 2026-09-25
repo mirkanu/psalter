@@ -14,7 +14,7 @@ export async function POST(
   const { id } = await params
   const setId = parseInt(id)
   if (isNaN(setId)) {
-    revalidateTag('precent')
+    revalidateTag('precent', 'max')
     return NextResponse.json({ error: 'invalid set id' }, { status: 400 })
   }
 

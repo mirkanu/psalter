@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     where: eq(precentingSets.userId, targetUserId),
     orderBy: [desc(precentingSets.date)],
   })
-  revalidateTag('precent')
+  revalidateTag('precent', 'max')
   return NextResponse.json(sets)
 }
 

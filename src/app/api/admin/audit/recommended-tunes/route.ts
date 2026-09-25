@@ -118,7 +118,7 @@ export async function GET() {
   `)) as unknown as CountRow[]
   const psalmVersionRowCount = Number(totalRows[0]?.count ?? 0)
 
-  revalidateTag('precent')
+  revalidateTag('precent', 'max')
   return NextResponse.json({
     totals: {
       recommendedTuneCount: recommendedRows.length,
