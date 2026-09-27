@@ -75,7 +75,7 @@ export async function PATCH(
   }
 
   
-  revalidateTag(PRECENT_CACHE_TAG)
+  revalidateTag(PRECENT_CACHE_TAG, "max")
 
 return NextResponse.json({ ok: true })
 }
@@ -97,6 +97,6 @@ export async function DELETE(
 
   await db.delete(precentingSets).where(eq(precentingSets.id, setId))
 
-  revalidateTag(PRECENT_CACHE_TAG)
+  revalidateTag(PRECENT_CACHE_TAG, "max")
   return NextResponse.json({ ok: true })
 }
