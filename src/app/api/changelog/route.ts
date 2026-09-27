@@ -12,6 +12,7 @@ import { db } from '@/db'
 import { changelogPosts } from '@/db/schema'
 import { getAdminSessionOr401 } from '@/lib/admin-auth'
 import { broadcastToSubscribers } from '@/lib/changelog-broadcast'
+import { revalidatePath } from 'next/cache'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,6 +51,12 @@ export async function POST(req: Request) {
   void broadcastToSubscribers({ title, body }).catch((err) =>
     console.error('[changelog] broadcast threw:', err),
   )
+
+  // Issue #82 Phase 2: T1 routes are indefinite ISR. Publishing a changelog post
+  // must invalidate `/changelog` and the homepage so the new post surfaces without
+  // a Vercel redeploy.
+  revalidatePath('/changelog')
+  revalidatePath('/')
 
   return NextResponse.json({ ok: true })
 }

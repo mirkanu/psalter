@@ -1,4 +1,7 @@
-export const dynamic = 'force-dynamic'
+// Issue #82 Phase 2: T3 — 1-hour ISR. Cold visit acceptable; daily change
+// surfaces within an hour.
+export const dynamic = 'force-static'
+export const revalidate = 3600
 import type { Metadata } from "next"
 import { fetchAllDailyReadings } from "@/db/queries/daily"
 import { getDayOfYear } from "@/lib/daily"
