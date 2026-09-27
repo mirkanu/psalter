@@ -1,4 +1,7 @@
-export const dynamic = 'force-dynamic'
+// Issue #82 Phase 2: T1 indefinite ISR. Revalidate on /api/changelog publish
+// (revalidatePath('/')) and on Neon metadata change (manual Vercel redeploy).
+export const dynamic = 'force-static'
+export const revalidate = false
 import { Home, Library, CalendarDays, Music2, Church } from "lucide-react"
 import { fetchAllDailyReadings } from "@/db/queries/daily"
 import { fetchPublishedPosts } from "@/db/queries/changelog"

@@ -59,6 +59,9 @@ Never store raw `airtableusercontent.com` URLs in the database — they expire i
 ### Static rendering
 Public psalm and tune pages use `generateStaticParams` — no runtime DB queries on the read path.
 
+### ISR / T1 / T2 routes — manual Vercel redeploy after Neon changes
+Neon DB content changes are rare (every few months). When you change it, you must trigger a **Vercel production redeploy** — otherwise ISR-cached routes (T1) and tag-cached routes (T2/T3) will keep serving the old content. The `revalidatePath` / `revalidateTag` calls wired in `/api/precent/**` and `/api/dev/melisma-**` invalidate in-request, but full-DB re-imports (e.g. `seedPsalms`, `importAirtable`) need a Vercel redeploy or explicit revalidate to flush every cached psalm/tune page.
+
 ## Mobile-first layout (binding)
 
 The psalter is a **mobile-first** site. Always design + verify CSS at phone widths first (<=390px), then scale up to tablet/desktop. Centring, padding, and max-width rules MUST work on a 360-390px viewport, not just on desktop. After any visual/CSS change, re-screenshot at **mobile (390), tablet (768), and desktop (1440)** before considering the change done. The Playwright measure-lyrics script enforces block.mid === parent.mid for .lyrics-block and .lyrics-subtitle across all four view modes (lyrics, staff-split, solfege-split, staff) — it must pass at every viewport, not just desktop.
