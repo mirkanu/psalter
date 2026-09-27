@@ -33,6 +33,7 @@ These docs in `docs/research/` are the canonical record of our understanding of 
 | [`docs/research/scottish-psalter-structure.md`](docs/research/scottish-psalter-structure.md) | Meter taxonomy (CM/LM/SM/CMD), stanza-vs-verse model, syllabification, phrase boundaries, PHRASE_BREAK placement. Use when changing `annotate-phrase-breaks.ts` or meter-related code. |
 | [`docs/research/tune-digitisation-research.md`](docs/research/tune-digitisation-research.md) | Tune source catalog (Hymnary, de Boer, Sing Psalms), MusicXML→ABC conversion, per-source slur quality. Use when ingesting new tune data. |
 | [`docs/research/visitor-workflows.md`](docs/research/visitor-workflows.md) | **Who actually uses the site, the four user jobs (read, sing, pick-tune, explore), and which routes are latency-critical. Read this before touching the sing view, the modal psalm picker, the precenting left/right navigation, or any caching / prefetch / ISR / Vercel / Cloudflare decision. This is the source of truth for trade-offs about default view mode, default sort order, ISR TTLs, edge caching, and client prefetch priorities.** |
+| [`docs/research/cache-tactics.md`](docs/research/cache-tactics.md) | **The three cache tactics (T1 indefinite ISR, T2 indefinite edge cache, T3 1-hour edge cache), the route classification table, the rule for picking between them, and the auth-gating + invalidation decisions. Authoritative for any `export const dynamic / revalidate` choice, any `next.config.ts` cache header, and any Cloudflare Cache Rule.**
 
 ### Archived docs
 
