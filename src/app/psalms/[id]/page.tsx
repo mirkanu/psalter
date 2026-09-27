@@ -1,4 +1,8 @@
-export const dynamic = 'force-dynamic'
+// Issue #82 Phase 2: T1 indefinite ISR for each psalm. generateStaticParams
+// already pre-builds all 150 psalms at deploy; revalidate=false keeps the
+// built copy until a revalidateTag('psalm-<id>') or production redeploy.
+export const dynamic = 'force-static'
+export const revalidate = false
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { db } from '@/db'

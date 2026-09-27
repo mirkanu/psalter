@@ -1,4 +1,6 @@
-export const dynamic = 'force-dynamic'
+// Issue #82 Phase 2: T1 indefinite ISR for the explore index.
+export const dynamic = 'force-static'
+export const revalidate = false
 import type { Metadata } from "next"
 import {
   fetchWhenYouTopics,
