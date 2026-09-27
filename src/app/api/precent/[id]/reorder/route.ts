@@ -44,6 +44,6 @@ export async function POST(
     }
   })
 
-  revalidateTag(PRECENT_CACHE_TAG)
+  revalidateTag(PRECENT_CACHE_TAG, "max")
   return NextResponse.json({ ok: true })
 }

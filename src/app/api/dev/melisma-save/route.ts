@@ -194,7 +194,7 @@ export async function POST(req: Request) {
     melismaPositions: result[0].melismaPositions,
   })
 
-  revalidateTag(PRECENT_CACHE_TAG)
+  revalidateTag(PRECENT_CACHE_TAG, "max")
   return NextResponse.json({
     ok: true,
     updatedRows: result.length,

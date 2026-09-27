@@ -66,7 +66,7 @@ export async function PATCH(
   }
 
   
-  revalidateTag(PRECENT_CACHE_TAG)
+  revalidateTag(PRECENT_CACHE_TAG, "max")
 
 return NextResponse.json({ ok: true })
 }
@@ -91,6 +91,6 @@ export async function DELETE(
     .delete(setItems)
     .where(and(eq(setItems.id, itemIdNum), eq(setItems.setId, setId)))
 
-  revalidateTag(PRECENT_CACHE_TAG)
+  revalidateTag(PRECENT_CACHE_TAG, "max")
   return NextResponse.json({ ok: true })
 }
