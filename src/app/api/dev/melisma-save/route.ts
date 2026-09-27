@@ -27,6 +27,8 @@
  */
 
 import { NextResponse } from 'next/server'
+import { revalidateTag } from "next/cache"
+import { PRECENT_CACHE_TAG } from "@/db/queries/tunes"
 import { revalidatePath } from 'next/cache'
 import { db } from '@/db'
 import { tunes, psalmVersionTunes, psalmVersions } from '@/db/schema'
@@ -184,6 +186,15 @@ export async function POST(req: Request) {
     if (psalmId) revalidatePath(`/psalms/${psalmId}`)
   }
 
+  return NextResponse.json({
+    ok: true,
+    updatedRows: result.length,
+    tune: result[0],
+    phraseShapeOverride: result[0].phraseShapeOverride,
+    melismaPositions: result[0].melismaPositions,
+  })
+
+  revalidateTag(PRECENT_CACHE_TAG)
   return NextResponse.json({
     ok: true,
     updatedRows: result.length,

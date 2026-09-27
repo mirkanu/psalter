@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { revalidateTag } from "next/cache"
+import { PRECENT_CACHE_TAG } from "@/db/queries/tunes"
 import { db } from '@/db'
 import { setItems } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
@@ -63,7 +65,10 @@ export async function PATCH(
     return NextResponse.json({ error: 'item not found' }, { status: 404 })
   }
 
-  return NextResponse.json({ ok: true })
+  
+  revalidateTag(PRECENT_CACHE_TAG)
+
+return NextResponse.json({ ok: true })
 }
 
 export async function DELETE(
@@ -86,5 +91,6 @@ export async function DELETE(
     .delete(setItems)
     .where(and(eq(setItems.id, itemIdNum), eq(setItems.setId, setId)))
 
+  revalidateTag(PRECENT_CACHE_TAG)
   return NextResponse.json({ ok: true })
 }
