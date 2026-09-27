@@ -1,9 +1,16 @@
 import { cache } from "react"
+import { unstable_cache } from "next/cache"
 import { db } from "@/db"
 import { eq, asc, and, inArray, isNotNull, desc } from "drizzle-orm"
 import { tunes, tuneMelismaDecisions, psalmVersionTunes, psalmVersionHistoricalTunes } from "@/db/schema"
 import { deriveTuneJpgPages } from "@/lib/tune-jpg-urls"
 import { tuneNameToSlug } from "@/lib/tune-slug"
+
+// Shared cache tag for the /precent/* read path (issue #82, Phase 1.1).
+// Mutation routes that touch set items, set metadata, or per-tune data
+// these queries read should call revalidateTag(PRECENT_CACHE_TAG) so
+// the cached entry is purged on the next read.
+export const PRECENT_CACHE_TAG = "precent" as const
 
 export type MelismaStatus = 'approved' | 'not_approved'
 
@@ -40,7 +47,7 @@ export async function fetchTuneCount(): Promise<number> {
   return rows.filter((r) => !isPlaceholderTuneName(r.name)).length
 }
 
-export async function fetchAllTunes() {
+async function fetchAllTunesImpl() {
   const rows = await db.query.tunes.findMany({
     columns: {
       id: true, name: true, meter: true, scoreJpgUrl: true,
@@ -107,6 +114,13 @@ export async function fetchAllTunes() {
     .sort((a, b) => b.recommendedPsalmIds.length - a.recommendedPsalmIds.length || a.name.localeCompare(b.name))
 }
 
+export const fetchAllTunes = unstable_cache(
+  fetchAllTunesImpl,
+  ["tunes:fetchAllTunes"],
+  { tags: [PRECENT_CACHE_TAG], revalidate: 86400 },
+)
+
+
 /**
  * Enrich AlternateTune[] (e.g. from fetchTunesByMeter) into the full TuneRow[]
  * shape that TuneTable / TunePickerDialog (Mode A) expect.
@@ -134,7 +148,7 @@ type FetchAllTunesRow = Awaited<ReturnType<typeof fetchAllTunes>>[number]
 export type EnrichedTuneRow = FetchAllTunesRow &
   Pick<AlternateTune, 'melismaPositions' | 'melismaStatus' | 'historicalUsageCount'>
 
-export async function enrichAlternateTunesToTuneRows(
+async function enrichAlternateTunesToTuneRowsImpl(
   alternates: AlternateTune[],
 ): Promise<EnrichedTuneRow[]> {
   if (alternates.length === 0) return []
@@ -190,6 +204,13 @@ export async function enrichAlternateTunesToTuneRows(
     } satisfies EnrichedTuneRow
   })
 }
+
+export const enrichAlternateTunesToTuneRows = unstable_cache(
+  enrichAlternateTunesToTuneRowsImpl,
+  ["tunes:enrichAlternateTunesToTuneRows"],
+  { tags: [PRECENT_CACHE_TAG], revalidate: 86400 },
+) as unknown as (alternates: AlternateTune[]) => Promise<EnrichedTuneRow[]>
+
 
 /**
  * Memoised with React cache() so that generateMetadata and the page
@@ -278,7 +299,7 @@ export interface AlternateTune {
   historicalUsageCount: number
 }
 
-export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]> {
+async function fetchTunesByMeterImpl(meter: string): Promise<AlternateTune[]> {
   const rows = await db.query.tunes.findMany({
     where: eq(tunes.meter, meter),
     columns: {
@@ -325,6 +346,13 @@ export async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]>
     }
   })
 }
+
+export const fetchTunesByMeter = unstable_cache(
+  fetchTunesByMeterImpl,
+  ["tunes:fetchTunesByMeter"],
+  { tags: [PRECENT_CACHE_TAG], revalidate: 86400 },
+) as (meter: string) => Promise<Awaited<ReturnType<typeof fetchTunesByMeterImpl>>>
+
 
 export interface PsalmVersionTuneTiers {
   /** Tunes flagged psalmVersionTunes.isPrimary=true for THIS psalm version — the canonical

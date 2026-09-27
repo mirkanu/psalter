@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { revalidateTag } from "next/cache"
+import { PRECENT_CACHE_TAG } from "@/db/queries/tunes"
 import { db } from '@/db'
 import { setItems } from '@/db/schema'
 import { eq } from 'drizzle-orm'
@@ -58,5 +60,6 @@ export async function POST(
     return inserted
   })
 
+  revalidateTag(PRECENT_CACHE_TAG, "max")
   return NextResponse.json({ ok: true, item: result })
 }

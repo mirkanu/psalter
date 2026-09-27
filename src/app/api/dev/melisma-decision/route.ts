@@ -14,6 +14,8 @@
  */
 
 import { NextResponse } from 'next/server'
+import { revalidateTag } from "next/cache"
+import { PRECENT_CACHE_TAG } from "@/db/queries/tunes"
 import { db } from '@/db'
 import { tuneMelismaDecisions, tunes } from '@/db/schema'
 import { eq, desc, and, isNotNull } from 'drizzle-orm'
@@ -129,6 +131,18 @@ export async function POST(req: Request) {
 
   const currentStatus = (latestStatusRow[0]?.status as MelismaStatus | undefined) ?? null
 
+  return NextResponse.json({
+    ok: true,
+    entry: {
+      id: inserted[0].id,
+      status: (inserted[0].status as MelismaStatus | null) ?? null,
+      comment: inserted[0].comment,
+      createdAt: inserted[0].createdAt.toISOString(),
+    } satisfies DecisionEntry,
+    currentStatus,
+  })
+
+  revalidateTag(PRECENT_CACHE_TAG, "max")
   return NextResponse.json({
     ok: true,
     entry: {
