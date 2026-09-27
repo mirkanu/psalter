@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic'
-import Link from "next/link"
+import Link from "@/components/Link"
 import type { Metadata } from "next"
 import { fetchMessianicPsalms } from "@/db/queries/explore"
 import { Badge } from "@/components/ui/badge"

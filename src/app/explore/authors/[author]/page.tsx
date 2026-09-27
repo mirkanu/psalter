@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { notFound } from "next/navigation"
-import Link from "next/link"
+import Link from "@/components/Link"
 import type { Metadata } from "next"
 import { fetchDistinctAuthors, fetchPsalmsByAuthor } from "@/db/queries/explore"
 import { Badge } from "@/components/ui/badge"

@@ -4,7 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useRouter } from "next/navigation"
 import { useLocalStorage } from "@/hooks/useLocalStorage"
 import { useMediaQuery } from "@/hooks/useMediaQuery"
-import Link from "next/link"
+import Link from "@/components/Link"
 import { Search, X, ChevronDown, ChevronUp, Download, Music } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"

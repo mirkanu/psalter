@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from "react"
-import Link from "next/link"
+import Link from "@/components/Link"
 import { Badge } from "@/components/ui/badge"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { ChevronDown, ChevronUp, ExternalLink } from "lucide-react"

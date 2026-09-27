@@ -1,4 +1,4 @@
-import Link from "next/link"
+import Link from "@/components/Link"
 import { Music2 } from "lucide-react"
 import { formatPsalmRef } from "@/lib/daily"
 

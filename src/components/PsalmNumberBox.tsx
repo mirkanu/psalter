@@ -1,4 +1,4 @@
-import Link from "next/link"
+import Link from "@/components/Link"
 import { renderSnippet } from "@/lib/search-utils"
 import { abbreviateMeter } from "@/lib/meter-abbrev"
 

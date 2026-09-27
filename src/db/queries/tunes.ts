@@ -8,7 +8,7 @@ import { tuneNameToSlug } from "@/lib/tune-slug"
 
 // Shared cache tag for the /precent/* read path (issue #82, Phase 1.1).
 // Mutation routes that touch set items, set metadata, or per-tune data
-// these queries read should call revalidateTag(PRECENT_CACHE_TAG) so
+// these queries read should call revalidateTag(PRECENT_CACHE_TAG, "max") so
 // the cached entry is purged on the next read.
 export const PRECENT_CACHE_TAG = "precent" as const
 
@@ -47,7 +47,7 @@ export async function fetchTuneCount(): Promise<number> {
   return rows.filter((r) => !isPlaceholderTuneName(r.name)).length
 }
 
-async function fetchAllTunes() {
+async function fetchAllTunesImpl() {
   const rows = await db.query.tunes.findMany({
     columns: {
       id: true, name: true, meter: true, scoreJpgUrl: true,
@@ -148,7 +148,7 @@ type FetchAllTunesRow = Awaited<ReturnType<typeof fetchAllTunes>>[number]
 export type EnrichedTuneRow = FetchAllTunesRow &
   Pick<AlternateTune, 'melismaPositions' | 'melismaStatus' | 'historicalUsageCount'>
 
-async function enrichAlternateTunesToTuneRows(
+async function enrichAlternateTunesToTuneRowsImpl(
   alternates: AlternateTune[],
 ): Promise<EnrichedTuneRow[]> {
   if (alternates.length === 0) return []
@@ -299,7 +299,7 @@ export interface AlternateTune {
   historicalUsageCount: number
 }
 
-async function fetchTunesByMeter(meter: string): Promise<AlternateTune[]> {
+async function fetchTunesByMeterImpl(meter: string): Promise<AlternateTune[]> {
   const rows = await db.query.tunes.findMany({
     where: eq(tunes.meter, meter),
     columns: {

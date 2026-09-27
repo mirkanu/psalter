@@ -68,6 +68,6 @@ export async function POST(req: Request) {
     })
     .returning({ id: precentingSets.id })
 
-  revalidateTag(PRECENT_CACHE_TAG)
+  revalidateTag(PRECENT_CACHE_TAG, "max")
   return NextResponse.json({ ok: true, id: row.id })
 }

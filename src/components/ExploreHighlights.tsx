@@ -1,4 +1,4 @@
-import Link from "next/link"
+import Link from "@/components/Link"
 import { Palette, BookOpen, Library, Gem } from "lucide-react"
 
 const HIGHLIGHTS = [
