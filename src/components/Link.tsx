@@ -14,7 +14,7 @@
  * as latency-critical (currently: modal psalm picker's Mode A/C left/right
  * nav, which warm the next psalm pre-emptively for the sing page).
  */
-import NextLink from "@/components/Link"
+import NextLink from "next/link"
 import type { ComponentProps } from "react"
 
 export type LinkProps = ComponentProps<typeof NextLink>
