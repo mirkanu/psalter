@@ -24,14 +24,19 @@ Rebuild of **psalter.cprc.co.uk** — a Scottish Psalter website for CPRC congre
 
 ## Critical Reference Docs — READ FIRST
 
-These docs in `.planning/research/` are the canonical record of our understanding of Scottish Psalter notation and lyric alignment. Any work touching solfège parsing, lyric-to-note alignment, melisma handling, slurs, or OCR pipelines **MUST** consult them before changing code or proposing fixes. They have been corrected through multiple painful debug cycles; treat them as binding.
+These docs in `docs/research/` are the canonical record of our understanding of Scottish Psalter notation and lyric alignment. Any work touching solfège parsing, lyric-to-note alignment, melisma handling, slurs, or OCR pipelines **MUST** consult them before changing code or proposing fixes. They have been corrected through multiple painful debug cycles; treat them as binding.
 
 | Doc | Read when working on |
 |---|---|
-| [`.planning/research/lyric-to-note-alignment.md`](.planning/research/lyric-to-note-alignment.md) | **Anything about melismas, slurs, underlines, syllable-to-note mapping, `w:` lines, `getPassingPositions`, `abc-melisma.ts`, `padWLineToNoteCount`. This is the SINGLE SOURCE OF TRUTH on alignment.** |
-| [`.planning/research/tonic-solfa-notation.md`](.planning/research/tonic-solfa-notation.md) | Solfège syntax — pitch syllables, dot subdivisions, hold symbols, underlines, octave subscripts. Use when changing `solfege-parser.ts` or `ocr-solfege-v2.ts`. |
-| [`.planning/research/scottish-psalter-structure.md`](.planning/research/scottish-psalter-structure.md) | Meter taxonomy (CM/LM/SM/CMD), stanza-vs-verse model, syllabification, phrase boundaries, PHRASE_BREAK placement. Use when changing `annotate-phrase-breaks.ts` or meter-related code. |
-| [`.planning/research/tune-digitisation-research.md`](.planning/research/tune-digitisation-research.md) | Tune source catalog (Hymnary, de Boer, Sing Psalms), MusicXML→ABC conversion, per-source slur quality. Use when ingesting new tune data. |
+| [`docs/research/lyric-to-note-alignment.md`](docs/research/lyric-to-note-alignment.md) | **Anything about melismas, slurs, underlines, syllable-to-note mapping, `w:` lines, `getPassingPositions`, `abc-melisma.ts`, `padWLineToNoteCount`. This is the SINGLE SOURCE OF TRUTH on alignment.** |
+| [`docs/research/tonic-solfa-notation.md`](docs/research/tonic-solfa-notation.md) | Solfège syntax — pitch syllables, dot subdivisions, hold symbols, underlines, octave subscripts. Use when changing `solfege-parser.ts` or `ocr-solfege-v2.ts`. |
+| [`docs/research/scottish-psalter-structure.md`](docs/research/scottish-psalter-structure.md) | Meter taxonomy (CM/LM/SM/CMD), stanza-vs-verse model, syllabification, phrase boundaries, PHRASE_BREAK placement. Use when changing `annotate-phrase-breaks.ts` or meter-related code. |
+| [`docs/research/tune-digitisation-research.md`](docs/research/tune-digitisation-research.md) | Tune source catalog (Hymnary, de Boer, Sing Psalms), MusicXML→ABC conversion, per-source slur quality. Use when ingesting new tune data. |
+| [`docs/research/visitor-workflows.md`](docs/research/visitor-workflows.md) | **Who actually uses the site, the four user jobs (read, sing, pick-tune, explore), and which routes are latency-critical. Read this before touching the sing view, the modal psalm picker, the precenting left/right navigation, or any caching / prefetch / ISR / Vercel / Cloudflare decision. This is the source of truth for trade-offs about default view mode, default sort order, ISR TTLs, edge caching, and client prefetch priorities.** |
+
+### Archived docs
+
+`docs/archive/` holds research docs kept for historical reference but no longer authoritative. They were moved out of `docs/research/` and replaced with newer analysis — see each file's `About.md` for the supersession chain and the GitHub issue that audited it. Do **not** consult these for current behaviour; consult the linked successor doc instead.
 
 ### Hard rules derived from these docs
 
@@ -76,4 +81,4 @@ See `.env.example` for required keys. Never commit real values; local `.env` is 
 
 ## Workflow
 
-Project tracking lives in **GitHub Issues and Milestones** on this repository. Planning documents (`.planning/research/*.md`) hold canonical reference material; day-to-day planning lives in issues. See [`Skills/github-workflow`](https://github.com/mirkanu/skills-public) — or the matching skill in this workspace — for the general comment-on-start / comment-on-finish / branching rules.
+Project tracking lives in **GitHub Issues and Milestones** on this repository. Planning documents (`docs/research/*.md`) hold canonical reference material; day-to-day planning lives in issues. See [`Skills/github-workflow`](https://github.com/mirkanu/skills-public) — or the matching skill in this workspace — for the general comment-on-start / comment-on-finish / branching rules.
