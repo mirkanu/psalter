@@ -27,14 +27,10 @@ export const auth = betterAuth({
   plugins: [admin()],
   secret: process.env.BETTER_AUTH_SECRET!,
   baseURL: AUTH_URL,
-  // Allow logins from both the canonical production domain AND any active
-  // Vercel preview deployment. baseURL alone is enough for cookie scoping,
-  // but Better Auth rejects requests whose Origin header isn't in the trusted
-  // list — so Vercel preview URLs need to be added explicitly.
-  // Patterns use Better Auth's wildcard syntax (* and ?), NOT regex.
-  // See .planning/phases/17-vercel-neon-migration/17-02-SUMMARY.md
+  // Phase 18: canonical production domain only. The pre-Phase-18 wildcard
+  // 'https://*.vercel.app' was added in Phase 17 for Vercel preview testing;
+  // post-cutover there is no Vercel app to attack, so the wildcard is removed.
   trustedOrigins: [
     AUTH_URL,
-    'https://*.vercel.app',
   ],
 })
