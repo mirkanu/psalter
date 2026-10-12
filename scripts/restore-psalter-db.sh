@@ -1,11 +1,23 @@
 #!/bin/bash
 # Phase 18 Plan 18-01 — restore psalter DB from canonical dump into the
-# local psalter-db container. The persistent volume's `postgres` password
-# is `<see POSTGRES_PASSWORD in /home/services/.env.production>` (verified: scripts/*.ts hardcode this literal).
+# local psalter-db container. Reads the postgres password from
+# /home/services/.env.production (POSTGRES_PASSWORD); do not hardcode.
 set -euo pipefail
 
-LOCAL_PORT=5435
-export PGPASSWORD=<see POSTGRES_PASSWORD in /home/services/.env.production>
+# Load only valid env lines from .env.production (skip lines with - in
+# identifier names like LAUNCH-TEST_UMAMI_WEBSITE_ID; bash refuses to
+# source those and the bare . would otherwise fail under set -e).
+if [ -f /home/services/.env.production ]; then
+  while IFS="=" read -r key value; do
+    if [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] && [ -n "$value" ]; then
+      export "$key=$value"
+    fi
+  done < <(grep -E "^[A-Za-z_][A-Za-z0-9_]*=" /home/services/.env.production)
+fi
+: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in /home/services/.env.production}"
+export PGPASSWORD="$POSTGRES_PASSWORD"
+
+LOCAL_PORT=${PSALTER_DB_PORT:-5435}
 
 # Step 1 — wait for psalter-db to accept connections
 until pg_isready -h localhost -p "$LOCAL_PORT" -U postgres; do
