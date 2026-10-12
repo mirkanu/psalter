@@ -361,4 +361,4 @@ Phases 7 and 10 have no dependencies on Phase 6 or each other and may be worked 
 | 14. Launch Polish | 0/TBD | Not started | - |
 | 16. Tune Page First-Class Surface | 3/3 | Complete    | 2026-08-15 |
 | 17. Vercel + Neon Migration | 4/4 | Complete   | 2026-09-07 |
-| 18. Undo Vercel + Neon Migration | 0/TBD | Not started | - |
+| 18. Undo Vercel + Neon Migration | 4/4 | Complete   | 2026-10-12 |

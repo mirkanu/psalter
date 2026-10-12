@@ -3,19 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
 status: executing
-stopped_at: Phase 18 planning complete; ready to execute (4 plans / 4 waves verified clean)
-last_updated: "2026-10-12T10:05:51.283Z"
-last_activity: 2026-10-12 -- Phase 18 planning complete
+stopped_at: Phase 14 UI-SPEC approved
+last_updated: "2026-10-12T11:09:03.341Z"
+last_activity: 2026-10-12 -- Phase 18 execution started
 progress:
-  total_phases: 13
-  completed_phases: 11
-  total_plans: 50
-  completed_plans: 50
-  percent: 98
-notes:
-  - "Local master reset to origin/master (c4eb461) on 2026-10-12 — `.planning/` top-level files were recovered from git history (aef4bda / 80c5275 / 3e7a8f0)."
-  - "Phase 17 cutover completed 2026-09-07; decommission deferred per-action. Reversal requested 2026-10-12 → registered as Phase 18 with INFRA-12/13/14 requirements."
-  - "Backups Sept 10 → Oct 11 silently failed (20-byte placeholders) — Sept 9 dump is canonical; fresh Neon pull attempted at 18-01 before termination."
+  total_phases: 12
+  completed_phases: 3
+  total_plans: 39
+  completed_plans: 17
+  percent: 44
 ---
 
 # Project State
@@ -25,13 +21,14 @@ notes:
 See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone close)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 18 — undo-vercel-neon-migration (restore Hetzner hosting, terminate Vercel + Neon, $0/mo budget)
+**Current focus:** Phase 18 — undo-vercel-neon-migration-restore-hetzner-hosting
 
 ## Current Position
 
-Phase: 18 (undo-vercel-neon-migration) — PLANNING (next-to-execute 2026-10-12)
-Status: Ready to execute
-Last activity: 2026-10-12 -- Phase 18 planning complete
+Phase: 18 (undo-vercel-neon-migration-restore-hetzner-hosting) — EXECUTING
+Plan: 1 of 4
+Status: Executing Phase 18
+Last activity: 2026-10-12 -- Phase 18 execution started
 **Trigger:** User: "I keep incurring costs on Neon and it's hard to avoid" → undo Phase 17, terminate Vercel + Neon.
 
 **Recent sync (2026-10-12 morning):**
