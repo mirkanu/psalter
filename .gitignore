@@ -53,6 +53,9 @@ public/tunes-compressed/
 public/tunes-samples/
 public/tunes-old/
 
+# Phase 18 database dumps (large SQL binaries — never commit)
+backups/
+
 # .planning operational history — may contain infra-specific details
 # Keep: ROADMAP.md, PROJECT.md, REQUIREMENTS.md, milestones/, seeds/, notes/, research/, todos/
 .planning/phases/

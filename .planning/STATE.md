@@ -2,20 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
-status: executing
-stopped_at: Phase 18 planning complete; ready to execute (4 plans / 4 waves verified clean)
-last_updated: "2026-10-12T10:05:51.283Z"
-last_activity: 2026-10-12 -- Phase 18 planning complete
+status: ready_to_plan
+stopped_at: Phase 14 UI-SPEC approved
+last_updated: "2026-10-12T11:09:03.341Z"
+last_activity: 2026-10-12 -- Phase 18 execution started
 progress:
-  total_phases: 13
-  completed_phases: 11
-  total_plans: 50
-  completed_plans: 50
-  percent: 98
-notes:
-  - "Local master reset to origin/master (c4eb461) on 2026-10-12 — `.planning/` top-level files were recovered from git history (aef4bda / 80c5275 / 3e7a8f0)."
-  - "Phase 17 cutover completed 2026-09-07; decommission deferred per-action. Reversal requested 2026-10-12 → registered as Phase 18 with INFRA-12/13/14 requirements."
-  - "Backups Sept 10 → Oct 11 silently failed (20-byte placeholders) — Sept 9 dump is canonical; fresh Neon pull attempted at 18-01 before termination."
+  total_phases: 12
+  completed_phases: 4
+  total_plans: 39
+  completed_plans: 17
+  percent: 33
 ---
 
 # Project State
@@ -25,13 +21,14 @@ notes:
 See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone close)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 18 — undo-vercel-neon-migration (restore Hetzner hosting, terminate Vercel + Neon, $0/mo budget)
+**Current focus:** Phase 18 — undo-vercel-neon-migration-restore-hetzner-hosting
 
 ## Current Position
 
-Phase: 18 (undo-vercel-neon-migration) — PLANNING (next-to-execute 2026-10-12)
-Status: Ready to execute
-Last activity: 2026-10-12 -- Phase 18 planning complete
+Phase: 999.1
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-12
 **Trigger:** User: "I keep incurring costs on Neon and it's hard to avoid" → undo Phase 17, terminate Vercel + Neon.
 
 **Recent sync (2026-10-12 morning):**
@@ -39,7 +36,7 @@ Last activity: 2026-10-12 -- Phase 18 planning complete
 - `f146831` was local master (the Phase 17 cutover commit, before any reversal context). `origin/master` had advanced to `c4eb461` with 30+ merged PRs (Sept 8 → Oct 10) on a different history baseline (no merge base with local).
 - Reset local `master` → `origin/master` (`c4eb461`). Pre-reset safety snapshot: `/tmp/psalter-pre-reset-20261012-074819.tar.gz` (152 MB, 30-day retention).
 - `git reflog`: `f146831` reachable for ~90 days.
-- `.env` (gitignored, June 20) still points at Hetzner `localhost:5435` with `psalter_secure_2024` — compatible with bringing the local `psalter-db` Docker container back up if `POSTGRES_PASSWORD` in `/home/services/.env.production` matches.
+- `.env` (gitignored, June 20) still points at Hetzner `localhost:5435` with `<see POSTGRES_PASSWORD in /home/services/.env.production>` — compatible with bringing the local `psalter-db` Docker container back up if `POSTGRES_PASSWORD` in `/home/services/.env.production` matches.
 - `.env.production.local` (gitignored, Vercel overlay) is the only file pointing at Neon — must be neutralised.
 - Cloudflare Tunnel config `/home/claude/.cloudflare-tunnel/config.yml` is missing the `psalter.gsdlabs.dev` ingress block (was removed during 7-day soak teardown; pre-cut snapshot in `17-03-tunnel-config.yml.pre-cut` is the canonical "before" form).
 - PM2 `psalter` process "online" but pointing at `localhost:5435` with no DB container behind it — effectively dead until `psalter-db` is brought up.
@@ -51,7 +48,7 @@ Last activity: 2026-10-12 -- Phase 18 planning complete
 
 **Velocity:**
 
-- Total plans completed: 86
+- Total plans completed: 90
 - Average duration: 22 min
 - Total execution time: ~1.9 hours
 
@@ -77,6 +74,7 @@ Last activity: 2026-10-12 -- Phase 18 planning complete
 | 10 | 5 | - | - |
 | 11 | 6 | - | - |
 | 12 | 8 | - | - |
+| 18 | 4 | - | - |
 
 **Recent Trend:**
 

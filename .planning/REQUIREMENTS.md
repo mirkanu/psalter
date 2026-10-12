@@ -92,9 +92,9 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 Triggered 2026-10-12 by user ("I keep incurring costs on Neon and it's hard to avoid"). Inverse of Phase 17.
 
-- [ ] **INFRA-12**: Hetzner restoration — PM2 `psalter` rebuilt against `origin/master` `c4eb461` and serving 200 on every visitor route; `psalter-db` Docker container running on `localhost:5435`; Cloudflare Tunnel ingress for `psalter` restored; `.env.production.local` (Vercel overlay) neutralised; Cloudflare Access app for `*.gsdlabs.dev` re-wrapping the Hetzner origin — Phase 18
-- [ ] **INFRA-13**: Vercel + Neon termination — Vercel project `psalter` deleted (custom domain detached); Neon project deleted via console; Vercel-side response headers absent from `psalter.gsdlabs.dev` (no `x-vercel-id`); hard cost budget for the psalter app = $0/month verified — Phase 18
-- [ ] **INFRA-14**: Neon data recovery — Neon's most-recent achievable state restored into local Postgres (Sept 9 dump from `mirkanu/psalter-db-backup` as default; fresh Neon `pg_dump` if pulled before termination); at least one table-row parity check against the pre-Phase-17 Hetzner baseline; Sept 10 → Oct 11 unrecovered writes acknowledged in plan docs — Phase 18
+- [x] **INFRA-12**: Hetzner restoration — PM2 `psalter` rebuilt against `origin/master` `c4eb461` and serving 200 on every visitor route; `psalter-db` Docker container running on `localhost:5435`; Cloudflare Tunnel ingress for `psalter` restored; `.env.production.local` (Vercel overlay) neutralised; Cloudflare Access app for `*.gsdlabs.dev` re-wrapping the Hetzner origin — Phase 18
+- [x] **INFRA-13**: Vercel + Neon termination — Vercel project `psalter` deleted (custom domain detached); Neon project deleted via console; Vercel-side response headers absent from `psalter.gsdlabs.dev` (no `x-vercel-id`); hard cost budget for the psalter app = $0/month verified — Phase 18
+- [x] **INFRA-14**: Neon data recovery — Neon's most-recent achievable state restored into local Postgres (Sept 9 dump from `mirkanu/psalter-db-backup` as default; fresh Neon `pg_dump` if pulled before termination); at least one table-row parity check against the pre-Phase-17 Hetzner baseline; Sept 10 → Oct 11 unrecovered writes acknowledged in plan docs — Phase 18
 
 ## v2 Requirements
 
