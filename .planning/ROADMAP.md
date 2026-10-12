@@ -298,7 +298,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. `psalter.gsdlabs.dev` resolves through Cloudflare proxy to Hetzner — response headers contain no Vercel identifiers (no `x-vercel-id`, no `x-vercel-cache`); Cloudflare DNS returns Hetzner/`psalter` target (or the tunnel CNAME)
   2. PM2 `psalter` service is online, rebuilt against `origin/master` `c4eb461`, and serves 200 on `/`, `/psalms`, `/tunes`, `/daily`, `/login`, `/changelog`
-  3. `psalter-db` Docker container is running on `localhost:5435`, accepts connections with `psalter_secure_2024` from `.env`, and `pg_isready` returns 0 against the published port
+  3. `psalter-db` Docker container is running on `localhost:5435`, accepts connections with `<see POSTGRES_PASSWORD in /home/services/.env.production>` from `.env`, and `pg_isready` returns 0 against the published port
   4. Neon Postgres data is restored locally — either the Sept 9 dump from `mirkanu/psalter-db-backup` (`daily/2026-09-09.sql.gz`) OR a fresh `pg_dump` pulled directly from Neon before termination; at least one table is row-counted against the Sept 7 Hetzner pre-migration baseline for parity check
   5. `public/tunes/` image set is restored locally (either via fresh `pg_restore` of the Cloudflare R2 bucket contents OR re-pulled from `mirkanu/psalter-backup`'s pre-Phase-17 tarball) and `/tunes/beatitudo` etc. serve 200 with non-empty JPG response
   6. Cloudflare Tunnel ingress for `psalter` is restored in `/home/services/hetzner-vps/config.yml`, the tunnel service restarted, and `cloudflared` is healthy (`sudo systemctl status cloudflared`)
@@ -361,4 +361,4 @@ Phases 7 and 10 have no dependencies on Phase 6 or each other and may be worked 
 | 14. Launch Polish | 0/TBD | Not started | - |
 | 16. Tune Page First-Class Surface | 3/3 | Complete    | 2026-08-15 |
 | 17. Vercel + Neon Migration | 4/4 | Complete   | 2026-09-07 |
-| 18. Undo Vercel + Neon Migration | 0/TBD | Not started | - |
+| 18. Undo Vercel + Neon Migration | 4/4 | Complete    | 2026-10-12 |
