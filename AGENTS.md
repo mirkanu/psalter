@@ -22,6 +22,12 @@ Rebuild of **psalter.cprc.co.uk** — a Scottish Psalter website for CPRC congre
 | Storage | Cloudflare R2 (tune score sheet JPGs, bucket `gsd-psalter`) |
 | Deployment | Vercel, custom domain `psalter.gsdlabs.dev` |
 
+## Backup & Recovery
+
+- **Postgres database** is dumped daily at 03:00 UTC by a GitHub Actions workflow on [`mirkanu/psalter-db-backup`](https://github.com/mirkanu/psalter-db-backup). Workflow: `.github/workflows/backup-hetzner.yml`. Run `gh workflow run "Backup psalter DB (Hetzner)" --repo mirkanu/psalter-db-backup` to dump ad-hoc.
+- **Pre-Phase-13 uncompressed tune image originals** are preserved on R2 under the `originals/` prefix (see [`docs/notes/2026-10-12-r2-originals-backup.md`](docs/notes/2026-10-12-r2-originals-backup.md)). The Phase 13 compression replaced R2's contents — original 4032×3024 JPEGs live only at `https://cdn.psalter.gsdlabs.dev/originals/{slug}-{staff|solfege}-{n}.jpg` and in the local tarball `/home/services/psalter-backups/tunes-pre-compression-20260730.tar.gz` (sha256 `28a83a7d...`).
+- **Verification scripts**: `bash scripts/verify-tunes-backup.sh` (proves the tarball restores byte-identical images), `bash scripts/verify-migration.ts` (proves the database schema/rows match).
+
 ## Critical Reference Docs — READ FIRST
 
 These docs in `docs/research/` are the canonical record of our understanding of Scottish Psalter notation and lyric alignment. Any work touching solfège parsing, lyric-to-note alignment, melisma handling, slurs, or OCR pipelines **MUST** consult them before changing code or proposing fixes. They have been corrected through multiple painful debug cycles; treat them as binding.
