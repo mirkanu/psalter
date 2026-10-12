@@ -1,0 +1,161 @@
+# CPRC Psalter — Project Context
+
+## What This Is
+
+A rebuild of **psalter.cprc.co.uk** — the Covenanter Presbyterian Reformed Congregation (CPRC) Scottish Psalter website. Migrated off Airtable (backend) + Softr (frontend) onto a self-hosted Next.js 15 + PostgreSQL app, deployed live at **psalter.gsdlabs.dev**. Both planned milestones shipped 2026-07-29: v1.0 Public Psalter (full public browse, search, and the flagship feature — **live abcjs notation rendering** with syllable-aligned lyrics under the staff) and v1.1 Precentor Portal & Polish (authenticated precentor tooling, live in production). No milestone is currently active — Airtable exit verification, final polish, and ongoing melisma/notation curation live in the Backlog.
+
+## Core Value
+
+A precentor during worship can instantly find the psalms chosen for a service and follow the live-rendered tune notation with lyrics beneath the notes — hymnal-style — without relying on slow Softr or static images.
+
+This held up through v1.0 and v1.1: the notation+lyrics singing view (mobile-first, chromeless, swipe-navigable) is the app's centre of gravity, and the precentor portal (v1.1, live in production) builds directly on it.
+
+## Who It's For
+
+**General congregation (public, no login):** Browse all 150 psalms, read metrical lyrics, view tune info, explore theological metadata (topics, messianic references, doctrines), follow the 365-day daily reading plan, search by keyword or topic.
+
+**Precentors (login required):** Create and manage service events (date + AM/PM), assign psalm+tune pairs to each service, view the service "set list" during worship with live notation.
+
+**Future:** User accounts for congregation members (favourites, personalisation) — deferred to v2.
+
+## Current State (post-v1.0, post-v1.1)
+
+- **Live at:** psalter.gsdlabs.dev (Hetzner VPS, PM2 process `psalter`, port 3005, Cloudflare Tunnel)
+- **Backend:** PostgreSQL (`psalter-db` Docker container) — fully migrated off Airtable for all read paths; Airtable itself not yet decommissioned (Backlog Phase 999.1)
+- **Frontend:** Next.js 15 App Router, static-rendered psalm/tune pages
+- **Notation:** abcjs live SVG for 172 tunes total; 70 tunes currently marked `approved` in `/dev/melisma-editor` (unlocks live inline-Staff notation), remainder gracefully fall back to the original JPG scan — ongoing content curation, not a correctness gap
+- **Auth:** Better Auth, precentor accounts admin-created only, live in production
+- **~29,300 LOC** TypeScript/TSX in `src/`
+
+### Key Data Tables (PostgreSQL, migrated from Airtable)
+
+| Table | Purpose |
+|-------|---------|
+| psalms / psalm_versions | 150 psalms — KJV text, title, book, author, Haddington intro, structured lyrics |
+| tunes | 172 tunes — name, meter, JPG score images, ABC notation, melisma decisions |
+| naves_topics / verse_naves_topics | Nave's topical concordance cross-references |
+| messianic classifications | Messianic type/reference classification |
+| daily_readings | 365-day reading plan |
+| precenting_sets / set_items | Precentor service events and psalm+tune assignments |
+| feedback_submissions | Site feedback form |
+
+## Target Stack (achieved)
+
+- **Frontend:** Next.js 15 (App Router), shadcn/ui, Tailwind CSS 4, lucide-react
+- **ORM/DB:** Drizzle ORM + postgres.js, PostgreSQL 16
+- **Notation:** abcjs 6.6.3 (melody-only; four-part harmony still deferred, copyright check not yet done)
+- **Auth:** Better Auth (precentor login, admin-created accounts only)
+- **Storage:** Cloudflare R2 (tune score JPGs)
+- **Analytics:** Umami (self-hosted)
+
+## Key Decisions
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| Migrate data to PostgreSQL | Eliminate Airtable cost, own the data | ✓ Good — done, live, all read paths off Airtable |
+| abcjs for notation | Renders ABC notation in-browser; melody-only is copyright-safe | ✓ Good — core differentiator, works well once syllable-alignment was solved |
+| Melody-only encoding | 1979 RPCI typographical copyright expired 2004; traditional Scots tunes are public domain | ✓ Good — no legal issues surfaced |
+| Four-part harmony deferred | Copyright status needs further legal check | — Pending, still deferred to v2 |
+| Admin UI post-launch | Airtable continues to serve editorial needs short-term | ⚠️ Revisit — Airtable subscription still active pending Backlog Phase 999.1 exit verification; `/dev/melisma-editor` has become the de facto tune-data admin UI |
+| Next.js + shadcn/ui | Project-wide convention; fast, accessible, self-hosted | ✓ Good |
+| Deploy to psalter.gsdlabs.dev | Hetzner VPS via Cloudflare Tunnel; port 3005; psalter-db PostgreSQL container | ✓ Good — stable in production |
+| Structured lyrics data model (`Stanza→Line→Syllable`) | Heuristic blob-based alignment couldn't handle DCM pairing, mid-stanza verse splits, or alternate meters correctly (Phase 4.9.6) | ✓ Good — closed a long-running class of staff-alignment bugs |
+| Manual `/dev/melisma-editor` over batch OCR (Phase 4.11 pivot) | Claude Vision couldn't reliably perceive solfège underlines at batch scale; per-tune human review was more reliable | ✓ Good — mature workflow, actively used post-v1.0; slower but correct |
+| Milestone boundary drawn after Phase 4.12, not after all 4.9.x melisma work | Remaining melisma/OCR phases (4.9, 4.9.11, 4.9.12, 4.10, 4.11) don't block the public site — non-approved tunes gracefully fall back to JPG | ✓ Good — avoided gating a shippable public site on open-ended content curation |
+
+## Constraints
+
+- **Copyright:** Melody lines of traditional Scottish Psalter tunes are public domain. Four-part harmonisations deferred pending copyright checks.
+- **Precentor continuity:** Service event workflow must be at least as capable as current Softr/Airtable flow — met (Phase 5, 05.1).
+- **Future extensibility:** Architecture should support easy addition of features (vibe-code-friendly).
+- **VPS resources:** Hetzner VPS has 3.7GB RAM total; shared with other GSD projects — see global CLAUDE.md memory-hygiene rules.
+
+## Current Milestone: v2.0 Public Beta
+
+**Goal:** Get the site ready for its first outside testers (2-3 friends) — fix known bugs, close UX rough edges in the psalm/tune selectors and tune list, add a changelog + email updates, and finish the deferred visual polish, without adding new core capability.
+
+**Target features:**
+- Bug fixes: Ps 148b duplicate row, Aurelia-style meter-mismatch warning, psalm selector always-collapsed-on-load
+- Psalm selector polish: meter tags on multi-version toggles, search/filter width fix
+- Tune selector consolidation into one shared picker component
+- /tunes list overhaul: mirrors /psalms display, Recording column + mobile-fit table, sticky header, real Backup/Historical tune data (migrated from Airtable), inline embed player, name-based tune slugs
+- Changelog: /changelog page with inline admin authoring, homepage hero, email subscribe via Resend
+- Feedback: emails manuelkuhs@gmail.com via Resend, rate-limited
+- JPEG compression for tune images
+- Folded-in polish backlog: OG images, favicon, 404 page, Lighthouse 90+, remaining loading skeletons, click-feedback states
+
+## Requirements
+
+### Validated (v1.0 — Public Psalter, shipped 2026-07-29)
+
+- [x] Migrate all Airtable data to PostgreSQL — Phase 1
+- [x] Public psalm browsing — dense-grid list + instant search — Phase 4.7
+- [x] Psalm detail page — 7-tab structure with all metadata — Phase 4.5
+- [x] Metrical lyrics display with structured Stanza→Line→Syllable model — Phase 4.9.6
+- [x] Tune pages — name, meter, score display, YouTube/audio links — Phase 2, 4.8
+- [x] abcjs live notation rendering with syllable-aligned lyrics — Phase 4, 4.9.2, 4.9.6–4.9.10
+- [x] Mobile-first singing view (chromeless, swipe navigation, onboarding tour) — Phase 4.9.3–4.9.4, 4.9.15, 04.9.15.1
+- [x] 365-day daily reading plan — Phase 2
+- [x] Full-text search + topic/meter browse — Phase 3
+- [x] /explore rebuild matching reference site (6 sections) — Phase 4.12
+
+Full detail: `.planning/milestones/v1.0-REQUIREMENTS.md`
+
+### Validated (v1.1 — Precentor Portal & Polish, shipped 2026-07-29)
+
+- [x] Precentor login — Phase 05.1
+- [x] Precentor: create/manage service events, assign psalm+tune pairs, live precenting mode — Phase 5
+- [x] Site footer, feedback form, analytics — Phase 05.2
+- [x] Daily reading plan calendar view — Phase 05.3
+
+Full detail: `.planning/milestones/v1.1-REQUIREMENTS.md`
+
+### Active
+
+- [ ] v2.0 Public Beta — see Current Milestone above. Requirements to be scoped in `.planning/REQUIREMENTS.md`.
+  - [x] SEC-01, SEC-02, SEC-03 (Security & Data-Safety Prerequisites) — Phase 6, validated 2026-07-30. Closed a live production auth hole (middleware never compiled, 12 admin surfaces publicly reachable) and backed up 326 unbacked-up tune images before any compression work touches them.
+  - [x] EMAIL-01 (Resend Provisioning) — Phase 7, validated 2026-07-31. DNS trust chain (SPF/DKIM/MX/DMARC) verified for `mail.gsdlabs.dev`; sending-only Resend API key live in production; `sendEmail()` client wrapper + CLI test-send script shipped.
+  - [~] EMAIL-02 (Real Inbox Delivery Verification) — Phase 7, **partial** 2026-07-31. Gmail delivery confirmed (Primary inbox, spf/dkim/dmarc all pass, human-verified raw headers + independent 10/10 mail-tester.com score). Outlook/Hotmail/Live-family delivery intentionally not tested — human declined to supply a Microsoft-family address for this run. Needed before Phase 8/9 (feedback notifications, changelog broadcasts) can be considered fully proven for all recipients.
+  - [x] FEED-01 (Feedback Email Notification) — Phase 8, validated 2026-08-02. Every accepted feedback submission triggers a fire-and-forget notification to manuelkuhs@gmail.com via Phase 7's `sendEmail()`; DB write never blocks on send outcome. Live-proven: 5/5 real smoke-test emails plus one live-modal submission confirmed in Gmail Primary inbox by human checkpoint.
+  - [~] FEED-02 (Feedback API Rate Limiting) — Phase 8, **partial** 2026-08-02. In-process sliding-window limiter (5 requests/60s/IP) is live-verified against the real production endpoint (`200 200 200 200 200 429` with `Retry-After` header). The live-browser rendering of the modal's "please wait a minute" message was explicitly declined by human decision at the verification checkpoint, judging the automated proof sufficient — recorded as an open, disclosed gap rather than a silent pass, mirroring the EMAIL-02 precedent above. A code-review finding (CR-01: unhandled crash on a literal JSON `null` body, returns 500 instead of 400) was assessed as not goal-blocking — it cannot bypass the rate limiter or trigger a spurious email — and remains open for a follow-up fix.
+  - [x] CHLG-01..05 (Changelog: public feed, inline admin authoring, homepage hero, email subscribe/broadcast, unsubscribe) — Phase 9, validated 2026-08-07. All five live-proven against production: anonymous visitors see the post list with no composer; admin composer publishes inline and appears at the top instantly; homepage hero links to `/changelog`; subscribe is enumeration-safe (two identical POSTs → one row, byte-identical responses) and rate-limited (`200×5, 429` on the 6th); a real broadcast email was delivered to a human-checked inbox with subject/body/line-breaks intact and a working unsubscribe link, confirmed via DB row removal. Two small follow-ups shipped same-day at user request, outside the original plan scope: a Log Out nav entry, and admin post-editing (`PATCH /api/changelog/[id]`, no re-broadcast on edit) — both code-reviewed alongside the rest of the phase. A code-review finding (CR-01: `/api/unsubscribe` had no rate limiting, unlike its `/api/subscribe` and `/api/changelog` siblings — real availability concern given the VPS's 3.7GB/earlyoom memory ceiling) was fixed same-day: 20 requests/60s/IP, live-verified (`404×20, 429` on the 21st against the real endpoint).
+  - [x] TUNE-01..05 (Tune Data Fixes: Ps 148b duplicate, meter-mismatch banner, Backup/Historical migration, Change Tune tiering, name-based slugs) — Phase 10, validated 2026-08-08. Ps 148b's duplicate `is_primary` row fixed at the data level (Airtable link-order as source of truth) plus a partial unique index makes recurrence structurally impossible. A shared `isMeterMismatch()` predicate now backs a warning banner across Staff/Solfège/Sing views. Real per-tune historical-usage stats and per-psalm-version Backup/Historical tune links were migrated from Airtable into Postgres (39 backup, 393 historical, 0 unmatched names) and now drive a tiered Change Tune dialog (Backup → Historical → Other), replacing the old fake "not primary = backup" derivation and the broken Backup/Historical tabs. Tune URLs moved from numeric ids to name-based slugs. Deployment surfaced a real code-level defect beyond the original plan scope: `permanentRedirect()` degraded to a client-side-only redirect (invisible to crawlers/curl) because the route's `loading.tsx` sibling forces Next.js to stream the 200 shell before the async redirect resolves — fixed by moving the redirect into `middleware.ts`, which always issues a genuine HTTP 308. Also closed two code-review warnings found in the same pass: two internal Airtable admin-note tune rows were getting real crawlable pages (missing placeholder-tune filter reuse), and a latent (0/172, now regression-tested) numeric-slug collision class.
+
+### Backlog
+
+- [ ] Airtable exit verification (gap audit, R2 backup completeness, pg_dump backup, pgweb read-only viewer, cancellation checklist) — Backlog Phase 999.1 (was Phase 05.4). Note: v2.0 migrates the specific Backup/Historical tune fields needed for the tune list, but does not close out full Airtable decommissioning.
+- [ ] Melisma/notation OCR corpus: 70/172 tunes reviewed and approved in `/dev/melisma-editor`; 102 remain — ongoing background curation, not phase-tracked
+
+~~Phase 999.2 (Polish: OG images, Lighthouse 90+, remaining loading skeletons, click-feedback) — folded into v2.0 Public Beta rather than run as a separate milestone.~~
+
+### Carried-over technical debt (not formal requirements, tracked for future scoping)
+
+- UAT/verification sign-off gaps on several shipped phases (02, 04.5, 04.7, 04.9.8, 04.9.9, 04.9.14, 05, 05.1, 05.3) — all live in production with no reported breakage, formal checkpoints never closed
+
+### Out of Scope (v1)
+
+- Four-part harmonisation rendering — copyright check pending
+- User accounts / congregation favourites — deferred to v2
+- Admin UI (Directus/NocoDB) — `/dev/melisma-editor` has organically filled part of this need for tune data; general Airtable replacement still post-launch/low priority
+- Mobile app / PWA offline mode
+- Dark mode — deferred to v2
+
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd-transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd-complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
+---
+*Last updated: 2026-08-08 — Phase 10 (Tune Data Fixes) complete: TUNE-01..05 all validated live. A real code-level redirect defect found during deployment (client-side-only redirect, not a true HTTP 308) was fixed via middleware same-day, alongside two code-review warnings (placeholder-tune content leak, latent numeric-slug collision).*
