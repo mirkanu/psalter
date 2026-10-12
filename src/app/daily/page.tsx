@@ -1,7 +1,6 @@
-// Issue #82 Phase 2: T3 — 1-hour ISR. Cold visit acceptable; daily change
-// surfaces within an hour.
+// Issue #82 Phase 2: T3 — static export (1-hour ISR was Vercel-specific;
+// Hetzner rebuilds on deploy so no cache interval is needed).
 export const dynamic = 'force-static'
-export const revalidate = 3600
 import type { Metadata } from "next"
 import { fetchAllDailyReadings } from "@/db/queries/daily"
 import { getDayOfYear } from "@/lib/daily"
