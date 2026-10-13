@@ -365,10 +365,15 @@ Phases 7 and 10 have no dependencies on Phase 6 or each other and may be worked 
 
 ### Phase 19: Hetzner perf — ship Layer 3 (Cloudflare Cache Rule), T2 route conversions, /precent/[id]/* de-auth-gate, DB-password fix, and re-verify via speedtest. Implements the parked work from issue #82 plan-as-comment and PR #94.
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Cold-TTFB on T2 routes drops to < 100 ms via Cloudflare edge cache; `/precent/[id]/*` pages are cacheable (de-auth-gated, URL obscurity only); PM2 `psalter` `DATABASE_URL` is sourced from shared `${POSTGRES_PASSWORD}` instead of a hardcoded literal; regression-free on T1/T3/auth-only paths and other gsdlabs.dev subdomains.
+**Requirements**: PERF-LAYER3, PERF-T2-CONVERSIONS, PERF-PRECENT-DEAUTH, PERF-DBPASSWORD-SYNTH
 **Depends on:** Phase 18
-**Plans:** 0 plans
+**Plans:** 2 plans in 2 waves
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 19 to break down)
+
+**Wave 1**
+- [ ] 19-01-PLAN.md — T2 route conversions on 5 route families (`/tunes/[slug]`, `/psalms/[id]/study`, `/explore/{authors,topics,naves,messianic}`), `/precent/[id]/*` de-auth-gate with middleware carve-out + `generateStaticParams` enumerations, Cloudflare Cache Rule via API with `edge_ttl=31536000` + `headers()` Cache-Control in `next.config.ts`, atomic commit + push + `npm run build` + `pm2 restart psalter` + `cf-cache-status: HIT` verification + speedtest before/after (wave 1)
+
+**Wave 2** *(blocked on Wave 1; one human-verify checkpoint)*
+- [ ] 19-02-PLAN.md — `.env` `DATABASE_URL` literal → `${POSTGRES_PASSWORD}` value-preserving substitution (ABORT on divergence), final speedtest capture, TTFB-drop developer checkpoint, `docs/research/cache-tactics.md` merge from `origin/cache-tactics-doc`, ROADMAP/STATE closeout (wave 2)
