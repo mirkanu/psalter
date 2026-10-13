@@ -18,7 +18,8 @@ export async function generateStaticParams() {
   try {
     const rows = await db.select({ id: precentingSets.id }).from(precentingSets)
     return rows.map((r) => ({ id: String(r.id) }))
-  } catch {
+  } catch (err) {
+    console.error(`[generateStaticParams] DB unreachable for precenting sets:`, err)
     return []
   }
 }

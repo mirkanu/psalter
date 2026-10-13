@@ -44,8 +44,8 @@ export async function middleware(request: NextRequest) {
   // /precent (list) and /api/precent/* STAY gated below. Order matters — this
   // MUST run before the sessionCookie check below.
   if (
-    pathname.match(/^\/precent\/\d+$/) ||
-    pathname.match(/^\/precent\/\d+\/sing\/\d+$/)
+    pathname.match(/^\/precent\/\d+\/?$/) ||
+    pathname.match(/^\/precent\/\d+\/sing\/\d+\/?$/)
   ) {
     return NextResponse.next()
   }

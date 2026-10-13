@@ -22,7 +22,10 @@ export async function generateStaticParams() {
   try {
     const slugs = await fetchTuneSlugs()
     return slugs.map((slug) => ({ slug }))
-  } catch { return [] }
+  } catch (err) {
+    console.error(`[generateStaticParams] DB unreachable for fetchTuneSlugs:`, err)
+    return []
+  }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

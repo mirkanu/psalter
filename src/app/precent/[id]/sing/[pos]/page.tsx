@@ -28,13 +28,9 @@ interface PageProps {
 export async function generateStaticParams() {
   try {
     const rows = await db
-      .select({
-        setId: precentingSets.id,
-        itemCount: sql<number>`(
-          SELECT COUNT(*)::int FROM set_items WHERE set_items.set_id = ${precentingSets.id}
-        )`,
-      })
-      .from(precentingSets)
+      .select({ setId: setItems.setId, itemCount: sql<number>`COUNT(*)::int` })
+      .from(setItems)
+      .groupBy(setItems.setId)
     const params: { id: string; pos: string }[] = []
     for (const row of rows) {
       const count = Number(row.itemCount) || 0
@@ -43,7 +39,8 @@ export async function generateStaticParams() {
       }
     }
     return params
-  } catch {
+  } catch (err) {
+    console.error(`[generateStaticParams] DB unreachable for precenting sets × items:`, err)
     return []
   }
 }
