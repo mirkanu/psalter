@@ -14,7 +14,10 @@ export async function generateStaticParams() {
   try {
     const authors = await fetchDistinctAuthors()
     return authors.map((a) => ({ author: encodeURIComponent(a) }))
-  } catch { return [] }
+  } catch (err) {
+    console.error(`[generateStaticParams] DB unreachable for authors:`, err)
+    return []
+  }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

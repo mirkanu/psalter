@@ -20,7 +20,10 @@ export async function generateStaticParams() {
     .filter((t) => t.name)
     .map((t) => ({ slug: slugMap.get(t.id) ?? '' }))
     .filter((p) => p.slug !== '')
-  } catch { return [] }
+  } catch (err) {
+    console.error(`[generateStaticParams] DB unreachable for topics:`, err)
+    return []
+  }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

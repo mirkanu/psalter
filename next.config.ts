@@ -39,10 +39,6 @@ const nextConfig: NextConfig = {
         headers: t2CacheControl,
       },
       {
-        source: '/psalms/:id/sing',
-        headers: t2CacheControl,
-      },
-      {
         source: '/tunes/:slug',
         headers: t2CacheControl,
       },

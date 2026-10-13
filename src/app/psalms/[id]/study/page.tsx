@@ -45,7 +45,10 @@ export async function generateStaticParams() {
     if (isMulti) slugs.add(String(row.psalmId))
   }
   return Array.from(slugs).map((slug) => ({ id: slug }))
-  } catch { return [] }
+  } catch (err) {
+    console.error(`[generateStaticParams] DB unreachable for psalm studies:`, err)
+    return []
+  }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

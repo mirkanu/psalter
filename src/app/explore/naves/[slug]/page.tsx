@@ -19,7 +19,10 @@ export async function generateStaticParams() {
     const topics = await fetchNavesTopicsWithCounts()
     const navesSlugMap = buildNavesSlugMap(topics)
     return topics.map((t) => ({ slug: navesSlugMap.get(t.id) ?? slugify(t.name) }))
-  } catch { return [] }
+  } catch (err) {
+    console.error(`[generateStaticParams] DB unreachable for naves:`, err)
+    return []
+  }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
