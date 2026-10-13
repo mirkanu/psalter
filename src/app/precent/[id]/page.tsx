@@ -1,8 +1,7 @@
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-static'
+export const revalidate = false
 
-import { notFound, redirect } from 'next/navigation'
-import { auth } from '@/lib/auth'
-import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
 import { db } from '@/db'
 import { precentingSets, setItems, psalmVersions } from '@/db/schema'
 import { eq, asc, inArray } from 'drizzle-orm'
@@ -12,6 +11,18 @@ import { SetDetail } from '@/components/precent/SetDetail'
 import type { PsalmRow } from '@/components/PsalmListingGrid'
 import type { TuneRow } from '@/components/TuneTable'
 
+// Phase 19 PERF-02: enumerate every precenting set id so Next.js can pre-render
+// each /precent/[id] page statically at deploy (matched by the Cloudflare Cache
+// Rule in 19-01-PLAN). Bounds: O(distinct sets); current data is < 10 total.
+export async function generateStaticParams() {
+  try {
+    const rows = await db.select({ id: precentingSets.id }).from(precentingSets)
+    return rows.map((r) => ({ id: String(r.id) }))
+  } catch {
+    return []
+  }
+}
+
 export default async function PrecentSetPage({
   params,
 }: {
@@ -20,9 +31,6 @@ export default async function PrecentSetPage({
   const { id } = await params
   const setId = parseInt(id)
   if (isNaN(setId)) notFound()
-
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) redirect('/login')
 
   const set = await db.query.precentingSets.findFirst({
     where: eq(precentingSets.id, setId),
@@ -40,8 +48,11 @@ export default async function PrecentSetPage({
 
   if (!set) notFound()
 
-  if (set.userId !== session.user.id && session.user.role !== 'admin') notFound()
-
+  // Phase 19 PERF-02: /precent/[id] is de-auth-gated (the precentor's own set
+  // contains no confidential content). Per issue #82 plan-as-comment: the data
+  // is the precentor's own service plan (psalms + tunes + verse ranges). No
+  // PII, no notes, no secrets. The set is discoverable only via guessing the
+  // numeric id. Owner-only data not personally identifying-sensitive.
   const psalmListRows: PsalmRow[] = await fetchPsalmListRows()
   const allTunes: TuneRow[] = (await fetchAllTunes()) as TuneRow[]
 

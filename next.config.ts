@@ -24,6 +24,54 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async headers() {
+    // Phase 19 PERF-03 (Layer 3 — defence in depth): emit s-maxage=1y on T2 path
+    // globs so Vercel edge emits the right Cache-Control header even before the
+    // Cloudflare Cache Rule takes effect. The Cloudflare Cache Rule (created in
+    // Task 4) is the canonical mechanism — these headers cover the brief window
+    // between deploy and Cache Rule propagation.
+    const t2CacheControl = [
+      { key: 'Cache-Control', value: 'public, s-maxage=31536000, stale-while-revalidate=604800' },
+    ]
+    return [
+      {
+        source: '/psalms/:id/study',
+        headers: t2CacheControl,
+      },
+      {
+        source: '/psalms/:id/sing',
+        headers: t2CacheControl,
+      },
+      {
+        source: '/tunes/:slug',
+        headers: t2CacheControl,
+      },
+      {
+        source: '/explore/authors/:author',
+        headers: t2CacheControl,
+      },
+      {
+        source: '/explore/topics/:slug',
+        headers: t2CacheControl,
+      },
+      {
+        source: '/explore/naves/:slug',
+        headers: t2CacheControl,
+      },
+      {
+        source: '/explore/messianic',
+        headers: t2CacheControl,
+      },
+      {
+        source: '/precent/:id(\\d+)',
+        headers: t2CacheControl,
+      },
+      {
+        source: '/precent/:id(\\d+)/sing/:pos(\\d+)',
+        headers: t2CacheControl,
+      },
+    ]
+  },
   // Phase 04.9.15 Plan 05 (Rule 3 - blocking-issue fix): this Hetzner VPS has
   // only 3.7GB RAM total and runs at ~2.4GB baseline across other services
   // (see CLAUDE.md "Hetzner VPS memory constraints"). Default build worker
