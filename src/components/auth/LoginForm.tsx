@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -70,6 +71,11 @@ export function LoginForm() {
             <Button type="submit" className="w-full" disabled={isPending}>
               {isPending ? <Loader2 className="size-4 animate-spin" /> : 'Sign in'}
             </Button>
+            <p className="text-muted-foreground text-xs">
+              <Link href="/forgot-password" className="underline underline-offset-2 hover:text-foreground transition-colors">
+                Forgot password?
+              </Link>
+            </p>
             {/* Issue #10: surface the account-request path on the login screen
                 so uninvited visitors see how to ask, instead of bouncing
                 away. The footnote-style hint keeps it subordinate to the
