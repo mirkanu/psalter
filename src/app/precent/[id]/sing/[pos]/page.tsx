@@ -3,7 +3,7 @@ export const revalidate = false
 import { notFound } from 'next/navigation'
 import { db } from '@/db'
 import { precentingSets, setItems } from '@/db/schema'
-import { eq, asc } from 'drizzle-orm'
+import { eq, asc, sql } from 'drizzle-orm'
 import {
   fetchPsalmDetail,
   getEditoriallyLinkedTuneIdsForPsalm,
@@ -19,6 +19,33 @@ import { stripDoubleMeterSuffix } from '@/lib/meter-abbrev'
 
 interface PageProps {
   params: Promise<{ id: string; pos: string }>
+}
+
+// Phase 19 PERF-02: enumerate every (setId, position) pair so Next.js can
+// pre-render each /precent/[id]/sing/[pos] page statically at deploy (matched
+// by the Cloudflare Cache Rule in 19-01-PLAN). Bounds: O(sets * avg items per
+// set); current data is < 100 total pairs so build cost is negligible.
+export async function generateStaticParams() {
+  try {
+    const rows = await db
+      .select({
+        setId: precentingSets.id,
+        itemCount: sql<number>`(
+          SELECT COUNT(*)::int FROM set_items WHERE set_items.set_id = ${precentingSets.id}
+        )`,
+      })
+      .from(precentingSets)
+    const params: { id: string; pos: string }[] = []
+    for (const row of rows) {
+      const count = Number(row.itemCount) || 0
+      for (let pos = 0; pos < count; pos++) {
+        params.push({ id: String(row.setId), pos: String(pos + 1) })
+      }
+    }
+    return params
+  } catch {
+    return []
+  }
 }
 
 export default async function PrecentSingPage({ params }: PageProps) {

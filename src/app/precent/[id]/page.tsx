@@ -11,6 +11,18 @@ import { SetDetail } from '@/components/precent/SetDetail'
 import type { PsalmRow } from '@/components/PsalmListingGrid'
 import type { TuneRow } from '@/components/TuneTable'
 
+// Phase 19 PERF-02: enumerate every precenting set id so Next.js can pre-render
+// each /precent/[id] page statically at deploy (matched by the Cloudflare Cache
+// Rule in 19-01-PLAN). Bounds: O(distinct sets); current data is < 10 total.
+export async function generateStaticParams() {
+  try {
+    const rows = await db.select({ id: precentingSets.id }).from(precentingSets)
+    return rows.map((r) => ({ id: String(r.id) }))
+  } catch {
+    return []
+  }
+}
+
 export default async function PrecentSetPage({
   params,
 }: {
