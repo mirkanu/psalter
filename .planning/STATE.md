@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
 status: ready_to_plan
-stopped_at: Phase 14 UI-SPEC approved
-last_updated: "2026-10-12T11:09:03.341Z"
-last_activity: 2026-10-12 -- Phase 18 execution started
+stopped_at: Phase 19 — Hetzner perf (Layer 3 + T2 + /precent de-auth-gate) shipped
+last_updated: "2026-10-13T13:14:00.000Z"
+last_activity: 2026-10-13 -- Phase 19 execution completed
 progress:
-  total_phases: 12
-  completed_phases: 4
-  total_plans: 39
-  completed_plans: 17
-  percent: 33
+  total_phases: 13
+  completed_phases: 5
+  total_plans: 41
+  completed_plans: 19
+  percent: 38
 ---
 
 # Project State
@@ -21,15 +21,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone close)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 18 — undo-vercel-neon-migration-restore-hetzner-hosting
+**Current focus:** Phase 19 closed — Hetzner perf (Layer 3 + T2 + /precent de-auth-gate) shipped. Awaiting next phase planning.
 
 ## Current Position
 
-Phase: 999.1
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-10-12
-**Trigger:** User: "I keep incurring costs on Neon and it's hard to avoid" → undo Phase 17, terminate Vercel + Neon.
+Phase: 19
+Plan: 2/2 complete
+Status: Phase 19 shipped, TTFB-drop gate PASS
+Last activity: 2026-10-13
+**Recent sync (2026-10-13):**
+- Phase 19 (Hetzner perf) shipped: Cloudflare Cache Rule `d8c78a9291dd40b38f9a3523e5bd6bcc` Layer 3 active in zone `6c322a054d869df9450e4c99e8d4d4a8`; T2 route conversions on `/tunes/[slug]`, `/psalms/[id]/study`, `/explore/{authors,topics,naves,messianic}`; `/precent/[id]/*` de-auth-gate with middleware carve-out; `.env` `DATABASE_URL` `${POSTGRES_PASSWORD}` value-preserving substitution (ABORT-on-divergence guard passed); warm TTFB on `tune-dundee`/`psalm-23-study`/`psalm-23-sing-tune` dropped from 88/137/129 ms baseline to 0/0/0.1 ms (Cloudflare edge cache HIT) — `19-02-ttfb-gate.txt` ends with `GATE: PASS`.
+- `docs/research/cache-tactics.md` merged from `origin/cache-tactics-doc` (PR #97 closes) — canonical source-of-truth for PERF-01/02/03 now lives on master, not a side branch.
+- ROADMAP.md Phase 19 entry filled in with goal + PERF-01..05 requirement IDs + 2 plans `[x]`-checked; progress count advanced (13 total / 5 complete ≈ 38%).
 
 **Recent sync (2026-10-12 morning):**
 
