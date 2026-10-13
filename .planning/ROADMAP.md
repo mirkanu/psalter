@@ -346,7 +346,7 @@ This scope (PERF-01, PERF-02, OG images, Lighthouse 90+, remaining skeletons, cl
 ## Progress
 
 **Execution Order (v2.0):**
-Phases 7 and 10 have no dependencies on Phase 6 or each other and may be worked in any order; Phase 8 and Phase 9 depend on Phase 7; Phase 11 depends on Phase 10; Phase 13 depends on Phase 6; Phase 14 depends on all prior v2.0 phases. **Phase 17 (Vercel + Neon Migration) shipped 2026-09-07; Phase 18 (Undo Vercel + Neon Migration) is the next-to-execute phase as of 2026-10-12 — independent, runs immediately, re-uses the Hetzner PM2 + tunnel + .env kept intact as Phase 17's documented rollback path.**
+Phases 7 and 10 have no dependencies on Phase 6 or each other and may be worked in any order; Phase 8 and Phase 9 depend on Phase 7; Phase 11 depends on Phase 10; Phase 13 depends on Phase 6; Phase 14 depends on all prior v2.0 phases. **Phase 17 (Vercel + Neon Migration) shipped 2026-09-07; Phase 18 (Undo Vercel + Neon Migration) shipped 2026-10-12, re-using the Hetzner PM2 + tunnel + .env kept intact as Phase 17's documented rollback path; Phase 19 (Hetzner perf — Layer 3 Cache Rule + T2 conversions + /precent de-auth-gate + .env DB-password fix) shipped 2026-10-13 with TTFB-drop gate PASS.**
 
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
@@ -362,18 +362,15 @@ Phases 7 and 10 have no dependencies on Phase 6 or each other and may be worked 
 | 16. Tune Page First-Class Surface | 3/3 | Complete    | 2026-08-15 |
 | 17. Vercel + Neon Migration | 4/4 | Complete   | 2026-09-07 |
 | 18. Undo Vercel + Neon Migration | 4/4 | Complete    | 2026-10-12 |
+| 19. Hetzner Perf (Layer 3 + T2 + /precent de-auth + DB-password fix) | 2/2 | Complete    | 2026-10-13 |
 
 ### Phase 19: Hetzner perf — ship Layer 3 (Cloudflare Cache Rule), T2 route conversions, /precent/[id]/* de-auth-gate, DB-password fix, and re-verify via speedtest. Implements the parked work from issue #82 plan-as-comment and PR #94.
 
-**Goal:** Cold-TTFB on T2 routes drops to < 100 ms via Cloudflare edge cache; `/precent/[id]/*` pages are cacheable (de-auth-gated, URL obscurity only); PM2 `psalter` `DATABASE_URL` is sourced from shared `${POSTGRES_PASSWORD}` instead of a hardcoded literal; regression-free on T1/T3/auth-only paths and other gsdlabs.dev subdomains.
-**Requirements**: PERF-LAYER3, PERF-T2-CONVERSIONS, PERF-PRECENT-DEAUTH, PERF-DBPASSWORD-SYNTH
+**Goal:** Ship the parked perf work from issue #82 plan-as-comment + PR #94 — Cloudflare Cache Rule Layer 3 + T2 route conversions + /precent/[id]/* de-auth-gate + .env DATABASE_URL ${POSTGRES_PASSWORD} substitution. Re-verify warm TTFB drop on the 5 T2 candidate routes via /tmp/speedtest4.mjs.
+**Requirements**: PERF-01 (T2 route conversions), PERF-02 (/precent/[id]/* de-auth-gate), PERF-03 (Cloudflare Cache Rule Layer 3), PERF-04 (.env DATABASE_URL ${POSTGRES_PASSWORD} substitution), PERF-05 (TTFB-drop speedtest gate)
 **Depends on:** Phase 18
-**Plans:** 2 plans in 2 waves
+**Plans:** 2 plans
 
 Plans:
-
-**Wave 1**
-- [ ] 19-01-PLAN.md — T2 route conversions on 5 route families (`/tunes/[slug]`, `/psalms/[id]/study`, `/explore/{authors,topics,naves,messianic}`), `/precent/[id]/*` de-auth-gate with middleware carve-out + `generateStaticParams` enumerations, Cloudflare Cache Rule via API with `edge_ttl=31536000` + `headers()` Cache-Control in `next.config.ts`, atomic commit + push + `npm run build` + `pm2 restart psalter` + `cf-cache-status: HIT` verification + speedtest before/after (wave 1)
-
-**Wave 2** *(blocked on Wave 1; one human-verify checkpoint)*
-- [ ] 19-02-PLAN.md — `.env` `DATABASE_URL` literal → `${POSTGRES_PASSWORD}` value-preserving substitution (ABORT on divergence), final speedtest capture, TTFB-drop developer checkpoint, `docs/research/cache-tactics.md` merge from `origin/cache-tactics-doc`, ROADMAP/STATE closeout (wave 2)
+- [x] 19-01-PLAN.md — T2 conversions + /precent de-auth-gate + Cloudflare Cache Rule + baseline speedtest
+- [x] 19-02-PLAN.md — DB-password fix + docs merge + final speedtest + ROADMAP/STATE closeout

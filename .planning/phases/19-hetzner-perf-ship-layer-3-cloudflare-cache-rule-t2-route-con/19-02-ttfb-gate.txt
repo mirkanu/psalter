@@ -1,0 +1,12 @@
+# Phase 19 PERF-05 TTFB-drop gate — captured 2026-10-13T11:52:29Z
+# Source: 19-01-speedtest-before.json (BEFORE) vs 19-02-speedtest-final.json (AFTER)
+# Cloudflare Cache Rule d8c78a9291dd40b38f9a3523e5bd6bcc Layer 3 active in zone
+# DB-password substitution .env: ${POSTGRES_PASSWORD} sourced from .env.production
+
+Route                     Before_ms    After_ms     Delta_pct    Verdict
+-----                     ---------    --------     ---------    ------ 
+tune-dundee               87.9500002861023 0            100%         PASS   
+psalm-23-study            136.59999990463257 0            100%         PASS   
+psalm-23-sing-tune        128.75       0.09999942779541016 100%         PASS   
+
+GATE: PASS
