@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: psalter
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${PSALTER_DB_PASSWORD}
     volumes:
       - psalter_db_data:/var/lib/postgresql/data
     healthcheck:
