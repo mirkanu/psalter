@@ -362,3 +362,13 @@ Phases 7 and 10 have no dependencies on Phase 6 or each other and may be worked 
 | 16. Tune Page First-Class Surface | 3/3 | Complete    | 2026-08-15 |
 | 17. Vercel + Neon Migration | 4/4 | Complete   | 2026-09-07 |
 | 18. Undo Vercel + Neon Migration | 4/4 | Complete    | 2026-10-12 |
+
+### Phase 19: Hetzner perf — ship Layer 3 (Cloudflare Cache Rule), T2 route conversions, /precent/[id]/* de-auth-gate, DB-password fix, and re-verify via speedtest. Implements the parked work from issue #82 plan-as-comment and PR #94.
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 18
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 19 to break down)

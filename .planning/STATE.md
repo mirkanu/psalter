@@ -131,6 +131,7 @@ Last activity: 2026-10-12
 - Phase 5 edited: edited fields: goal, requirements, success_criteria — full precentor portal redesign with Precenting Sets, psalm table, meter mismatch checker, precenting mode
 - Phase 05.1 inserted after Phase 5: Auth Gate — Better Auth login, route protection, admin-created accounts, auto-populate Precentor from session (URGENT)
 - Phase 04.9.15.1 inserted after Phase 4.9.15: Inline Staff Landscape Fit + Swipe Stanza Navigation — captured from /gsd-explore session; not urgent, queued for later planning
+- Phase 19 added (2026-10-13): Hetzner perf — ship Layer 3 (Cloudflare Cache Rule), T2 route conversions, /precent/[id]/* de-auth-gate, psalter PM2 DATABASE_URL password fix, and re-verify via re-running /tmp/speedtest4.mjs. Implements the parked work from issue #82 plan-as-comment (#issuecomment-5856178875) and PR #94. Source-of-truth: docs/research/cache-tactics.md on branch docs/cache-tactics (PR #89 open, unmerged); needs merge as part of this phase. Captured from /gsd-explore session reviewing pre-Phase-18 perf PRs against the current Hetzner+PM2+Cloudflare Tunnel reality.
 
 ### Decisions
 
