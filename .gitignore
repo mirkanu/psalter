@@ -63,6 +63,13 @@ backups/
 .planning/debug/
 .planning/threads/
 .planning/config.json
+.planning/ui-reviews/
+.planning/*.png
+
+# data/ ephemeral artifacts — Sept 2026 psalm-23 UAT screenshots + HTML captures
+data/uploads/
+data/*.png
+data/*.html
 public/tunes/
 footer-desktop.png
 .env*
