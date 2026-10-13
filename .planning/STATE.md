@@ -4,7 +4,7 @@ milestone: v2.0
 milestone_name: Public Beta
 status: ready_to_plan
 stopped_at: Phase 19 — Hetzner perf (Layer 3 + T2 + /precent de-auth-gate) shipped
-last_updated: "2026-10-13T13:14:00.000Z"
+last_updated: "2026-10-13T12:03:20.000Z"
 last_activity: 2026-10-13 -- Phase 19 execution completed
 progress:
   total_phases: 13
