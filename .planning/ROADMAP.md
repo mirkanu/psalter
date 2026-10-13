@@ -304,7 +304,7 @@ Plans:
   6. Cloudflare Tunnel ingress for `psalter` is restored in `/home/services/hetzner-vps/config.yml`, the tunnel service restarted, and `cloudflared` is healthy (`sudo systemctl status cloudflared`)
   7. `/api/deploy-info` returns the new commit SHA with `max-age=0, must-revalidate`
   8. `.env.production.local` (Vercel overlay) is renamed/removed; `.env` is the only env file loaded; `psalter` process `env` dump contains no `VERCEL_*` or `TURBO_*` entries
-  9. Cloudflare Access application for `*.gsdlabs.dev` is verified to still wrap the Hetzner origin (re-attached if needed); write paths (`/api/precent/*`, admin routes) are gated
+  9. Write paths (`/api/precent/*`, admin routes) are gated by Better Auth — `trustedOrigins: [AUTH_URL]` only and admin-only accounts. Cloudflare Access is intentionally not used (Phase 18 deviation: no Access app existed for psalter pre-Phase-17, and Better Auth provides equivalent or stronger security for an admin-only authenticated site). See `18-VERIFICATION.md` Gap 1 and PROJECT.md "Phase 18" entry.
   10. No Vercel-specific code remains in HEAD: `grep -irE 'x-vercel|\.vercel/|@vercel/' src/` returns nothing in committed code paths (PRs #94, #92 edge-cache, ISR-related code stripped/rewritten for Hetzner); `ISR` re-enabled for select routes if appropriate
   11. Vercel project (`psalter`) is deleted via `vercel project rm` (or the Vercel dashboard) and the custom domain `psalter.gsdlabs.dev` is detached; Neon project is terminated via the Neon console (`Project settings → Delete project`) and the connection string is no longer reachable
   12. Hard cost budget = `$0/month` for psalter app on Hetzner — verified by inspection of VPS invoice + absence of Stripe/Vercel/Neon charges for the project
