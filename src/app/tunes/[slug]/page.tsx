@@ -1,4 +1,5 @@
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-static'
+export const revalidate = false
 import { notFound, permanentRedirect } from "next/navigation"
 import type { Metadata } from "next"
 import { fetchTuneDetail, fetchTuneBySlug, fetchTuneSlugs, fetchTuneMelismaStatus } from "@/db/queries/tunes"

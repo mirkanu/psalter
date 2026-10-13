@@ -1,4 +1,5 @@
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-static'
+export const revalidate = false
 import { notFound } from 'next/navigation'
 import { db } from '@/db'
 import { precentingSets, setItems } from '@/db/schema'

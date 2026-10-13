@@ -38,6 +38,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Phase 19 PERF-02 de-auth-gate carve-out: /precent/[id] and
+  // /precent/[id]/sing/[pos] contain no confidential content (the precentor's
+  // own set), so they are T2-cacheable and must NOT redirect to /login.
+  // /precent (list) and /api/precent/* STAY gated below. Order matters — this
+  // MUST run before the sessionCookie check below.
+  if (
+    pathname.match(/^\/precent\/\d+$/) ||
+    pathname.match(/^\/precent\/\d+\/sing\/\d+$/)
+  ) {
+    return NextResponse.next()
+  }
+
   // D-02: /precent/* requires any authenticated session (fast cookie check)
   if (pathname.startsWith('/precent')) {
     const sessionCookie = getSessionCookie(request)
