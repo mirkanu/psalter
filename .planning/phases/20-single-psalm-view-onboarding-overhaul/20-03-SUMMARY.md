@@ -156,3 +156,16 @@ None - no external service configuration required. The plan changes are entirely
 *Phase: 20-single-psalm-view-onboarding-overhaul*
 *Plan: 03*
 *Completed: 2026-10-15*
+
+## Self-Check: PASSED
+
+- `src/app/api/build-version/route.ts` exists (85 lines, public endpoint)
+- `src/components/BuildVersionGuard.tsx` exists (95 lines, 'use client' side-effect component)
+- `tests/api/build-version.test.ts` exists (7 vitest tests, all green)
+- `tests/diagnostics/build-version-guard.mjs` exists (3 Playwright sub-checks via Chromium daemon :3099)
+- `src/app/layout.tsx` imports + mounts `<BuildVersionGuard />` (2 BuildVersionGuard references)
+- `src/components/DeployStatus.tsx` no longer has pageshow handler (only 1 reference in a code comment)
+- All 2 commits exist on local master: `71ea3990` (feat), `419d905c` (docs)
+- `npx tsc --noEmit` exits 0 with 0 new errors in files owned by this plan (pre-existing spec-file errors in `tests/e2e/*.spec.ts` and `tests/precent-*.spec.ts` are unrelated to this plan and unchanged)
+- 7/7 vitest unit tests for `/api/build-version` pass (`npx vitest run tests/api/build-version.test.ts` → 7 passed, 33ms)
+- Push to `origin/master` rejected by gitleaks push protection (per memory `project_github_push_protection_master.md`) — local commit `71ea3990` + docs commit `419d905c` are on local master awaiting PR-based merge via the orchestrator
