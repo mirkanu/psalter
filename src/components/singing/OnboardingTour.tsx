@@ -3,16 +3,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Hand } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import type { ViewMode } from '@/components/notation/NotationRenderer'
 
-// Task 5 (04.9.14-01): bumped v1 → v2 to re-trigger the tour for existing
-// users when the scroll-hide explanation steps were added (those steps were
-// since removed — see the SWIPE_STEPS comment below — but the version-bump
-// precedent stands).
-// 04.9.15.1-03: bumped v2 → v3 to re-trigger the tour again when the swipe
-// step was added (same precedent as the v1→v2 bump). Not bumped again for
-// the scroll-hide-steps removal (checkpoint round 5) — that's content being
-// removed from an existing step set, not new functionality to gate.
-const TOUR_KEY = 'psalter_tour_v3'
+// Phase 20-01 (D-15/D-16): split the single linear tour into 3 independent
+// triggers, each gated by its own localStorage flag. Existing users who
+// completed the legacy `psalter_tour_v3` are migrated to the new
+// initialDone flag on hydrate so they do not re-onboard.
+const TOUR_INITIAL_KEY = 'psalter.tour.initialDone'
+const TOUR_AUDIO_KEY = 'psalter.tour.audioStepDone'
+const TOUR_SWIPE_KEY = 'psalter.tour.swipeStepDone'
+const TOUR_KEY_LEGACY = 'psalter_tour_v3'
 
 interface Step {
   target: string // data-tour-target value
@@ -20,26 +20,31 @@ interface Step {
 }
 
 // 260517-ht8 #1a — re-insert "tap to change tune" as step 3; gear becomes step 4.
-const STEPS: Step[] = [
+// Phase 20-01 (D-15): the initial tour excludes the audio step because the
+// play button isn't visible on first visit to Lyrics Only or Legacy.
+const INITIAL_STEPS: Step[] = [
   { target: 'prev-next', copy: 'Navigate to next/previous psalm' },
   { target: 'psalm-label', copy: 'Tap to quickly switch to any psalm' },
   { target: 'tune-name', copy: 'Tap to switch to a different tune' },
   { target: 'view-controls', copy: 'Open settings to change views (e.g. lyrics only) and access the study guide' },
 ]
 
-// 04.9.15.1-03 (MOBILE-10): appended only when totalStanzas > 1. Reuses the
-// existing 'scroll-area' target (the <main data-tour-target="scroll-area">
-// already exists and is already measured today) — no new data-tour-target.
+// Audio-player single-step popover (D-15). Fires on first Music Notes / Staff
+// Inline entry once the initial tour has been completed. Highlights the
+// existing `data-tour-target="play-button"` on GlassBottomBar's play icon.
+const AUDIO_STEP: Step = {
+  target: 'play-button',
+  copy: 'Tap the play button to open the audio player.',
+}
+
+// 04.9.15.1-03 (MOBILE-10): swipe step reused verbatim from the previous tour.
 // (The scroll-hide explanation steps that previously also used 'scroll-area'
-// / 'top-bar' were removed per checkpoint round 5 feedback — scroll-to-hide
-// is discoverable naturally — so this is now the ONLY step using this
-// target.)
-const SWIPE_STEPS: Step[] = [
-  {
-    target: 'scroll-area',
-    copy: 'Swipe left or right to move between stanza groups.',
-  },
-]
+// were removed per checkpoint round 5 feedback — scroll-to-hide is
+// discoverable naturally — so this is the ONLY step using this target.)
+const SWIPE_STEP: Step = {
+  target: 'scroll-area',
+  copy: 'Swipe left or right to move between stanza groups.',
+}
 
 interface Rect {
   top: number
@@ -77,58 +82,133 @@ function unionBbox(rects: Rect[]): Rect {
   return { top: minTop, left: minLeft, width: maxRight - minLeft, height: maxBottom - minTop }
 }
 
-interface Props {
+export interface OnboardingTourProps {
   /** 04.9.15.1-03 (MOBILE-10): current stanza-set count. Used to gate the
    *  swipe tutorial step — only shown when there's more than one set to
-   *  swipe between. Optional. */
+   *  swipe between. */
   totalStanzas?: number | null
+  /** Phase 20-01 (D-15): current viewMode — gates the audio-step (fires
+   *  only on Music Notes views) and swipe-step (fires only on staff-inline
+   *  with >1 stanza). */
+  viewMode: ViewMode
+  /** Phase 20-01 (D-15, D-23): the initial tour fires once after the
+   *  first-visit modal was Accepted. */
+  firstVisitAccepted: boolean
 }
 
-export function OnboardingTour({ totalStanzas }: Props = {}) {
+type Trigger = 'initial' | 'audio' | 'swipe'
+
+export function OnboardingTour({ totalStanzas, viewMode, firstVisitAccepted }: OnboardingTourProps) {
   // SSR-safe: render nothing until mounted; assume seen=true to suppress
   // first-paint flash for returning visitors (hydration reads the real value).
   const [mounted, setMounted] = useState(false)
-  const [tourSeen, setTourSeen] = useState(true)
+  // Phase 20-01 (D-16): three independent completion flags. Returning users
+  // start true so the tour doesn't flash on mount; hydrate sets the real
+  // value after localStorage is read.
+  const [tourInitialSeen, setTourInitialSeen] = useState(true)
+  const [tourAudioSeen, setTourAudioSeen] = useState(true)
+  const [tourSwipeSeen, setTourSwipeSeen] = useState(true)
   const [step, setStep] = useState(0)
   const [rects, setRects] = useState<Rect[] | null>(null)
 
   // 04.9.15.1-03: gate the swipe step to >1 stanza-set (nothing to swipe
   // between otherwise).
   const hasMultipleStanzas = totalStanzas != null && totalStanzas > 1
-  const steps = useMemo<Step[]>(
-    () => [...STEPS, ...(hasMultipleStanzas ? SWIPE_STEPS : [])],
-    [hasMultipleStanzas],
-  )
 
-  // CR-01 fix: if `steps` shrinks (e.g. totalStanzas drops to 1 mid-tour,
-  // dropping SWIPE_STEPS), clamp `step` so it never points past the end of
-  // the new, shorter array. Without this, the measurement effect below reads
-  // `steps[step]` as `undefined` and throws.
+  // Hydrate from localStorage AFTER mount — three independent flags plus
+  // legacy `psalter_tour_v3 === 'done'` → `psalter.tour.initialDone = true`
+  // migration so existing completed users do not re-onboard (D-16 + Open
+  // Question #2 from RESEARCH.md).
   useEffect(() => {
-    setStep((s) => Math.min(s, steps.length - 1))
-  }, [steps.length])
-
-  // Hydrate from localStorage AFTER mount
-  useEffect(() => {
-    let seen = true
+    let seenInitial = false
+    let seenAudio = false
+    let seenSwipe = false
     try {
-      seen = localStorage.getItem(TOUR_KEY) === 'done'
+      if (
+        localStorage.getItem(TOUR_KEY_LEGACY) === 'done' &&
+        localStorage.getItem(TOUR_INITIAL_KEY) !== 'true'
+      ) {
+        localStorage.setItem(TOUR_INITIAL_KEY, 'true')
+      }
+      localStorage.removeItem(TOUR_KEY_LEGACY)
+      seenInitial = localStorage.getItem(TOUR_INITIAL_KEY) === 'true'
+      seenAudio = localStorage.getItem(TOUR_AUDIO_KEY) === 'true'
+      seenSwipe = localStorage.getItem(TOUR_SWIPE_KEY) === 'true'
     } catch {
-      /* ignore — treat as not-yet-seen so first-time experience still runs */
-      seen = false
+      /* ignore — fail-open: treat as not-yet-seen so first-time experience
+          runs even if localStorage is unavailable */
     }
-    setTourSeen(seen)
+    setTourInitialSeen(seenInitial)
+    setTourAudioSeen(seenAudio)
+    setTourSwipeSeen(seenSwipe)
     setMounted(true)
   }, [])
 
+  // Phase 20-01 (D-15): derive which sub-tour to fire based on the three
+  // independent gates + viewMode + firstVisitAccepted. Priority order:
+  //   1. audio (Music Notes first entry, after initial tour)
+  //   2. swipe (Staff Inline first entry, multi-stanza, after initial tour)
+  //   3. initial (after modal Accept)
+  const isMusicNotesView =
+    viewMode === 'staff' ||
+    viewMode === 'staff-split' ||
+    viewMode === 'solfege' ||
+    viewMode === 'solfege-split'
+  const isStaffInlineView = viewMode === 'staff'
+
+  const shouldFireInitial = mounted && firstVisitAccepted && !tourInitialSeen
+  const shouldFireAudio =
+    mounted && tourInitialSeen && !tourAudioSeen && isMusicNotesView
+  const shouldFireSwipe =
+    mounted &&
+    tourInitialSeen &&
+    !tourSwipeSeen &&
+    isStaffInlineView &&
+    hasMultipleStanzas
+
+  const activeTrigger: Trigger | null = shouldFireAudio
+    ? 'audio'
+    : shouldFireSwipe
+      ? 'swipe'
+      : shouldFireInitial
+        ? 'initial'
+        : null
+
+  const steps = useMemo<Step[]>(() => {
+    if (activeTrigger === 'audio') return [AUDIO_STEP]
+    if (activeTrigger === 'swipe') return [SWIPE_STEP]
+    if (activeTrigger === 'initial') return INITIAL_STEPS
+    return []
+  }, [activeTrigger])
+
+  const tourSeen = activeTrigger === null
+
+  // CR-01 fix: if `steps` shrinks (e.g. totalStanzas drops to 1 mid-tour,
+  // dropping SWIPE_STEP), clamp `step` so it never points past the end of
+  // the new, shorter array. Floor at 0 so the initial render (steps=[])
+  // doesn't drive step to -1 and trip the measure effect's safeStep
+  // undefined check.
+  useEffect(() => {
+    setStep((s) => Math.max(0, Math.min(s, steps.length - 1)))
+  }, [steps.length])
+
   const dismiss = useCallback(() => {
-    setTourSeen(true)
+    const keyToWrite =
+      activeTrigger === 'audio'
+        ? TOUR_AUDIO_KEY
+        : activeTrigger === 'swipe'
+          ? TOUR_SWIPE_KEY
+          : TOUR_INITIAL_KEY
     try {
-      localStorage.setItem(TOUR_KEY, 'done')
+      localStorage.setItem(keyToWrite, 'true')
     } catch {
       /* ignore — non-persistent dismissal still hides for this session */
     }
-  }, [])
+    if (activeTrigger === 'audio') setTourAudioSeen(true)
+    else if (activeTrigger === 'swipe') setTourSwipeSeen(true)
+    else setTourInitialSeen(true)
+    setStep(0)
+  }, [activeTrigger])
 
   // Measure target on step change / resize / orientation
   useEffect(() => {
@@ -137,8 +217,14 @@ export function OnboardingTour({ totalStanzas }: Props = {}) {
       // CR-01 fix: clamp defensively in case this effect fires (e.g. via the
       // resize listener) in the same tick `steps` shrank but before the
       // clamping effect above has committed its `setStep` — never trust
-      // `step` to be in-bounds for the CURRENT `steps` array.
-      const safeStep = Math.min(step, steps.length - 1)
+      // `step` to be in-bounds for the CURRENT `steps` array. Floor at 0
+      // so an empty steps array doesn't drive safeStep negative and trip
+      // the undefined check below.
+      const safeStep = Math.max(0, Math.min(step, steps.length - 1))
+      if (!steps[safeStep]) {
+        dismiss()
+        return
+      }
       const rs = measure(steps[safeStep].target)
       if (!rs || rs.length === 0) {
         // Target missing — dismiss gracefully (mitigates T-04.9.4.04-03 DoS).
@@ -165,7 +251,7 @@ export function OnboardingTour({ totalStanzas }: Props = {}) {
       window.removeEventListener('resize', update)
       window.removeEventListener('orientationchange', update)
     }
-  }, [mounted, tourSeen, step, dismiss])
+  }, [mounted, tourSeen, step, dismiss, steps])
 
   // Escape dismisses at any step
   useEffect(() => {
@@ -186,12 +272,23 @@ export function OnboardingTour({ totalStanzas }: Props = {}) {
   const padding = 8
 
   // 04.9.15.1-03: identify the swipe step specifically (by target + copy —
-  // 'scroll-area' is currently only used by SWIPE_STEPS, but matching on
+  // 'scroll-area' is currently only used by SWIPE_STEP, but matching on
   // copy too keeps this correct if another step ever reuses the target)
   // so only this one step gets the extra in-spotlight hand visual.
   const isSwipeStep =
+    activeTrigger === 'swipe' &&
     steps[currentStep]?.target === 'scroll-area' &&
-    steps[currentStep]?.copy === SWIPE_STEPS[0].copy
+    steps[currentStep]?.copy === SWIPE_STEP.copy
+
+  // Phase 20-01 visual markers — Playwright assertions (UI-SPEC §Visual
+  // markers) and the `data-onboarding-tour` legacy marker (used by
+  // existing tests + Playwright diagnostics).
+  const triggerAttr =
+    activeTrigger === 'audio'
+      ? 'data-tour-audio-step'
+      : activeTrigger === 'swipe'
+        ? 'data-tour-swipe-step'
+        : 'data-tour-initial'
 
   // Bubble placement is based on the union bbox so it never overlaps any spotlight.
   const bbox = unionBbox(rects)
@@ -202,20 +299,13 @@ export function OnboardingTour({ totalStanzas }: Props = {}) {
   const placeBelow = bbox.top + bbox.height / 2 < viewportH / 2
 
   // Checkpoint round 2, issue 4: clamp the bubble's vertical position to the
-  // visible viewport. 'scroll-area' (used by SWIPE_STEPS) is an unusually
+  // visible viewport. 'scroll-area' (used by SWIPE_STEP) is an unusually
   // large/tall spotlight target — the whole notation region — so
   // `placeBelow` can evaluate false with a `bbox.top` near/above the top
   // edge, pushing the un-clamped `top: bbox.top - padding - 8` (bubble's
   // BOTTOM edge, since it's paired with `translate(-50%, -100%)`) high
   // enough that most or all of the bubble rendered above the visible
   // viewport (matching the reported "copy clipped/invisible" symptom).
-  // Clamp so the bubble's top AND bottom edges always stay within
-  // [BUBBLE_MARGIN, viewportH - BUBBLE_MARGIN], using a conservative height
-  // estimate — bubble content is short (one "Step N of M" line, 1-2 lines of
-  // copy, one button row) and width is capped at min(320px, 90vw), so it
-  // never realistically needs more than this. Applies to every step (not
-  // just the swipe step) since any step could in principle target a
-  // tall/near-edge element.
   const BUBBLE_MARGIN = 12
   const ESTIMATED_BUBBLE_HEIGHT = 180
   const bubbleTop = placeBelow
@@ -236,10 +326,7 @@ export function OnboardingTour({ totalStanzas }: Props = {}) {
   // scroll-hide reflow applies a negative margin-top / grows to 100dvh when
   // the chrome bars are hidden), so centering the hand + dot-preview inside
   // the RAW bbox can place them off-screen (dot preview invisible) or over
-  // real rendered content instead of clean space. Clamp/intersect the
-  // spotlight rect to the visible viewport before using it as the anchor for
-  // the swipe-step-only visuals below — bubble placement above is
-  // unaffected (bbox itself, and the spotlight mask cutout, stay exact).
+  // real rendered content instead of clean space.
   const swipeVisualTop = Math.max(bbox.top, 0)
   const swipeVisualLeft = Math.max(bbox.left, 0)
   const swipeVisualRect = {
@@ -250,7 +337,14 @@ export function OnboardingTour({ totalStanzas }: Props = {}) {
   }
 
   const overlay = (
-    <div data-onboarding-tour className="fixed inset-0 z-[200] pointer-events-auto">
+    <div
+      data-onboarding-tour
+      data-tour-trigger={activeTrigger}
+      data-tour-audio-step={activeTrigger === 'audio' ? '' : undefined}
+      data-tour-swipe-step={activeTrigger === 'swipe' ? '' : undefined}
+      data-tour-initial={activeTrigger === 'initial' ? '' : undefined}
+      className="fixed inset-0 z-[200] pointer-events-auto"
+    >
       {/* 260517-ht8 #1b — SVG-mask spotlight supports MULTIPLE simultaneous cutouts
          so e.g. the back and forward arrows are individually highlighted (instead
          of one wide region covering the whole top bar). Backdrop alpha is set
@@ -310,12 +404,9 @@ export function OnboardingTour({ totalStanzas }: Props = {}) {
         ))}
       </svg>
       {/* 04.9.15.1-03 (MOBILE-10): swipe-step-only visual — animated hand,
-         positioned inside the spotlight cutout (Sketch 007 Variant C, minus
-         the dot-preview clone per checkpoint round 2 feedback: the tour no
-         longer references or previews the dot indicator at all — the real
-         StanzaDotIndicator, mounted separately in SingingView, speaks for
-         itself). Sits above the mask (201) but below the bubble (202).
-         Reduced motion falls back to a static, centered hand glyph. */}
+         positioned inside the spotlight cutout. Sits above the mask (201) but
+         below the bubble (202). Reduced motion falls back to a static,
+         centered hand glyph. */}
       {isSwipeStep && (
         <div
           aria-hidden
@@ -338,9 +429,7 @@ export function OnboardingTour({ totalStanzas }: Props = {}) {
             }
           `}</style>
           {/* dotted swipe trail — light-on-dark for visibility against the
-               spotlight cutout. rgba(255,255,255,0.5) reads as a soft white
-               on the dark page background and as a mid-grey on light mode
-               (the cutout is over the page content, not the bubble). */}
+               spotlight cutout. */}
           <div
             className="absolute top-1/2 left-1/2 h-0.5 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full motion-reduce:hidden"
             style={{

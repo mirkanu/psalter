@@ -38,6 +38,15 @@ const STORAGE_LAST_MUSIC_MODE_KEY = 'psalter-score-mode-last-music'
 // size; Lyrics Only has its own — see `readStoredSize`/`activeBaseSize` below.
 const STORAGE_SIZE_KEY = 'psalter-staff-size'
 const STORAGE_LYRICS_SIZE_KEY = 'psalter-lyrics-size'
+// Phase 20-01 (D-16, D-23, D-24): new tour + first-visit modal flags. The
+// three `*Done` keys gate the three independent OnboardingTour triggers
+// (initial / audio-step / swipe-step). `firstVisitModalAccepted` gates
+// whether the modal auto-opens. `handleRestartTour` clears all four so
+// "Restart tour" in the gear popover re-prompts every step + the modal.
+const STORAGE_TOUR_INITIAL_DONE = 'psalter.tour.initialDone'
+const STORAGE_TOUR_AUDIO_STEP_DONE = 'psalter.tour.audioStepDone'
+const STORAGE_TOUR_SWIPE_STEP_DONE = 'psalter.tour.swipeStepDone'
+const STORAGE_FIRST_VISIT_ACCEPTED = 'psalter.firstVisitModalAccepted'
 // 2026-08-23 (row-count knob): upper bound on `rowDelta` for the Inline Staff
 // A+/A− knob. 3 lets a CM stanza subdivide from 4 rows (A+0) to 7 rows (A+3),
 // which is the most the dynamic solver can fill without leaving rows so sparse
@@ -227,6 +236,10 @@ export function SingingView({
   // button presses. `baseSize` (above) is now lyric-only: driven ONLY by A+/A−.
   const [notationBaseSize, setNotationBaseSize] = useState<number>(13)
   const [mounted, setMounted] = useState(false)
+  // Phase 20-01 (D-24): gate for the first-visit modal. Read from
+  // localStorage in the mount effect below; passed to OnboardingTour so the
+  // initial tour fires only after the user accepted the modal.
+  const [firstVisitAccepted, setFirstVisitAccepted] = useState(false)
 
   // 04.9.4-03: Proportional zoom heuristic — refs avoid stale closures in the
   // debounced resize handler. `referenceWidthRef` tracks the viewport width at
@@ -267,6 +280,13 @@ export function SingingView({
     setViewMode(hasAnyNotation ? stored : 'lyrics')
     setBaseSize(readStoredSize(STORAGE_SIZE_KEY))
     setLyricsBaseSize(readStoredSize(STORAGE_LYRICS_SIZE_KEY))
+    // Phase 20-01 (D-24): read firstVisitModalAccepted — feeds OnboardingTour
+    // so the initial tour fires only after the user Accepted the modal.
+    try {
+      setFirstVisitAccepted(localStorage.getItem(STORAGE_FIRST_VISIT_ACCEPTED) === 'true')
+    } catch {
+      /* ignore */
+    }
     setMounted(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -594,9 +614,22 @@ export function SingingView({
       // 04.9.15.1-03: bumped v2 → v3 (swipe step added) — clear the current
       // key too, same precedent, so "Restart tour" keeps working.
       localStorage.removeItem('psalter_tour_v3')
+      // Phase 20-01 (D-16, Pitfall 5): the new tour has 3 keys
+      // (psalter.tour.{initial,audioStep,swipeStep}Done). Without extension,
+      // "Restart tour" wouldn't re-trigger the audio or swipe steps. Also
+      // clear psalter.firstVisitModalAccepted so the first-visit modal
+      // re-opens on next visit (restart = full re-prompt).
+      localStorage.removeItem(STORAGE_TOUR_INITIAL_DONE)
+      localStorage.removeItem(STORAGE_TOUR_AUDIO_STEP_DONE)
+      localStorage.removeItem(STORAGE_TOUR_SWIPE_STEP_DONE)
+      localStorage.removeItem(STORAGE_FIRST_VISIT_ACCEPTED)
     } catch {
       /* ignore */
     }
+    // Reset the in-state flag so the modal re-opens immediately without
+    // waiting for next hydrate. The 3 tour flags are in OnboardingTour's
+    // state — they reset via the setTourKey remount trick below.
+    setFirstVisitAccepted(false)
     setTourKey((k) => k + 1)
   }, [])
 
@@ -1356,7 +1389,12 @@ export function SingingView({
       {phoneLandscapeChromeHide && (totalStanzas ?? 0) > 1 && (
         <StanzaDotIndicator current={currentStanza ?? 1} total={totalStanzas as number} />
       )}
-      <OnboardingTourClient key={tourKey} totalStanzas={totalStanzas} />
+      <OnboardingTourClient
+        key={tourKey}
+        totalStanzas={totalStanzas}
+        viewMode={viewMode}
+        firstVisitAccepted={firstVisitAccepted}
+      />
 
       {/* 2026-09-02: fullscreen overlay — replaces the old scroll-hide-UI
          pattern. Renders just the notation+lyrics at full bleed; the SAME
