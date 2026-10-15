@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
-status: executing
+status: ready_to_plan
 stopped_at: Phase 20 Plan 02 complete (PR #118 open, awaiting merge)
 last_updated: "2026-10-15T16:08:00.000Z"
 last_activity: 2026-10-15
 progress:
   total_phases: 14
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 44
   completed_plans: 22
-  percent: 50
+  percent: 36
 ---
 
 # Project State
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone clos
 
 ## Current Position
 
-Phase: 20 (Single Psalm View Onboarding Overhaul) — EXECUTING
-Plan: 3 of 3
-Status: Ready to execute
+Phase: 999.1
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-10-15
 **Recent sync (2026-10-15):**
 
@@ -57,7 +57,7 @@ Last activity: 2026-10-15
 
 **Velocity:**
 
-- Total plans completed: 90
+- Total plans completed: 93
 - Average duration: 22 min
 - Total execution time: ~1.9 hours
 
@@ -84,6 +84,7 @@ Last activity: 2026-10-15
 | 11 | 6 | - | - |
 | 12 | 8 | - | - |
 | 18 | 4 | - | - |
+| 20 | 3 | - | - |
 
 **Recent Trend:**
 
