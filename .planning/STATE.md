@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
-status: ready_to_plan
-stopped_at: Phase 19 — Hetzner perf (Layer 3 + T2 + /precent de-auth-gate) shipped
-last_updated: "2026-10-13T12:03:20.000Z"
-last_activity: 2026-10-13 -- Phase 19 execution completed
+status: executing
+stopped_at: Phase 20 UI-SPEC approved
+last_updated: "2026-10-15T14:42:49.828Z"
+last_activity: 2026-10-15 -- Phase 20 execution started
 progress:
-  total_phases: 13
-  completed_phases: 5
-  total_plans: 41
+  total_phases: 14
+  completed_phases: 4
+  total_plans: 44
   completed_plans: 19
-  percent: 38
+  percent: 43
 ---
 
 # Project State
@@ -21,15 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone close)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 19 closed — Hetzner perf (Layer 3 + T2 + /precent de-auth-gate) shipped. Awaiting next phase planning.
+**Current focus:** Phase 20 — Single Psalm View Onboarding Overhaul
 
 ## Current Position
 
-Phase: 19
-Plan: 2/2 complete
-Status: Phase 19 shipped, TTFB-drop gate PASS
-Last activity: 2026-10-13 - Completed quick task 261013-iom: forgot-password workflow
+Phase: 20 (Single Psalm View Onboarding Overhaul) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 20
+Last activity: 2026-10-15 -- Phase 20 execution started
 **Recent sync (2026-10-13):**
+
 - Phase 19 (Hetzner perf) shipped: Cloudflare Cache Rule `d8c78a9291dd40b38f9a3523e5bd6bcc` Layer 3 active in zone `6c322a054d869df9450e4c99e8d4d4a8`; T2 route conversions on `/tunes/[slug]`, `/psalms/[id]/study`, `/explore/{authors,topics,naves,messianic}`; `/precent/[id]/*` de-auth-gate with middleware carve-out; `.env` `DATABASE_URL` `${POSTGRES_PASSWORD}` value-preserving substitution (ABORT-on-divergence guard passed); warm TTFB on `tune-dundee`/`psalm-23-study`/`psalm-23-sing-tune` dropped from 88/137/129 ms baseline to 0/0/0.1 ms (Cloudflare edge cache HIT) — `19-02-ttfb-gate.txt` ends with `GATE: PASS`.
 - `docs/research/cache-tactics.md` merged from `origin/cache-tactics-doc` (PR #97 closes) — canonical source-of-truth for PERF-01/02/03 now lives on master, not a side branch.
 - ROADMAP.md Phase 19 entry filled in with goal + PERF-01..05 requirement IDs + 2 plans `[x]`-checked; progress count advanced (13 total / 5 complete ≈ 38%).
@@ -135,6 +136,7 @@ Last activity: 2026-10-13 - Completed quick task 261013-iom: forgot-password wor
 - Phase 05.1 inserted after Phase 5: Auth Gate — Better Auth login, route protection, admin-created accounts, auto-populate Precentor from session (URGENT)
 - Phase 04.9.15.1 inserted after Phase 4.9.15: Inline Staff Landscape Fit + Swipe Stanza Navigation — captured from /gsd-explore session; not urgent, queued for later planning
 - Phase 19 added (2026-10-13): Hetzner perf — ship Layer 3 (Cloudflare Cache Rule), T2 route conversions, /precent/[id]/* de-auth-gate, psalter PM2 DATABASE_URL password fix, and re-verify via re-running /tmp/speedtest4.mjs. Implements the parked work from issue #82 plan-as-comment (#issuecomment-5856178875) and PR #94. Source-of-truth: docs/research/cache-tactics.md on branch docs/cache-tactics (PR #89 open, unmerged); needs merge as part of this phase. Captured from /gsd-explore session reviewing pre-Phase-18 perf PRs against the current Hetzner+PM2+Cloudflare Tunnel reality.
+- Phase 20 added (2026-10-15): Single Psalm View Onboarding Overhaul — Legacy third top-level view (Lyrics Only + always-on SoundCloud/MIDI embeds, no popout play button); bottom-right play button redesigned as open/close toggle with inverted colors and explicit MIDI stop on close (SoundCloud auto-stops on hide via iframe); mirror "not available" notices for empty SoundCloud and MIDI URLs; audio state persistence across psalms (open/closed + last-selected) in localStorage, cross-view resets to closed; tour split into 3 context-aware triggers (initial without play step, audio step on first Music Notes/Staff Inline entry, swipe step on first Staff Inline entry); first-visit modal at /psalms/[id] only (NOT /psalms index or /psalms/[id]/study) with live preview + Accept gate that re-opens until clicked; new public `/api/build-version` endpoint returning only `{ buildId }` + localStorage compare-and-reload effect on psalm pages (standalone from admin-only DeployStatus). Source-of-truth: `.planning/notes/2026-10-15-single-psalm-view-ux-overhaul.md`. Triggered by precentor beta-test feedback — non-tech user couldn't navigate the single-psalm view, wanted SoundCloud/MIDI at the top with no clicking, missed the tour.
 
 ### Decisions
 
@@ -329,9 +331,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-07T07:43:40.378Z
-Stopped at: Phase 14 UI-SPEC approved
-Resume file: None
+Last session: 2026-10-15T14:21:41.410Z
+Stopped at: Phase 20 UI-SPEC approved
+Resume file: .planning/phases/20-single-psalm-view-onboarding-overhaul/20-UI-SPEC.md
 
 ### Deferred from 04.9.4 polish (separate tickets when needed)
 
