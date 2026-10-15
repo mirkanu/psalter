@@ -384,7 +384,10 @@ Plans:
 **Plans:** 3 plans (2 waves)
 
 Plans:
+**Wave 1**
 - [ ] 20-01-PLAN.md — FirstVisitModal (Choose a view + 3 radios + Save at /psalms/[id] only) + OnboardingTour 3-trigger split (initial / audio / swipe) + psalter_tour_v3 migration (wave 1)
 - [ ] 20-02-PLAN.md — Legacy third viewMode (always-on SoundCloud + MIDI embeds, no play button) + bottom-right play button as open/close toggle (inverted colors) + audio persistence (psalter-audio-source → psalter.audioLastSelected) + MIDI explicit stop on close (wave 1, parallel with 01)
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 20-03-PLAN.md — Public /api/build-version endpoint + BuildVersionGuard client + refactor DeployStatus pageshow handler to use the new mechanism; resolves pre-existing data-build-id="unknown" memory (wave 2, depends on 01+02)
 

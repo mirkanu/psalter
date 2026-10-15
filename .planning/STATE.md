@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
-status: Phase 19 shipped, TTFB-drop gate PASS
-stopped_at: "Phase 20 context gathered (4 gray areas decided: Legacy label kept, blank initial behind modal, minimal modal tone, bfcache-guard merged with build-version)"
-last_updated: "2026-10-15T13:54:50.764Z"
-last_activity: "2026-10-13 - Completed quick task 261013-iom: forgot-password workflow"
+status: executing
+stopped_at: Phase 20 UI-SPEC approved
+last_updated: "2026-10-15T14:41:49.555Z"
+last_activity: 2026-10-15 -- Phase 20 planning complete
 progress:
   total_phases: 14
   completed_phases: 4
-  total_plans: 41
+  total_plans: 44
   completed_plans: 19
-  percent: 46
+  percent: 43
 ---
 
 # Project State
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone clos
 
 Phase: 19
 Plan: 2/2 complete
-Status: Phase 19 shipped, TTFB-drop gate PASS
-Last activity: 2026-10-13 - Completed quick task 261013-iom: forgot-password workflow
+Status: Ready to execute
+Last activity: 2026-10-15 -- Phase 20 planning complete
 **Recent sync (2026-10-13):**
 
 - Phase 19 (Hetzner perf) shipped: Cloudflare Cache Rule `d8c78a9291dd40b38f9a3523e5bd6bcc` Layer 3 active in zone `6c322a054d869df9450e4c99e8d4d4a8`; T2 route conversions on `/tunes/[slug]`, `/psalms/[id]/study`, `/explore/{authors,topics,naves,messianic}`; `/precent/[id]/*` de-auth-gate with middleware carve-out; `.env` `DATABASE_URL` `${POSTGRES_PASSWORD}` value-preserving substitution (ABORT-on-divergence guard passed); warm TTFB on `tune-dundee`/`psalm-23-study`/`psalm-23-sing-tune` dropped from 88/137/129 ms baseline to 0/0/0.1 ms (Cloudflare edge cache HIT) — `19-02-ttfb-gate.txt` ends with `GATE: PASS`.
@@ -331,9 +331,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-15T13:54:50.677Z
-Stopped at: Phase 20 context gathered (4 gray areas decided: Legacy label kept, blank initial behind modal, minimal modal tone, bfcache-guard merged with build-version)
-Resume file: .planning/phases/20-single-psalm-view-onboarding-overhaul/20-CONTEXT.md
+Last session: 2026-10-15T14:21:41.410Z
+Stopped at: Phase 20 UI-SPEC approved
+Resume file: .planning/phases/20-single-psalm-view-onboarding-overhaul/20-UI-SPEC.md
 
 ### Deferred from 04.9.4 polish (separate tickets when needed)
 
