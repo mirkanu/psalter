@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, type ReactNode } from 'react'
-import { Settings, Play, Pause, ChevronLeft, ChevronRight, Maximize2, Minimize2 } from 'lucide-react'
+import { Settings, Play, ChevronLeft, ChevronRight, Maximize2, Minimize2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MAX_SIZE, SIZE_STEP } from '@/components/notation/NotationRenderer'
 
@@ -23,7 +23,15 @@ interface Props {
   /** Stanza prev/next nav — replaces NotationRenderer's removed chromeless stanza nav. */
   onStanzaPrev?: () => void
   onStanzaNext?: () => void
+  // Phase 20-02 (D-05/D-06): the bottom-right Play button is an open/close
+  // toggle, not play/pause. `isPlaying` is still accepted for any downstream
+  // indicator that might depend on it (e.g. tests) but the button itself
+  // renders purely on `playerOpen`. `hidePlayButton` (D-03) hides the button
+  // entirely in Legacy view, where the embeds are always-on at the top of
+  // the notation area.
   isPlaying: boolean
+  playerOpen: boolean
+  hidePlayButton?: boolean
   onPlayToggle: () => void
   onGearOpen: () => void
   /** Fullscreen toggle — when provided, renders an icon button left of Play
@@ -69,6 +77,8 @@ export function GlassBottomBar({
   onStanzaPrev,
   onStanzaNext,
   isPlaying,
+  playerOpen,
+  hidePlayButton = false,
   onPlayToggle,
   onGearOpen,
   onFullscreenToggle,
@@ -203,17 +213,32 @@ export function GlassBottomBar({
           </button>
         )}
 
-        {/* Play (icon-only) */}
-        <button
-          type="button"
-          aria-label={isPlaying ? 'Pause' : 'Play'}
-          data-tour-target="play-button"
-          data-singing-play
-          onClick={onPlayToggle}
-          className="min-h-10 min-w-11 inline-flex items-center justify-center text-foreground active:scale-[0.90] transition-transform duration-75 shrink-0"
-        >
-          {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-        </button>
+        {/* Phase 20-02 (D-03/D-05/D-06): Play (icon-only) — open/close toggle.
+            Default state (closed) shows the Play icon on the glass surface in
+            foreground color. Open state flips to bg-foreground text-background
+            (inverted colors per UI-SPEC.md "Accent reserved for" #3 — NOT
+            bg-primary, which would read as warning). In Legacy view (D-03) the
+            button is hidden entirely because the embeds are always-on at the
+            top of the notation area; `hidePlayButton` short-circuits the JSX
+            so no button element is rendered (no empty space, no a11y label). */}
+        {hidePlayButton ? null : (
+          <button
+            type="button"
+            aria-label={playerOpen ? 'Close audio player' : 'Open audio player'}
+            data-tour-target="play-button"
+            data-singing-play
+            data-play-toggle={playerOpen ? 'open' : 'closed'}
+            onClick={onPlayToggle}
+            className={[
+              'min-h-10 min-w-11 inline-flex items-center justify-center active:scale-[0.90] transition-[transform,background,color] duration-75 shrink-0',
+              playerOpen
+                ? 'bg-foreground text-background'
+                : 'text-foreground',
+            ].join(' ')}
+          >
+            <Play className="h-5 w-5" />
+          </button>
+        )}
 
         {/* Gear — far right (slot or default button) */}
         {gear ?? (

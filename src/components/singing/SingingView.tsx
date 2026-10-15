@@ -47,6 +47,16 @@ const STORAGE_TOUR_INITIAL_DONE = 'psalter.tour.initialDone'
 const STORAGE_TOUR_AUDIO_STEP_DONE = 'psalter.tour.audioStepDone'
 const STORAGE_TOUR_SWIPE_STEP_DONE = 'psalter.tour.swipeStepDone'
 const STORAGE_FIRST_VISIT_ACCEPTED = 'psalter.firstVisitModalAccepted'
+// Phase 20-02 (D-11/D-12/D-13): bottom-right play-button open/closed state +
+// which audio source (MIDI vs SoundCloud) the user last selected. Both
+// persist across psalm navigation (prev/next, jump, picker). audioPlayerOpen
+// resets to false when LEAVING Legacy view (D-13); entering Legacy forces
+// closed (D-09/D-14). STORAGE_AUDIO_SOURCE_LEGACY is the pre-Phase-20 key
+// 'psalter-audio-source' that used values 'abc' | 'soundcloud'; the new
+// namespace uses 'midi' | 'soundcloud' (Pitfall 1: migrate, don't duplicate).
+const STORAGE_AUDIO_PLAYER_OPEN = 'psalter.audioPlayerOpen'
+const STORAGE_AUDIO_LAST_SELECTED = 'psalter.audioLastSelected'
+const STORAGE_AUDIO_SOURCE_LEGACY = 'psalter-audio-source'
 // 2026-08-23 (row-count knob): upper bound on `rowDelta` for the Inline Staff
 // A+/A− knob. 3 lets a CM stanza subdivide from 4 rows (A+0) to 7 rows (A+3),
 // which is the most the dynamic solver can fill without leaving rows so sparse
@@ -240,6 +250,16 @@ export function SingingView({
   // localStorage in the mount effect below; passed to OnboardingTour so the
   // initial tour fires only after the user accepted the modal.
   const [firstVisitAccepted, setFirstVisitAccepted] = useState(false)
+  // Phase 20-02 (D-05/D-11/D-12/D-13): audio persistence state. Declared HERE
+  // (before the hydrate + persist effects that consume them) so TypeScript
+  // doesn't complain about use-before-declaration. audioPlayerOpen is the
+  // bottom-right Play button's open/closed state — replaces the legacy
+  // play/pause semantics (D-05). audioLastSelected is the user's preferred
+  // audio source (MIDI vs SoundCloud); migrated from psalter-audio-source on
+  // hydrate (D-11, Pitfall 1). Both persist across psalm navigation; the open
+  // state resets to closed when leaving Legacy view (D-13).
+  const [audioPlayerOpen, setAudioPlayerOpen] = useState(false)
+  const [audioLastSelected, setAudioLastSelected] = useState<'midi' | 'soundcloud'>('midi')
 
   // 04.9.4-03: Proportional zoom heuristic — refs avoid stale closures in the
   // debounced resize handler. `referenceWidthRef` tracks the viewport width at
@@ -290,6 +310,30 @@ export function SingingView({
     setMounted(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Phase 20-02 (D-11, Pitfall 1): audio persistence hydrate. Runs AFTER the
+  // mount effect above so the `mounted` flag is already true; this effect's
+  // `[mounted]` dependency triggers it on the next tick. Reads both the new
+  // `psalter.audioLastSelected` key AND the legacy `psalter-audio-source` key,
+  // migrates the legacy value ('abc' → 'midi', 'soundcloud' stays), and writes
+  // the canonical new key + removes the old one (write-only going forward).
+  // `audioPlayerOpen` reads the new boolean key directly.
+  useEffect(() => {
+    if (!mounted) return
+    try {
+      const oldRaw = localStorage.getItem(STORAGE_AUDIO_SOURCE_LEGACY)
+      const newRaw = localStorage.getItem(STORAGE_AUDIO_LAST_SELECTED)
+      if (newRaw === 'midi' || newRaw === 'soundcloud') {
+        setAudioLastSelected(newRaw)
+      } else if (oldRaw === 'abc' || oldRaw === 'soundcloud') {
+        const resolved = oldRaw === 'abc' ? 'midi' : 'soundcloud'
+        setAudioLastSelected(resolved)
+        localStorage.setItem(STORAGE_AUDIO_LAST_SELECTED, resolved)
+        localStorage.removeItem(STORAGE_AUDIO_SOURCE_LEGACY)
+      }
+      setAudioPlayerOpen(localStorage.getItem(STORAGE_AUDIO_PLAYER_OPEN) === 'true')
+    } catch { /* ignore */ }
+  }, [mounted])
 
   // Keeps wasMusicNotesBeforeRef in sync for LATER (mid-session) tune
   // switches into a zero-notation tune — see the ref's declaration above for
@@ -384,6 +428,19 @@ export function SingingView({
     if (!mounted) return
     try { localStorage.setItem(STORAGE_LYRICS_SIZE_KEY, String(lyricsBaseSize)) } catch { /* ignore */ }
   }, [lyricsBaseSize, mounted])
+  // Phase 20-02 (D-12): audio persistence. Both keys persist across psalm
+  // navigation (prev/next, jump, picker). audioPlayerOpen is gated by the
+  // `mounted` flag to prevent stale-snapshot writes during SSR/initial render;
+  // a separate reset effect below handles the viewMode-driven reset on Legacy
+  // exit (D-13) so it can't be clobbered here.
+  useEffect(() => {
+    if (!mounted) return
+    try { localStorage.setItem(STORAGE_AUDIO_PLAYER_OPEN, audioPlayerOpen ? 'true' : 'false') } catch { /* ignore */ }
+  }, [audioPlayerOpen, mounted])
+  useEffect(() => {
+    if (!mounted) return
+    try { localStorage.setItem(STORAGE_AUDIO_LAST_SELECTED, audioLastSelected) } catch { /* ignore */ }
+  }, [audioLastSelected, mounted])
 
   // 04.9.4-03: Keep baseSizeRef in sync with state so the resize handler always
   // reads the latest value without re-binding listeners.
@@ -406,6 +463,19 @@ export function SingingView({
     if (viewMode === 'lyrics') {
       setIsPlaying(false)
       setMiniBarVisible(false)
+    }
+    // Phase 20-02 (D-09/D-13/D-14): Legacy view is the only view-mode
+    // transition that stops audio playback (D-14). Other view switches keep
+    // audio playing across the chrome change (audio continues; only the
+    // visible chrome differs — D-09). When LEAVING Legacy, reset
+    // audioPlayerOpen to closed (D-13) so the user must re-open the bottom-
+    // right play button on return.
+    if (viewMode === 'legacy' && prev !== 'legacy') {
+      setIsPlaying(false)
+      setAudioPlayerOpen(false)
+      setMiniBarVisible(false)
+    } else if (viewMode !== 'legacy' && prev === 'legacy') {
+      setAudioPlayerOpen(false)
     }
   }, [viewMode])
 
@@ -576,6 +646,8 @@ export function SingingView({
 
   // 04.9.4-02 lifted state: audio + gear drawer + stanza indicator
   const [isPlaying, setIsPlaying] = useState(false)
+  // Note: audioPlayerOpen + audioLastSelected are declared above (near
+  // firstVisitAccepted) so the hydrate + persist effects can reference them.
   const [gearOpen, setGearOpen] = useState(false)
   const [miniBarMounted, setMiniBarMounted] = useState(false)
   const [miniBarVisible, setMiniBarVisible] = useState(false)
@@ -710,17 +782,36 @@ export function SingingView({
       setTuneSwitcherOpen(true)
       return
     }
-    setIsPlaying((prev) => {
-      const next = !prev
-      if (next) {
+    // Phase 20-02 (D-05): open/close toggle, NOT play/pause. First press
+    // opens the embed player (MIDI or SoundCloud, whichever audioLastSelected
+    // points at). Pressing again closes it. D-08: MIDI explicit stop on close
+    // — flipping isPlaying to false propagates to AbcAudioControls via its
+    // useEffect cleanup, which calls synth.stop(). SoundCloud is stopped by
+    // the PlayMiniBar subtree unmounting (see viewMode !== 'legacy' gate on
+    // the PlayMiniBarClient mount site below — entering Legacy unmounts the
+    // bar entirely; closing while in a non-legacy view hides it via the
+    // visible prop, but the iframe stays mounted so no auto-stop there).
+    // D-09: switching TO Legacy is the only view-mode transition that stops
+    // audio (handled in the prevViewModeRef effect above); non-Legacy view
+    // changes keep audio playing across the chrome change.
+    setAudioPlayerOpen((prev) => {
+      const nextOpen = !prev
+      if (nextOpen) {
         if (!miniBarMounted) {
           setMiniBarMounted(true)
-          requestAnimationFrame(() => setMiniBarVisible(true))
+          requestAnimationFrame(() => {
+            setMiniBarVisible(true)
+            setIsPlaying(true)
+          })
         } else {
           setMiniBarVisible(true)
+          setIsPlaying(true)
         }
+      } else {
+        setMiniBarVisible(false)
+        setIsPlaying(false)
       }
-      return next
+      return nextOpen
     })
   }, [miniBarMounted, activeTune])
 
@@ -1325,7 +1416,15 @@ export function SingingView({
         totalStanzas={staffPaginationActive ? totalStanzas : null}
         onStanzaPrev={handleStanzaPrev}
         onStanzaNext={handleStanzaNext}
+        // Phase 20-02 (D-05/D-06/D-03): playerOpen replaces isPlaying for the
+        // bottom-right play button. The bar still receives isPlaying for its
+        // own internal sync, but the play button itself renders purely on the
+        // playerOpen state (open/close semantics — see GlassBottomBar edits).
+        // hidePlayButton hides the button entirely in Legacy view (D-03) where
+        // the embeds are always-on at the top of the notation area.
         isPlaying={isPlaying}
+        playerOpen={audioPlayerOpen}
+        hidePlayButton={viewMode === 'legacy'}
         onPlayToggle={handlePlayToggle}
         onGearOpen={() => setGearOpen(true)}
         // 2026-09-02: fullscreen button (icon-only) sits just left of Play.
@@ -1368,7 +1467,7 @@ export function SingingView({
           )
         }
       />
-      {(abc || soundcloudUrl) && (
+      {viewMode !== 'legacy' && (abc || soundcloudUrl) && (
         <PlayMiniBarClient
           abc={abc}
           mounted={miniBarMounted}
@@ -1422,7 +1521,12 @@ export function SingingView({
             totalStanzas={staffPaginationActive ? totalStanzas : null}
             onStanzaPrev={handleStanzaPrev}
             onStanzaNext={handleStanzaNext}
+            // Phase 20-02 (D-05/D-03): mirror the inline GlassBottomBar edits —
+            // playerOpen replaces isPlaying semantics for the play button,
+            // hidePlayButton hides it entirely in Legacy view.
             isPlaying={isPlaying}
+            playerOpen={audioPlayerOpen}
+            hidePlayButton={viewMode === 'legacy'}
             onPlayToggle={handlePlayToggle}
             onGearOpen={() => setGearOpen(true)}
             onFullscreenToggle={() => setIsFullscreen(false)}

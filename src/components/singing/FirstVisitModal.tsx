@@ -31,7 +31,11 @@ import {
 import { Button } from '@/components/ui/button'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
 
-const STORAGE_VIEW_MODE_KEY = 'psalter.viewMode'
+// Phase 20 CR-01 fix: align with SingingView.STORAGE_MODE_KEY so the modal's
+// Save action actually controls /psalms/[id] view selection. The previous
+// 'psalter.viewMode' key was never read by any consumer, so first-time
+// visitors' view picks were silently dropped after Save+reload.
+const STORAGE_VIEW_MODE_KEY = 'psalter-score-mode'
 const STORAGE_FIRST_VISIT_KEY = 'psalter.firstVisitModalAccepted'
 
 type ViewModeOption = {

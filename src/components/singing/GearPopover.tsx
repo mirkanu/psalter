@@ -15,6 +15,7 @@ import {
   HelpCircle,
   Settings,
   ScanLine,
+  Library,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
@@ -333,6 +334,31 @@ export function GearPopover({
             Lyrics Only
           </button>
         </div>
+
+        {/* Phase 20-02 (D-01/D-04): Legacy view — 3rd full-width row spanning
+            both columns of the main grid. Available everywhere the other view
+            modes are (gear popover, modals, tour preview — D-04). Selecting
+            Legacy switches into the always-on-embeds view defined in
+            NotationRenderer's `viewMode === 'legacy'` branch (D-03). Visually
+            matches the existing 2-col radio row pattern; the full-width layout
+            emphasises this is a distinct, self-contained view rather than a
+            sibling to Music Notes / Lyrics Only. */}
+        <button
+          type="button"
+          role="radio"
+          aria-checked={viewMode === 'legacy'}
+          data-view-option="legacy"
+          onClick={() => onViewModeChange('legacy')}
+          className={[
+            'col-span-2 h-10 rounded-md text-sm font-semibold active:scale-[0.95] transition-[transform,background,color] duration-75 motion-reduce:transition-none inline-flex items-center justify-center gap-1.5',
+            viewMode === 'legacy'
+              ? 'bg-primary text-primary-foreground'
+              : 'hover:bg-muted text-muted-foreground',
+          ].join(' ')}
+        >
+          <Library className="h-4 w-4" />
+          <span>Legacy</span>
+        </button>
 
         {/* Sub-toggles — always rendered so the user can pick Notation / Layout
             directly even from Lyrics Only (issue #59, point 3). Tapping Notation

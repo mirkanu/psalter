@@ -112,34 +112,16 @@ export function DeployStatus() {
       void load()
     }, TICK_MS)
 
-    // iOS Safari back/forward cache (bfcache) auto-reload. When the admin
-    // navigates away from the tab and back (or switches apps and returns),
-    // Safari can restore the entire page from bfcache — preserving the
-    // exact JS state (computed font sizes, layout values, scroll position)
-    // from before the navigation. Even with a fresh HTML response and JS
-    // bundle, the tab can be showing stale rendered state because the
-    // useEffect-based layout calculations never re-run.
-    //
-    // The `pageshow` event fires on every page load including bfcache
-    // restores; `event.persisted === true` is the bfcache-restore signal.
-    // First-page-load fires `pageshow` with persisted=false — that path
-    // is a no-op here. We reload silently so the admin never sees the
-    // discrepancy between this tab and a freshly opened one.
-    //
-    // Admin-only: DeployStatus is the admin footer, so this listener only
-    // mounts when the user is signed in as an admin. Non-admin visitors
-    // don't pay the cost of this listener.
-    function onPageShow(event: PageTransitionEvent) {
-      if (event.persisted) {
-        window.location.reload()
-      }
-    }
-    window.addEventListener('pageshow', onPageShow)
+    // bfcache reload is handled globally by BuildVersionGuard
+    // (mounted in layout.tsx — see Phase 20 Plan 03). The new mechanism
+    // covers BOTH the bfcache-restore case (pageshow persisted=true)
+    // AND the generic stale-build case for every visitor, not just
+    // admins. The DOM `data-build-id` staleness check below still runs
+    // for the admin footer freshness indicator.
 
     return () => {
       cancelled = true
       clearInterval(id)
-      window.removeEventListener('pageshow', onPageShow)
     }
   }, [isAdmin])
 

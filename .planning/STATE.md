@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
 status: executing
-stopped_at: Phase 20 Plan 01 complete (PR #116 merged)
-last_updated: "2026-10-15T15:01:47.985Z"
-last_activity: 2026-10-15 -- Phase 20 Plan 01 complete (FirstVisitModal + OnboardingTour 3-trigger split)
+stopped_at: Phase 20 Plan 02 complete (PR #118 open, awaiting merge)
+last_updated: "2026-10-15T16:08:00.000Z"
+last_activity: 2026-10-15
 progress:
   total_phases: 14
   completed_phases: 4
   total_plans: 44
-  completed_plans: 20
-  percent: 45
+  completed_plans: 22
+  percent: 50
 ---
 
 # Project State
@@ -26,11 +26,12 @@ See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone clos
 ## Current Position
 
 Phase: 20 (Single Psalm View Onboarding Overhaul) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-10-15
 **Recent sync (2026-10-15):**
 
+- Phase 20 Plan 02 shipped: Legacy view as third top-level mode (NotationRenderer renders SoundCloud iframe + MIDI embed + lyrics, all visible without clicking) + bottom-right Play button reshaped to open/close toggle with inverted colors when open (D-05/D-06) + audio persistence across psalms via two new localStorage keys `psalter.audioPlayerOpen` + `psalter.audioLastSelected` (D-11/D-12) + one-shot migration of legacy `psalter-audio-source` (`'abc'` → `'midi'`) + MIDI explicit stop on close via `synth.stop()` (D-08) + SoundCloud iframe full unmount on Legacy entry (Pitfall 7: hide ≠ stop) + D-10 mirror empty-URL notices (verbatim CONTEXT.md copy) + 5th Legacy radio in GearPopover with Library icon. 12 new vitest unit tests across 4 files (3 GlassBottomBar + 3 PlayMiniBar + 2 audio-persistence + 4 SingingView) all green. 40 Plan 01 tests still green (52 total). `npx tsc --noEmit` clean for changed files (pre-existing test errors in unrelated suites unchanged). PR #118 open awaiting squash merge to gitleaks-protected master.
 - Phase 20 Plan 01 shipped: FirstVisitModal (3 view-mode radios + Save) mounted at `/psalms/[id]` only, self-managed via localStorage (`psalter.firstVisitModalAccepted` + `psalter.viewMode`); OnboardingTour split into 3 independent triggers (initial/audio/swipe) gated by `psalter.tour.{initial,audioStep,swipeStep}Done`; legacy `psalter_tour_v3='done'` users migrate to `psalter.tour.initialDone` on hydrate; `SingingView.handleRestartTour` extended to clear all 4 keys + reset `firstVisitAccepted` state. 5/5 FirstVisitModal unit tests + 5/5 OnboardingTour unit tests green. `npx tsc --noEmit` clean for changed files. Merged to origin/master via PR #116 (gitleaks-protected master requires squash merge via PR).
 
 **Recent sync (2026-10-13):**
@@ -127,6 +128,7 @@ Last activity: 2026-10-15
 | Phase 12 P07 | 17min | 3 tasks | 4 files |
 | Phase 17 P01 | 12 min | 5 tasks | 4 files |
 | Phase 20 P01 | 25min | 2 tasks | 9 files |
+| Phase 20 P02 | 45min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -338,8 +340,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-15T15:00:40.831Z
-Stopped at: Phase 20 UI-SPEC approved
+Last session: 2026-10-15T15:41:04.332Z
+Stopped at: Phase 20 Plan 02 complete (PR #118 open, awaiting merge)
 Resume file: None
 
 ### Deferred from 04.9.4 polish (separate tickets when needed)

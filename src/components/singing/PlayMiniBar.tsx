@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type TransitionEvent } from 'react'
 import { ChevronDown, Piano, Film } from 'lucide-react'
+import { toast } from 'sonner'
 import { AbcAudioControls } from './AbcAudioControls'
 import { cn } from '@/lib/utils'
 
@@ -43,7 +44,15 @@ export function PlayMiniBar({
   // Bug 3 (260717-mwv): audio-only tunes (no ABC at all) must never attempt
   // to render the (broken, because `abc` is empty) ABC audio controls.
   const hasAbc = !!abc && abc.trim().length > 0
-  const [audioSource, setAudioSource] = useState<'abc' | 'soundcloud'>(() => (!hasAbc && hasSc ? 'soundcloud' : 'abc'))
+  // Phase 20-02 (D-11, Pitfall 1): audioSource value space changed from
+  // 'abc' | 'soundcloud' to 'midi' | 'soundcloud'. The 'abc' literal here
+  // was confusing (sounded like "ABC notation") and mis-mapped the MIDI
+  // playback. The new 'midi' value aligns with the D-10 mirror notice copy
+  // ("Piano player not available...") and the localStorage key name
+  // `psalter.audioLastSelected`. Existing localStorage entries under the
+  // legacy 'psalter-audio-source' key with value 'abc' migrate to 'midi'
+  // on hydrate (see below).
+  const [audioSource, setAudioSource] = useState<'midi' | 'soundcloud'>(() => (!hasAbc && hasSc ? 'soundcloud' : 'midi'))
   const [audioSourceRestored, setAudioSourceRestored] = useState(false)
   const [showTour, setShowTour] = useState(false)
 
@@ -51,10 +60,27 @@ export function PlayMiniBar({
     if (visible) setHidden(false)
   }, [visible])
 
+  // Phase 20-02 (D-11, Pitfall 1): migration-aware hydrate. Reads the new
+  // `psalter.audioLastSelected` key first; falls back to the legacy
+  // `psalter-audio-source` key for users who picked a source before this
+  // change shipped. Old value 'abc' maps to new value 'midi'; 'soundcloud'
+  // is unchanged. Writes the new key + removes the old key in the same
+  // effect so the migration is one-shot and idempotent.
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem('psalter-audio-source')
-      if (raw === 'abc' || raw === 'soundcloud') setAudioSource(raw)
+      const newRaw = window.localStorage.getItem('psalter.audioLastSelected')
+      const oldRaw = window.localStorage.getItem('psalter-audio-source')
+      let resolved: 'midi' | 'soundcloud'
+      if (newRaw === 'midi' || newRaw === 'soundcloud') {
+        resolved = newRaw
+      } else if (oldRaw === 'abc' || oldRaw === 'soundcloud') {
+        resolved = oldRaw === 'abc' ? 'midi' : 'soundcloud'
+        window.localStorage.setItem('psalter.audioLastSelected', resolved)
+        window.localStorage.removeItem('psalter-audio-source')
+      } else {
+        resolved = (!hasAbc && hasSc) ? 'soundcloud' : 'midi'
+      }
+      setAudioSource(resolved)
     } catch { /* ignore */ }
     setAudioSourceRestored(true)
   }, [])
@@ -67,16 +93,43 @@ export function PlayMiniBar({
     if (!hasAbc && hasSc) setAudioSource('soundcloud')
   }, [hasAbc, hasSc])
 
+  // Phase 20-02 (D-11): write-only persistence to the NEW key. The old
+  // `psalter-audio-source` key is no longer written — migration in the
+  // hydrate effect above handles the existing entries.
   useEffect(() => {
     if (!audioSourceRestored) return
     try {
-      window.localStorage.setItem('psalter-audio-source', audioSource)
+      window.localStorage.setItem('psalter.audioLastSelected', audioSource)
     } catch { /* ignore */ }
   }, [audioSource, audioSourceRestored])
 
   useEffect(() => {
     if (audioSource === 'soundcloud' && isPlaying) onPlayingChange(false)
   }, [audioSource]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Phase 20-02 (D-10): mirror empty-URL notices verbatim. When the user has
+  // picked SoundCloud but the active tune has no SoundCloud URL (or vice
+  // versa for MIDI), surface a sonner toast explaining the gap and pointing
+  // at the audio-mode toggle. Uses the existing toast-once ref pattern so a
+  // repeated open/close of the bar doesn't fire the toast again.
+  const mirrorToastShownRef = useRef(false)
+  useEffect(() => {
+    if (!audioSourceRestored) return
+    if (mirrorToastShownRef.current) return
+    if (audioSource === 'soundcloud' && !hasSc) {
+      toast('Sung recording not available for this tune. Try switching to the piano player by pressing the piano button on the left.')
+      mirrorToastShownRef.current = true
+    } else if (audioSource === 'midi' && !hasAbc) {
+      toast('Piano player not available for this tune. Try switching to the sung recording by pressing the sung recording button on the left.')
+      mirrorToastShownRef.current = true
+    } else if (audioSource === 'midi' && hasAbc) {
+      // MIDI URL present — reset so a later switch back to SoundCloud-on-no-URL
+      // fires the toast again.
+      mirrorToastShownRef.current = false
+    } else if (audioSource === 'soundcloud' && hasSc) {
+      mirrorToastShownRef.current = false
+    }
+  }, [audioSource, audioSourceRestored, hasAbc, hasSc])
 
   // One-time tour: show on first player mount
   useEffect(() => {
@@ -233,8 +286,8 @@ export function PlayMiniBar({
         <div className="relative">
           <button
             type="button"
-            onClick={() => { setAudioSource((s) => (s === 'abc' ? 'soundcloud' : 'abc')); dismissTour() }}
-            aria-label={audioSource === 'abc' ? 'Switch to recording' : 'Switch to digital audio'}
+            onClick={() => { setAudioSource((s) => (s === 'midi' ? 'soundcloud' : 'midi')); dismissTour() }}
+            aria-label={audioSource === 'midi' ? 'Switch to recording' : 'Switch to digital audio'}
             aria-describedby={showTour ? 'audio-source-tour' : undefined}
             data-audio-source-toggle
             data-mode={audioSource}
@@ -295,7 +348,7 @@ export function PlayMiniBar({
       )}
 
       <div className="flex-1 min-w-0 overflow-x-auto">
-        {audioSource === 'abc' && hasAbc ? (
+        {audioSource === 'midi' && hasAbc ? (
           <AbcAudioControls
             abc={abc}
             isPlaying={isPlaying}
