@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
-status: ready_to_plan
-stopped_at: Phase 19 — Hetzner perf (Layer 3 + T2 + /precent de-auth-gate) shipped
-last_updated: "2026-10-13T12:03:20.000Z"
-last_activity: 2026-10-13 -- Phase 19 execution completed
+status: Phase 19 shipped, TTFB-drop gate PASS
+stopped_at: "Phase 20 context gathered (4 gray areas decided: Legacy label kept, blank initial behind modal, minimal modal tone, bfcache-guard merged with build-version)"
+last_updated: "2026-10-15T13:54:50.764Z"
+last_activity: "2026-10-13 - Completed quick task 261013-iom: forgot-password workflow"
 progress:
-  total_phases: 13
-  completed_phases: 5
+  total_phases: 14
+  completed_phases: 4
   total_plans: 41
   completed_plans: 19
-  percent: 38
+  percent: 46
 ---
 
 # Project State
@@ -30,6 +30,7 @@ Plan: 2/2 complete
 Status: Phase 19 shipped, TTFB-drop gate PASS
 Last activity: 2026-10-13 - Completed quick task 261013-iom: forgot-password workflow
 **Recent sync (2026-10-13):**
+
 - Phase 19 (Hetzner perf) shipped: Cloudflare Cache Rule `d8c78a9291dd40b38f9a3523e5bd6bcc` Layer 3 active in zone `6c322a054d869df9450e4c99e8d4d4a8`; T2 route conversions on `/tunes/[slug]`, `/psalms/[id]/study`, `/explore/{authors,topics,naves,messianic}`; `/precent/[id]/*` de-auth-gate with middleware carve-out; `.env` `DATABASE_URL` `${POSTGRES_PASSWORD}` value-preserving substitution (ABORT-on-divergence guard passed); warm TTFB on `tune-dundee`/`psalm-23-study`/`psalm-23-sing-tune` dropped from 88/137/129 ms baseline to 0/0/0.1 ms (Cloudflare edge cache HIT) — `19-02-ttfb-gate.txt` ends with `GATE: PASS`.
 - `docs/research/cache-tactics.md` merged from `origin/cache-tactics-doc` (PR #97 closes) — canonical source-of-truth for PERF-01/02/03 now lives on master, not a side branch.
 - ROADMAP.md Phase 19 entry filled in with goal + PERF-01..05 requirement IDs + 2 plans `[x]`-checked; progress count advanced (13 total / 5 complete ≈ 38%).
@@ -330,9 +331,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-07T07:43:40.378Z
-Stopped at: Phase 14 UI-SPEC approved
-Resume file: None
+Last session: 2026-10-15T13:54:50.677Z
+Stopped at: Phase 20 context gathered (4 gray areas decided: Legacy label kept, blank initial behind modal, minimal modal tone, bfcache-guard merged with build-version)
+Resume file: .planning/phases/20-single-psalm-view-onboarding-overhaul/20-CONTEXT.md
 
 ### Deferred from 04.9.4 polish (separate tickets when needed)
 
