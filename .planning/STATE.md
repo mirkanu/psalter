@@ -4,8 +4,8 @@ milestone: v2.0
 milestone_name: Public Beta
 status: executing
 stopped_at: Phase 20 UI-SPEC approved
-last_updated: "2026-10-15T14:41:49.555Z"
-last_activity: 2026-10-15 -- Phase 20 planning complete
+last_updated: "2026-10-15T14:42:49.828Z"
+last_activity: 2026-10-15 -- Phase 20 execution started
 progress:
   total_phases: 14
   completed_phases: 4
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone close)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 19 closed — Hetzner perf (Layer 3 + T2 + /precent de-auth-gate) shipped. Awaiting next phase planning.
+**Current focus:** Phase 20 — Single Psalm View Onboarding Overhaul
 
 ## Current Position
 
-Phase: 19
-Plan: 2/2 complete
-Status: Ready to execute
-Last activity: 2026-10-15 -- Phase 20 planning complete
+Phase: 20 (Single Psalm View Onboarding Overhaul) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 20
+Last activity: 2026-10-15 -- Phase 20 execution started
 **Recent sync (2026-10-13):**
 
 - Phase 19 (Hetzner perf) shipped: Cloudflare Cache Rule `d8c78a9291dd40b38f9a3523e5bd6bcc` Layer 3 active in zone `6c322a054d869df9450e4c99e8d4d4a8`; T2 route conversions on `/tunes/[slug]`, `/psalms/[id]/study`, `/explore/{authors,topics,naves,messianic}`; `/precent/[id]/*` de-auth-gate with middleware carve-out; `.env` `DATABASE_URL` `${POSTGRES_PASSWORD}` value-preserving substitution (ABORT-on-divergence guard passed); warm TTFB on `tune-dundee`/`psalm-23-study`/`psalm-23-sing-tune` dropped from 88/137/129 ms baseline to 0/0/0.1 ms (Cloudflare edge cache HIT) — `19-02-ttfb-gate.txt` ends with `GATE: PASS`.
