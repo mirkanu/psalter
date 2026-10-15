@@ -12,6 +12,7 @@ import { ToastTapDismiss } from "@/components/ToastTapDismiss";
 import { DesktopOptimisedBanner } from "@/components/DesktopOptimisedBanner";
 import { InstallDialogHost } from "@/components/InstallDialogHost";
 import { InstallAsAppBanner } from "@/components/InstallAsAppBanner";
+import { BuildVersionGuard } from "@/components/BuildVersionGuard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -102,6 +103,12 @@ export default function RootLayout({
           <DesktopOptimisedBanner />
           <InstallAsAppBanner />
           <InstallDialogHost />
+          {/* Phase 20 Plan 03: single mechanism covering both bfcache
+              restore (iOS Safari pageshow persisted=true) and generic
+              stale-build detection. Renders a no-op <span>; the
+              mechanism lives in the registered window listener + the
+              mount-time fetch. */}
+          <BuildVersionGuard />
           {process.env.NEXT_PUBLIC_PSALTER_UMAMI_WEBSITE_ID && (
             <Script
               src="https://umami.gsdlabs.dev/script.js"
