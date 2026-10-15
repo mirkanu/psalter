@@ -374,3 +374,13 @@ Phases 7 and 10 have no dependencies on Phase 6 or each other and may be worked 
 Plans:
 - [x] 19-01-PLAN.md — T2 conversions + /precent de-auth-gate + Cloudflare Cache Rule + baseline speedtest
 - [x] 19-02-PLAN.md — DB-password fix + docs merge + final speedtest + ROADMAP/STATE closeout
+
+### Phase 20: Single Psalm View Onboarding Overhaul
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 19
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 20 to break down)
