@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
 status: executing
-stopped_at: Phase 20 UI-SPEC approved
-last_updated: "2026-10-15T14:42:49.828Z"
-last_activity: 2026-10-15 -- Phase 20 execution started
+stopped_at: Phase 20 Plan 01 complete (PR #116 merged)
+last_updated: "2026-10-15T15:01:47.985Z"
+last_activity: 2026-10-15 -- Phase 20 Plan 01 complete (FirstVisitModal + OnboardingTour 3-trigger split)
 progress:
   total_phases: 14
   completed_phases: 4
   total_plans: 44
-  completed_plans: 19
-  percent: 43
+  completed_plans: 20
+  percent: 45
 ---
 
 # Project State
@@ -26,9 +26,13 @@ See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone clos
 ## Current Position
 
 Phase: 20 (Single Psalm View Onboarding Overhaul) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 20
-Last activity: 2026-10-15 -- Phase 20 execution started
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-10-15
+**Recent sync (2026-10-15):**
+
+- Phase 20 Plan 01 shipped: FirstVisitModal (3 view-mode radios + Save) mounted at `/psalms/[id]` only, self-managed via localStorage (`psalter.firstVisitModalAccepted` + `psalter.viewMode`); OnboardingTour split into 3 independent triggers (initial/audio/swipe) gated by `psalter.tour.{initial,audioStep,swipeStep}Done`; legacy `psalter_tour_v3='done'` users migrate to `psalter.tour.initialDone` on hydrate; `SingingView.handleRestartTour` extended to clear all 4 keys + reset `firstVisitAccepted` state. 5/5 FirstVisitModal unit tests + 5/5 OnboardingTour unit tests green. `npx tsc --noEmit` clean for changed files. Merged to origin/master via PR #116 (gitleaks-protected master requires squash merge via PR).
+
 **Recent sync (2026-10-13):**
 
 - Phase 19 (Hetzner perf) shipped: Cloudflare Cache Rule `d8c78a9291dd40b38f9a3523e5bd6bcc` Layer 3 active in zone `6c322a054d869df9450e4c99e8d4d4a8`; T2 route conversions on `/tunes/[slug]`, `/psalms/[id]/study`, `/explore/{authors,topics,naves,messianic}`; `/precent/[id]/*` de-auth-gate with middleware carve-out; `.env` `DATABASE_URL` `${POSTGRES_PASSWORD}` value-preserving substitution (ABORT-on-divergence guard passed); warm TTFB on `tune-dundee`/`psalm-23-study`/`psalm-23-sing-tune` dropped from 88/137/129 ms baseline to 0/0/0.1 ms (Cloudflare edge cache HIT) — `19-02-ttfb-gate.txt` ends with `GATE: PASS`.
@@ -122,6 +126,7 @@ Last activity: 2026-10-15 -- Phase 20 execution started
 | Phase 12 P06 | 10min | 2 tasks | 2 files |
 | Phase 12 P07 | 17min | 3 tasks | 4 files |
 | Phase 17 P01 | 12 min | 5 tasks | 4 files |
+| Phase 20 P01 | 25min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -239,6 +244,8 @@ Recent decisions affecting current work:
 - [Phase 17]: Pre-build grep guard excludes scripts/ from scan (Rule 1 fix) — Plan PATHS list incorrectly included scripts/, but 10 scripts/*.ts legitimately reference process.env.AIRTABLE_PAT per 17-RESEARCH.md Q5. Scripts are dev-only tools never bundled by Next.js. Verified staged scripts/ leak passes guard while staged src/ leak fails it.
 - [Phase 17]: PSALTER_ANTHROPIC_API_KEY skipped on Vercel (dev-only spend key) — Only referenced from src/app/api/dev/test-ocr/route.ts (a dev route); including a spend key on Vercel runtime for a path that should never execute there is worse risk than the env var being missing if someone hits the dev route.
 - [Phase 17]: Renamed /tmp/17-01-neon.txt keys from NEON_* to PSALTER_NEON_* per CLAUDE.md naming convention — Global NEON_PROJECT_ID in /home/services/.env.production refers to debates; PSALTER_ prefix avoids collision and signals project-scoping per CLAUDE.md Shared credentials section.
+- [Phase 20]: FirstVisitModal ships with optional props (controlled mode for tests) AND self-managed mode (reads/writes localStorage, hard-reloads on Accept). Psalm page mounts with no props; modal self-manages. Hard reload on Accept avoids threading state through server-rendered page→SingingView→modal context.
+- [Phase 20]: OnboardingTour split into 3 independent triggers (initial/audio/swipe) gated by psalter.tour.{initial,audioStep,swipeStep}Done. Legacy psalter_tour_v3='done' users migrate to psalter.tour.initialDone on hydrate so they don't re-onboard. Step clamp fixed (Math.max(0, ...)) to prevent measure effect's safeStep going negative on initial render.
 
 ### Pending Todos
 
@@ -331,9 +338,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-15T14:21:41.410Z
+Last session: 2026-10-15T15:00:40.831Z
 Stopped at: Phase 20 UI-SPEC approved
-Resume file: .planning/phases/20-single-psalm-view-onboarding-overhaul/20-UI-SPEC.md
+Resume file: None
 
 ### Deferred from 04.9.4 polish (separate tickets when needed)
 
