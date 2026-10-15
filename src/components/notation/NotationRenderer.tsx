@@ -214,7 +214,7 @@ export interface NotationRendererProps {
   staffInlineApproved?: boolean
 }
 
-export type ViewMode = 'staff' | 'solfege' | 'staff-split' | 'solfege-split' | 'lyrics'
+export type ViewMode = 'staff' | 'solfege' | 'staff-split' | 'solfege-split' | 'lyrics' | 'legacy'
 type BaseSize = number
 
 export const MIN_SIZE = 4
@@ -235,7 +235,7 @@ function isBaseSize(n: number): n is BaseSize {
 }
 
 function isViewMode(s: string): s is ViewMode {
-  return s === 'staff' || s === 'solfege' || s === 'staff-split' || s === 'solfege-split' || s === 'lyrics'
+  return s === 'staff' || s === 'solfege' || s === 'staff-split' || s === 'solfege-split' || s === 'lyrics' || s === 'legacy'
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
