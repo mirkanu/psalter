@@ -293,6 +293,14 @@ function isSolfegeMode(viewMode: ViewMode): boolean {
   return viewMode === 'solfege' || viewMode === 'solfege-split'
 }
 
+// Phase 20-02 (D-02/D-31): Legacy view helper. Mirrors isSplitMode/isSolfegeMode
+// — Legacy is a genuinely distinct render path (always-on SoundCloud + MIDI
+// embeds at top, lyrics below), NOT a modifier on 'lyrics'. Used to gate the
+// legacy render branch AND the data-view-mode root attribute on the renderer.
+function isLegacyMode(viewMode: ViewMode): boolean {
+  return viewMode === 'legacy'
+}
+
 /**
  * Phase 04.9.20 quick task 260825-slur: wrap melisma groups in (...) so
  * abcjs draws a native slur arc. abcjs's slur parser (see
@@ -2765,6 +2773,69 @@ export function NotationRenderer({
         </div>
       )
     }
+  } else if (viewMode === 'legacy') {
+    // Phase 20-02 (D-03): Legacy view — always-on SoundCloud + MIDI embeds at
+    // the top, lyrics below. Both audio embeds render concurrently (no popout)
+    // and the bottom-right play button is hidden (controlled by SingingView via
+    // `hidePlayButton={viewMode === 'legacy'}`). The renderer is intentionally
+    // minimal here: it owns the embed shells; audio playback is owned by
+    // PlayMiniBar (which is fully unmounted in this view — see Pitfall 7
+    // in RESEARCH.md: hiding the iframe doesn't stop audio; full unmount does).
+    //
+    // Each iframe is capped at ~80px height so the two embeds + subtitle + a
+    // reasonable amount of lyrics fit inside the 390px mobile viewport without
+    // horizontal overflow (UI-SPEC.md Mobile-First Verification Checklist).
+    //
+    // NOTE: the actual playback (SoundCloud Widget API + abcjs synth.stop)
+    // lives in PlayMiniBar / AbcAudioControls — this renderer only renders the
+    // chrome. In legacy view, PlayMiniBar is unmounted (see SingingView's
+    // viewMode !== 'legacy' gate at the PlayMiniBarClient mount site) so no
+    // playback control is reachable; the SoundCloud iframe auto-stops when its
+    // parent unmounts (browser-native) and abcjs synth.stop() fires via
+    // AbcAudioControls' effect cleanup on the same unmount.
+    viewArea = (
+      <div className="flex flex-col gap-3 w-full" data-legacy-view>
+        <div data-legacy-embeds className="space-y-2 mb-2">
+          {soundcloudUrl && soundcloudUrl.startsWith('http') ? (
+            <iframe
+              data-legacy-soundcloud
+              title={`SoundCloud recording: ${tuneName || 'tune'}`}
+              src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(soundcloudUrl)}&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false`}
+              // SoundCloud's embed widget accesses localStorage during init —
+              // allow-same-origin is required for the widget bootstrap fetch,
+              // see PlayMiniBar.tsx:325 for the full rationale.
+              sandbox="allow-scripts allow-same-origin"
+              allow="autoplay"
+              width="100%"
+              height="80"
+              className="rounded-md border border-border"
+            />
+          ) : null}
+          {abc && abc.trim().length > 0 ? (
+            // MIDI placeholder — actual playback lives in PlayMiniBar (MIDI
+            // mode), which is unmounted in legacy view. This embed slot stays
+            // reserved for symmetry with the SoundCloud iframe above; the real
+            // interactive controls are surfaced via the open/close bottom-right
+            // play button when the user switches back to a non-legacy view.
+            <div
+              data-legacy-midi
+              role="region"
+              aria-label={`Piano player embed: ${tuneName || 'tune'}`}
+              className="w-full h-20 rounded-md border border-border bg-muted/30 flex items-center justify-center text-xs text-muted-foreground"
+            >
+              Piano player available — press Play in the bottom bar to listen
+            </div>
+          ) : null}
+        </div>
+        <div data-notation-lyrics>
+          {stanzas.length === 0 ? (
+            <p className="text-sm text-muted-foreground italic">No lyrics available.</p>
+          ) : (
+            renderLyricsContent()
+          )}
+        </div>
+      </div>
+    )
   } else {
     // Lyrics-only: single-column scrollable list of all stanzas (D-17 verse numbers).
     // 260517-cm0 #4a: in chromeless (singing) view, apply generous padding +
