@@ -117,6 +117,33 @@ async function main() {
     await assert(d.overflow === false, `(d ${vp.name}) no horizontal overflow at ${vp.width}x${vp.height}`)
   }
 
+  // (e) CR-01 regression: pick "Lyrics Only" radio, Save, then reload — the
+  // chosen view must survive. Asserts the modal writes the storage key that
+  // SingingView actually reads.
+  const e = await job(`
+    await page.context().clearCookies()
+    await page.evaluate(() => { try { localStorage.clear() } catch {} })
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto('${BASE}/psalms/1', { waitUntil: 'networkidle' })
+    await page.waitForSelector('[data-first-visit-modal]', { timeout: 5000 })
+    await page.click('[data-view-option="lyrics"]')
+    await page.click('[data-first-visit-save]')
+    // Modal should close; storage should be set.
+    await page.waitForSelector('[data-first-visit-modal]', { state: 'detached', timeout: 5000 })
+    const storedMode = await page.evaluate(() => localStorage.getItem('psalter-score-mode'))
+    const storedAccepted = await page.evaluate(() => localStorage.getItem('psalter.firstVisitModalAccepted'))
+    // Reload and confirm NotationRenderer reads the stored viewMode.
+    await page.reload({ waitUntil: 'networkidle' })
+    await page.waitForSelector('[data-notation-renderer]', { timeout: 5000 })
+    const viewMode = await page.getAttribute('[data-notation-renderer]', 'data-view-mode')
+    const overflowAfter = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
+    return { storedMode, storedAccepted, viewMode, overflowAfter }
+  `)
+  await assert(e.storedMode === 'lyrics', `(e) localStorage psalter-score-mode === 'lyrics' after Save (got: ${e.storedMode})`)
+  await assert(e.storedAccepted === 'true', `(e) localStorage psalter.firstVisitModalAccepted === 'true' after Save (got: ${e.storedAccepted})`)
+  await assert(e.viewMode === 'lyrics', `(e) NotationRenderer data-view-mode === 'lyrics' after reload (got: ${e.viewMode})`)
+  await assert(e.overflowAfter === false, '(e) no horizontal overflow after reload')
+
   console.log('\nAll checks passed. Screenshots in:', OUT_DIR)
 }
 
