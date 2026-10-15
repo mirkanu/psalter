@@ -377,10 +377,14 @@ Plans:
 
 ### Phase 20: Single Psalm View Onboarding Overhaul
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Non-tech-savvy precentors can pick a view (Music Notes / Lyrics Only / Legacy) on first visit, get a guided 3-trigger tour of features, and have their audio play state + view choice persist across psalms with reliable deploy-aware cache-busting — fixing the pre-existing `data-build-id="unknown"` staleness issue as a side-effect.
+
+**Requirements**: (no REQ-IDs in v2.0; ship is gated by user acceptance on D-01..D-35 from 20-CONTEXT.md)
 **Depends on:** Phase 19
-**Plans:** 0 plans
+**Plans:** 3 plans (2 waves)
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 20 to break down)
+- [ ] 20-01-PLAN.md — FirstVisitModal (Choose a view + 3 radios + Save at /psalms/[id] only) + OnboardingTour 3-trigger split (initial / audio / swipe) + psalter_tour_v3 migration (wave 1)
+- [ ] 20-02-PLAN.md — Legacy third viewMode (always-on SoundCloud + MIDI embeds, no play button) + bottom-right play button as open/close toggle (inverted colors) + audio persistence (psalter-audio-source → psalter.audioLastSelected) + MIDI explicit stop on close (wave 1, parallel with 01)
+- [ ] 20-03-PLAN.md — Public /api/build-version endpoint + BuildVersionGuard client + refactor DeployStatus pageshow handler to use the new mechanism; resolves pre-existing data-build-id="unknown" memory (wave 2, depends on 01+02)
+
