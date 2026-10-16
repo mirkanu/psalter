@@ -27,14 +27,25 @@ interface Props {
  * (`psalter-audio-source='abc'` → `'midi'`, PlayMiniBar.tsx:69-86) runs
  * inside this component's render so legacy visitors keep their last
  * selection.
+ *
+ * Phase 21 fqz polish:
+ *   - `hideSourceToggle` hides the Piano↔SoundCloud source-switch button —
+ *     Legacy has its own MIDI-only audio surface and the popup toggle would
+ *     be unreachable / confusing. The popup PlayMiniBar in Music Notes /
+ *     Lyrics Only still shows it.
+ *   - `embedded` drops the bar's `w-full` so the wrapper below can
+ *     shrink-wrap + center the bar to its controls instead of stretching
+ *     to the full column width.
  */
 export function LegacyAudioEmbed({ abc, soundcloudUrl, tuneName }: Props) {
   const [isPlaying, setIsPlaying] = useState(false)
 
   return (
-    <div data-legacy-midi className="w-full">
+    <div data-legacy-midi className="flex justify-center">
       <PlayMiniBar
         variant="flow"
+        embedded
+        hideSourceToggle
         mounted={true}
         visible={true}
         abc={abc}

@@ -23,6 +23,15 @@ interface Props {
    *  the scrollable content area — avoids a hardcoded height guess that
    *  would be wrong in SoundCloud mode (h-[80px] vs h-[44px]). */
   onHeightChange?: (heightPx: number) => void
+  /** Phase 21 fqz polish: hide the Piano↔SoundCloud source-switch button.
+   *  Only the inline-embedded player in Legacy view sets this — the popup
+   *  PlayMiniBar (Music Notes / Lyrics Only) keeps the button so users can
+   *  still toggle between MIDI piano and SoundCloud recording there. */
+  hideSourceToggle?: boolean
+  /** Phase 21 fqz polish: when true, the flow-variant bar drops its full-width
+   *  class so the surrounding container can shrink-wrap it to its controls
+   *  and center it horizontally. Has no effect in 'fixed' / 'inline' variants. */
+  embedded?: boolean
 }
 
 export function PlayMiniBar({
@@ -36,6 +45,8 @@ export function PlayMiniBar({
   tuneName,
   variant = 'fixed',
   onHeightChange,
+  hideSourceToggle = false,
+  embedded = false,
 }: Props) {
   const [hidden, setHidden] = useState(!visible)
   const rootRef = useRef<HTMLDivElement | null>(null)
@@ -254,7 +265,11 @@ export function PlayMiniBar({
         // like normal content. A border + rounded card frames it as an audio
         // element rather than chrome. translate-y/opacity transitions are
         // skipped in flow mode (the bar is always visible if visible=true).
-        isFlow && 'static w-full rounded-lg border border-border/40 bg-background/90 backdrop-blur-sm px-2 shadow-sm',
+        // Phase 21 fqz polish: `embedded` (Legacy view) drops `w-full` so the
+        // surrounding flex container can shrink-wrap + center the bar to its
+        // controls instead of stretching to the full column width.
+        isFlow && !embedded && 'w-full',
+        isFlow && 'static rounded-lg border border-border/40 bg-background/90 backdrop-blur-sm px-2 shadow-sm',
         isFlow && 'translate-y-0 opacity-100',
         'transition-all duration-200 ease-out',
         'motion-reduce:translate-y-0 motion-reduce:!transition-opacity motion-reduce:duration-100',
@@ -281,8 +296,11 @@ export function PlayMiniBar({
       {/* B(e): abc/SoundCloud toggle. 2026-08-16 (icon review round): user
           picked Piano (was Music note) for "on recording, tap to switch to
           digital" — reviewed via a side-by-side mockup sent over Telegram.
-          Film for "on digital, tap to switch to recording" is unchanged. */}
-      {showScToggle && (
+          Film for "on digital, tap to switch to recording" is unchanged.
+          Phase 21 fqz polish: hidden in the Legacy-view embedded player via
+          `hideSourceToggle` — Legacy has its own MIDI-only audio surface, so
+          the popup-style source switch would be unreachable / confusing. */}
+      {showScToggle && !hideSourceToggle && (
         <div className="relative">
           <button
             type="button"
