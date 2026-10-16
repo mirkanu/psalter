@@ -38,15 +38,15 @@ const STORAGE_LAST_MUSIC_MODE_KEY = 'psalter-score-mode-last-music'
 // size; Lyrics Only has its own — see `readStoredSize`/`activeBaseSize` below.
 const STORAGE_SIZE_KEY = 'psalter-staff-size'
 const STORAGE_LYRICS_SIZE_KEY = 'psalter-lyrics-size'
-// Phase 20-01 (D-16, D-23, D-24): new tour + first-visit modal flags. The
-// three `*Done` keys gate the three independent OnboardingTour triggers
-// (initial / audio-step / swipe-step). `firstVisitModalAccepted` gates
-// whether the modal auto-opens. `handleRestartTour` clears all four so
-// "Restart tour" in the gear popover re-prompts every step + the modal.
+// Phase 20-01 (D-16): new tour flags. The three `*Done` keys gate the
+// three independent OnboardingTour triggers (initial / audio-step /
+// swipe-step). `handleRestartTour` clears all three so "Restart tour" in
+// the gear popover re-prompts every step. The first-visit modal was
+// removed in Phase 21 (D-02) — its storage key is gone and the tour now
+// fires on first visit without a modal gate.
 const STORAGE_TOUR_INITIAL_DONE = 'psalter.tour.initialDone'
 const STORAGE_TOUR_AUDIO_STEP_DONE = 'psalter.tour.audioStepDone'
 const STORAGE_TOUR_SWIPE_STEP_DONE = 'psalter.tour.swipeStepDone'
-const STORAGE_FIRST_VISIT_ACCEPTED = 'psalter.firstVisitModalAccepted'
 // Phase 20-02 (D-11/D-12/D-13): bottom-right play-button open/closed state +
 // which audio source (MIDI vs SoundCloud) the user last selected. Both
 // persist across psalm navigation (prev/next, jump, picker). audioPlayerOpen
@@ -246,10 +246,6 @@ export function SingingView({
   // button presses. `baseSize` (above) is now lyric-only: driven ONLY by A+/A−.
   const [notationBaseSize, setNotationBaseSize] = useState<number>(13)
   const [mounted, setMounted] = useState(false)
-  // Phase 20-01 (D-24): gate for the first-visit modal. Read from
-  // localStorage in the mount effect below; passed to OnboardingTour so the
-  // initial tour fires only after the user accepted the modal.
-  const [firstVisitAccepted, setFirstVisitAccepted] = useState(false)
   // Phase 20-02 (D-05/D-11/D-12/D-13): audio persistence state. Declared HERE
   // (before the hydrate + persist effects that consume them) so TypeScript
   // doesn't complain about use-before-declaration. audioPlayerOpen is the
@@ -300,13 +296,6 @@ export function SingingView({
     setViewMode(hasAnyNotation ? stored : 'lyrics')
     setBaseSize(readStoredSize(STORAGE_SIZE_KEY))
     setLyricsBaseSize(readStoredSize(STORAGE_LYRICS_SIZE_KEY))
-    // Phase 20-01 (D-24): read firstVisitModalAccepted — feeds OnboardingTour
-    // so the initial tour fires only after the user Accepted the modal.
-    try {
-      setFirstVisitAccepted(localStorage.getItem(STORAGE_FIRST_VISIT_ACCEPTED) === 'true')
-    } catch {
-      /* ignore */
-    }
     setMounted(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -646,8 +635,9 @@ export function SingingView({
 
   // 04.9.4-02 lifted state: audio + gear drawer + stanza indicator
   const [isPlaying, setIsPlaying] = useState(false)
-  // Note: audioPlayerOpen + audioLastSelected are declared above (near
-  // firstVisitAccepted) so the hydrate + persist effects can reference them.
+  // Note: audioPlayerOpen + audioLastSelected are declared near the
+  // top of the component (before the hydrate + persist effects) so they
+  // can be referenced by useEffect closures below.
   const [gearOpen, setGearOpen] = useState(false)
   const [miniBarMounted, setMiniBarMounted] = useState(false)
   const [miniBarVisible, setMiniBarVisible] = useState(false)
@@ -688,20 +678,16 @@ export function SingingView({
       localStorage.removeItem('psalter_tour_v3')
       // Phase 20-01 (D-16, Pitfall 5): the new tour has 3 keys
       // (psalter.tour.{initial,audioStep,swipeStep}Done). Without extension,
-      // "Restart tour" wouldn't re-trigger the audio or swipe steps. Also
-      // clear psalter.firstVisitModalAccepted so the first-visit modal
-      // re-opens on next visit (restart = full re-prompt).
+      // "Restart tour" wouldn't re-trigger the audio or swipe steps.
+      // (Phase 21 D-02: the first-visit modal is gone — no modal key to clear.)
       localStorage.removeItem(STORAGE_TOUR_INITIAL_DONE)
       localStorage.removeItem(STORAGE_TOUR_AUDIO_STEP_DONE)
       localStorage.removeItem(STORAGE_TOUR_SWIPE_STEP_DONE)
-      localStorage.removeItem(STORAGE_FIRST_VISIT_ACCEPTED)
     } catch {
       /* ignore */
     }
-    // Reset the in-state flag so the modal re-opens immediately without
-    // waiting for next hydrate. The 3 tour flags are in OnboardingTour's
-    // state — they reset via the setTourKey remount trick below.
-    setFirstVisitAccepted(false)
+    // The 3 tour flags live in OnboardingTour's own state — bumping
+    // tourKey forces a remount so it re-hydrates from the cleared keys.
     setTourKey((k) => k + 1)
   }, [])
 
@@ -1492,7 +1478,6 @@ export function SingingView({
         key={tourKey}
         totalStanzas={totalStanzas}
         viewMode={viewMode}
-        firstVisitAccepted={firstVisitAccepted}
       />
 
       {/* 2026-09-02: fullscreen overlay — replaces the old scroll-hide-UI

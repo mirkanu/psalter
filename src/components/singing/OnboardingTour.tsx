@@ -91,14 +91,11 @@ export interface OnboardingTourProps {
    *  only on Music Notes views) and swipe-step (fires only on staff-inline
    *  with >1 stanza). */
   viewMode: ViewMode
-  /** Phase 20-01 (D-15, D-23): the initial tour fires once after the
-   *  first-visit modal was Accepted. */
-  firstVisitAccepted: boolean
 }
 
 type Trigger = 'initial' | 'audio' | 'swipe'
 
-export function OnboardingTour({ totalStanzas, viewMode, firstVisitAccepted }: OnboardingTourProps) {
+export function OnboardingTour({ totalStanzas, viewMode }: OnboardingTourProps) {
   // SSR-safe: render nothing until mounted; assume seen=true to suppress
   // first-paint flash for returning visitors (hydration reads the real value).
   const [mounted, setMounted] = useState(false)
@@ -145,10 +142,13 @@ export function OnboardingTour({ totalStanzas, viewMode, firstVisitAccepted }: O
   }, [])
 
   // Phase 20-01 (D-15): derive which sub-tour to fire based on the three
-  // independent gates + viewMode + firstVisitAccepted. Priority order:
+  // independent gates + viewMode. Priority order:
   //   1. audio (Music Notes first entry, after initial tour)
   //   2. swipe (Staff Inline first entry, multi-stanza, after initial tour)
-  //   3. initial (after modal Accept)
+  //   3. initial (after the initial localStorage check)
+  // Phase 21 (D-02): firstVisitAccepted gate removed — FirstVisitModal is
+  // gone, so the initial tour fires on first visit by default (gated only
+  // by mounted + tourInitialSeen).
   const isMusicNotesView =
     viewMode === 'staff' ||
     viewMode === 'staff-split' ||
@@ -156,7 +156,7 @@ export function OnboardingTour({ totalStanzas, viewMode, firstVisitAccepted }: O
     viewMode === 'solfege-split'
   const isStaffInlineView = viewMode === 'staff'
 
-  const shouldFireInitial = mounted && firstVisitAccepted && !tourInitialSeen
+  const shouldFireInitial = mounted && !tourInitialSeen
   const shouldFireAudio =
     mounted && tourInitialSeen && !tourAudioSeen && isMusicNotesView
   const shouldFireSwipe =
