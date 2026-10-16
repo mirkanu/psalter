@@ -332,7 +332,14 @@ export function GearPopover({
             aria-checked={viewMode === 'lyrics'}
             data-settings-main="lyrics-only"
             id="settings-tab-lyrics-only"
-            onClick={() => onViewModeChange('lyrics')}
+            onClick={() => {
+              onViewModeChange('lyrics')
+              // Phase 21 fqz2: auto-close after selecting Lyrics (the
+              // sub-toggles below still make sense under Music Notes, where
+              // the user is likely to pick Notation / Layout next; but a
+              // direct jump to Lyrics means they're done with the menu).
+              onOpenChange(false)
+            }}
             className={[
               'h-10 rounded-md text-sm font-semibold active:scale-[0.95] transition-[transform,background,color] duration-75 motion-reduce:transition-none inline-flex items-center justify-center gap-1.5',
               // Explicit `viewMode === 'lyrics'` (NOT `!isMusicNotes`) so the
@@ -352,7 +359,12 @@ export function GearPopover({
             role="radio"
             aria-checked={viewMode === 'legacy'}
             data-view-option="legacy"
-            onClick={() => onViewModeChange('legacy')}
+            onClick={() => {
+              onViewModeChange('legacy')
+              // Phase 21 fqz2: auto-close after selecting Legacy (same
+              // rationale as Lyrics — direct jumps end the menu interaction).
+              onOpenChange(false)
+            }}
             className={[
               'h-10 rounded-md text-sm font-semibold active:scale-[0.95] transition-[transform,background,color] duration-75 motion-reduce:transition-none inline-flex items-center justify-center gap-1.5',
               viewMode === 'legacy'
