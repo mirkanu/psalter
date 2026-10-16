@@ -353,21 +353,22 @@ export function SingingView({
     if (audioRestoreAppliedRef.current) return
     audioRestoreAppliedRef.current = true
     let storedOpen = false
-    let hadLastSelected = false
     try {
       storedOpen = localStorage.getItem(STORAGE_AUDIO_PLAYER_OPEN) === 'true'
-      hadLastSelected =
-        localStorage.getItem(STORAGE_AUDIO_LAST_SELECTED) !== null ||
-        localStorage.getItem(STORAGE_AUDIO_SOURCE_LEGACY) !== null
     } catch { /* ignore */ }
     setMiniBarMounted(storedOpen)
-    // Edge case (D-03 CONTEXT.md "specifics"): a visitor whose
-    // audioPlayerOpen was 'true' but who never selected a source lands with
-    // the bottom-right icon in its inverted 'open' colour, but no player UI
-    // — they can click to pick a source. We surface the icon's open state
-    // here via miniBarMounted=true (so the next toggle unhides it without a
-    // fresh click) and gate the visible UI on a real lastSelected value.
-    setMiniBarVisible(storedOpen && hadLastSelected)
+    // Phase 21 fqz2: `miniBarVisible` now mirrors `storedOpen` directly.
+    // The D-03-era gate `storedOpen && hadLastSelected` was meant to hide
+    // the popup for users who opened the player without selecting a source,
+    // but in practice it left the popup invisible across psalm navigation
+    // even for users who had the player fully open — the play button was
+    // correctly inverted (miniBarMounted=true) but the popup itself
+    // (miniBarVisible=false) didn't render until the user tapped the
+    // play button twice (close then open). The PlayMiniBar already
+    // handles the no-source case by rendering a "Loading recording…"
+    // placeholder or a default MIDI piano when hasAbc is true, so the
+    // user always sees something inside the bar.
+    setMiniBarVisible(storedOpen)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted])
 

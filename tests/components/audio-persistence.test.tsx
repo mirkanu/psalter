@@ -253,7 +253,7 @@ describe('SingingView — Phase 20-02 audio persistence (Task 2)', () => {
     }, { timeout: 3000 })
   })
 
-  it("D-03b: fresh psalm page with audioPlayerOpen='true' but audioLastSelected missing → mounted=true, visible=false (edge case)", async () => {
+  it("D-03b: fresh psalm page with audioPlayerOpen='true' but audioLastSelected missing → mounted=true, visible=true (fqz2 — popup is visible even without a source)", async () => {
     window.localStorage.setItem('psalter-score-mode', 'staff-split')
     window.localStorage.setItem('psalter.audioPlayerOpen', 'true')
     // deliberately do NOT set psalter.audioLastSelected or the legacy key
@@ -265,10 +265,15 @@ describe('SingingView — Phase 20-02 audio persistence (Task 2)', () => {
     await waitFor(() => {
       const bar = container!.querySelector('[data-testid="mock-play-mini-bar"]')
       expect(bar).not.toBeNull()
-      // Icon still flips to inverted 'open' state (mounted=true), but the
-      // player UI does not render because there's no source to play yet.
+      // Phase 21 fqz2: the popup is now visible immediately, even when no
+      // source has been selected. PlayMiniBar handles the no-source case
+      // internally (renders a default MIDI piano if hasAbc, or a
+      // "Loading recording…" placeholder, or the SoundCloud iframe if
+      // hasSc — the user always sees something inside the bar). The old
+      // `visible=false` gate made the user tap the play button twice
+      // (close then open) before the popup would show.
       expect(bar!.getAttribute('data-mounted')).toBe('true')
-      expect(bar!.getAttribute('data-visible')).toBe('false')
+      expect(bar!.getAttribute('data-visible')).toBe('true')
     }, { timeout: 3000 })
   })
 
