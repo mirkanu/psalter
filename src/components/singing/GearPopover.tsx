@@ -152,6 +152,7 @@ export function GearPopover({
   //   const scanAlreadyForced = isStaff && isSplit && !staffInlineApproved
   //   const showScoreSourceRow =
   //     isMusicNotes && isStaff && isSplit && originalScanAvailable && !scanAlreadyForced
+  // Keep these references alive so TypeScript flags a re-activation that forgets to thread a value back into the void list.
   void isMusicNotes; void isStaff; void isSplit; void originalScanAvailable; void staffInlineApproved
   const scanAlreadyForced = false
   const showScoreSourceRow = false

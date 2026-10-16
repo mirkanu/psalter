@@ -2477,9 +2477,10 @@ export function NotationRenderer({
     // remove the `|| isSplit` term and the slot will once again render the
     // unified abcjs split-leaf path (subject to all the tuning above).
     const forceStaffJpgFallback =
-      (isSplit && !staffInlineApproved) ||
       (tunePageMode && !abc.trim()) ||
       isSplit
+    // Split-leaf always falls back to scanned JPG per `project-staff-split-leaf-disabled`;
+    // re-enable digital split-leaf by removing the `isSplit` term.
 
     // #18: when the split-half mobile pagination block is also rendered
     // (inside the lyrics slot, as `paginationBlock`), suppress the duplicate
@@ -2614,9 +2615,7 @@ export function NotationRenderer({
             // (max-h-50%) stays as the conservative upper bound for
             // viewbox-derived content overflow.
             // baseSize drives AbcPlayer's dynamic lyric solver
-            // (MIN/POST_BUMP window) in the chromeless mobile path. In
-            // baseSize drives AbcPlayer's dynamic lyric solver
-            // (MIN/POST_BUMP window) in the chromeless mobile path. In
+            // (MIN/POST_BUMP window) in the chromeless mobile path.
             // Inline Staff mode this stays at the mobile default — A+/A−
             // now drives extraSubdivisions (row count) instead of font.
             baseSize={baseSize}
