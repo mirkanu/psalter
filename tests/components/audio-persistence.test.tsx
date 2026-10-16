@@ -36,7 +36,15 @@ vi.mock('@/components/singing/GlassBottomBar', () => ({
 }))
 
 vi.mock('@/components/singing/PlayMiniBarClient', () => ({
-  PlayMiniBarClient: () => null,
+  // Phase 21 (D-03): surface the `mounted` + `visible` props as DOM-readable
+  // attributes so the new audio-restore tests below can assert the
+  // hydration effect actually drove the bar from localStorage into visible UI
+  // (not just the bottom-right icon's inverted colour state).
+  PlayMiniBarClient: (props) => React.createElement('div', {
+    'data-testid': 'mock-play-mini-bar',
+    'data-mounted': props.mounted ? 'true' : 'false',
+    'data-visible': props.visible ? 'true' : 'false',
+  }),
 }))
 
 vi.mock('@/components/singing/GearPopoverClient', () => ({
@@ -121,6 +129,35 @@ if (typeof window !== 'undefined' && !window.visualViewport) {
   window.visualViewport = { addEventListener: () => {}, removeEventListener: () => {} }
 }
 
+// Phase 21 (D-03 audio-restore tests): include a minimal primaryTune with
+// abcNotation + a non-empty staffPages array so the PlayMiniBarClient mount
+// gate (`viewMode !== 'legacy' && (abc || soundcloudUrl)`) opens for tests
+// that need to assert the bar's `mounted` + `visible` data attrs. Without a
+// tune, the bar's outer conditional never renders and the new mock can't be
+// observed.
+const testPrimaryTune = {
+  id: 1,
+  name: 'Crimond',
+  slug: 'crimond',
+  meter: 'CM',
+  abcNotation: 'X:1\nT:Crimond\nM:4/4\nL:1/4\nK:G\nC2 E2 4G2|]',
+  abcSatb: null,
+  scoreJpgUrl: null,
+  solfegeJpgUrl: null,
+  soundcloudUrl: null,
+  youtubeUrl: null,
+  doubleLength: false,
+  meterVariant: [],
+  solfegeOcrText: null,
+  phraseShapeOverride: null,
+  melismaPositions: null,
+  staffPages: ['crimond-page-1.jpg'],
+  solfegePages: [],
+  melismaStatus: 'approved',
+  weightedHistoricalFrequency: 0,
+  historicalUsageCount: 0,
+} as unknown as React.ComponentProps<typeof SingingView>['primaryTune']
+
 const baseProps: React.ComponentProps<typeof SingingView> = {
   psalm: {
     id: 23,
@@ -139,7 +176,7 @@ const baseProps: React.ComponentProps<typeof SingingView> = {
   currentSlug: '23',
   prevSlug: '22',
   nextSlug: '24',
-  primaryTune: null,
+  primaryTune: testPrimaryTune,
   alternateTunes: [],
   editoriallyLinkedTuneIds: [],
   meter: 'CM',
@@ -184,6 +221,69 @@ describe('SingingView — Phase 20-02 audio persistence (Task 2)', () => {
     await waitFor(() => {
       expect(window.localStorage.getItem('psalter.audioLastSelected')).toBe('soundcloud')
       expect(window.localStorage.getItem('psalter-audio-source')).toBeNull()
+    }, { timeout: 3000 })
+  })
+
+  // Phase 21 (D-03): audio player UI restoration. The bug: `audioPlayerOpen`
+  // hydrates from localStorage but `miniBarMounted` / `miniBarVisible` were
+  // never seeded, so PlayMiniBar.tsx:220's `if (!mounted) return null` short-
+  // circuited — bottom-right icon flipped to inverted colour but the bar
+  // itself never rendered. These three cases pin the new restore effect.
+  //
+  // All three cases also pre-seed `psalter-score-mode='staff-split'` so the
+  // PlayMiniBar's outer render gate (`viewMode !== 'legacy' && (abc || soundcloudUrl)`)
+  // opens — Phase 21 D-01 made the default viewMode 'legacy', which would
+  // otherwise hide the bar in tests with no other state set. We want the bar
+  // to mount so the new mock can observe `data-mounted` / `data-visible`.
+
+  it("D-03a: fresh psalm page with audioPlayerOpen='true' AND audioLastSelected set → mounted=true and visible=true", async () => {
+    window.localStorage.setItem('psalter-score-mode', 'staff-split')
+    window.localStorage.setItem('psalter.audioPlayerOpen', 'true')
+    window.localStorage.setItem('psalter.audioLastSelected', 'midi')
+    let container: HTMLElement | null = null
+    await act(async () => {
+      const result = render(<SingingView {...baseProps} />)
+      container = result.container
+    })
+    await waitFor(() => {
+      const bar = container!.querySelector('[data-testid="mock-play-mini-bar"]')
+      expect(bar).not.toBeNull()
+      expect(bar!.getAttribute('data-mounted')).toBe('true')
+      expect(bar!.getAttribute('data-visible')).toBe('true')
+    }, { timeout: 3000 })
+  })
+
+  it("D-03b: fresh psalm page with audioPlayerOpen='true' but audioLastSelected missing → mounted=true, visible=false (edge case)", async () => {
+    window.localStorage.setItem('psalter-score-mode', 'staff-split')
+    window.localStorage.setItem('psalter.audioPlayerOpen', 'true')
+    // deliberately do NOT set psalter.audioLastSelected or the legacy key
+    let container: HTMLElement | null = null
+    await act(async () => {
+      const result = render(<SingingView {...baseProps} />)
+      container = result.container
+    })
+    await waitFor(() => {
+      const bar = container!.querySelector('[data-testid="mock-play-mini-bar"]')
+      expect(bar).not.toBeNull()
+      // Icon still flips to inverted 'open' state (mounted=true), but the
+      // player UI does not render because there's no source to play yet.
+      expect(bar!.getAttribute('data-mounted')).toBe('true')
+      expect(bar!.getAttribute('data-visible')).toBe('false')
+    }, { timeout: 3000 })
+  })
+
+  it("D-03c: fresh psalm page with audioPlayerOpen unset → mounted=false (default closed state preserved)", async () => {
+    window.localStorage.setItem('psalter-score-mode', 'staff-split')
+    let container: HTMLElement | null = null
+    await act(async () => {
+      const result = render(<SingingView {...baseProps} />)
+      container = result.container
+    })
+    await waitFor(() => {
+      const bar = container!.querySelector('[data-testid="mock-play-mini-bar"]')
+      expect(bar).not.toBeNull()
+      expect(bar!.getAttribute('data-mounted')).toBe('false')
+      expect(bar!.getAttribute('data-visible')).toBe('false')
     }, { timeout: 3000 })
   })
 })

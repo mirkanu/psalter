@@ -127,12 +127,15 @@ interface Props {
 function readStoredViewMode(showLyrics: boolean): ViewMode {
   try {
     const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_MODE_KEY) : null
-    if (raw === 'staff' || raw === 'solfege' || raw === 'staff-split' || raw === 'solfege-split' || raw === 'lyrics') {
+    if (raw === 'staff' || raw === 'solfege' || raw === 'staff-split' || raw === 'solfege-split' || raw === 'lyrics' || raw === 'legacy') {
       if (raw === 'lyrics' && !showLyrics) return 'staff'
       return raw
     }
   } catch { /* ignore */ }
-  return 'staff'
+  // Phase 21 (D-01): fresh visitors default to 'legacy' (was 'staff' in
+  // Phase 20). Returning visitors with a stored value already returned
+  // above — this fallback is only hit for first-ever / cleared-storage.
+  return 'legacy'
 }
 
 function readStoredSize(key: string): number {
@@ -213,7 +216,9 @@ export function SingingView({
 
   // ViewMode + baseSize state (owned here; passed controlled to NotationRenderer)
   const showLyrics = !!lyrics
-  const [viewMode, setViewMode] = useState<ViewMode>('staff')
+  // Phase 21 (D-01): default for fresh visitors is 'legacy' — returning
+  // visitors get their stored mode via the hydrate effect below.
+  const [viewMode, setViewMode] = useState<ViewMode>('legacy')
   // Quick task 260822-di9: voluntary "view the original scan" swap. Separate
   // from viewMode's staff-split/solfege-split states ON PURPOSE — those encode
   // LAYOUT and, via shouldFallbackToSplit, the MOBILE-08 approval gate, which
@@ -322,6 +327,48 @@ export function SingingView({
       }
       setAudioPlayerOpen(localStorage.getItem(STORAGE_AUDIO_PLAYER_OPEN) === 'true')
     } catch { /* ignore */ }
+  }, [mounted])
+
+  // Phase 21 (D-03): audio player UI restore. The hydrate effect above reads
+  // `psalter.audioPlayerOpen` into the `audioPlayerOpen` state, but
+  // `PlayMiniBar.tsx:220` returns `null` whenever the `mounted` prop is
+  // false — and `miniBarMounted` / `miniBarVisible` are never seeded from the
+  // hydrated value. Without this effect, a user who previously had the player
+  // open sees the bottom-right icon flip to inverted colours on the next
+  // psalm, but the PlayMiniBar player UI itself never renders.
+  //
+  // The `audioRestoreAppliedRef` guard ensures this runs ONCE post-mount —
+  // subsequent re-runs (driven by the user's own toggles via
+  // `handlePlayToggle`) must NOT clobber their in-memory state.
+  //
+  // We deliberately read localStorage DIRECTLY here instead of using the
+  // hydrated `audioPlayerOpen` state: the audio-hydrate effect above and this
+  // effect both run in the same effect phase, and React's effect order isn't
+  // guaranteed to give us the freshly-hydrated value before our ref guard
+  // latches. Reading localStorage again is cheap (single useEffect call) and
+  // guarantees we see the same value the hydrate effect did.
+  const audioRestoreAppliedRef = useRef<boolean>(false)
+  useEffect(() => {
+    if (!mounted) return
+    if (audioRestoreAppliedRef.current) return
+    audioRestoreAppliedRef.current = true
+    let storedOpen = false
+    let hadLastSelected = false
+    try {
+      storedOpen = localStorage.getItem(STORAGE_AUDIO_PLAYER_OPEN) === 'true'
+      hadLastSelected =
+        localStorage.getItem(STORAGE_AUDIO_LAST_SELECTED) !== null ||
+        localStorage.getItem(STORAGE_AUDIO_SOURCE_LEGACY) !== null
+    } catch { /* ignore */ }
+    setMiniBarMounted(storedOpen)
+    // Edge case (D-03 CONTEXT.md "specifics"): a visitor whose
+    // audioPlayerOpen was 'true' but who never selected a source lands with
+    // the bottom-right icon in its inverted 'open' colour, but no player UI
+    // — they can click to pick a source. We surface the icon's open state
+    // here via miniBarMounted=true (so the next toggle unhides it without a
+    // fresh click) and gate the visible UI on a real lastSelected value.
+    setMiniBarVisible(storedOpen && hadLastSelected)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted])
 
   // Keeps wasMusicNotesBeforeRef in sync for LATER (mid-session) tune
