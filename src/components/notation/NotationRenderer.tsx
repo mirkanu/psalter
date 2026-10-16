@@ -49,6 +49,7 @@ import { detectRepeatedPitchContinuations } from '@/lib/detect-repeated-pitch-co
 import { computeNotationScale } from '@/lib/notation-scale'
 import { isMeterMismatch } from '@/lib/meter-mismatch'
 import { computeScanToggleVisible } from '@/lib/inline-staff-gating'
+import { LegacyAudioEmbed } from '@/components/singing/LegacyAudioEmbed'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -2794,7 +2795,7 @@ export function NotationRenderer({
     // AbcAudioControls' effect cleanup on the same unmount.
     viewArea = (
       <div className="flex flex-col gap-3 w-full" data-legacy-view>
-        <div data-legacy-embeds className="space-y-2 mb-2">
+        <div data-legacy-embeds className="space-y-2 my-2">
           {soundcloudUrl && soundcloudUrl.startsWith('http') ? (
             <iframe
               data-legacy-soundcloud
@@ -2806,24 +2807,17 @@ export function NotationRenderer({
               sandbox="allow-scripts allow-same-origin"
               allow="autoplay"
               width="100%"
-              height="80"
+              height="166"
+              scrolling="no"
               className="rounded-md border border-border"
             />
           ) : null}
           {abc && abc.trim().length > 0 ? (
-            // MIDI placeholder — actual playback lives in PlayMiniBar (MIDI
-            // mode), which is unmounted in legacy view. This embed slot stays
-            // reserved for symmetry with the SoundCloud iframe above; the real
-            // interactive controls are surfaced via the open/close bottom-right
-            // play button when the user switches back to a non-legacy view.
-            <div
-              data-legacy-midi
-              role="region"
-              aria-label={`Piano player embed: ${tuneName || 'tune'}`}
-              className="w-full h-20 rounded-md border border-border bg-muted/30 flex items-center justify-center text-xs text-muted-foreground"
-            >
-              Piano player available — press Play in the bottom bar to listen
-            </div>
+            <LegacyAudioEmbed
+              abc={abc}
+              soundcloudUrl={soundcloudUrl}
+              tuneName={tuneName || ''}
+            />
           ) : null}
         </div>
         <div data-notation-lyrics>
