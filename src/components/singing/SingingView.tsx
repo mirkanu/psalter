@@ -469,10 +469,15 @@ export function SingingView({
   // `mounted` flag to prevent stale-snapshot writes during SSR/initial render;
   // a separate reset effect below handles the viewMode-driven reset on Legacy
   // exit (D-13) so it can't be clobbered here.
-  useEffect(() => {
-    if (!mounted) return
-    try { localStorage.setItem(STORAGE_AUDIO_PLAYER_OPEN, audioPlayerOpen ? 'true' : 'false') } catch { /* ignore */ }
-  }, [audioPlayerOpen, mounted])
+  // Phase 21 fqz2 (fix 3): `audioPlayerOpen` is persisted inside
+  // `handlePlayToggle` and the prevViewModeRef effect below — the places
+  // that actually mutate it from a user-driven action. A separate
+  // [audioPlayerOpen, mounted]-watching persist effect ran on first mount
+  // with `audioPlayerOpen` still at its initial `false` value (setState is
+  // async, so the audio-hydrate effect's queued `setAudioPlayerOpen(true)`
+  // hadn't been committed yet), clobbered localStorage to "false", and
+  // made the next mount's restore look like nothing happened. Moving the
+  // persist to the action sites removes the race entirely.
   useEffect(() => {
     if (!mounted) return
     try { localStorage.setItem(STORAGE_AUDIO_LAST_SELECTED, audioLastSelected) } catch { /* ignore */ }
@@ -492,6 +497,9 @@ export function SingingView({
   // When switching to lyrics-only, auto-close the mini-bar and reset playback.
   // Split-leaf and solfege modes still use the abcjs synth, so the mini-bar stays.
   const prevViewModeRef = useRef<ViewMode>(viewMode)
+  // Phase 21 fqz2 (fix 3): see the prevViewModeRef effect below — used to
+  // suppress the D-13 reset on the initial viewMode hydration.
+  const viewModeHydratedRef = useRef<boolean>(false)
   useEffect(() => {
     const prev = prevViewModeRef.current
     prevViewModeRef.current = viewMode
@@ -506,12 +514,29 @@ export function SingingView({
     // visible chrome differs — D-09). When LEAVING Legacy, reset
     // audioPlayerOpen to closed (D-13) so the user must re-open the bottom-
     // right play button on return.
+    // Phase 21 fqz2 (fix 3): skip the D-13 reset on the initial mount. The
+    // viewMode hydrate below sets viewMode from its default `'legacy'` to
+    // whatever the user last stored — without this guard, the prev/current
+    // diff would look like a real "leaving Legacy" transition and clobber
+    // the user's stored `psalter.audioPlayerOpen` to "false" on every psalm
+    // navigation. The ref tracks whether we've seen at least one user-driven
+    // viewMode change since mount; the initial viewMode hydration doesn't
+    // count (the readStoredViewMode helper already handles that correctly).
+    if (!viewModeHydratedRef.current) {
+      viewModeHydratedRef.current = true
+      return
+    }
     if (viewMode === 'legacy' && prev !== 'legacy') {
       setIsPlaying(false)
       setAudioPlayerOpen(false)
       setMiniBarVisible(false)
+      // Phase 21 fqz2 (fix 3): persist the closed state so a return-from-Legacy
+      // navigation doesn't re-open the player.
+      try { localStorage.setItem(STORAGE_AUDIO_PLAYER_OPEN, 'false') } catch { /* ignore */ }
     } else if (viewMode !== 'legacy' && prev === 'legacy') {
       setAudioPlayerOpen(false)
+      // Phase 21 fqz2 (fix 3): same persist-on-action pattern.
+      try { localStorage.setItem(STORAGE_AUDIO_PLAYER_OPEN, 'false') } catch { /* ignore */ }
     }
   }, [viewMode])
 
@@ -844,6 +869,10 @@ export function SingingView({
         setMiniBarVisible(false)
         setIsPlaying(false)
       }
+      // Phase 21 fqz2 (fix 3): persist open/close to localStorage here, not
+      // via a separate audioPlayerOpen-watching effect (which clobbered the
+      // value on first mount — see comment on the removed persist effect).
+      try { localStorage.setItem(STORAGE_AUDIO_PLAYER_OPEN, nextOpen ? 'true' : 'false') } catch { /* ignore */ }
       return nextOpen
     })
   }, [miniBarMounted, activeTune])
