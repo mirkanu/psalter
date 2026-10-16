@@ -4,8 +4,8 @@ milestone: v2.0
 milestone_name: Public Beta
 status: ready_to_plan
 stopped_at: "Phase 20 Plan 02 complete (PR #118 open, awaiting merge)"
-last_updated: "2026-10-16T08:34:39.127Z"
-last_activity: 2026-10-16 -- Phase 21 execution started
+last_updated: "2026-10-16T11:38:00.000Z"
+last_activity: 2026-10-16 -- Quick task 261016-fqz completed (Phase 21 polish: Legacy view + Tour wording/padding/icon fixes)
 progress:
   total_phases: 15
   completed_phases: 6
@@ -259,6 +259,7 @@ None yet.
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
+| 261016-fqz | Phase 21 polish in Legacy view + Tour (lyrics match, inline MIDI, taller SoundCloud, gear single-row with Lyrics rename, tour copy w/ orange "new feature" + audio step on Lyrics + single-step chrome hidden) | 2026-10-16 | fd994bbe | [261016-fqz-phase-21-polish-in-the-new-legacy-view-m](./quick/261016-fqz-phase-21-polish-in-the-new-legacy-view-m/) |
 | q01 | Psalm detail layout: split desktop, reversed header, Sing tab on mobile | 2026-05-09 | eebcbbb | [260509-q01-psalm-detail-layout-overhaul](./quick/260509-q01-psalm-detail-layout-overhaul/) |
 | q02 | UI fixes batch 3: tune format, mobile sticky score, meter tooltip, search overlay, lyrics search, search bugs (T2,T4-T8) | 2026-05-11 | 133507a | [20260511-ui-fixes-batch3](./quick/20260511-ui-fixes-batch3/) |
 | q03 | UI fixes batch 4: T4 gap+progressive sticky, T5 Popover meter, T6 GlobalSearch→Dialog, T7 lyrics snippet, sticky list headers | 2026-05-11 | cb9b448 | [20260511-ui-fixes-batch4](./quick/20260511-ui-fixes-batch4/) |
