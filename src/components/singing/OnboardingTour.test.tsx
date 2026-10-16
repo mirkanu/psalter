@@ -134,13 +134,14 @@ describe('OnboardingTour (Phase 20-01, D-15/D-16; Phase 21 D-02 drops firstVisit
     expect(localStorage.getItem('psalter.tour.audioStepDone')).toBe('true')
   })
 
-  // Phase 21 (D-06): SWIPE_STEP now targets 'stanza-nav' and uses the
-  // user-provided copy "Tap < and > to navigate between stanzas". The
-  // wrapper above adds two elements sharing that target so the measure
-  // step finds both — unionBoundingRect then draws two cutouts (not
-  // asserted visually here, but existence of the text confirms step 7
-  // reaches the right branch).
-  it('Test 6 (Phase 21 D-06): SWIPE_STEP targets stanza-nav and uses the new copy', async () => {
+  // Phase 21 (D-06): SWIPE_STEP now targets 'scroll-area' (the notation
+  // region — the user swipes the notation itself, not the bottom bar) and
+  // uses the user-provided copy. The wrapper above provides one element
+  // with target 'scroll-area' (the <main>) — single cutout, not two like
+  // the D-06 era. The swipe copy branches by viewport (see Test 11 for
+  // the mobile path); under the beforeEach desktop stub, the desktop
+  // "Tap < and > to navigate between stanzas" copy renders.
+  it('Test 6 (Phase 21 D-06 + fqz2): SWIPE_STEP targets scroll-area and uses the new copy', async () => {
     localStorage.setItem('psalter.tour.initialDone', 'true')
     localStorage.setItem('psalter.tour.audioStepDone', 'true')
     renderTour({ viewMode: 'staff', totalStanzas: 2 })

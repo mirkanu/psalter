@@ -60,13 +60,20 @@ const AUDIO_STEP: Step = {
 // (with the dot indicator hint that the GlassBottomBar shows). The hand
 // animation + trail render on both since the swipe visual makes sense
 // whenever stanza navigation is the topic.
+// Phase 21 fqz2: the target moves BACK to 'scroll-area' (the notation
+// region) on both viewports — the user swipes / taps the notation itself,
+// not the bottom bar. On desktop the same target works because the union
+// bbox draws the spotlight around the whole notation column; the copy
+// wording diverges by viewport so each user gets the gesture they can
+// actually perform. The GlassBottomBar's prev/next buttons stay mounted
+// as a fallback for users who prefer the explicit control.
 const SWIPE_STEP_DESKTOP: Step = {
-  target: 'stanza-nav',
+  target: 'scroll-area',
   copy: 'Tap < and > to navigate between stanzas',
 }
 const SWIPE_STEP_MOBILE: Step = {
-  target: 'stanza-nav',
-  copy: 'Swipe left or right to move between stanza groups — the dots show where you are.',
+  target: 'scroll-area',
+  copy: 'Swipe left or right to move between stanza groups.',
 }
 
 interface Rect {
@@ -336,13 +343,14 @@ export function OnboardingTour({ totalStanzas, viewMode }: OnboardingTourProps) 
   const padding = 8
 
   // 04.9.15.1-03: identify the swipe step specifically (target + trigger)
-  // so only this one step gets the extra in-spotlight hand visual. We match
-  // on target + trigger rather than copy because the swipe copy now branches
-  // by viewport (SWIPE_STEP_DESKTOP vs SWIPE_STEP_MOBILE) and would defeat
-  // a copy-equality check.
+  // so only this one step gets the extra in-spotlight hand visual. The
+  // target is 'scroll-area' (the notation region) on both viewports — see
+  // SWIPE_STEP_DESKTOP / SWIPE_STEP_MOBILE above. We match on target +
+  // trigger rather than copy because the swipe copy branches by viewport
+  // and would defeat a copy-equality check.
   const isSwipeStep =
     activeTrigger === 'swipe' &&
-    steps[currentStep]?.target === 'stanza-nav'
+    steps[currentStep]?.target === 'scroll-area'
 
   // Phase 21 (D-04): orange ring on the final gear step draws attention to
   // the settings button — site accent green is reserved, orange is unused.
