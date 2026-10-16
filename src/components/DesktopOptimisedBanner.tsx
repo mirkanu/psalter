@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { isPhoneDevice, isStandaloneDisplayMode } from '@/lib/device'
+import { useTour } from '@/components/TourProvider'
 
 const STORAGE_KEY = 'psalter.desktopBannerDismissed'
 
@@ -51,6 +52,10 @@ function readClient(): ClientHints {
  */
 export function DesktopOptimisedBanner() {
   const isDesktop = useMediaQuery('(min-width: 768px)')
+  // Phase 21 (D-07): read tour-open state from TourProvider so the banner
+  // hides while OnboardingTour is active — the spotlight ring + bubble
+  // would be occluded by an always-on banner.
+  const { isOpen: isTourOpen } = useTour()
   // Read the dismissal flag at mount (SSR-safe: returns true on the server,
   // so the SSR markup never includes the banner). After hydration on the
   // client, the initializer runs once and returns the stored value.
@@ -77,7 +82,15 @@ export function DesktopOptimisedBanner() {
     }
   }, [])
 
-  if (!isDesktop || dismissed) return null
+  if (!isDesktop) return null
+  // Phase 21 (D-07): hide while tour is open so it doesn't occlude tour
+  // targets; re-appears the moment the tour closes (unless the user has
+  // permanently dismissed it via handleDismiss below — that flag is
+  // independent of this one). Gate BEFORE `dismissed` so a desktop visitor
+  // who never dismissed the banner still sees it vanish while the tour
+  // advances and pop back the moment they hit Done/Skip.
+  if (isTourOpen) return null
+  if (dismissed) return null
   if (client.isPhone || client.isStandalone) return null
 
   return (

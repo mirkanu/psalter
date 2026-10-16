@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import { Hand } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
+import { useTour } from '@/components/TourProvider'
 
 // Phase 20-01 (D-15/D-16): split the single linear tour into 3 independent
 // triggers, each gated by its own localStorage flag. Existing users who
@@ -22,11 +23,16 @@ interface Step {
 // 260517-ht8 #1a — re-insert "tap to change tune" as step 3; gear becomes step 4.
 // Phase 20-01 (D-15): the initial tour excludes the audio step because the
 // play button isn't visible on first visit to Lyrics Only or Legacy.
+// Phase 21 (D-04): copy user-provided word-for-word; gear icon highlighted
+// in orange on this step (see `ringStroke` derivation below).
 const INITIAL_STEPS: Step[] = [
   { target: 'prev-next', copy: 'Navigate to next/previous psalm' },
   { target: 'psalm-label', copy: 'Tap to quickly switch to any psalm' },
   { target: 'tune-name', copy: 'Tap to switch to a different tune' },
-  { target: 'view-controls', copy: 'Open settings to change views (e.g. lyrics only) and access the study guide' },
+  {
+    target: 'view-controls',
+    copy: 'Open settings to change views (Music Notes or Lyrics Only) and access the study guide',
+  },
 ]
 
 // Audio-player single-step popover (D-15). Fires on first Music Notes / Staff
@@ -37,13 +43,16 @@ const AUDIO_STEP: Step = {
   copy: 'Tap the play button to open the audio player.',
 }
 
-// 04.9.15.1-03 (MOBILE-10): swipe step reused verbatim from the previous tour.
-// (The scroll-hide explanation steps that previously also used 'scroll-area'
-// were removed per checkpoint round 5 feedback — scroll-to-hide is
-// discoverable naturally — so this is the ONLY step using this target.)
+// 04.9.15.1-03 (MOBILE-10): swipe step reused from the previous tour, then
+// replaced per Phase 21 (D-06) — desktop visitors don't swipe, they tap the
+// prev/next stanza buttons; the target moved from 'scroll-area' (the whole
+// notation region) to 'stanza-nav' (the prev/next buttons in GlassBottomBar).
+// Mobile swipe still works because the buttons are still present; "Tap"
+// covers both touch (mobile) and click (desktop) — single-text path so no
+// viewMode branching needed.
 const SWIPE_STEP: Step = {
-  target: 'scroll-area',
-  copy: 'Swipe left or right to move between stanza groups.',
+  target: 'stanza-nav',
+  copy: 'Tap < and > to navigate between stanzas',
 }
 
 interface Rect {
@@ -96,6 +105,15 @@ export interface OnboardingTourProps {
 type Trigger = 'initial' | 'audio' | 'swipe'
 
 export function OnboardingTour({ totalStanzas, viewMode }: OnboardingTourProps) {
+  // Phase 21 (D-07): TourProvider context — OnboardingTour calls `tour.show()`
+  // while the tour is active so DesktopOptimisedBanner can read `isOpen` and
+  // hide until the tour closes. The provider is wrapped high in the layout so
+  // both OnboardingTour (rendered inside SingingView via OnboardingTourClient)
+  // and DesktopOptimisedBanner (rendered in <body>) share the same context.
+  // The no-op fallback when rendered outside the provider means isolated tests
+  // don't crash.
+  const tour = useTour()
+
   // SSR-safe: render nothing until mounted; assume seen=true to suppress
   // first-paint flash for returning visitors (hydration reads the real value).
   const [mounted, setMounted] = useState(false)
@@ -208,7 +226,12 @@ export function OnboardingTour({ totalStanzas, viewMode }: OnboardingTourProps) 
     else if (activeTrigger === 'swipe') setTourSwipeSeen(true)
     else setTourInitialSeen(true)
     setStep(0)
-  }, [activeTrigger])
+    // Phase 21 (D-07): notify TourProvider so DesktopOptimisedBanner
+    // re-renders immediately (or remains hidden if user permanently dismissed
+    // it via the localStorage flag — that path is independent of the
+    // tour-open state).
+    tour.dismiss()
+  }, [activeTrigger, tour])
 
   // Measure target on step change / resize / orientation
   useEffect(() => {
@@ -263,6 +286,17 @@ export function OnboardingTour({ totalStanzas, viewMode }: OnboardingTourProps) 
     return () => window.removeEventListener('keydown', onKey)
   }, [mounted, tourSeen, dismiss])
 
+  // Phase 21 (D-07): TourProvider tracks open-state so
+  // DesktopOptimisedBanner can hide while the tour is active; both the Done
+  // dismiss and the X (escape) close already call `tour.dismiss()` above.
+  // This effect publishes the open signal whenever the tour is rendering —
+  // it isn't idempotent because TourProvider.show() is a useCallback, but
+  // calling it again on every render is fine (React batches setState(true)
+  // to a no-op).
+  useEffect(() => {
+    if (activeTrigger !== null) tour.show()
+  }, [activeTrigger, tour])
+
   if (!mounted || tourSeen || !rects || rects.length === 0) return null
 
   // CR-01 fix: clamp for render too — `steps` can shrink (breakpoint cross)
@@ -277,8 +311,15 @@ export function OnboardingTour({ totalStanzas, viewMode }: OnboardingTourProps) 
   // so only this one step gets the extra in-spotlight hand visual.
   const isSwipeStep =
     activeTrigger === 'swipe' &&
-    steps[currentStep]?.target === 'scroll-area' &&
+    steps[currentStep]?.target === 'stanza-nav' &&
     steps[currentStep]?.copy === SWIPE_STEP.copy
+
+  // Phase 21 (D-04): orange ring on the final gear step draws attention to
+  // the settings button — site accent green is reserved, orange is unused.
+  // Only on the INITIAL tour's last step so audio/swipe triggers keep their
+  // default white ring.
+  const ringStroke =
+    isLast && activeTrigger === 'initial' ? '#f97316' : 'var(--tour-ring, #ffffff)'
 
   // Phase 20-01 visual markers — Playwright assertions (UI-SPEC §Visual
   // markers) and the `data-onboarding-tour` legacy marker (used by
@@ -381,7 +422,10 @@ export function OnboardingTour({ totalStanzas, viewMode }: OnboardingTourProps) 
          dimmed backdrop, especially in dark mode. The ring uses
          var(--tour-ring, white) so light mode can soften if needed in the
          future; defaults to full white today. Sits between the wash
-         (z 201) and the bubble (z 202) so it doesn't intercept clicks. */}
+         (z 201) and the bubble (z 202) so it doesn't intercept clicks.
+         Phase 21 (D-04): `ringStroke` overrides to #f97316 (orange) on the
+         final step of the initial tour so the gear button gets visual
+         attention. */}
       <svg
         data-tour-ring
         width={viewportW}
@@ -389,7 +433,7 @@ export function OnboardingTour({ totalStanzas, viewMode }: OnboardingTourProps) 
         className="absolute inset-0 pointer-events-none"
         style={{ zIndex: 201 }}
         fill="none"
-        stroke="var(--tour-ring, #ffffff)"
+        stroke={ringStroke}
         strokeWidth={2}
       >
         {rects.map((r, i) => (
