@@ -34,6 +34,7 @@ Rebuild of psalter.cprc.co.uk from Airtable + Softr to a self-hosted Next.js 15 
 
 - [x] **Phase 17: Vercel + Neon Migration** (4/4 plans) — completed 2026-09-07 - DNS cut to `cname.vercel-dns.com`; Hetzner PM2 + tunnel left intact as rollback; soak ran Sept 7 → Sept 14 with no rollbacks. **Reversal requested 2026-10-12** due to ongoing Neon compute cost → tracked as Phase 18.
 - [ ] **Phase 18: Undo Vercel + Neon Migration — Restore Hetzner Hosting** - Reverse Phase 17: bring psalter back to Hetzner (PM2 + `psalter-db` Docker + Cloudflare Tunnel), terminate Vercel project + Neon project, restore latest available Neon data to the local Postgres, replumb `public/tunes/` images, sweep Vercel-specific code, and verify $0/mo hard cost budget. Triggered 2026-10-12 by user ("I keep incurring costs on Neon and it's hard to avoid"). **Depends on: nothing — runs immediately.** See `.planning/todos/pending/2026-10-12-undo-vercel-neon-migration.md` and `docs/notes/2026-10-12-migration-reversal-state-snapshot.md`.
+- [ ] **Phase 21: Single-Psalm Onboarding v2 + Audio Restore** - Replace FirstVisitModal with default-Legacy first-visit experience (legacy view matches the old softr site most incoming visitors will be familiar with); fix audio-player-across-navigation bug (icon inverts on the new page but `PlayMiniBar` doesn't mount — `audioPlayerOpen` hydrates from localStorage but no effect restores `miniBarMounted`/`miniBarVisible`); rework OnboardingTour: orange gear button on the final step + new text "Open settings to change views (Music Notes or Lyrics Only) and access the study guide"; on desktop replace swipe step with stanza-nav step (target `< Stanza x / x >`, text "Tap < and > to navigate between stanzas"); hide `DesktopOptimisedBanner` while tour is open via React context provider; Restart Tour clears storage and immediately re-fires the tour without FirstVisitModal bubble. Fold in Phase 20 review leftovers WR-01/02/03 + IN-01. **Depends on:** Phase 20. See `.planning/phases/21-onboarding-v2-audio-restore/21-CONTEXT.md`.
 
 <details>
 <summary>✅ v1.0 Public Psalter (Phases 1–4.12) — SHIPPED 2026-07-29</summary>
@@ -390,4 +391,20 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [x] 20-03-PLAN.md — Public /api/build-version endpoint + BuildVersionGuard client + refactor DeployStatus pageshow handler to use the new mechanism; resolves pre-existing data-build-id="unknown" memory (wave 2, depends on 01+02)
+
+### Phase 21: Single-Psalm Onboarding v2 + Audio Restore
+
+**Goal:** First-time visitors default to the Legacy view (matching the old softr site most visitors are coming from) without any modal interruption; the audio player's open/closed state genuinely persists across psalm navigation; the onboarding tour's final step draws attention to the gear button (orange) so visitors discover Music Notes / Lyrics Only; the tour's "swipe" step is replaced with a desktop-relevant stanza-nav step on desktop viewports; the desktop "phones" banner hides while the tour is open so it doesn't occlude tour targets; Restart Tour works without bubbling through any modal; and the four Phase 20 review leftovers (WR-01/02/03 + IN-01) are folded in.
+
+**Requirements**: (no REQ-IDs in v2.0; ship is gated by user acceptance on D-01..D-25 from `21-CONTEXT.md`)
+**Depends on:** Phase 20
+**Plans:** 2 plans (2 waves)
+
+Plans:
+
+**Wave 1**
+- [ ] 21-01-PLAN.md — Delete FirstVisitModal + default Legacy + audio-restore hydration + review leftovers (WR-01/02/03 + IN-01) (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 21-02-PLAN.md — TourProvider context + final-step orange + SWIPE_STEP stanza-nav + banner-hide-during-tour (wave 2)
 
