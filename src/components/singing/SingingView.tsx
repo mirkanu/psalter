@@ -505,6 +505,24 @@ export function SingingView({
     const prev = prevViewModeRef.current
     prevViewModeRef.current = viewMode
     if (prev === viewMode) return
+    // Phase 21 fqz2 (fix 3) plus regression patch: skip ALL three reset
+    // branches (lyrics auto-close + Legacy D-13 enter + Legacy D-13 leave)
+    // on the initial viewMode hydration. The viewMode hydrate below sets
+    // viewMode from its default `'legacy'` to whatever the user last stored
+    // — without this guard, the prev/current diff looks like a real
+    // user-driven transition and clobbers the in-memory audioPlayerOpen /
+    // miniBarVisible state to "false", which makes the popup silently
+    // disappear on every fresh page load for users whose stored view is
+    // `'lyrics'` (the bottom-right play button stays inverted because
+    // audioPlayerOpen is hydrated separately by the audio-hydrate effect,
+    // but PlayMiniBar's `visible` prop = miniBarVisible collapses to false,
+    // requiring a second tap to actually reopen the popup — the "tap twice"
+    // symptom). The ref latches on the first effect run so only real
+    // user-driven viewMode changes trigger any of the resets below.
+    if (!viewModeHydratedRef.current) {
+      viewModeHydratedRef.current = true
+      return
+    }
     if (viewMode === 'lyrics') {
       setIsPlaying(false)
       setMiniBarVisible(false)
@@ -515,18 +533,6 @@ export function SingingView({
     // visible chrome differs — D-09). When LEAVING Legacy, reset
     // audioPlayerOpen to closed (D-13) so the user must re-open the bottom-
     // right play button on return.
-    // Phase 21 fqz2 (fix 3): skip the D-13 reset on the initial mount. The
-    // viewMode hydrate below sets viewMode from its default `'legacy'` to
-    // whatever the user last stored — without this guard, the prev/current
-    // diff would look like a real "leaving Legacy" transition and clobber
-    // the user's stored `psalter.audioPlayerOpen` to "false" on every psalm
-    // navigation. The ref tracks whether we've seen at least one user-driven
-    // viewMode change since mount; the initial viewMode hydration doesn't
-    // count (the readStoredViewMode helper already handles that correctly).
-    if (!viewModeHydratedRef.current) {
-      viewModeHydratedRef.current = true
-      return
-    }
     if (viewMode === 'legacy' && prev !== 'legacy') {
       setIsPlaying(false)
       setAudioPlayerOpen(false)
