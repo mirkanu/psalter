@@ -36,6 +36,17 @@ interface Props {
  *   - `embedded` drops the bar's `w-full` so the wrapper below can
  *     shrink-wrap + center the bar to its controls instead of stretching
  *     to the full column width.
+ *
+ * Quick fix (post-fqz, see PlayMiniBar forceSource):
+ *   - `forceSource='midi'` pins this instance's audio source to MIDI for its
+ *     entire lifetime. Without it, PlayMiniBar reads
+ *     `psalter.audioLastSelected` on hydrate and surfaces whatever the user
+ *     last picked in the popup (Music Notes / Lyrics) — leaving Legacy's
+ *     second box showing SoundCloud twice (the visible SoundCloud iframe on
+ *     top + the PlayMiniBar's SoundCloud-mode iframe replacing the MIDI).
+ *     Force-source skips BOTH the hydrate read and the persist write, so
+ *     the embedded player is decoupled from the popup's shared localStorage
+ *     key entirely.
  */
 export function LegacyAudioEmbed({ abc, soundcloudUrl, tuneName }: Props) {
   const [isPlaying, setIsPlaying] = useState(false)
@@ -46,6 +57,7 @@ export function LegacyAudioEmbed({ abc, soundcloudUrl, tuneName }: Props) {
         variant="flow"
         embedded
         hideSourceToggle
+        forceSource="midi"
         mounted={true}
         visible={true}
         abc={abc}
