@@ -134,7 +134,9 @@ describe('OnboardingTour (Phase 20-01, D-15/D-16; Phase 21 D-02 drops firstVisit
   // escapes so the regex syntax doesn't fight the literal parens. Test
   // advances via the "Next →" button — bubble copy swaps per step in the
   // same React render, so by step 4 the gear-step copy is what's visible.
-  it('Test 7 (Phase 21 D-04): INITIAL_STEPS[3] (final gear step) has the new copy', async () => {
+  // Phase 21 fqz (item 6): the copy is now split into a `pre` + orange
+  // `highlight` pair; assert both fragments are present.
+  it('Test 7 (Phase 21 D-04 + fqz item 6): INITIAL_STEPS[3] (final gear step) has the new copy', async () => {
     renderTour({ viewMode: 'staff-split' })
     await act(async () => {
       await new Promise((r) => setTimeout(r, 200))
@@ -154,11 +156,16 @@ describe('OnboardingTour (Phase 20-01, D-15/D-16; Phase 21 D-02 drops firstVisit
     await act(async () => {
       await new Promise((r) => setTimeout(r, 100))
     })
+    // The pre fragment (sans "(new feature!)" highlight) lives in the <p>;
+    // assert it's present.
     expect(
-      screen.getByText(
-        /Open settings to change views \(Music Notes or Lyrics Only\) and access the study guide/,
-      ),
+      screen.getByText(/Open settings to access the study guide or/),
     ).toBeTruthy()
+    // The highlight lives in the orange <span>; Test 9 verifies the exact
+    // textContent match.
+    expect(
+      document.querySelector('[role="dialog"] .text-orange-500'),
+    ).not.toBeNull()
   })
 
   // Phase 21 (D-04): the spotlight ring's stroke becomes #f97316 on the
@@ -190,5 +197,52 @@ describe('OnboardingTour (Phase 20-01, D-15/D-16; Phase 21 D-02 drops firstVisit
     const ring = document.querySelector('svg[data-tour-ring]')
     expect(ring).not.toBeNull()
     expect(ring?.getAttribute('stroke')).toBe('#f97316')
+  })
+
+  // Phase 21 fqz (item 6): final step bubble copy renders the highlight
+  // portion in a .text-orange-500 <span> so it pops against the rest of the
+  // copy. The structured `{ pre, highlight }` form drives the bubble JSX
+  // through its discriminated branch.
+  it('Test 9 (Phase 21 fqz item 6): final-step bubble has the orange-highlighted "new feature" span', async () => {
+    renderTour({ viewMode: 'staff-split' })
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 200))
+    })
+    // Advance to step 4 (final step).
+    for (let i = 0; i < 3; i++) {
+      // eslint-disable-next-line no-await-in-loop
+      await act(async () => {
+        await new Promise((r) => setTimeout(r, 50))
+      })
+      const nextBtn = screen.queryByRole('button', { name: /Next →/ })
+      if (!nextBtn) break
+      fireEvent.click(nextBtn)
+    }
+    // eslint-disable-next-line no-await-in-loop
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 100))
+    })
+    const orangeSpan = document.querySelector('.text-orange-500')
+    expect(orangeSpan).not.toBeNull()
+    expect(orangeSpan?.textContent).toBe(
+      '(new feature!) change views to Music Notes or Lyrics Only',
+    )
+  })
+
+  // Phase 21 fqz (item 7): the audio-player tour step ALSO fires on first
+  // entry to viewMode='lyrics' (not just Music Notes views). Same
+  // `psalter.tour.audioStepDone` key — so once seen on either path, the user
+  // is not re-shown the step on the other path.
+  it('Test 10 (Phase 21 fqz item 7): audio-step fires on first viewMode=lyrics entry', async () => {
+    localStorage.setItem('psalter.tour.initialDone', 'true')
+    renderTour({ viewMode: 'lyrics' })
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 200))
+    })
+    const audioMarker = document.querySelector('[data-tour-audio-step]')
+    expect(audioMarker).not.toBeNull()
+    expect(
+      screen.getByText('Tap the play button to open the audio player.'),
+    ).toBeTruthy()
   })
 })

@@ -316,6 +316,32 @@ async function main() {
     '(h) No FirstVisitModal returned with Restart Tour (D-02: modal deleted)',
   )
 
+  // ────────────────────────────────────────────────────────────────────
+  // (i) Final step shows orange "(new feature!)" copy (fqz item 6)
+  // ────────────────────────────────────────────────────────────────────
+  console.log('\n[i] tour final-step copy — expect orange "(new feature!)" span')
+  const i = await job(`
+    await page.context().clearCookies()
+    await page.evaluate(() => { try { localStorage.clear() } catch {} })
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto('${BASE}/psalms/1', { waitUntil: 'networkidle' })
+    await page.waitForSelector('[data-onboarding-tour][data-tour-initial]', { timeout: 5000 })
+    // Advance from step 1 → 2 → 3 → 4 via the "Next →" button.
+    for (let i = 0; i < 3; i++) {
+      const btn = await page.locator('[role="dialog"] button:has-text("Next")').first()
+      await btn.click()
+      await page.waitForTimeout(120)
+    }
+    const orangeText = await page.locator('[role="dialog"] .text-orange-500').first().textContent()
+    await page.screenshot({ path: '${join(OUT_DIR, 'step4-orange.png')}', fullPage: false })
+    return { orangeText }
+  `)
+  console.log('  result:', { orangeText: i.orangeText })
+  await assert(
+    i.orangeText === '(new feature!) change views to Music Notes or Lyrics Only',
+    `(i) Final step orange-highlighted span text matches (got: ${i.orangeText})`,
+  )
+
   console.log('\nAll checks passed. Screenshots in:', OUT_DIR)
 }
 

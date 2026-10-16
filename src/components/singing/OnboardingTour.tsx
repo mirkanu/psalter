@@ -17,7 +17,7 @@ const TOUR_KEY_LEGACY = 'psalter_tour_v3'
 
 interface Step {
   target: string // data-tour-target value
-  copy: string
+  copy: string | { pre: string; highlight: string }
 }
 
 // 260517-ht8 #1a — re-insert "tap to change tune" as step 3; gear becomes step 4.
@@ -25,13 +25,20 @@ interface Step {
 // play button isn't visible on first visit to Lyrics Only or Legacy.
 // Phase 21 (D-04): copy user-provided word-for-word; gear icon highlighted
 // in orange on this step (see `ringStroke` derivation below).
+// Phase 21 fqz (item 6): final step now flags the view-switch as a new
+// feature — copy is the structured `{ pre, highlight }` form so the bubble
+// can render the highlight portion in orange (#f97316) to match the gear
+// ring's attention accent.
 const INITIAL_STEPS: Step[] = [
   { target: 'prev-next', copy: 'Navigate to next/previous psalm' },
   { target: 'psalm-label', copy: 'Tap to quickly switch to any psalm' },
   { target: 'tune-name', copy: 'Tap to switch to a different tune' },
   {
     target: 'view-controls',
-    copy: 'Open settings to change views (Music Notes or Lyrics Only) and access the study guide',
+    copy: {
+      pre: 'Open settings to access the study guide or ',
+      highlight: '(new feature!) change views to Music Notes or Lyrics Only',
+    },
   },
 ]
 
@@ -167,11 +174,15 @@ export function OnboardingTour({ totalStanzas, viewMode }: OnboardingTourProps) 
   // Phase 21 (D-02): firstVisitAccepted gate removed — FirstVisitModal is
   // gone, so the initial tour fires on first visit by default (gated only
   // by mounted + tourInitialSeen).
+  // Phase 21 fqz (item 7): include 'lyrics' so the audio-step fires on first
+  // Lyrics Only entry too — same `psalter.tour.audioStepDone` key, so neither
+  // path re-fires once the user has seen it once.
   const isMusicNotesView =
     viewMode === 'staff' ||
     viewMode === 'staff-split' ||
     viewMode === 'solfege' ||
-    viewMode === 'solfege-split'
+    viewMode === 'solfege-split' ||
+    viewMode === 'lyrics'
   const isStaffInlineView = viewMode === 'staff'
 
   const shouldFireInitial = mounted && !tourInitialSeen
@@ -491,19 +502,34 @@ export function OnboardingTour({ totalStanzas, viewMode }: OnboardingTourProps) 
       <div
         role="dialog"
         aria-live="polite"
-        aria-label={`Onboarding step ${currentStep + 1} of ${steps.length}`}
+        aria-label={steps.length > 1
+          ? `Onboarding step ${currentStep + 1} of ${steps.length}`
+          : 'Onboarding notice'}
         tabIndex={-1}
         className="absolute z-[202] bg-background border border-border rounded-lg shadow-lg p-4"
         style={{ ...bubbleStyle, width: 'min(320px, 90vw)' }}
       >
-        <p className="text-xs text-muted-foreground text-center mb-2">
-          Step {currentStep + 1} of {steps.length}
+        {steps.length > 1 && (
+          <p className="text-xs text-muted-foreground text-center mb-2">
+            Step {currentStep + 1} of {steps.length}
+          </p>
+        )}
+        <p className="text-sm font-normal mb-4">
+          {typeof steps[currentStep].copy === 'string'
+            ? steps[currentStep].copy
+            : (<>
+                {steps[currentStep].copy.pre}
+                <span className="text-orange-500 font-semibold">
+                  {steps[currentStep].copy.highlight}
+                </span>
+              </>)}
         </p>
-        <p className="text-sm font-normal mb-4">{steps[currentStep].copy}</p>
         <div className="flex items-center justify-between gap-2">
-          <Button variant="ghost" size="sm" onClick={dismiss}>
-            Skip tour
-          </Button>
+          {steps.length > 1 && (
+            <Button variant="ghost" size="sm" onClick={dismiss}>
+              Skip tour
+            </Button>
+          )}
           <Button
             variant="default"
             size="sm"
