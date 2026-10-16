@@ -329,13 +329,17 @@ export function GearPopover({
           <button
             type="button"
             role="radio"
-            aria-checked={!isMusicNotes}
+            aria-checked={viewMode === 'lyrics'}
             data-settings-main="lyrics-only"
             id="settings-tab-lyrics-only"
             onClick={() => onViewModeChange('lyrics')}
             className={[
               'h-10 rounded-md text-sm font-semibold active:scale-[0.95] transition-[transform,background,color] duration-75 motion-reduce:transition-none inline-flex items-center justify-center gap-1.5',
-              !isMusicNotes
+              // Explicit `viewMode === 'lyrics'` (NOT `!isMusicNotes`) so the
+              // Lyrics radio stays muted while Legacy is selected — the old
+              // `!isMusicNotes` derivation also evaluated true under Legacy,
+              // leaving both Lyrics and Legacy highlighted at once.
+              viewMode === 'lyrics'
                 ? 'bg-primary text-primary-foreground'
                 : 'hover:bg-muted text-muted-foreground',
             ].join(' ')}
