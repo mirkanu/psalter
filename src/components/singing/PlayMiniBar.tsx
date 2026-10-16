@@ -32,6 +32,16 @@ interface Props {
    *  class so the surrounding container can shrink-wrap it to its controls
    *  and center it horizontally. Has no effect in 'fixed' / 'inline' variants. */
   embedded?: boolean
+  /** Quick fix (post-fqz): pin the audio source for the lifetime of this
+   *  PlayMiniBar instance. Used by Legacy view's embedded MIDI player so
+   *  it doesn't pick up the popup player's last selection from
+   *  `psalter.audioLastSelected` (the user may have switched the popup to
+   *  SoundCloud in Music/Lyrics before opening Legacy). With this set:
+   *    - hydrate effect uses `forceSource` directly, skipping the read
+   *    - persist effect skips the write (don't pollute shared state)
+   *    - the "no-abc + has-sc → soundcloud" re-force (line ~103) is suppressed
+   *  Mirrors `hideSourceToggle`'s scope — only Legacy view sets it. */
+  forceSource?: 'midi' | 'soundcloud'
 }
 
 export function PlayMiniBar({
@@ -47,6 +57,7 @@ export function PlayMiniBar({
   onHeightChange,
   hideSourceToggle = false,
   embedded = false,
+  forceSource,
 }: Props) {
   const [hidden, setHidden] = useState(!visible)
   const rootRef = useRef<HTMLDivElement | null>(null)
@@ -77,7 +88,16 @@ export function PlayMiniBar({
   // change shipped. Old value 'abc' maps to new value 'midi'; 'soundcloud'
   // is unchanged. Writes the new key + removes the old key in the same
   // effect so the migration is one-shot and idempotent.
+  // Quick fix: when `forceSource` is set (Legacy view's embedded MIDI
+  // player), skip the localStorage read entirely — the popup player's last
+  // selection is irrelevant to this instance, and reading it surfaced
+  // SoundCloud in Legacy when the user had switched the popup earlier.
   useEffect(() => {
+    if (forceSource) {
+      setAudioSource(forceSource)
+      setAudioSourceRestored(true)
+      return
+    }
     try {
       const newRaw = window.localStorage.getItem('psalter.audioLastSelected')
       const oldRaw = window.localStorage.getItem('psalter-audio-source')
@@ -94,25 +114,31 @@ export function PlayMiniBar({
       setAudioSource(resolved)
     } catch { /* ignore */ }
     setAudioSourceRestored(true)
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Bug 3 (260717-mwv): re-force SoundCloud whenever this instance has no
   // ABC — covers both a stale localStorage restore AND a later tune-switch
   // to an audio-only tune (this component instance persists across tune
-  // switches; only its props change).
+  // switches; only its props change). Suppressed when `forceSource` is
+  // set so Legacy's MIDI player doesn't flip to SoundCloud if the active
+  // tune has no ABC.
   useEffect(() => {
+    if (forceSource) return
     if (!hasAbc && hasSc) setAudioSource('soundcloud')
-  }, [hasAbc, hasSc])
+  }, [hasAbc, hasSc, forceSource])
 
   // Phase 20-02 (D-11): write-only persistence to the NEW key. The old
   // `psalter-audio-source` key is no longer written — migration in the
-  // hydrate effect above handles the existing entries.
+  // hydrate effect above handles the existing entries. Suppressed when
+  // `forceSource` is set so this instance can't pollute the popup's
+  // shared localStorage key.
   useEffect(() => {
+    if (forceSource) return
     if (!audioSourceRestored) return
     try {
       window.localStorage.setItem('psalter.audioLastSelected', audioSource)
     } catch { /* ignore */ }
-  }, [audioSource, audioSourceRestored])
+  }, [audioSource, audioSourceRestored, forceSource])
 
   useEffect(() => {
     if (audioSource === 'soundcloud' && isPlaying) onPlayingChange(false)

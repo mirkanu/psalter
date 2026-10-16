@@ -232,7 +232,11 @@ export function GlassBottomBar({
             data-play-toggle={playerOpen ? 'open' : 'closed'}
             onClick={onPlayToggle}
             className={[
-              'min-h-10 min-w-11 inline-flex items-center justify-center active:scale-[0.90] transition-[transform,background,color] duration-75 shrink-0',
+              // Phase 21 fqz polish: rounded-md matches the rhythm of the
+              // popup-source-toggle in PlayMiniBar.tsx:317. Without it the
+              // inverted "box" (playerOpen: bg-foreground text-background) has
+              // sharp corners that read as a mis-aligned clipping rect.
+              'min-h-10 min-w-11 inline-flex items-center justify-center rounded-md active:scale-[0.90] transition-[transform,background,color] duration-75 shrink-0',
               playerOpen
                 ? 'bg-foreground text-background'
                 : 'text-foreground',
