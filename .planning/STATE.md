@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
-status: executing
+status: ready_to_plan
 stopped_at: "Phase 20 Plan 02 complete (PR #118 open, awaiting merge)"
 last_updated: "2026-10-16T08:34:39.127Z"
 last_activity: 2026-10-16 -- Phase 21 execution started
 progress:
   total_phases: 15
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 46
   completed_plans: 22
-  percent: 48
+  percent: 40
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone clos
 
 ## Current Position
 
-Phase: 21 (onboarding-v2-audio-restore) — EXECUTING
-Plan: 1 of 2
-Status: Executing Phase 21
-Last activity: 2026-10-16 -- Phase 21 execution started
+Phase: 999.1
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-16
 **Recent sync (2026-10-15):**
 
 - Phase 20 Plan 02 shipped: Legacy view as third top-level mode (NotationRenderer renders SoundCloud iframe + MIDI embed + lyrics, all visible without clicking) + bottom-right Play button reshaped to open/close toggle with inverted colors when open (D-05/D-06) + audio persistence across psalms via two new localStorage keys `psalter.audioPlayerOpen` + `psalter.audioLastSelected` (D-11/D-12) + one-shot migration of legacy `psalter-audio-source` (`'abc'` → `'midi'`) + MIDI explicit stop on close via `synth.stop()` (D-08) + SoundCloud iframe full unmount on Legacy entry (Pitfall 7: hide ≠ stop) + D-10 mirror empty-URL notices (verbatim CONTEXT.md copy) + 5th Legacy radio in GearPopover with Library icon. 12 new vitest unit tests across 4 files (3 GlassBottomBar + 3 PlayMiniBar + 2 audio-persistence + 4 SingingView) all green. 40 Plan 01 tests still green (52 total). `npx tsc --noEmit` clean for changed files (pre-existing test errors in unrelated suites unchanged). PR #118 open awaiting squash merge to gitleaks-protected master.
@@ -57,7 +57,7 @@ Last activity: 2026-10-16 -- Phase 21 execution started
 
 **Velocity:**
 
-- Total plans completed: 93
+- Total plans completed: 95
 - Average duration: 22 min
 - Total execution time: ~1.9 hours
 
@@ -85,6 +85,7 @@ Last activity: 2026-10-16 -- Phase 21 execution started
 | 12 | 8 | - | - |
 | 18 | 4 | - | - |
 | 20 | 3 | - | - |
+| 21 | 2 | - | - |
 
 **Recent Trend:**
 

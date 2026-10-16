@@ -34,7 +34,7 @@ Rebuild of psalter.cprc.co.uk from Airtable + Softr to a self-hosted Next.js 15 
 
 - [x] **Phase 17: Vercel + Neon Migration** (4/4 plans) — completed 2026-09-07 - DNS cut to `cname.vercel-dns.com`; Hetzner PM2 + tunnel left intact as rollback; soak ran Sept 7 → Sept 14 with no rollbacks. **Reversal requested 2026-10-12** due to ongoing Neon compute cost → tracked as Phase 18.
 - [ ] **Phase 18: Undo Vercel + Neon Migration — Restore Hetzner Hosting** - Reverse Phase 17: bring psalter back to Hetzner (PM2 + `psalter-db` Docker + Cloudflare Tunnel), terminate Vercel project + Neon project, restore latest available Neon data to the local Postgres, replumb `public/tunes/` images, sweep Vercel-specific code, and verify $0/mo hard cost budget. Triggered 2026-10-12 by user ("I keep incurring costs on Neon and it's hard to avoid"). **Depends on: nothing — runs immediately.** See `.planning/todos/pending/2026-10-12-undo-vercel-neon-migration.md` and `docs/notes/2026-10-12-migration-reversal-state-snapshot.md`.
-- [ ] **Phase 21: Single-Psalm Onboarding v2 + Audio Restore** - Replace FirstVisitModal with default-Legacy first-visit experience (legacy view matches the old softr site most incoming visitors will be familiar with); fix audio-player-across-navigation bug (icon inverts on the new page but `PlayMiniBar` doesn't mount — `audioPlayerOpen` hydrates from localStorage but no effect restores `miniBarMounted`/`miniBarVisible`); rework OnboardingTour: orange gear button on the final step + new text "Open settings to change views (Music Notes or Lyrics Only) and access the study guide"; on desktop replace swipe step with stanza-nav step (target `< Stanza x / x >`, text "Tap < and > to navigate between stanzas"); hide `DesktopOptimisedBanner` while tour is open via React context provider; Restart Tour clears storage and immediately re-fires the tour without FirstVisitModal bubble. Fold in Phase 20 review leftovers WR-01/02/03 + IN-01. **Depends on:** Phase 20. See `.planning/phases/21-onboarding-v2-audio-restore/21-CONTEXT.md`.
+- [x] **Phase 21: Single-Psalm Onboarding v2 + Audio Restore** (2/2 plans) — completed 2026-10-16 - FirstVisitModal deleted entirely; fresh visitor defaults to Legacy view (was Staff) returning-visitor preferences preserved; audio player genuinely persists across psalm navigation (new hydrate effect with audioRestoreAppliedRef guard seeds miniBarMounted/miniBarVisible from localStorage once); TourProvider React context wires tour open-state to DesktopOptimisedBanner so the "phones" banner hides while the tour is open and re-appears the moment it closes (without touching the user's permanent-dismiss flag); OnboardingTour final step spotlight ring renders orange (#f97316) with the locked wording; SWIPE_STEP replaced with a stanza-nav step targeting `< Stanza x / x >` (single "Tap < and >" text covers mobile + desktop); Restart Tour clears all 6 keys + bumps tourKey for an immediate re-fire with no page reload, no FirstVisitModal. Phase 20 review leftovers WR-02/WR-03/IN-01 folded into the same change. 27 new vitest cases (5 TourProvider + 3 OnboardingTour + 2 DesktopOptimisedBanner + 3 audio-persistence D-03 hydration) green; Hetzner build YGy7qq2QpGujZcMMyBtvV deployed via pm2 restart; PR #121 opened (squash-merge via user's protected-master convention). Live runtime probe verified D-04 copy verbatim, D-07 banner-hide + return, D-05 restart-tour-fires-immediately, and D-01 fresh Legacy default. See `.planning/phases/21-onboarding-v2-audio-restore/21-CONTEXT.md`, `21-01-SUMMARY.md`, `21-02-SUMMARY.md`.
 
 <details>
 <summary>✅ v1.0 Public Psalter (Phases 1–4.12) — SHIPPED 2026-07-29</summary>
@@ -398,13 +398,13 @@ Plans:
 
 **Requirements**: (no REQ-IDs in v2.0; ship is gated by user acceptance on D-01..D-25 from `21-CONTEXT.md`)
 **Depends on:** Phase 20
-**Plans:** 2 plans (2 waves)
+**Plans:** 2/2 plans complete
 
 Plans:
 
 **Wave 1**
-- [ ] 21-01-PLAN.md — Delete FirstVisitModal + default Legacy + audio-restore hydration + review leftovers (WR-01/02/03 + IN-01) (wave 1)
+- [x] 21-01-PLAN.md — Delete FirstVisitModal + default Legacy + audio-restore hydration + review leftovers (WR-01/02/03 + IN-01) (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 21-02-PLAN.md — TourProvider context + final-step orange + SWIPE_STEP stanza-nav + banner-hide-during-tour (wave 2)
+- [x] 21-02-PLAN.md — TourProvider context + final-step orange + SWIPE_STEP stanza-nav + banner-hide-during-tour (wave 2)
 
