@@ -5,6 +5,7 @@ import { Hand } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
 import { useTour } from '@/components/TourProvider'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 // Phase 20-01 (D-15/D-16): split the single linear tour into 3 independent
 // triggers, each gated by its own localStorage flag. Existing users who
@@ -54,12 +55,18 @@ const AUDIO_STEP: Step = {
 // replaced per Phase 21 (D-06) — desktop visitors don't swipe, they tap the
 // prev/next stanza buttons; the target moved from 'scroll-area' (the whole
 // notation region) to 'stanza-nav' (the prev/next buttons in GlassBottomBar).
-// Mobile swipe still works because the buttons are still present; "Tap"
-// covers both touch (mobile) and click (desktop) — single-text path so no
-// viewMode branching needed.
-const SWIPE_STEP: Step = {
+// Phase 21 fqz polish: copy branches by viewport — desktop keeps the
+// keyboard/tap prev-next wording, mobile gets the original swipe wording
+// (with the dot indicator hint that the GlassBottomBar shows). The hand
+// animation + trail render on both since the swipe visual makes sense
+// whenever stanza navigation is the topic.
+const SWIPE_STEP_DESKTOP: Step = {
   target: 'stanza-nav',
   copy: 'Tap < and > to navigate between stanzas',
+}
+const SWIPE_STEP_MOBILE: Step = {
+  target: 'stanza-nav',
+  copy: 'Swipe left or right to move between stanza groups — the dots show where you are.',
 }
 
 interface Rect {
@@ -120,6 +127,14 @@ export function OnboardingTour({ totalStanzas, viewMode }: OnboardingTourProps) 
   // The no-op fallback when rendered outside the provider means isolated tests
   // don't crash.
   const tour = useTour()
+
+  // Phase 21 fqz polish: pick the swipe-step copy by viewport. 768px matches
+  // the DesktopOptimisedBanner breakpoint so "desktop" / "mobile" stay in
+  // sync across the app. useMediaQuery returns false on SSR + first paint,
+  // so the mobile copy renders first — by the time the tour is actually
+  // shown (after mounted), the matchMedia event has already fired and the
+  // correct copy is in place. No flicker risk on the live site.
+  const isDesktop = useMediaQuery('(min-width: 768px)')
 
   // SSR-safe: render nothing until mounted; assume seen=true to suppress
   // first-paint flash for returning visitors (hydration reads the real value).
@@ -205,16 +220,20 @@ export function OnboardingTour({ totalStanzas, viewMode }: OnboardingTourProps) 
 
   const steps = useMemo<Step[]>(() => {
     if (activeTrigger === 'audio') return [AUDIO_STEP]
-    if (activeTrigger === 'swipe') return [SWIPE_STEP]
+    // Phase 21 fqz polish: pick the swipe-step copy by viewport so mobile
+    // visitors see the swipe wording while desktop visitors see the
+    // prev/next tap wording. The Step target is the same so the spotlight
+    // and hand visual render identically either way.
+    if (activeTrigger === 'swipe') return [isDesktop ? SWIPE_STEP_DESKTOP : SWIPE_STEP_MOBILE]
     if (activeTrigger === 'initial') return INITIAL_STEPS
     return []
-  }, [activeTrigger])
+  }, [activeTrigger, isDesktop])
 
   const tourSeen = activeTrigger === null
 
   // CR-01 fix: if `steps` shrinks (e.g. totalStanzas drops to 1 mid-tour,
-  // dropping SWIPE_STEP), clamp `step` so it never points past the end of
-  // the new, shorter array. Floor at 0 so the initial render (steps=[])
+  // dropping the swipe step), clamp `step` so it never points past the end
+  // of the new, shorter array. Floor at 0 so the initial render (steps=[])
   // doesn't drive step to -1 and trip the measure effect's safeStep
   // undefined check.
   useEffect(() => {
@@ -316,14 +335,14 @@ export function OnboardingTour({ totalStanzas, viewMode }: OnboardingTourProps) 
   const isLast = currentStep === steps.length - 1
   const padding = 8
 
-  // 04.9.15.1-03: identify the swipe step specifically (by target + copy —
-  // 'scroll-area' is currently only used by SWIPE_STEP, but matching on
-  // copy too keeps this correct if another step ever reuses the target)
-  // so only this one step gets the extra in-spotlight hand visual.
+  // 04.9.15.1-03: identify the swipe step specifically (target + trigger)
+  // so only this one step gets the extra in-spotlight hand visual. We match
+  // on target + trigger rather than copy because the swipe copy now branches
+  // by viewport (SWIPE_STEP_DESKTOP vs SWIPE_STEP_MOBILE) and would defeat
+  // a copy-equality check.
   const isSwipeStep =
     activeTrigger === 'swipe' &&
-    steps[currentStep]?.target === 'stanza-nav' &&
-    steps[currentStep]?.copy === SWIPE_STEP.copy
+    steps[currentStep]?.target === 'stanza-nav'
 
   // Phase 21 (D-04): orange ring on the final gear step draws attention to
   // the settings button — site accent green is reserved, orange is unused.

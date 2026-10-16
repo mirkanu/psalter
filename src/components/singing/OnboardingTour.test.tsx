@@ -1,8 +1,25 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import { render, screen, cleanup, fireEvent, act } from '@testing-library/react'
 import { OnboardingTour } from './OnboardingTour'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
+
+// Phase 21 fqz polish: SWIPE_STEP copy branches by viewport (mobile vs
+// desktop). jsdom doesn't define window.matchMedia by default, so we stub
+// it in tests that exercise the swipe step (and reset between tests so
+// stubs don't leak).
+function stubMatchMedia(isDesktop: boolean): void {
+  window.matchMedia = ((query: string) => ({
+    matches: query === '(min-width: 768px)' ? isDesktop : false,
+    media: query,
+    onchange: null,
+    addEventListener() {},
+    removeEventListener() {},
+    addListener() {},
+    removeListener() {},
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia
+}
 
 // Phase 20-01 OnboardingTour renders the spotlight by measuring
 // `[data-tour-target="..."]` elements in the document. The unit tests need
@@ -40,10 +57,18 @@ function withTourTargets(children: React.ReactNode) {
   )
 }
 
+beforeEach(() => {
+  // Default to desktop for tests that don't explicitly opt into mobile —
+  // most pre-existing assertions assume the desktop copy path.
+  stubMatchMedia(true)
+})
+
 afterEach(() => {
   cleanup()
   localStorage.clear()
   vi.restoreAllMocks()
+  // @ts-expect-error test cleanup — jsdom leaves matchMedia undefined by default
+  delete window.matchMedia
 })
 
 function renderTour(
@@ -244,5 +269,29 @@ describe('OnboardingTour (Phase 20-01, D-15/D-16; Phase 21 D-02 drops firstVisit
     expect(
       screen.getByText('Tap the play button to open the audio player.'),
     ).toBeTruthy()
+  })
+
+  // Phase 21 fqz polish: the swipe-step copy branches by viewport. On
+  // mobile (min-width: 768px -> false), the original swipe wording is
+  // restored; on desktop, the D-06 tap-prev-next wording is shown. The
+  // beforeEach stub defaults to desktop, so this test re-stubs to mobile
+  // to exercise the alternate branch.
+  it('Test 11 (Phase 21 fqz polish): swipe-step copy is mobile swipe wording under 768px', async () => {
+    stubMatchMedia(false)
+    localStorage.setItem('psalter.tour.initialDone', 'true')
+    localStorage.setItem('psalter.tour.audioStepDone', 'true')
+    renderTour({ viewMode: 'staff', totalStanzas: 2 })
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 200))
+    })
+    const swipeMarker = document.querySelector('[data-tour-swipe-step]')
+    expect(swipeMarker).not.toBeNull()
+    expect(
+      screen.getByText(/Swipe left or right to move between stanza groups/),
+    ).toBeTruthy()
+    // The desktop copy must NOT be present on the mobile path.
+    expect(
+      screen.queryByText('Tap < and > to navigate between stanzas'),
+    ).toBeNull()
   })
 })
