@@ -15,7 +15,6 @@ import {
 } from '@/db/queries/psalms'
 import { fetchTunesByMeter, fetchTuneMelismaStatus, fetchPsalmVersionTuneTiers, enrichAlternateTunesToTuneRows, fetchTuneCount } from '@/db/queries/tunes'
 import { SingingView } from '@/components/singing/SingingView'
-import { FirstVisitModalClient } from '@/components/singing/FirstVisitModalClient'
 import { parseSlug, deriveVersionSlug, stripStar, slugToDisplayTitle } from '@/lib/psalm-slugs'
 import { deriveTuneJpgPages } from '@/lib/tune-jpg-urls'
 import { tuneNameToSlug } from '@/lib/tune-slug'
@@ -229,10 +228,6 @@ export default async function PsalmPage({ params }: PageProps) {
         versionSiblings={versionSiblings}
         isRecommendedVersion={isRecommendedVersion}
       />
-      {/* Phase 20-01 (D-17): first-visit view-selector modal mounted ONLY at
-         `/psalms/[id]`. Self-managed: reads `psalter.firstVisitModalAccepted`
-         and persists on Save with no wiring needed from the page. */}
-      <FirstVisitModalClient />
     </div>
   )
 }

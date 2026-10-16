@@ -49,6 +49,7 @@ import { detectRepeatedPitchContinuations } from '@/lib/detect-repeated-pitch-co
 import { computeNotationScale } from '@/lib/notation-scale'
 import { isMeterMismatch } from '@/lib/meter-mismatch'
 import { computeScanToggleVisible } from '@/lib/inline-staff-gating'
+import { LegacyAudioEmbed } from '@/components/singing/LegacyAudioEmbed'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -2477,9 +2478,10 @@ export function NotationRenderer({
     // remove the `|| isSplit` term and the slot will once again render the
     // unified abcjs split-leaf path (subject to all the tuning above).
     const forceStaffJpgFallback =
-      (isSplit && !staffInlineApproved) ||
       (tunePageMode && !abc.trim()) ||
       isSplit
+    // Split-leaf always falls back to scanned JPG per `project-staff-split-leaf-disabled`;
+    // re-enable digital split-leaf by removing the `isSplit` term.
 
     // #18: when the split-half mobile pagination block is also rendered
     // (inside the lyrics slot, as `paginationBlock`), suppress the duplicate
@@ -2614,9 +2616,7 @@ export function NotationRenderer({
             // (max-h-50%) stays as the conservative upper bound for
             // viewbox-derived content overflow.
             // baseSize drives AbcPlayer's dynamic lyric solver
-            // (MIN/POST_BUMP window) in the chromeless mobile path. In
-            // baseSize drives AbcPlayer's dynamic lyric solver
-            // (MIN/POST_BUMP window) in the chromeless mobile path. In
+            // (MIN/POST_BUMP window) in the chromeless mobile path.
             // Inline Staff mode this stays at the mobile default — A+/A−
             // now drives extraSubdivisions (row count) instead of font.
             baseSize={baseSize}
@@ -2795,7 +2795,7 @@ export function NotationRenderer({
     // AbcAudioControls' effect cleanup on the same unmount.
     viewArea = (
       <div className="flex flex-col gap-3 w-full" data-legacy-view>
-        <div data-legacy-embeds className="space-y-2 mb-2">
+        <div data-legacy-embeds className="space-y-2 my-2">
           {soundcloudUrl && soundcloudUrl.startsWith('http') ? (
             <iframe
               data-legacy-soundcloud
@@ -2807,24 +2807,17 @@ export function NotationRenderer({
               sandbox="allow-scripts allow-same-origin"
               allow="autoplay"
               width="100%"
-              height="80"
+              height="166"
+              scrolling="no"
               className="rounded-md border border-border"
             />
           ) : null}
           {abc && abc.trim().length > 0 ? (
-            // MIDI placeholder — actual playback lives in PlayMiniBar (MIDI
-            // mode), which is unmounted in legacy view. This embed slot stays
-            // reserved for symmetry with the SoundCloud iframe above; the real
-            // interactive controls are surfaced via the open/close bottom-right
-            // play button when the user switches back to a non-legacy view.
-            <div
-              data-legacy-midi
-              role="region"
-              aria-label={`Piano player embed: ${tuneName || 'tune'}`}
-              className="w-full h-20 rounded-md border border-border bg-muted/30 flex items-center justify-center text-xs text-muted-foreground"
-            >
-              Piano player available — press Play in the bottom bar to listen
-            </div>
+            <LegacyAudioEmbed
+              abc={abc}
+              soundcloudUrl={soundcloudUrl}
+              tuneName={tuneName || ''}
+            />
           ) : null}
         </div>
         <div data-notation-lyrics>

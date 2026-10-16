@@ -296,6 +296,7 @@ html, body {
 [data-notation-body][data-view-mode="solfege"] .lyrics-block,
 [data-notation-body][data-view-mode="staff-split"] .lyrics-block,
 [data-notation-body][data-view-mode="solfege-split"] .lyrics-block,
+[data-notation-body][data-view-mode="legacy"] .lyrics-block,
 [data-notation-body][data-view-mode="staff"] .lyrics-subtitle,
 [data-notation-body][data-view-mode="staff"] .psalm-subtitle {
   max-width: min(36rem, calc(100% - 2rem));
@@ -305,7 +306,8 @@ html, body {
 [data-notation-body][data-view-mode="lyrics"] .lyrics-block,
 [data-notation-body][data-view-mode="solfege"] .lyrics-block,
 [data-notation-body][data-view-mode="staff-split"] .lyrics-block,
-[data-notation-body][data-view-mode="solfege-split"] .lyrics-block {
+[data-notation-body][data-view-mode="solfege-split"] .lyrics-block,
+[data-notation-body][data-view-mode="legacy"] .lyrics-block {
   padding-block: 0.95rem 1.5rem;
 }
 [data-notation-body][data-view-mode="staff"] .lyrics-subtitle,
@@ -319,6 +321,7 @@ html, body {
   [data-notation-body][data-view-mode="solfege"] .lyrics-block,
   [data-notation-body][data-view-mode="staff-split"] .lyrics-block,
   [data-notation-body][data-view-mode="solfege-split"] .lyrics-block,
+  [data-notation-body][data-view-mode="legacy"] .lyrics-block,
   [data-notation-body][data-view-mode="staff"] .lyrics-subtitle,
   [data-notation-body][data-view-mode="staff"] .psalm-subtitle {
     /* On phones, drop the 36rem cap so margin-inline:auto centres a block

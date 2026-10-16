@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
 status: ready_to_plan
-stopped_at: Phase 20 Plan 02 complete (PR #118 open, awaiting merge)
-last_updated: "2026-10-15T16:08:00.000Z"
-last_activity: 2026-10-15
+stopped_at: "Phase 20 Plan 02 complete (PR #118 open, awaiting merge)"
+last_updated: "2026-10-16T11:38:00.000Z"
+last_activity: 2026-10-16 -- Quick task 261016-fqz completed (Phase 21 polish: Legacy view + Tour wording/padding/icon fixes)
 progress:
-  total_phases: 14
-  completed_phases: 5
-  total_plans: 44
+  total_phases: 15
+  completed_phases: 6
+  total_plans: 46
   completed_plans: 22
-  percent: 36
+  percent: 40
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-29 after v1.0 and v1.1 milestone close)
 
 **Core value:** A precentor during worship can instantly find the psalms chosen for a service and follow live-rendered tune notation with lyrics beneath the notes — without relying on slow Softr or static images.
-**Current focus:** Phase 20 — Single Psalm View Onboarding Overhaul
+**Current focus:** Phase 21 — onboarding-v2-audio-restore
 
 ## Current Position
 
 Phase: 999.1
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-10-15
+Last activity: 2026-10-16
 **Recent sync (2026-10-15):**
 
 - Phase 20 Plan 02 shipped: Legacy view as third top-level mode (NotationRenderer renders SoundCloud iframe + MIDI embed + lyrics, all visible without clicking) + bottom-right Play button reshaped to open/close toggle with inverted colors when open (D-05/D-06) + audio persistence across psalms via two new localStorage keys `psalter.audioPlayerOpen` + `psalter.audioLastSelected` (D-11/D-12) + one-shot migration of legacy `psalter-audio-source` (`'abc'` → `'midi'`) + MIDI explicit stop on close via `synth.stop()` (D-08) + SoundCloud iframe full unmount on Legacy entry (Pitfall 7: hide ≠ stop) + D-10 mirror empty-URL notices (verbatim CONTEXT.md copy) + 5th Legacy radio in GearPopover with Library icon. 12 new vitest unit tests across 4 files (3 GlassBottomBar + 3 PlayMiniBar + 2 audio-persistence + 4 SingingView) all green. 40 Plan 01 tests still green (52 total). `npx tsc --noEmit` clean for changed files (pre-existing test errors in unrelated suites unchanged). PR #118 open awaiting squash merge to gitleaks-protected master.
@@ -57,7 +57,7 @@ Last activity: 2026-10-15
 
 **Velocity:**
 
-- Total plans completed: 93
+- Total plans completed: 95
 - Average duration: 22 min
 - Total execution time: ~1.9 hours
 
@@ -85,6 +85,7 @@ Last activity: 2026-10-15
 | 12 | 8 | - | - |
 | 18 | 4 | - | - |
 | 20 | 3 | - | - |
+| 21 | 2 | - | - |
 
 **Recent Trend:**
 
@@ -258,6 +259,10 @@ None yet.
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
+| 261016-fqz | Phase 21 polish in Legacy view + Tour (lyrics match, inline MIDI, taller SoundCloud, gear single-row with Lyrics rename, tour copy w/ orange "new feature" + audio step on Lyrics + single-step chrome hidden) | 2026-10-16 | fd994bbe | [261016-fqz-phase-21-polish-in-the-new-legacy-view-m](./quick/261016-fqz-phase-21-polish-in-the-new-legacy-view-m/) |
+| 261016-fqz2 | Phase 21 polish r2: 4 fixes — (1) hide Piano↔SoundCloud source-switch in inline Legacy embed (popup PlayMiniBar keeps it), (2) shrink-wrap + center the Legacy embed MIDI bar, (3) GearPopover Lyrics radio no longer double-highlights when Legacy is selected (was `!isMusicNotes`, now explicit `viewMode === 'lyrics'`), (4) OnboardingTour stanza-nav step now branches copy by viewport — mobile < 768px shows the original "Swipe left or right..." wording, desktop keeps the "Tap < and >" wording | 2026-10-16 | 4733728d | [261016-fqz2-phase-21-polish-r2-four-fixes](./quick/261016-fqz2-phase-21-polish-r2-four-fixes/) |
+| 261016-fqz3 | Phase 21 polish r3: 3 fixes — (1) GearPopover auto-closes on Lyrics or Legacy selection (Music Notes stays open so the Notation / Layout sub-toggles are reachable), (2) OnboardingTour swipe step: target moved back to 'scroll-area' (the notation region) so the spotlight highlights the thing the user actually swipes, mobile copy simplified to "Swipe left or right to move between stanza groups.", (3) **bug fix**: audio player open/close state actually persists across psalm navigation — the D-03 persist effect raced with the audio-hydrate effect (clobbered localStorage to "false" on every psalm 2+ mount); persist moved to the action sites (handlePlayToggle + prevViewModeRef) and a viewModeHydratedRef suppresses the D-13 reset on the initial viewMode hydration | 2026-10-16 | a490ca37 | [261016-fqz3-phase-21-polish-r3-three-fixes](./quick/261016-fqz3-phase-21-polish-r3-three-fixes/) |
+| 261016-fqz4 | Phase 21 polish r4: follow-up to fqz3 fix 3 — after the audioPlayerOpen persistence was fixed, the popup itself was still gated on `hadLastSelected` (D-03-era defensive design), so navigating to a new psalm with audioPlayerOpen=true but no stored source left miniBarVisible=false (popup hidden) while miniBarMounted=true (play button inverted). User had to tap the play button twice (close then open) to see the popup. Changed `setMiniBarVisible(storedOpen && hadLastSelected)` → `setMiniBarVisible(storedOpen)`; the PlayMiniBar already handles the no-source case internally with a default MIDI piano / "Loading recording…" placeholder. D-03b test updated to assert the new behaviour. | 2026-10-16 | b2b98440 | [261016-fqz4-phase-21-polish-r4-popup-visible-no-source](./quick/261016-fqz4-phase-21-polish-r4-popup-visible-no-source/) |
 | q01 | Psalm detail layout: split desktop, reversed header, Sing tab on mobile | 2026-05-09 | eebcbbb | [260509-q01-psalm-detail-layout-overhaul](./quick/260509-q01-psalm-detail-layout-overhaul/) |
 | q02 | UI fixes batch 3: tune format, mobile sticky score, meter tooltip, search overlay, lyrics search, search bugs (T2,T4-T8) | 2026-05-11 | 133507a | [20260511-ui-fixes-batch3](./quick/20260511-ui-fixes-batch3/) |
 | q03 | UI fixes batch 4: T4 gap+progressive sticky, T5 Popover meter, T6 GlobalSearch→Dialog, T7 lyrics snippet, sticky list headers | 2026-05-11 | cb9b448 | [20260511-ui-fixes-batch4](./quick/20260511-ui-fixes-batch4/) |

@@ -168,6 +168,7 @@ export function GlassBottomBar({
               type="button"
               aria-label="Previous stanza page"
               data-stanza-prev
+              data-tour-target="stanza-nav"
               onClick={onStanzaPrev}
               disabled={!canPrev}
               className="min-h-10 inline-flex items-center justify-center px-1 text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"
@@ -190,6 +191,7 @@ export function GlassBottomBar({
               type="button"
               aria-label="Next stanza page"
               data-stanza-next
+              data-tour-target="stanza-nav"
               onClick={onStanzaNext}
               disabled={!canNext}
               className="min-h-10 inline-flex items-center justify-center px-1 text-foreground active:scale-[0.90] transition-transform duration-75 disabled:opacity-40 disabled:pointer-events-none"

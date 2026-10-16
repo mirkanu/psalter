@@ -38,15 +38,15 @@ const STORAGE_LAST_MUSIC_MODE_KEY = 'psalter-score-mode-last-music'
 // size; Lyrics Only has its own — see `readStoredSize`/`activeBaseSize` below.
 const STORAGE_SIZE_KEY = 'psalter-staff-size'
 const STORAGE_LYRICS_SIZE_KEY = 'psalter-lyrics-size'
-// Phase 20-01 (D-16, D-23, D-24): new tour + first-visit modal flags. The
-// three `*Done` keys gate the three independent OnboardingTour triggers
-// (initial / audio-step / swipe-step). `firstVisitModalAccepted` gates
-// whether the modal auto-opens. `handleRestartTour` clears all four so
-// "Restart tour" in the gear popover re-prompts every step + the modal.
+// Phase 20-01 (D-16): new tour flags. The three `*Done` keys gate the
+// three independent OnboardingTour triggers (initial / audio-step /
+// swipe-step). `handleRestartTour` clears all three so "Restart tour" in
+// the gear popover re-prompts every step. The first-visit modal was
+// removed in Phase 21 (D-02) — its storage key is gone and the tour now
+// fires on first visit without a modal gate.
 const STORAGE_TOUR_INITIAL_DONE = 'psalter.tour.initialDone'
 const STORAGE_TOUR_AUDIO_STEP_DONE = 'psalter.tour.audioStepDone'
 const STORAGE_TOUR_SWIPE_STEP_DONE = 'psalter.tour.swipeStepDone'
-const STORAGE_FIRST_VISIT_ACCEPTED = 'psalter.firstVisitModalAccepted'
 // Phase 20-02 (D-11/D-12/D-13): bottom-right play-button open/closed state +
 // which audio source (MIDI vs SoundCloud) the user last selected. Both
 // persist across psalm navigation (prev/next, jump, picker). audioPlayerOpen
@@ -127,12 +127,15 @@ interface Props {
 function readStoredViewMode(showLyrics: boolean): ViewMode {
   try {
     const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_MODE_KEY) : null
-    if (raw === 'staff' || raw === 'solfege' || raw === 'staff-split' || raw === 'solfege-split' || raw === 'lyrics') {
+    if (raw === 'staff' || raw === 'solfege' || raw === 'staff-split' || raw === 'solfege-split' || raw === 'lyrics' || raw === 'legacy') {
       if (raw === 'lyrics' && !showLyrics) return 'staff'
       return raw
     }
   } catch { /* ignore */ }
-  return 'staff'
+  // Phase 21 (D-01): fresh visitors default to 'legacy' (was 'staff' in
+  // Phase 20). Returning visitors with a stored value already returned
+  // above — this fallback is only hit for first-ever / cleared-storage.
+  return 'legacy'
 }
 
 function readStoredSize(key: string): number {
@@ -213,7 +216,9 @@ export function SingingView({
 
   // ViewMode + baseSize state (owned here; passed controlled to NotationRenderer)
   const showLyrics = !!lyrics
-  const [viewMode, setViewMode] = useState<ViewMode>('staff')
+  // Phase 21 (D-01): default for fresh visitors is 'legacy' — returning
+  // visitors get their stored mode via the hydrate effect below.
+  const [viewMode, setViewMode] = useState<ViewMode>('legacy')
   // Quick task 260822-di9: voluntary "view the original scan" swap. Separate
   // from viewMode's staff-split/solfege-split states ON PURPOSE — those encode
   // LAYOUT and, via shouldFallbackToSplit, the MOBILE-08 approval gate, which
@@ -246,10 +251,6 @@ export function SingingView({
   // button presses. `baseSize` (above) is now lyric-only: driven ONLY by A+/A−.
   const [notationBaseSize, setNotationBaseSize] = useState<number>(13)
   const [mounted, setMounted] = useState(false)
-  // Phase 20-01 (D-24): gate for the first-visit modal. Read from
-  // localStorage in the mount effect below; passed to OnboardingTour so the
-  // initial tour fires only after the user accepted the modal.
-  const [firstVisitAccepted, setFirstVisitAccepted] = useState(false)
   // Phase 20-02 (D-05/D-11/D-12/D-13): audio persistence state. Declared HERE
   // (before the hydrate + persist effects that consume them) so TypeScript
   // doesn't complain about use-before-declaration. audioPlayerOpen is the
@@ -300,13 +301,6 @@ export function SingingView({
     setViewMode(hasAnyNotation ? stored : 'lyrics')
     setBaseSize(readStoredSize(STORAGE_SIZE_KEY))
     setLyricsBaseSize(readStoredSize(STORAGE_LYRICS_SIZE_KEY))
-    // Phase 20-01 (D-24): read firstVisitModalAccepted — feeds OnboardingTour
-    // so the initial tour fires only after the user Accepted the modal.
-    try {
-      setFirstVisitAccepted(localStorage.getItem(STORAGE_FIRST_VISIT_ACCEPTED) === 'true')
-    } catch {
-      /* ignore */
-    }
     setMounted(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -333,6 +327,49 @@ export function SingingView({
       }
       setAudioPlayerOpen(localStorage.getItem(STORAGE_AUDIO_PLAYER_OPEN) === 'true')
     } catch { /* ignore */ }
+  }, [mounted])
+
+  // Phase 21 (D-03): audio player UI restore. The hydrate effect above reads
+  // `psalter.audioPlayerOpen` into the `audioPlayerOpen` state, but
+  // `PlayMiniBar.tsx:220` returns `null` whenever the `mounted` prop is
+  // false — and `miniBarMounted` / `miniBarVisible` are never seeded from the
+  // hydrated value. Without this effect, a user who previously had the player
+  // open sees the bottom-right icon flip to inverted colours on the next
+  // psalm, but the PlayMiniBar player UI itself never renders.
+  //
+  // The `audioRestoreAppliedRef` guard ensures this runs ONCE post-mount —
+  // subsequent re-runs (driven by the user's own toggles via
+  // `handlePlayToggle`) must NOT clobber their in-memory state.
+  //
+  // We deliberately read localStorage DIRECTLY here instead of using the
+  // hydrated `audioPlayerOpen` state: the audio-hydrate effect above and this
+  // effect both run in the same effect phase, and React's effect order isn't
+  // guaranteed to give us the freshly-hydrated value before our ref guard
+  // latches. Reading localStorage again is cheap (single useEffect call) and
+  // guarantees we see the same value the hydrate effect did.
+  const audioRestoreAppliedRef = useRef<boolean>(false)
+  useEffect(() => {
+    if (!mounted) return
+    if (audioRestoreAppliedRef.current) return
+    audioRestoreAppliedRef.current = true
+    let storedOpen = false
+    try {
+      storedOpen = localStorage.getItem(STORAGE_AUDIO_PLAYER_OPEN) === 'true'
+    } catch { /* ignore */ }
+    setMiniBarMounted(storedOpen)
+    // Phase 21 fqz2: `miniBarVisible` now mirrors `storedOpen` directly.
+    // The D-03-era gate `storedOpen && hadLastSelected` was meant to hide
+    // the popup for users who opened the player without selecting a source,
+    // but in practice it left the popup invisible across psalm navigation
+    // even for users who had the player fully open — the play button was
+    // correctly inverted (miniBarMounted=true) but the popup itself
+    // (miniBarVisible=false) didn't render until the user tapped the
+    // play button twice (close then open). The PlayMiniBar already
+    // handles the no-source case by rendering a "Loading recording…"
+    // placeholder or a default MIDI piano when hasAbc is true, so the
+    // user always sees something inside the bar.
+    setMiniBarVisible(storedOpen)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted])
 
   // Keeps wasMusicNotesBeforeRef in sync for LATER (mid-session) tune
@@ -433,10 +470,15 @@ export function SingingView({
   // `mounted` flag to prevent stale-snapshot writes during SSR/initial render;
   // a separate reset effect below handles the viewMode-driven reset on Legacy
   // exit (D-13) so it can't be clobbered here.
-  useEffect(() => {
-    if (!mounted) return
-    try { localStorage.setItem(STORAGE_AUDIO_PLAYER_OPEN, audioPlayerOpen ? 'true' : 'false') } catch { /* ignore */ }
-  }, [audioPlayerOpen, mounted])
+  // Phase 21 fqz2 (fix 3): `audioPlayerOpen` is persisted inside
+  // `handlePlayToggle` and the prevViewModeRef effect below — the places
+  // that actually mutate it from a user-driven action. A separate
+  // [audioPlayerOpen, mounted]-watching persist effect ran on first mount
+  // with `audioPlayerOpen` still at its initial `false` value (setState is
+  // async, so the audio-hydrate effect's queued `setAudioPlayerOpen(true)`
+  // hadn't been committed yet), clobbered localStorage to "false", and
+  // made the next mount's restore look like nothing happened. Moving the
+  // persist to the action sites removes the race entirely.
   useEffect(() => {
     if (!mounted) return
     try { localStorage.setItem(STORAGE_AUDIO_LAST_SELECTED, audioLastSelected) } catch { /* ignore */ }
@@ -456,6 +498,9 @@ export function SingingView({
   // When switching to lyrics-only, auto-close the mini-bar and reset playback.
   // Split-leaf and solfege modes still use the abcjs synth, so the mini-bar stays.
   const prevViewModeRef = useRef<ViewMode>(viewMode)
+  // Phase 21 fqz2 (fix 3): see the prevViewModeRef effect below — used to
+  // suppress the D-13 reset on the initial viewMode hydration.
+  const viewModeHydratedRef = useRef<boolean>(false)
   useEffect(() => {
     const prev = prevViewModeRef.current
     prevViewModeRef.current = viewMode
@@ -470,12 +515,29 @@ export function SingingView({
     // visible chrome differs — D-09). When LEAVING Legacy, reset
     // audioPlayerOpen to closed (D-13) so the user must re-open the bottom-
     // right play button on return.
+    // Phase 21 fqz2 (fix 3): skip the D-13 reset on the initial mount. The
+    // viewMode hydrate below sets viewMode from its default `'legacy'` to
+    // whatever the user last stored — without this guard, the prev/current
+    // diff would look like a real "leaving Legacy" transition and clobber
+    // the user's stored `psalter.audioPlayerOpen` to "false" on every psalm
+    // navigation. The ref tracks whether we've seen at least one user-driven
+    // viewMode change since mount; the initial viewMode hydration doesn't
+    // count (the readStoredViewMode helper already handles that correctly).
+    if (!viewModeHydratedRef.current) {
+      viewModeHydratedRef.current = true
+      return
+    }
     if (viewMode === 'legacy' && prev !== 'legacy') {
       setIsPlaying(false)
       setAudioPlayerOpen(false)
       setMiniBarVisible(false)
+      // Phase 21 fqz2 (fix 3): persist the closed state so a return-from-Legacy
+      // navigation doesn't re-open the player.
+      try { localStorage.setItem(STORAGE_AUDIO_PLAYER_OPEN, 'false') } catch { /* ignore */ }
     } else if (viewMode !== 'legacy' && prev === 'legacy') {
       setAudioPlayerOpen(false)
+      // Phase 21 fqz2 (fix 3): same persist-on-action pattern.
+      try { localStorage.setItem(STORAGE_AUDIO_PLAYER_OPEN, 'false') } catch { /* ignore */ }
     }
   }, [viewMode])
 
@@ -646,8 +708,9 @@ export function SingingView({
 
   // 04.9.4-02 lifted state: audio + gear drawer + stanza indicator
   const [isPlaying, setIsPlaying] = useState(false)
-  // Note: audioPlayerOpen + audioLastSelected are declared above (near
-  // firstVisitAccepted) so the hydrate + persist effects can reference them.
+  // Note: audioPlayerOpen + audioLastSelected are declared near the
+  // top of the component (before the hydrate + persist effects) so they
+  // can be referenced by useEffect closures below.
   const [gearOpen, setGearOpen] = useState(false)
   const [miniBarMounted, setMiniBarMounted] = useState(false)
   const [miniBarVisible, setMiniBarVisible] = useState(false)
@@ -688,20 +751,16 @@ export function SingingView({
       localStorage.removeItem('psalter_tour_v3')
       // Phase 20-01 (D-16, Pitfall 5): the new tour has 3 keys
       // (psalter.tour.{initial,audioStep,swipeStep}Done). Without extension,
-      // "Restart tour" wouldn't re-trigger the audio or swipe steps. Also
-      // clear psalter.firstVisitModalAccepted so the first-visit modal
-      // re-opens on next visit (restart = full re-prompt).
+      // "Restart tour" wouldn't re-trigger the audio or swipe steps.
+      // (Phase 21 D-02: the first-visit modal is gone — no modal key to clear.)
       localStorage.removeItem(STORAGE_TOUR_INITIAL_DONE)
       localStorage.removeItem(STORAGE_TOUR_AUDIO_STEP_DONE)
       localStorage.removeItem(STORAGE_TOUR_SWIPE_STEP_DONE)
-      localStorage.removeItem(STORAGE_FIRST_VISIT_ACCEPTED)
     } catch {
       /* ignore */
     }
-    // Reset the in-state flag so the modal re-opens immediately without
-    // waiting for next hydrate. The 3 tour flags are in OnboardingTour's
-    // state — they reset via the setTourKey remount trick below.
-    setFirstVisitAccepted(false)
+    // The 3 tour flags live in OnboardingTour's own state — bumping
+    // tourKey forces a remount so it re-hydrates from the cleared keys.
     setTourKey((k) => k + 1)
   }, [])
 
@@ -811,6 +870,10 @@ export function SingingView({
         setMiniBarVisible(false)
         setIsPlaying(false)
       }
+      // Phase 21 fqz2 (fix 3): persist open/close to localStorage here, not
+      // via a separate audioPlayerOpen-watching effect (which clobbered the
+      // value on first mount — see comment on the removed persist effect).
+      try { localStorage.setItem(STORAGE_AUDIO_PLAYER_OPEN, nextOpen ? 'true' : 'false') } catch { /* ignore */ }
       return nextOpen
     })
   }, [miniBarMounted, activeTune])
@@ -1492,7 +1555,6 @@ export function SingingView({
         key={tourKey}
         totalStanzas={totalStanzas}
         viewMode={viewMode}
-        firstVisitAccepted={firstVisitAccepted}
       />
 
       {/* 2026-09-02: fullscreen overlay — replaces the old scroll-hide-UI

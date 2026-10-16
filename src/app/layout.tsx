@@ -5,6 +5,11 @@ import { join } from "node:path";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader"
 import { Providers } from "@/components/Providers";
+// Phase 21 (D-07): TourProvider exposes { isOpen, show, dismiss } via
+// React context so OnboardingTour (mounted inside SingingView) and
+// DesktopOptimisedBanner (mounted here as a sibling host) can share the
+// tour's open-state without prop-drilling.
+import { TourProvider } from "@/components/TourProvider";
 import { Toaster } from "sonner";
 import Script from "next/script";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -84,38 +89,43 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <Providers>
-          <SiteHeader />
-          <main className="flex-1">{children}</main>
-          {/* 260717-mwv checkpoint round 2 (item A): SingingView's fixed
-              GlassBottomBar (h-11/h-13 + safe-area padding) was overlapping
-              the default bottom-right toast position, blocking interaction
-              with the bar underneath. Verified against sonner's source that
-              clicking the toast BODY does not dismiss it by default — only
-              the closeButton's own X and swipe gestures do — so
-              ToastTapDismiss adds tap-anywhere-on-the-toast dismissal on top
-              of the visible closeButton affordance. */}
-          <Toaster richColors closeButton offset={{ bottom: '88px' }} mobileOffset={{ bottom: '88px' }} />
-          <ToastTapDismiss />
-          <SiteFooter />
-          {/* Quick task 260817-p17: fixed-positioned, so its place in the
-              tree does not affect layout — placing it last keeps it above
-              other content in paint order. */}
-          <DesktopOptimisedBanner />
-          <InstallAsAppBanner />
-          <InstallDialogHost />
-          {/* Phase 20 Plan 03: single mechanism covering both bfcache
-              restore (iOS Safari pageshow persisted=true) and generic
-              stale-build detection. Renders a no-op <span>; the
-              mechanism lives in the registered window listener + the
-              mount-time fetch. */}
-          <BuildVersionGuard />
-          {process.env.NEXT_PUBLIC_PSALTER_UMAMI_WEBSITE_ID && (
-            <Script
-              src="https://umami.gsdlabs.dev/script.js"
-              data-website-id={process.env.NEXT_PUBLIC_PSALTER_UMAMI_WEBSITE_ID}
-              strategy="afterInteractive"
-            />
-          )}
+          {/* Phase 21 (D-07): must wrap every host that calls useTour() —
+              OnboardingTour (mounted by SingingView via OnboardingTourClient)
+              and DesktopOptimisedBanner (mounted here as a sibling host). */}
+          <TourProvider>
+            <SiteHeader />
+            <main className="flex-1">{children}</main>
+            {/* 260717-mwv checkpoint round 2 (item A): SingingView's fixed
+                GlassBottomBar (h-11/h-13 + safe-area padding) was overlapping
+                the default bottom-right toast position, blocking interaction
+                with the bar underneath. Verified against sonner's source that
+                clicking the toast BODY does not dismiss it by default — only
+                the closeButton's own X and swipe gestures do — so
+                ToastTapDismiss adds tap-anywhere-on-the-toast dismissal on top
+                of the visible closeButton affordance. */}
+            <Toaster richColors closeButton offset={{ bottom: '88px' }} mobileOffset={{ bottom: '88px' }} />
+            <ToastTapDismiss />
+            <SiteFooter />
+            {/* Quick task 260817-p17: fixed-positioned, so its place in the
+                tree does not affect layout — placing it last keeps it above
+                other content in paint order. */}
+            <DesktopOptimisedBanner />
+            <InstallAsAppBanner />
+            <InstallDialogHost />
+            {/* Phase 20 Plan 03: single mechanism covering both bfcache
+                restore (iOS Safari pageshow persisted=true) and generic
+                stale-build detection. Renders a no-op <span>; the
+                mechanism lives in the registered window listener + the
+                mount-time fetch. */}
+            <BuildVersionGuard />
+            {process.env.NEXT_PUBLIC_PSALTER_UMAMI_WEBSITE_ID && (
+              <Script
+                src="https://umami.gsdlabs.dev/script.js"
+                data-website-id={process.env.NEXT_PUBLIC_PSALTER_UMAMI_WEBSITE_ID}
+                strategy="afterInteractive"
+              />
+            )}
+          </TourProvider>
         </Providers>
       </body>
     </html>

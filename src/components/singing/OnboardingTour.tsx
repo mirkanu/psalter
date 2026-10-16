@@ -4,6 +4,8 @@ import { createPortal } from 'react-dom'
 import { Hand } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
+import { useTour } from '@/components/TourProvider'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 // Phase 20-01 (D-15/D-16): split the single linear tour into 3 independent
 // triggers, each gated by its own localStorage flag. Existing users who
@@ -16,17 +18,29 @@ const TOUR_KEY_LEGACY = 'psalter_tour_v3'
 
 interface Step {
   target: string // data-tour-target value
-  copy: string
+  copy: string | { pre: string; highlight: string }
 }
 
 // 260517-ht8 #1a — re-insert "tap to change tune" as step 3; gear becomes step 4.
 // Phase 20-01 (D-15): the initial tour excludes the audio step because the
 // play button isn't visible on first visit to Lyrics Only or Legacy.
+// Phase 21 (D-04): copy user-provided word-for-word; gear icon highlighted
+// in orange on this step (see `ringStroke` derivation below).
+// Phase 21 fqz (item 6): final step now flags the view-switch as a new
+// feature — copy is the structured `{ pre, highlight }` form so the bubble
+// can render the highlight portion in orange (#f97316) to match the gear
+// ring's attention accent.
 const INITIAL_STEPS: Step[] = [
   { target: 'prev-next', copy: 'Navigate to next/previous psalm' },
   { target: 'psalm-label', copy: 'Tap to quickly switch to any psalm' },
   { target: 'tune-name', copy: 'Tap to switch to a different tune' },
-  { target: 'view-controls', copy: 'Open settings to change views (e.g. lyrics only) and access the study guide' },
+  {
+    target: 'view-controls',
+    copy: {
+      pre: 'Open settings to access the study guide or ',
+      highlight: '(new feature!) change views to Music Notes or Lyrics Only',
+    },
+  },
 ]
 
 // Audio-player single-step popover (D-15). Fires on first Music Notes / Staff
@@ -37,11 +51,27 @@ const AUDIO_STEP: Step = {
   copy: 'Tap the play button to open the audio player.',
 }
 
-// 04.9.15.1-03 (MOBILE-10): swipe step reused verbatim from the previous tour.
-// (The scroll-hide explanation steps that previously also used 'scroll-area'
-// were removed per checkpoint round 5 feedback — scroll-to-hide is
-// discoverable naturally — so this is the ONLY step using this target.)
-const SWIPE_STEP: Step = {
+// 04.9.15.1-03 (MOBILE-10): swipe step reused from the previous tour, then
+// replaced per Phase 21 (D-06) — desktop visitors don't swipe, they tap the
+// prev/next stanza buttons; the target moved from 'scroll-area' (the whole
+// notation region) to 'stanza-nav' (the prev/next buttons in GlassBottomBar).
+// Phase 21 fqz polish: copy branches by viewport — desktop keeps the
+// keyboard/tap prev-next wording, mobile gets the original swipe wording
+// (with the dot indicator hint that the GlassBottomBar shows). The hand
+// animation + trail render on both since the swipe visual makes sense
+// whenever stanza navigation is the topic.
+// Phase 21 fqz2: the target moves BACK to 'scroll-area' (the notation
+// region) on both viewports — the user swipes / taps the notation itself,
+// not the bottom bar. On desktop the same target works because the union
+// bbox draws the spotlight around the whole notation column; the copy
+// wording diverges by viewport so each user gets the gesture they can
+// actually perform. The GlassBottomBar's prev/next buttons stay mounted
+// as a fallback for users who prefer the explicit control.
+const SWIPE_STEP_DESKTOP: Step = {
+  target: 'scroll-area',
+  copy: 'Tap < and > to navigate between stanzas',
+}
+const SWIPE_STEP_MOBILE: Step = {
   target: 'scroll-area',
   copy: 'Swipe left or right to move between stanza groups.',
 }
@@ -91,14 +121,28 @@ export interface OnboardingTourProps {
    *  only on Music Notes views) and swipe-step (fires only on staff-inline
    *  with >1 stanza). */
   viewMode: ViewMode
-  /** Phase 20-01 (D-15, D-23): the initial tour fires once after the
-   *  first-visit modal was Accepted. */
-  firstVisitAccepted: boolean
 }
 
 type Trigger = 'initial' | 'audio' | 'swipe'
 
-export function OnboardingTour({ totalStanzas, viewMode, firstVisitAccepted }: OnboardingTourProps) {
+export function OnboardingTour({ totalStanzas, viewMode }: OnboardingTourProps) {
+  // Phase 21 (D-07): TourProvider context — OnboardingTour calls `tour.show()`
+  // while the tour is active so DesktopOptimisedBanner can read `isOpen` and
+  // hide until the tour closes. The provider is wrapped high in the layout so
+  // both OnboardingTour (rendered inside SingingView via OnboardingTourClient)
+  // and DesktopOptimisedBanner (rendered in <body>) share the same context.
+  // The no-op fallback when rendered outside the provider means isolated tests
+  // don't crash.
+  const tour = useTour()
+
+  // Phase 21 fqz polish: pick the swipe-step copy by viewport. 768px matches
+  // the DesktopOptimisedBanner breakpoint so "desktop" / "mobile" stay in
+  // sync across the app. useMediaQuery returns false on SSR + first paint,
+  // so the mobile copy renders first — by the time the tour is actually
+  // shown (after mounted), the matchMedia event has already fired and the
+  // correct copy is in place. No flicker risk on the live site.
+  const isDesktop = useMediaQuery('(min-width: 768px)')
+
   // SSR-safe: render nothing until mounted; assume seen=true to suppress
   // first-paint flash for returning visitors (hydration reads the real value).
   const [mounted, setMounted] = useState(false)
@@ -145,18 +189,25 @@ export function OnboardingTour({ totalStanzas, viewMode, firstVisitAccepted }: O
   }, [])
 
   // Phase 20-01 (D-15): derive which sub-tour to fire based on the three
-  // independent gates + viewMode + firstVisitAccepted. Priority order:
+  // independent gates + viewMode. Priority order:
   //   1. audio (Music Notes first entry, after initial tour)
   //   2. swipe (Staff Inline first entry, multi-stanza, after initial tour)
-  //   3. initial (after modal Accept)
+  //   3. initial (after the initial localStorage check)
+  // Phase 21 (D-02): firstVisitAccepted gate removed — FirstVisitModal is
+  // gone, so the initial tour fires on first visit by default (gated only
+  // by mounted + tourInitialSeen).
+  // Phase 21 fqz (item 7): include 'lyrics' so the audio-step fires on first
+  // Lyrics Only entry too — same `psalter.tour.audioStepDone` key, so neither
+  // path re-fires once the user has seen it once.
   const isMusicNotesView =
     viewMode === 'staff' ||
     viewMode === 'staff-split' ||
     viewMode === 'solfege' ||
-    viewMode === 'solfege-split'
+    viewMode === 'solfege-split' ||
+    viewMode === 'lyrics'
   const isStaffInlineView = viewMode === 'staff'
 
-  const shouldFireInitial = mounted && firstVisitAccepted && !tourInitialSeen
+  const shouldFireInitial = mounted && !tourInitialSeen
   const shouldFireAudio =
     mounted && tourInitialSeen && !tourAudioSeen && isMusicNotesView
   const shouldFireSwipe =
@@ -176,16 +227,20 @@ export function OnboardingTour({ totalStanzas, viewMode, firstVisitAccepted }: O
 
   const steps = useMemo<Step[]>(() => {
     if (activeTrigger === 'audio') return [AUDIO_STEP]
-    if (activeTrigger === 'swipe') return [SWIPE_STEP]
+    // Phase 21 fqz polish: pick the swipe-step copy by viewport so mobile
+    // visitors see the swipe wording while desktop visitors see the
+    // prev/next tap wording. The Step target is the same so the spotlight
+    // and hand visual render identically either way.
+    if (activeTrigger === 'swipe') return [isDesktop ? SWIPE_STEP_DESKTOP : SWIPE_STEP_MOBILE]
     if (activeTrigger === 'initial') return INITIAL_STEPS
     return []
-  }, [activeTrigger])
+  }, [activeTrigger, isDesktop])
 
   const tourSeen = activeTrigger === null
 
   // CR-01 fix: if `steps` shrinks (e.g. totalStanzas drops to 1 mid-tour,
-  // dropping SWIPE_STEP), clamp `step` so it never points past the end of
-  // the new, shorter array. Floor at 0 so the initial render (steps=[])
+  // dropping the swipe step), clamp `step` so it never points past the end
+  // of the new, shorter array. Floor at 0 so the initial render (steps=[])
   // doesn't drive step to -1 and trip the measure effect's safeStep
   // undefined check.
   useEffect(() => {
@@ -208,7 +263,12 @@ export function OnboardingTour({ totalStanzas, viewMode, firstVisitAccepted }: O
     else if (activeTrigger === 'swipe') setTourSwipeSeen(true)
     else setTourInitialSeen(true)
     setStep(0)
-  }, [activeTrigger])
+    // Phase 21 (D-07): notify TourProvider so DesktopOptimisedBanner
+    // re-renders immediately (or remains hidden if user permanently dismissed
+    // it via the localStorage flag — that path is independent of the
+    // tour-open state).
+    tour.dismiss()
+  }, [activeTrigger, tour])
 
   // Measure target on step change / resize / orientation
   useEffect(() => {
@@ -263,6 +323,17 @@ export function OnboardingTour({ totalStanzas, viewMode, firstVisitAccepted }: O
     return () => window.removeEventListener('keydown', onKey)
   }, [mounted, tourSeen, dismiss])
 
+  // Phase 21 (D-07): TourProvider tracks open-state so
+  // DesktopOptimisedBanner can hide while the tour is active; both the Done
+  // dismiss and the X (escape) close already call `tour.dismiss()` above.
+  // This effect publishes the open signal whenever the tour is rendering —
+  // it isn't idempotent because TourProvider.show() is a useCallback, but
+  // calling it again on every render is fine (React batches setState(true)
+  // to a no-op).
+  useEffect(() => {
+    if (activeTrigger !== null) tour.show()
+  }, [activeTrigger, tour])
+
   if (!mounted || tourSeen || !rects || rects.length === 0) return null
 
   // CR-01 fix: clamp for render too — `steps` can shrink (breakpoint cross)
@@ -271,14 +342,22 @@ export function OnboardingTour({ totalStanzas, viewMode, firstVisitAccepted }: O
   const isLast = currentStep === steps.length - 1
   const padding = 8
 
-  // 04.9.15.1-03: identify the swipe step specifically (by target + copy —
-  // 'scroll-area' is currently only used by SWIPE_STEP, but matching on
-  // copy too keeps this correct if another step ever reuses the target)
-  // so only this one step gets the extra in-spotlight hand visual.
+  // 04.9.15.1-03: identify the swipe step specifically (target + trigger)
+  // so only this one step gets the extra in-spotlight hand visual. The
+  // target is 'scroll-area' (the notation region) on both viewports — see
+  // SWIPE_STEP_DESKTOP / SWIPE_STEP_MOBILE above. We match on target +
+  // trigger rather than copy because the swipe copy branches by viewport
+  // and would defeat a copy-equality check.
   const isSwipeStep =
     activeTrigger === 'swipe' &&
-    steps[currentStep]?.target === 'scroll-area' &&
-    steps[currentStep]?.copy === SWIPE_STEP.copy
+    steps[currentStep]?.target === 'scroll-area'
+
+  // Phase 21 (D-04): orange ring on the final gear step draws attention to
+  // the settings button — site accent green is reserved, orange is unused.
+  // Only on the INITIAL tour's last step so audio/swipe triggers keep their
+  // default white ring.
+  const ringStroke =
+    isLast && activeTrigger === 'initial' ? '#f97316' : 'var(--tour-ring, #ffffff)'
 
   // Phase 20-01 visual markers — Playwright assertions (UI-SPEC §Visual
   // markers) and the `data-onboarding-tour` legacy marker (used by
@@ -381,7 +460,10 @@ export function OnboardingTour({ totalStanzas, viewMode, firstVisitAccepted }: O
          dimmed backdrop, especially in dark mode. The ring uses
          var(--tour-ring, white) so light mode can soften if needed in the
          future; defaults to full white today. Sits between the wash
-         (z 201) and the bubble (z 202) so it doesn't intercept clicks. */}
+         (z 201) and the bubble (z 202) so it doesn't intercept clicks.
+         Phase 21 (D-04): `ringStroke` overrides to #f97316 (orange) on the
+         final step of the initial tour so the gear button gets visual
+         attention. */}
       <svg
         data-tour-ring
         width={viewportW}
@@ -389,7 +471,7 @@ export function OnboardingTour({ totalStanzas, viewMode, firstVisitAccepted }: O
         className="absolute inset-0 pointer-events-none"
         style={{ zIndex: 201 }}
         fill="none"
-        stroke="var(--tour-ring, #ffffff)"
+        stroke={ringStroke}
         strokeWidth={2}
       >
         {rects.map((r, i) => (
@@ -447,19 +529,34 @@ export function OnboardingTour({ totalStanzas, viewMode, firstVisitAccepted }: O
       <div
         role="dialog"
         aria-live="polite"
-        aria-label={`Onboarding step ${currentStep + 1} of ${steps.length}`}
+        aria-label={steps.length > 1
+          ? `Onboarding step ${currentStep + 1} of ${steps.length}`
+          : 'Onboarding notice'}
         tabIndex={-1}
         className="absolute z-[202] bg-background border border-border rounded-lg shadow-lg p-4"
         style={{ ...bubbleStyle, width: 'min(320px, 90vw)' }}
       >
-        <p className="text-xs text-muted-foreground text-center mb-2">
-          Step {currentStep + 1} of {steps.length}
+        {steps.length > 1 && (
+          <p className="text-xs text-muted-foreground text-center mb-2">
+            Step {currentStep + 1} of {steps.length}
+          </p>
+        )}
+        <p className="text-sm font-normal mb-4">
+          {typeof steps[currentStep].copy === 'string'
+            ? steps[currentStep].copy
+            : (<>
+                {steps[currentStep].copy.pre}
+                <span className="text-orange-500 font-semibold">
+                  {steps[currentStep].copy.highlight}
+                </span>
+              </>)}
         </p>
-        <p className="text-sm font-normal mb-4">{steps[currentStep].copy}</p>
         <div className="flex items-center justify-between gap-2">
-          <Button variant="ghost" size="sm" onClick={dismiss}>
-            Skip tour
-          </Button>
+          {steps.length > 1 && (
+            <Button variant="ghost" size="sm" onClick={dismiss}>
+              Skip tour
+            </Button>
+          )}
           <Button
             variant="default"
             size="sm"
