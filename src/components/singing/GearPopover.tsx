@@ -16,6 +16,7 @@ import {
   Settings,
   ScanLine,
   Library,
+  FileText,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ViewMode } from '@/components/notation/NotationRenderer'
@@ -76,7 +77,13 @@ export function GearPopover({
 }: Props) {
   const router = useRouter()
 
-  const isMusicNotes = viewMode !== 'lyrics'
+  // Excludes 'legacy' — Legacy has its own dedicated radio on the same row;
+  // without this gate Legacy view would double-activate the Music Notes radio.
+  const isMusicNotes =
+    viewMode === 'staff' ||
+    viewMode === 'staff-split' ||
+    viewMode === 'solfege' ||
+    viewMode === 'solfege-split'
   const isStaff = viewMode === 'staff' || viewMode === 'staff-split'
   const isSplit = viewMode === 'staff-split' || viewMode === 'solfege-split'
 
@@ -297,7 +304,7 @@ export function GearPopover({
         className="w-72 p-4 space-y-2"
       >
         {/* Main toggle */}
-        <div role="radiogroup" aria-label="View type" className="grid grid-cols-2 gap-1">
+        <div role="radiogroup" aria-label="View type" className="grid grid-cols-3 gap-1">
           <button
             type="button"
             role="radio"
@@ -309,14 +316,15 @@ export function GearPopover({
             title={musicNotesBlocked ? 'No staff or solfège notation available for this tune' : undefined}
             onClick={handleMainMusicNotes}
             className={[
-              'h-10 rounded-md text-sm font-semibold active:scale-[0.95] transition-[transform,background,color] duration-75 motion-reduce:transition-none',
+              'h-10 rounded-md text-sm font-semibold active:scale-[0.95] transition-[transform,background,color] duration-75 motion-reduce:transition-none inline-flex items-center justify-center gap-1.5',
               musicNotesBlocked && 'opacity-40',
               isMusicNotes
                 ? 'bg-primary text-primary-foreground'
                 : 'hover:bg-muted text-muted-foreground',
             ].join(' ')}
           >
-            Music Notes
+            <Music className="h-4 w-4" />
+            <span>Music Notes</span>
           </button>
           <button
             type="button"
@@ -326,40 +334,32 @@ export function GearPopover({
             id="settings-tab-lyrics-only"
             onClick={() => onViewModeChange('lyrics')}
             className={[
-              'h-10 rounded-md text-sm font-semibold active:scale-[0.95] transition-[transform,background,color] duration-75 motion-reduce:transition-none',
+              'h-10 rounded-md text-sm font-semibold active:scale-[0.95] transition-[transform,background,color] duration-75 motion-reduce:transition-none inline-flex items-center justify-center gap-1.5',
               !isMusicNotes
                 ? 'bg-primary text-primary-foreground'
                 : 'hover:bg-muted text-muted-foreground',
             ].join(' ')}
           >
-            Lyrics Only
+            <FileText className="h-4 w-4" />
+            <span>Lyrics</span>
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={viewMode === 'legacy'}
+            data-view-option="legacy"
+            onClick={() => onViewModeChange('legacy')}
+            className={[
+              'h-10 rounded-md text-sm font-semibold active:scale-[0.95] transition-[transform,background,color] duration-75 motion-reduce:transition-none inline-flex items-center justify-center gap-1.5',
+              viewMode === 'legacy'
+                ? 'bg-primary text-primary-foreground'
+                : 'hover:bg-muted text-muted-foreground',
+            ].join(' ')}
+          >
+            <Library className="h-4 w-4" />
+            <span>Legacy</span>
           </button>
         </div>
-
-        {/* Phase 20-02 (D-01/D-04): Legacy view — 3rd full-width row spanning
-            both columns of the main grid. Available everywhere the other view
-            modes are (gear popover, modals, tour preview — D-04). Selecting
-            Legacy switches into the always-on-embeds view defined in
-            NotationRenderer's `viewMode === 'legacy'` branch (D-03). Visually
-            matches the existing 2-col radio row pattern; the full-width layout
-            emphasises this is a distinct, self-contained view rather than a
-            sibling to Music Notes / Lyrics Only. */}
-        <button
-          type="button"
-          role="radio"
-          aria-checked={viewMode === 'legacy'}
-          data-view-option="legacy"
-          onClick={() => onViewModeChange('legacy')}
-          className={[
-            'col-span-2 h-10 rounded-md text-sm font-semibold active:scale-[0.95] transition-[transform,background,color] duration-75 motion-reduce:transition-none inline-flex items-center justify-center gap-1.5',
-            viewMode === 'legacy'
-              ? 'bg-primary text-primary-foreground'
-              : 'hover:bg-muted text-muted-foreground',
-          ].join(' ')}
-        >
-          <Library className="h-4 w-4" />
-          <span>Legacy</span>
-        </button>
 
         {/* Sub-toggles — always rendered so the user can pick Notation / Layout
             directly even from Lyrics Only (issue #59, point 3). Tapping Notation
