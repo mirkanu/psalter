@@ -1,5 +1,4 @@
-export const dynamic = 'force-static'
-export const revalidate = false
+export const dynamic = 'force-dynamic'
 
 import { notFound } from 'next/navigation'
 import { db } from '@/db'
@@ -10,19 +9,6 @@ import { fetchAllTunes, fetchPsalmVersionTuneTiers, type PsalmVersionTuneTiers }
 import { SetDetail } from '@/components/precent/SetDetail'
 import type { PsalmRow } from '@/components/PsalmListingGrid'
 import type { TuneRow } from '@/components/TuneTable'
-
-// Phase 19 PERF-02: enumerate every precenting set id so Next.js can pre-render
-// each /precent/[id] page statically at deploy (matched by the Cloudflare Cache
-// Rule in 19-01-PLAN). Bounds: O(distinct sets); current data is < 10 total.
-export async function generateStaticParams() {
-  try {
-    const rows = await db.select({ id: precentingSets.id }).from(precentingSets)
-    return rows.map((r) => ({ id: String(r.id) }))
-  } catch (err) {
-    console.error(`[generateStaticParams] DB unreachable for precenting sets:`, err)
-    return []
-  }
-}
 
 export default async function PrecentSetPage({
   params,

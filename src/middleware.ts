@@ -40,7 +40,9 @@ export async function middleware(request: NextRequest) {
 
   // Phase 19 PERF-02 de-auth-gate carve-out: /precent/[id] and
   // /precent/[id]/sing/[pos] contain no confidential content (the precentor's
-  // own set), so they are T2-cacheable and must NOT redirect to /login.
+  // own set), so they are de-auth-gated and must NOT redirect to /login.
+  // They are served DYNAMICALLY, not cached: precenting sets are per-user
+  // mutable data, so a cached copy would hide a psalm added to the set.
   // /precent (list) and /api/precent/* STAY gated below. Order matters — this
   // MUST run before the sessionCookie check below.
   if (
