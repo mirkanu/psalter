@@ -181,6 +181,9 @@ export async function fetchPsalmListRows(): Promise<PsalmRow[]> {
       meter: row.meter,
       kjvExcerpt: row.kjvExcerpt,
       recommendedTune: row.recommendedTune,
+      // "Recommended" lives only in psalm_versions.psalter_number free text
+      // ("50 (First Version, Recommended)") — there is no is_recommended column.
+      isRecommended: row.psalterNumber?.includes('Recommended') ?? false,
     }
   })
 }

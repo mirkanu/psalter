@@ -19,6 +19,14 @@ export interface PsalmRow {
   meter: string | null
   kjvExcerpt: string | null
   recommendedTune?: string | null
+  /**
+   * True when this row is the RECOMMENDED versification of a multi-version
+   * psalm. There is no `is_recommended` column — the marker lives only in
+   * `psalm_versions.psalter_number` free text ("50 (First Version, Recommended)"),
+   * the same source of truth `deriveVersionSlug` uses for the `*` in displayLabel.
+   * Optional so existing PsalmRow literals keep type-checking.
+   */
+  isRecommended?: boolean
 }
 
 const BOOKS = [
