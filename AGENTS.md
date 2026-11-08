@@ -67,7 +67,9 @@ Never store raw `airtableusercontent.com` URLs in the database — they expire i
 Public psalm and tune pages use `generateStaticParams` — no runtime DB queries on the read path.
 
 ### ISR / T1 / T2 routes — manual redeploy after DB changes
-Database content changes are rare (every few months). When you change it, you must trigger a **production redeploy** (`bash scripts/deploy.sh`) — otherwise ISR-cached routes (T1) and tag-cached routes (T2/T3) will keep serving the old content. The `revalidatePath` / `revalidateTag` calls wired in `/api/precent/**` and `/api/dev/melisma-**` invalidate in-request, but full-DB re-imports (e.g. `seedPsalms`, `importAirtable`) need a redeploy or explicit revalidate to flush every cached psalm/tune page.
+Database content changes are rare (every few months). When you change it, you must trigger a **production redeploy** (`bash scripts/deploy.sh`) — otherwise ISR-cached routes (T1) and tag-cached reads (T2) will keep serving the old content. The `revalidatePath` / `revalidateTag` calls wired in `/api/precent/**` and `/api/dev/melisma-**` invalidate in-request, but full-DB re-imports (e.g. `seedPsalms`, `importAirtable`) need a redeploy or explicit revalidate to flush every cached psalm/tune page.
+
+There are **two** caching tactics, not three — see `docs/research/cache-tactics.md` for the canonical taxonomy. (A third, "T3", was described in an earlier version of that doc but never existed in the tree: `/daily`'s `revalidate = 3600` was removed by PR #103 on 2026-10-12, so `/daily` is a T1 route and its day rolls over client-side anyway.) Note also that T2's `revalidate: 86400` lowers the *effective* revalidate of `/psalms/[id]` and `/tunes`, so those two routes expire after 24 h despite declaring `revalidate = false` — `cache-tactics.md` §3.5 has the mechanism and the evidence.
 
 ## Mobile-first layout (binding)
 
@@ -107,7 +109,29 @@ node scripts/repro-typecheck.mjs
 Two things to know when reading type-check output:
 
 - `next build` **ignores diagnostics in `*.test.*` and `*.spec.*` files** (`next/dist/lib/typescript/runTypeCheck.js` filters them out), so a non-zero `npx tsc --noEmit` does not by itself mean the build will fail.
-- The check needs roughly 1–1.5 GB. On this 3.7 GB box, before building: check `free -h`, and if free swap is low add headroom (`fallocate -l 4G /home/services/swapfile3 && chmod 600 … && mkswap … && swapon …`). Next preserves a distDir's `cache/` directory across builds, so a warm `<build-slot>/cache/.tsbuildinfo` makes the in-build check incremental and far cheaper — `TS_CACHE_DIR=.next-build/cache node scripts/repro-typecheck.mjs` writes exactly that file.
+- The check needs roughly 1–1.5 GB. On this 3.7 GB box, before building: check `free -h`, and give the build protected memory — see **"Protecting the build from the OOM killer"** below. (Swap headroom is not enough on its own: the type-check worker is killed by the OOM killer, and swapping is far too slow for it.) Next preserves a distDir's `cache/` directory across builds, so a warm `<build-slot>/cache/.tsbuildinfo` makes the in-build check incremental and far cheaper — `TS_CACHE_DIR=.next-build/cache node scripts/repro-typecheck.mjs` writes exactly that file.
+
+### Protecting the build from the OOM killer
+
+`scripts/deploy.sh` does not set this up for you. On this box the type-check worker still gets OOM-killed unless the build is given a protected memory reservation and is excluded from `earlyoom` (which kills the greediest process at ~5% free RAM).
+
+```sh
+CG=/sys/fs/cgroup/system.slice/psalter-build
+sudo mkdir -p "$CG"
+echo 1258291200 | sudo tee "$CG/memory.min" >/dev/null   # 1200 MiB
+
+setsid nohup bash scripts/deploy.sh > /tmp/psalter-deploy.log 2>&1 < /dev/null &
+sleep 4
+PID="$(pgrep -f 'bash scripts/deploy.sh' | head -1)"
+sudo sh -c "echo $PID > $CG/cgroup.procs"
+echo -1000 | sudo tee "/proc/$PID/oom_score_adj" >/dev/null
+```
+
+- `setsid` puts the build outside the calling process group, so Claude Code's background-task reaper cannot kill it mid-build (this happened on 2026-11-08 and lost a ~40-minute build).
+- `memory.min` stops the kernel reclaiming the build's pages; `oom_score_adj = -1000` keeps both `earlyoom` and the kernel OOM killer away from it. Both are inherited by child processes.
+- **Remove the cgroup afterwards** — it holds a memory reservation: `sudo rmdir /sys/fs/cgroup/system.slice/psalter-build`. Plain `rmdir` as the `claude` user fails with "Permission denied" (the cgroup dir is `root:root`).
+
+The build also needs ~1.5 GB of **free disk**. `/home/services` is on `/dev/sda`, which runs close to full because the Docker and containerd data-roots live there. `df` hides ~3 GB of it behind ext4's root-reserved block reserve, so a non-root build sees far less than `df` suggests. If the build dies with `ENOSPC`, release the reserve (`sudo tune2fs -m 1 /dev/sda` — reversible with `-m 5`, and it deletes nothing). Do **not** `docker volume prune` to make room: `docker system df` reports ~6.5 GB of "reclaimable" volumes, but those are dangling volumes that may still hold another project's database.
 
 ## Environment Variables
 
