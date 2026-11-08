@@ -50,6 +50,7 @@ data/deploy-info.json.prev
 # Which build slot the live server is serving from — written by scripts/deploy.sh
 data/live-dist-dir
 src/generated/build-info.json
+src/generated/build-info.json.prev
 
 # UAT screenshots pushed to Telegram during verification plans (runtime-generated)
 .tmp-uat/
