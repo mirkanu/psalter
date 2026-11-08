@@ -121,14 +121,35 @@ sudo mkdir -p "$CG"
 echo 1258291200 | sudo tee "$CG/memory.min" >/dev/null   # 1200 MiB
 
 setsid nohup bash scripts/deploy.sh > /tmp/psalter-deploy.log 2>&1 < /dev/null &
-sleep 4
-PID="$(pgrep -f 'bash scripts/deploy.sh' | head -1)"
-sudo sh -c "echo $PID > $CG/cgroup.procs"
-echo -1000 | sudo tee "/proc/$PID/oom_score_adj" >/dev/null
+DEPLOY_PID="$(pgrep -f 'bash scripts/deploy.sh' | head -1)"
+
+# Protect the whole tree, and keep protecting it.
+#
+# The move has to RACE the deploy's own forks. `npm run build` can start
+# within a second of launch, and any process forked BEFORE its parent was
+# moved stays in the old cgroup with oom_score_adj 0 — so a one-shot
+# "move the PID, then sleep" silently protects nothing. (This was a real
+# bug: on 2026-11-08 the build ran for 18 minutes with `oom_score_adj = 0`
+# and outside the cgroup, because `npm` had been forked 4 seconds before
+# the move.) Re-asserting every 2s closes that window.
+(
+  while kill -0 "$DEPLOY_PID" 2>/dev/null; do
+    for p in $(pgrep -P "$DEPLOY_PID" 2>/dev/null) $(pgrep -f 'next build' 2>/dev/null); do
+      sudo sh -c "echo $p > $CG/cgroup.procs" 2>/dev/null || true
+      echo -1000 | sudo tee "/proc/$p/oom_score_adj" >/dev/null 2>&1 || true
+    done
+    sleep 2
+  done
+) &
 ```
 
 - `setsid` puts the build outside the calling process group, so Claude Code's background-task reaper cannot kill it mid-build (this happened on 2026-11-08 and lost a ~40-minute build).
-- `memory.min` stops the kernel reclaiming the build's pages; `oom_score_adj = -1000` keeps both `earlyoom` and the kernel OOM killer away from it. Both are inherited by child processes.
+- `memory.min` stops the kernel reclaiming the build's pages; `oom_score_adj = -1000` keeps both `earlyoom` and the kernel OOM killer away from it. Both are inherited by child processes — **including the jest-worker that runs the type check**, which is what actually needs protecting.
+- Verify it worked before you trust it:
+  ```sh
+  for p in $(pgrep -f 'next build'); do cat /proc/$p/cgroup /proc/$p/oom_score_adj; done
+  ```
+  Every line should show `/system.slice/psalter-build` and `-1000`.
 - **Remove the cgroup afterwards** — it holds a memory reservation: `sudo rmdir /sys/fs/cgroup/system.slice/psalter-build`. Plain `rmdir` as the `claude` user fails with "Permission denied" (the cgroup dir is `root:root`).
 
 The build also needs ~1.5 GB of **free disk**. `/home/services` is on `/dev/sda`, which runs close to full because the Docker and containerd data-roots live there. `df` hides ~3 GB of it behind ext4's root-reserved block reserve, so a non-root build sees far less than `df` suggests. If the build dies with `ENOSPC`, release the reserve (`sudo tune2fs -m 1 /dev/sda` — reversible with `-m 5`, and it deletes nothing). Do **not** `docker volume prune` to make room: `docker system df` reports ~6.5 GB of "reclaimable" volumes, but those are dangling volumes that may still hold another project's database.
