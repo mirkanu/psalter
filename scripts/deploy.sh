@@ -64,11 +64,33 @@ echo "build slot: $build_slot"
 echo "HEAD      : $(git rev-parse --short HEAD) $(git log -1 --format=%s)"
 echo
 
-# Keep the previous deploy-info so a failed build cannot leave the live
-# server reporting a commit that was never deployed.
-if [ -f data/deploy-info.json ]; then
-  cp data/deploy-info.json data/deploy-info.json.prev
-fi
+# Keep the previous deploy metadata so a failed build cannot leave the live
+# server reporting a commit that was never deployed. `next build`'s prebuild
+# hook rewrites BOTH files before the compile starts, so both are snapshotted:
+#   - data/deploy-info.json       read by /api/deploy-info on every request
+#   - src/generated/build-info.json  baked into the client bundle
+DEPLOY_INFO='data/deploy-info.json'
+CLIENT_INFO='src/generated/build-info.json'
+DEPLOY_INFO_PREV='data/deploy-info.json.prev'
+CLIENT_INFO_PREV='src/generated/build-info.json.prev'
+
+snapshot_metadata() {
+  [ -f "$DEPLOY_INFO" ] && cp "$DEPLOY_INFO" "$DEPLOY_INFO_PREV" || true
+  [ -f "$CLIENT_INFO" ] && cp "$CLIENT_INFO" "$CLIENT_INFO_PREV" || true
+}
+
+restore_metadata() {
+  [ -f "$DEPLOY_INFO_PREV" ] && mv "$DEPLOY_INFO_PREV" "$DEPLOY_INFO" || true
+  [ -f "$CLIENT_INFO_PREV" ] && mv "$CLIENT_INFO_PREV" "$CLIENT_INFO" || true
+}
+
+# A build killed with SIGKILL cannot be trapped, but the .prev snapshots
+# survive on disk — restore with:
+#   mv data/deploy-info.json.prev data/deploy-info.json
+#   mv src/generated/build-info.json.prev src/generated/build-info.json
+trap 'echo; echo "interrupted — restoring deploy metadata"; restore_metadata; exit 130' INT TERM
+
+snapshot_metadata
 
 echo "[1/3] building into $build_slot"
 # Seed the target slot's build cache from the live slot's. Next preserves the
@@ -78,17 +100,25 @@ if [ ! -d "$build_slot/cache" ] && [ -d "$live/cache" ]; then
   mkdir -p "$build_slot"
   cp -a "$live/cache" "$build_slot/cache"
 fi
-PSALTER_DIST_DIR="$build_slot" NEXT_TELEMETRY_DISABLED=1 npm run build
+
+# NOTE: the build runs inside `if !` on purpose. Under `set -e` a bare
+# failing command aborts the script immediately, which would skip the
+# metadata restore below and leave the live server reporting a commit that
+# was never deployed.
+if ! PSALTER_DIST_DIR="$build_slot" NEXT_TELEMETRY_DISABLED=1 npm run build; then
+  echo
+  echo "BUILD FAILED — the live server was not touched."
+  restore_metadata
+  exit 1
+fi
 
 if [ ! -f "$build_slot/BUILD_ID" ]; then
   echo
   echo "BUILD FAILED — no $build_slot/BUILD_ID. The live server was not touched."
-  if [ -f data/deploy-info.json.prev ]; then
-    mv data/deploy-info.json.prev data/deploy-info.json
-  fi
+  restore_metadata
   exit 1
 fi
-rm -f data/deploy-info.json.prev
+rm -f "$DEPLOY_INFO_PREV" "$CLIENT_INFO_PREV"
 
 echo
 echo "[2/3] switching the live slot to $build_slot"
