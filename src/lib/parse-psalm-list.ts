@@ -4,7 +4,11 @@ export interface ParsedPsalmEntry {
   psalmNum: number
   verseRange: string | null
   psalm: PsalmRow | null
-  /** Non-null when a specific version (e.g. version b via "(AOTS)") was detected. */
+  /**
+   * The resolved `psalm_versions.id` whenever the psalm has more than one
+   * version row (an a/b pair, or a psalm-119 stanza). Null for single-version
+   * psalms, which have no a/b choice to record.
+   */
   psalmVersionId: number | null
 }
 
@@ -12,8 +16,15 @@ export interface ParsedPsalmEntry {
  * Parses a freeform psalm list into entries. Supports:
  *   "23:1-6; 74 (AOTS); 119:1-8"
  *
- * "(AOTS)" or any parenthetical after a psalm number (not a verse range) is
- * treated as a version-b indicator — maps to the second PsalmRow for that psalm.
+ * A bare psalm number resolves in four steps:
+ *   1. an exact single-version label ("23")
+ *   2. an exact psalm-119 stanza ("119:9-16") when a verse range was pasted
+ *   3. the RECOMMENDED version of a multi-version psalm ("50" → "50a*")
+ *   4. any psalm-119 stanza, i.e. the first one (fallback for an unranged "119")
+ *
+ * "(AOTS)" or any parenthetical after a psalm number (not a verse range)
+ * selects the "b" version BY LABEL — never by array position, because for
+ * psalm 119 the array position is an arbitrary stanza.
  */
 export function parsePsalmList(input: string, psalms: PsalmRow[]): ParsedPsalmEntry[] {
   const results: ParsedPsalmEntry[] = []
@@ -27,30 +38,42 @@ export function parsePsalmList(input: string, psalms: PsalmRow[]): ParsedPsalmEn
     const parenthetical = match[3] ?? null   // e.g. "AOTS", "Second Version"
     const numStr = String(psalmNum)
 
-    // All rows for this psalm number (may include multi-version rows like "55a", "55b")
-    const allForPsalm = psalms.filter(
-      (r) => r.id === psalmNum
-    )
+    // All rows for this psalm number. A First/Second pair has 2 rows ("50a*"/"50b");
+    // psalm 119 has 22 stanza rows ("119:1-8" … "119:169-176").
+    const allForPsalm = psalms.filter((r) => r.id === psalmNum)
+    const isMultiVersion = allForPsalm.length > 1
 
     let psalm: PsalmRow | null = null
-    let psalmVersionId: number | null = null
 
     if (parenthetical) {
-      // "(AOTS)" or any tune/version hint → pick the second (b) version if available
-      const secondVersion = allForPsalm[1] ?? null
-      if (secondVersion) {
-        psalm = secondVersion
-        psalmVersionId = secondVersion.versionId ?? null
-      } else {
-        // Fall back to first version
-        psalm = allForPsalm[0] ?? null
-      }
-    } else {
+      // "(AOTS)" / "Second Version" → the "b" version, matched by LABEL, never by
+      // array position (for psalm 119, array position [1] is an arbitrary stanza).
       psalm =
-        psalms.find((r) => r.displayLabel === numStr) ??
-        psalms.find((r) => r.displayLabel.startsWith(numStr + ':')) ??
+        allForPsalm.find((r) => r.displayLabel.startsWith(numStr + 'b')) ??
+        allForPsalm.find((r) => r.isRecommended === true) ??
+        allForPsalm[0] ??
+        null
+    } else {
+      // 1. exact single-version label ("23")
+      // 2. exact psalm-119 stanza ("119:9-16") when a verse range was pasted
+      // 3. RECOMMENDED version of a multi-version psalm ("50" → "50a*")
+      // 4. any psalm-119 stanza, i.e. the first one (fallback for an unranged "119")
+      psalm =
+        allForPsalm.find((r) => r.displayLabel === numStr) ??
+        (verseRange
+          ? allForPsalm.find((r) => r.displayLabel === `${numStr}:${verseRange}`)
+          : null) ??
+        allForPsalm.find((r) => r.isRecommended === true) ??
+        allForPsalm.find((r) => r.displayLabel.startsWith(numStr + ':')) ??
         null
     }
+
+    // Record the resolved version whenever the psalm has more than one version
+    // row, so the sing view renders THAT versification instead of falling back to
+    // sortedVersions[0] (lowest id) — which is the non-recommended version for
+    // 45/102/124/143/145/148. Single-version psalms stay null: there is no a/b
+    // choice to record, and it keeps the paste preview free of "(23)" noise.
+    const psalmVersionId = psalm && isMultiVersion ? psalm.versionId ?? null : null
 
     results.push({ psalmNum, verseRange, psalm, psalmVersionId })
   }

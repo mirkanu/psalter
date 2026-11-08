@@ -58,14 +58,6 @@ const nextConfig: NextConfig = {
         source: '/explore/messianic',
         headers: t2CacheControl,
       },
-      {
-        source: '/precent/:id(\\d+)',
-        headers: t2CacheControl,
-      },
-      {
-        source: '/precent/:id(\\d+)/sing/:pos(\\d+)',
-        headers: t2CacheControl,
-      },
     ]
   },
   // Phase 04.9.15 Plan 05 (Rule 3 - blocking-issue fix): this Hetzner VPS has

@@ -3,10 +3,41 @@ import { revalidateTag } from "next/cache"
 import { PRECENT_CACHE_TAG } from "@/db/queries/tunes"
 import { db } from '@/db'
 import { setItems } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, asc } from 'drizzle-orm'
 import { getSessionOr401, loadSetWithAccess } from '@/lib/precent-auth'
 
 export const dynamic = 'force-dynamic'
+
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params
+  const setId = parseInt(id)
+  if (isNaN(setId)) {
+    return NextResponse.json({ error: 'invalid set id' }, { status: 400 })
+  }
+
+  const { session, res: authRes } = await getSessionOr401()
+  if (authRes) return authRes
+  const access = await loadSetWithAccess(setId, session)
+  if (access.res) return access.res
+
+  const rows = await db
+    .select({
+      id: setItems.id,
+      psalmId: setItems.psalmId,
+      psalmVersionId: setItems.psalmVersionId,
+      tuneId: setItems.tuneId,
+      verseRange: setItems.verseRange,
+      position: setItems.position,
+    })
+    .from(setItems)
+    .where(eq(setItems.setId, setId))
+    .orderBy(asc(setItems.position))
+
+  return NextResponse.json({ count: rows.length, items: rows })
+}
 
 export async function POST(
   req: Request,
