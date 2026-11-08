@@ -1,5 +1,7 @@
 # Project Research Summary
 
+> **Note:** This file was written for the v2.0 Public Beta milestone (researched 2026-07-29) and summarises the four research documents alongside it — `ARCHITECTURE.md`, `FEATURES.md`, `PITFALLS.md` and `STACK.md`, which were moved into this directory at the same time. It is **superseded** for current behaviour: the stack it describes (Next.js 15 on Vercel, Neon Postgres) is no longer the stack. The site now runs Next.js 16.2.5 on a Hetzner VPS (PM2 behind a Cloudflare Tunnel) with PostgreSQL 16 in the local `psalter-db` Docker container and Cloudflare R2 for object storage; the Vercel project and the Neon project were both deleted on 2026-11-08. For the current state see `AGENTS.md` (the canonical project guide), `docs/research/visitor-workflows.md` (who uses the site and which routes are latency-critical) and `docs/research/cache-tactics.md` (the caching posture). Read the four sibling documents for the *reasoning* of the v2.0 milestone; do not read any of them as a description of how the site behaves today.
+
 **Project:** CPRC Psalter — v2.0 Public Beta
 **Domain:** Feature-addition milestone on an existing production Next.js/PostgreSQL app (not greenfield) — email (transactional + broadcast), inline admin-authored content, batch image processing, third-party audio embed, plus two data/routing fixes (meter-mismatch banner, tune slug migration, Backup/Historical tune sort)
 **Researched:** 2026-07-29
