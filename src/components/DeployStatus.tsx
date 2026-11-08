@@ -35,9 +35,9 @@ interface DeployInfo {
   message?: string
   /** Next.js BUILD_ID. Set by scripts/capture-build-id.ts (postbuild) and
    *  read by /api/deploy-info. Compared against document.documentElement's
-   *  data-build-id (SSR'd from .next/BUILD_ID by layout.tsx) to detect a
-   *  stale cached HTML response — the JS bundle's commit can be fresh
-   *  while the HTML it lives in still references older chunks. */
+   *  data-build-id (SSR'd from the live slot's BUILD_ID by layout.tsx) to
+   *  detect a stale cached HTML response — the JS bundle's commit can be
+   *  fresh while the HTML it lives in still references older chunks. */
   buildId?: string
 }
 
