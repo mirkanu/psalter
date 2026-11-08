@@ -30,13 +30,12 @@ echo "Working directory: $(pwd)"
 echo "Pre-build BUILD_ID: $(cat .next/BUILD_ID 2>/dev/null || echo 'NONE')"
 echo
 
-echo "[1/2] npm run build"
-npm run build
+echo "[1/2] scripts/deploy.sh"
+# scripts/deploy.sh builds into the slot that is not live, then switches the
+# live slot and restarts pm2 — so the running server keeps serving the old
+# build for the whole ~15 minute compile instead of 500-ing throughout.
+bash scripts/deploy.sh
 
 echo
-echo "[2/2] pm2 restart psalter"
-pm2 restart psalter
-
-echo
-echo "Post-build BUILD_ID: $(cat .next/BUILD_ID)"
+echo "Post-build BUILD_ID: $(cat "$(cat data/live-dist-dir)/BUILD_ID")"
 echo "PASS — single build+restart complete"

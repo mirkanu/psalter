@@ -46,7 +46,11 @@ interface ClientBuildInfo {
 }
 
 const cwd = process.cwd()
-const buildIdPath = join(cwd, '.next', 'BUILD_ID')
+// The build writes its output to whichever distDir it was given. scripts/deploy.sh
+// sets PSALTER_DIST_DIR to the slot that is not live; a plain `npm run build`
+// leaves it unset and uses `.next`.
+const distDir = process.env.PSALTER_DIST_DIR || '.next'
+const buildIdPath = join(cwd, distDir, 'BUILD_ID')
 const serverJsonPath = join(cwd, 'data', 'deploy-info.json')
 const clientJsonPath = join(cwd, 'src', 'generated', 'build-info.json')
 
@@ -59,7 +63,7 @@ if (!existsSync(buildIdPath)) {
 
 const buildId = readFileSync(buildIdPath, 'utf8').trim()
 if (!buildId) {
-  console.error('[capture-build-id] .next/BUILD_ID is empty. Skipping.')
+  console.error(`[capture-build-id] ${distDir}/BUILD_ID is empty. Skipping.`)
   process.exit(0)
 }
 

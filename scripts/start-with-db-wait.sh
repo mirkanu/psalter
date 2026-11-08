@@ -15,6 +15,17 @@ set -a
 set +a
 set -e
 
+# Which build directory to serve from.
+#
+# `next build` wipes and rewrites its output directory, so scripts/deploy.sh
+# builds into whichever of the two slots (`.next` / `.next-build`) is not
+# currently live, then writes that slot here before restarting PM2. This must
+# be set AFTER sourcing the env files so a stray PSALTER_DIST_DIR in one of
+# them cannot point the server at the wrong build.
+PSALTER_DIST_DIR="$(cat /home/services/psalter/data/live-dist-dir 2>/dev/null || echo '.next')"
+export PSALTER_DIST_DIR
+echo "Serving build directory: $PSALTER_DIST_DIR"
+
 # Wait for PostgreSQL to be ready, with timeout
 TIMEOUT=60
 START_TIME=$(date +%s)
