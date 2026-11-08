@@ -1,45 +1,60 @@
 # Contributing
 
-> **Note:** This project is 100% AI-generated and maintained as a personal tool via [Claude Code](https://claude.ai/claude-code). PRs from others are welcome but unlikely to get maintainer attention. Issues may not receive responses.
+> **Note:** This project is 100% AI-generated and maintained as a personal tool via [Claude Code](https://claude.ai/claude-code). PRs from others are welcome but unlikely to get maintainer attention. Issues may not receive a response.
 
-## Deployment pipeline
+## Where it is hosted
 
-The site is hosted on [Vercel](https://vercel.com) with [Neon](https://neon.tech) for PostgreSQL. Everything deploys automatically from GitHub — no manual CI step.
-
-### Production — `psalter.gsdlabs.dev`
-
-Every push to the **`master`** branch triggers a production deployment. The new version goes live as soon as the build reaches `READY` state, typically 60–90 seconds.
-
-### Preview deployments — per-branch URLs
-
-Every push to **any other branch** creates a preview deployment at a unique URL:
+The site is hosted on a **Hetzner VPS**, fronted by the shared Cloudflare Tunnel:
 
 ```
-https://psalter-git-<branch-slug>-<your-github-username>.vercel.app
+Cloudflare Tunnel → PM2 service `psalter` → Next.js on port 3005
+                  → PostgreSQL 16 in the local Docker container `psalter-db` (localhost:5435)
 ```
 
-These previews are **publicly accessible** — anyone with the URL can view them. They share the production Neon database, so be careful with destructive writes when testing on a preview. Previews auto-expire after 30 days.
+Tune score-sheet images are served from Cloudflare R2 via `cdn.psalter.gsdlabs.dev`.
 
-Open a PR if you want a permanent record of the change; PRs are not required to trigger previews.
+There is **no CI deploy pipeline**. Production deploys are deliberate, manual, and run by the
+maintainer — see below.
 
-### Ignored Build Step
+## Deployment
 
-Commits that touch **only `.md` or `.txt` files** skip the build entirely. Vercel auto-cancels the deployment in a few seconds and no preview URL is created. This saves ~80 seconds per docs-only commit.
+```sh
+bash scripts/deploy.sh
+```
 
-The rule uses git pathspec exclusion — if you change any code file (anything outside `.md`/`.txt`), the build runs as normal.
+That is the only supported deploy path. It builds into whichever build slot is *not* live
+(`.next` / `.next-build`, recorded in `data/live-dist-dir`), swaps the live slot and restarts
+PM2. Never run `npm run build` against the live slot — `next build` wipes its output directory,
+which 500s every dynamic route while the server is serving from it.
+
+Two rules that bite:
+
+- **Commit before you build.** `scripts/capture-deploy-info.ts` reads `HEAD` at build start, so
+  building before committing stamps the wrong commit into the admin footer.
+- **`master` is push-protected.** `gitleaks` runs with `enforce_admins: true`, so direct pushes
+  are rejected. Commit to a branch, open a PR, and merge.
+
+There are no preview deployments. If you need to see a change live, deploy it.
 
 ## Local development
 
-```bash
+```sh
 npm install
-npm run dev      # http://localhost:3005
+npm run dev      # http://localhost:3000
 ```
 
-For the database, copy `.env.example` to `.env` and set `DATABASE_URL` to a Neon connection string. Drizzle ORM lives in `drizzle/` and `src/db/`.
+Copy `.env.example` to `.env` and point `DATABASE_URL` at a local Postgres on port 5435 — the
+same container as in the README's quick setup. `BETTER_AUTH_URL` must match the port you
+actually serve on. Drizzle ORM lives in `drizzle/` and `src/db/`.
+
+Secrets live in `/home/services/.env.production` on the VPS and in a gitignored `.env`
+locally. Never commit either.
 
 ### Testing notation rendering
 
-`abcjs` notation rendering is browser-only — server-side rendering throws. If your change touches `src/components/notation/`, test in a real browser (iOS Safari preferred — mobile is the primary platform).
+`abcjs` notation rendering is browser-only — server-side rendering throws. If your change
+touches `src/components/notation/`, test in a real browser (iOS Safari preferred — mobile is
+the primary platform).
 
 ## Where things live
 
@@ -48,16 +63,21 @@ For the database, copy `.env.example` to `.env` and set `DATABASE_URL` to a Neon
 | `src/app/` | Next.js App Router pages |
 | `src/components/` | React components (notation, psalm views, precentor portal) |
 | `src/db/` | Drizzle schema + client |
-| `src/lib/` | Auth (Better Auth), helpers, R2 client |
+| `src/lib/` | Auth (Better Auth), helpers, build-metadata readers |
 | `drizzle/` | Drizzle migrations |
-| `.planning/research/` | Canonical reference docs on Scottish Psalter notation |
-| `.planning/phases/` | GSD phase plans (gitignored, local only) |
+| `docs/research/` | Canonical reference docs on Scottish Psalter notation |
+| `scripts/` | Deploy, backup-verification and data-migration scripts |
+| `.planning/` | Project state and planning history |
 
 ## Things to know
 
 - **Mobile is primary.** Test on iOS Safari / Android Chrome first; desktop is secondary.
-- **Don't commit `.env`** — secrets live in Vercel project env vars.
-- **Hetzner is being retired** as of 2026-09-07; do not add new Hetzner infra.
+- **Don't commit `.env`** — it is gitignored, and `scripts/check-airtable-pat.sh` runs on every
+  build to catch a leaked Airtable token.
+- **`next build` type-checks the whole repo**, including anything under `scripts/`. A stray
+  temporary script with a type error fails the production build.
+- **The build needs about 1.5 GB of free memory** for its type-check worker. On a small box,
+  add swap headroom before building; see `AGENTS.md`.
 
 ## Contribution licence
 

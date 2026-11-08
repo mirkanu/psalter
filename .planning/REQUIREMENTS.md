@@ -81,7 +81,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [x] **INFRA-03**: Vercel Hobby project connected to GitHub repo, builds from `master`, env-var mapping documented, `AIRTABLE_PAT` excluded from Vercel env — Phase 17
 - [x] **INFRA-04**: Schema + data migrated to Neon via one-shot script (or `pg_dump`/`pg_restore`); row counts parity-checked against VPS Postgres — Phase 17
 - [x] **INFRA-05**: First Vercel deploy serves psalter at a preview URL with psalms, tunes, and precentor portal functional — Phase 17
-- [ ] **INFRA-06**: DNS `psalter.gsdlabs.dev` CNAME flipped to `cname.vercel-dns.com`; tunnel CNAME retained as documented rollback path for 7 days — Phase 17
+- [x] **INFRA-06**: DNS `psalter.gsdlabs.dev` CNAME flipped to `cname.vercel-dns.com`; tunnel CNAME retained as documented rollback path for 7 days — Phase 17. **Reversed by Phase 18 (2026-10-12):** DNS now points at the Cloudflare Tunnel → Hetzner PM2; the Vercel project is deleted and the Neon project terminated (2026-11-08). Tracked by INFRA-12/13/14.
 - [x] **INFRA-07**: Better Auth (admin/precentor login) verified working end-to-end on Vercel — login, session cookie, server-action guards — Phase 17
 - [ ] **INFRA-08**: Hetzner VPS footprint retired: psalter Docker container stopped and removed, `psalter` PM2 app stopped, `PSALTER_*` env vars removed from `/home/services/.env.production`, Cloudflare Tunnel ingress entry for `psalter.gsdlabs.dev` removed — Phase 17
 - [x] **INFRA-09**: If any periodic cron is needed (Telegram devotional? daily psalm-of-the-day?), it runs via GitHub Actions with secrets in repo secrets — Phase 17
