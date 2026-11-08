@@ -12,6 +12,14 @@ public psalm/tune/explore routes after this doc was written. §2 now records the
 directives from the current source tree; the §4 default-view question was also settled since
 (Phase 21, D-01) and is annotated below.
 
+**Corrected 2026-11-08 (second pass):** §2 previously said the public content routes are
+"never revalidated". That is true of `/psalms`, `/psalms/[id]/study`, `/tunes/[slug]` and
+`/explore/*`, but **not** of `/psalms/[id]` or `/tunes` — T2's `unstable_cache` lowers those two
+routes' effective revalidate to 86400. This doc had already recorded the contradicting
+evidence (`s-maxage=86400` for `/psalms/[id]`, issue #95) without reconciling it with the
+"never revalidated" wording. The two claims are now consistent; see §2 and
+`docs/research/cache-tactics.md` §3.5.
+
 **TL;DR — the five facts that matter**
 
 1. **Nobody comes to read psalms.** Every visit is a *sing* visit. Pages exist to support the sing view, not the other way round.
@@ -63,7 +71,7 @@ A rare third flow is **tune review** at `/tunes` — used while working toward t
 
 | Route | Persona | Latency-critical? | Cache behaviour today |
 | --- | --- | --- | --- |
-| `/psalms/[id]` (sing view) | Singer on phone | **YES** — every Sunday service hits it; also the modal-picker target | `force-static` + `revalidate = false` + `generateStaticParams` (verified, `src/app/psalms/[id]/page.tsx`) — prerendered at deploy time (T1), never revalidated. |
+| `/psalms/[id]` (sing view) | Singer on phone | **YES** — every Sunday service hits it; also the modal-picker target | `force-static` + `revalidate = false` + `generateStaticParams` (verified, `src/app/psalms/[id]/page.tsx`) — prerendered at deploy time (T1). **Effective revalidate is 86400, not `false`** — T2's `unstable_cache` lowers it; see `cache-tactics.md` §3.5. |
 | `/precent/[id]/sing/[pos]` | Precentor on laptop | **YES** — every service, every psalm in the set | `force-dynamic` (verified). Auth-gated; cold path also pays the Better Auth login POST + DB write. |
 | `/psalms/[id]/study` | Singer on phone (rare) | No — infrequent | `force-static` + `revalidate = false` + `generateStaticParams` (T1) |
 | `/precent/[id]` (set detail) | Precentor on laptop | No — used <1× per service to *create* a set, then never revisited | `force-dynamic` |
@@ -71,14 +79,23 @@ A rare third flow is **tune review** at `/tunes` — used while working toward t
 | `/psalms` (list) | Singer on phone | No — singer goes here once per session to start; cheap once warm | `force-static` + `revalidate = false` (T1) |
 | `/explore/*` | Singer on phone (devotions) | No — low traffic | `force-static` + `revalidate = false` + `generateStaticParams` (T1) |
 | `/daily*` | Singer on phone (devotions) | No — low traffic | `/daily` is `force-static`; `/daily/[day]` is `force-dynamic` (it has `generateStaticParams` *and* `force-dynamic` — the latter wins). |
-| `/tunes*` | Precentor on laptop | No — rare workflow | `force-static` + `revalidate = false` + `generateStaticParams` (T1) |
+| `/tunes*` | Precentor on laptop | No — rare workflow | `force-static` + `revalidate = false` + `generateStaticParams` (T1). `/tunes` (the list) also has an **effective revalidate of 86400** — T2's `unstable_cache` lowers it; see `cache-tactics.md` §3.5. `/tunes/[slug]` is genuinely `false`. |
 
 **Verified observation (2026-11-08):** the public content routes — `/psalms`, `/psalms/[id]`,
 `/psalms/[id]/study`, `/tunes`, `/tunes/[slug]`, `/explore/*` — are now `force-static` with
-`revalidate = false` and `generateStaticParams`: they are **prerendered at deploy time and
-never revalidated**. The `/precent` subtree stays `force-dynamic` because it is
-session-scoped. That split means **a database change is not visible until a redeploy** — see
-the ISR section of `AGENTS.md`.
+`revalidate = false` and `generateStaticParams`: they are **prerendered at deploy time**. The
+`/precent` subtree stays `force-dynamic` because it is session-scoped. That split means **a
+database change is not visible until a redeploy** — see the ISR section of `AGENTS.md`.
+
+**Correction (2026-11-08, second pass):** an earlier version of this paragraph said these
+routes are "**never revalidated**". That is true of `/psalms`, `/psalms/[id]/study`,
+`/tunes/[slug]` and `/explore/*`, but **not** of `/psalms/[id]` or `/tunes` — the two routes
+that consume the T2-cached read helpers in `src/db/queries/tunes.ts`. T2's
+`unstable_cache(..., { revalidate: 86400 })` lowers those two routes' *effective* revalidate
+to **86400**, so they rebuild at most once per 24 h on their own. Measured:
+`prerender-manifest.json` gives `initialRevalidateSeconds` = 86400 for 199 routes (150 base
+psalms + 13 `a` + 13 `b` + 22 psalm-119 verse-range subsections, plus `/tunes`) and `false`
+for 966. `docs/research/cache-tactics.md` §3.5 has the mechanism and the evidence.
 
 Caching below the framework still applies: in the helper functions (`db/queries/*.ts`) via
 `unstable_cache`, and at the Cloudflare edge in front of the VPS. The Cloudflare Cache Rule
@@ -96,7 +113,7 @@ returning `x-nextjs-cache: HIT` with `s-maxage=86400` (issue #95).
 - **A 24-hour TTL is functionally no-cache** (Fact 2). Edge or in-process cache misses almost every request; the only requests that hit a cache are back-to-back (warm path) and Sunday peaks (warm path). This argues **against** relying on long-TTL caches for hit-rate and **for** warming strategies (client prefetch on idle/tap, `revalidateTag` on edit, pre-warmed routes, persistent edge cache for the literal subset of routes a single user actually visits).
 - **Prefetch on hover is the wrong primitive** (Fact 5). On a phone there is no hover; on the desktop banner the user is being told this is the wrong device for them. The `Link` prefetch-on-hover behaviour Next.js gives by default is wasted budget. Prefetch should fire on **idle-after-render** (the sing view is now stable, so the modal-picker target psalm is the most likely next psalm) and on **tap-imminent** (the first touch on the modal trigger). PR #79 begins this work.
 - **The modal psalm picker (Mode C) and the precenting left/right buttons (Mode A)** are the two transitions that must be prefetched. Both push the user to a `/psalms/[id]` or `/precent/[id]/sing/[pos]` URL that costs 1+ second cold. A 50 ms prefetch pays for itself on the first tap.
-- **The sing view is now a prerendered route** (`force-static` + `revalidate = false` + `generateStaticParams`), so it is served as static HTML from the edge without touching the database at request time. The cost of that choice is **staleness**: a psalm or tune edit does not appear until a redeploy. The `revalidatePath` / `revalidateTag` calls wired into `/api/precent/**` handle the paths that matter at request time, but a full re-import of the database still needs `bash scripts/deploy.sh`.
+- **The sing view is now a prerendered route** (`force-static` + `revalidate = false` + `generateStaticParams`), so it is served as static HTML from the edge without touching the database at request time. The cost of that choice is **staleness**: a psalm or tune edit does not appear until a redeploy. (Strictly, `/psalms/[id]` and `/tunes` also rebuild themselves every 24 h because T2 lowers their effective revalidate — so an edit can surface within a day without a redeploy. A redeploy is still the only way to make it appear *now*, and the only reliable way for a full re-import. See §2 and `cache-tactics.md` §3.5.) The `revalidatePath` / `revalidateTag` calls wired into `/api/precent/**` handle the paths that matter at request time, but a full re-import of the database still needs `bash scripts/deploy.sh`.
 - **Lyrics-only rendering is dramatically cheaper than staff-inline** (no ABC notation payload, no staff SVG). The default-view decision affects the whole bundle, not just runtime cost. See §4.
 - **The mobile-first design constraint also drives prefetch selection** (Fact 5): on phones the only prefetch signal we have is **idle-after-render** and **tap-imminent**. There is no hover. The precentor desktop view is the only place where hover-prefetch is even possible, and the left/right buttons there are already being tapped within seconds of page load — tap-imminent prefetch covers it.
 
