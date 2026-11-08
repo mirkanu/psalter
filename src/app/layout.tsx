@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import "./globals.css";
+import { getLiveBuildId } from "@/lib/build-id";
 import { SiteHeader } from "@/components/SiteHeader"
 import { Providers } from "@/components/Providers";
 // Phase 21 (D-07): TourProvider exposes { isOpen, show, dismiss } via
@@ -34,20 +33,16 @@ const geistMono = Geist_Mono({
   weight: ["400"],
 });
 
-// Read .next/BUILD_ID at SSR time and surface it as a data-attribute on
+// Read <distDir>/BUILD_ID at SSR time and surface it as a data-attribute on
 // <html> so DeployStatus can verify the loaded HTML response matches the
-// current build. If .next/BUILD_ID is unreadable (e.g. dev server before
-// the first build), we fall back to "unknown" and DeployStatus treats the
-// verification as inconclusive rather than mismatching.
+// current build. If it is unreadable (e.g. dev server before the first
+// build), we fall back to "unknown" and DeployStatus treats the verification
+// as inconclusive rather than mismatching.
+//
+// The dist dir is NOT always `.next`: production deploys alternate between
+// two slots (`.next` and `.next-build`). See src/lib/build-id.ts.
 function getBuildId(): string {
-  try {
-    return (
-      readFileSync(join(process.cwd(), ".next", "BUILD_ID"), "utf8").trim() ||
-      "unknown"
-    );
-  } catch {
-    return "unknown";
-  }
+  return getLiveBuildId() || "unknown";
 }
 
 const buildId = getBuildId();

@@ -27,7 +27,7 @@ cd /home/services/psalter
 
 echo "=== Build + restart after Hymnary tunes ==="
 echo "Working directory: $(pwd)"
-echo "Pre-build BUILD_ID: $(cat .next/BUILD_ID 2>/dev/null || echo 'NONE')"
+echo "Pre-build BUILD_ID (live slot): $(cat "$(cat data/live-dist-dir 2>/dev/null || echo .next)/BUILD_ID" 2>/dev/null || echo 'NONE')"
 echo
 
 echo "[1/2] scripts/deploy.sh"
