@@ -4,23 +4,23 @@ This file is the canonical project guide for the `mirkanu/psalter` repository. I
 
 ## Project
 
-Rebuild of **psalter.cprc.co.uk** — a Scottish Psalter website for CPRC congregation and precentors. Migrating from Airtable + Softr to Next.js 15 + PostgreSQL + abcjs notation rendering.
+Rebuild of **psalter.cprc.co.uk** — a Scottish Psalter website for CPRC congregation and precentors. Migrating from Airtable + Softr to Next.js 16 + PostgreSQL + abcjs notation rendering.
 
-**Deployed at:** `psalter.gsdlabs.dev` (Vercel — `mirkanu/psalter`, `psalter.gsdlabs.dev` custom domain; Neon Postgres for the database; Cloudflare R2 for object storage).
+**Deployed at:** `psalter.gsdlabs.dev` (Hetzner VPS — PM2 service `psalter` on port 3005, fronted by the shared Cloudflare Tunnel; PostgreSQL in the local Docker container `psalter-db` on `localhost:5435`; Cloudflare R2 for object storage).
 
 ## Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Framework | Next.js 15 (App Router) |
+| Framework | Next.js 16.2.5 (App Router, Turbopack) + React 19 |
 | UI | shadcn/ui + Tailwind CSS 4 + lucide-react |
 | ORM | Drizzle ORM 0.45.2 + drizzle-kit 0.31.10 |
 | DB driver | postgres.js 3.4.9 |
-| Database | PostgreSQL 16 (Neon — connection via `DATABASE_URL`) |
-| Auth | Better Auth 1.6.9 (precentor login, admin-created accounts only) |
+| Database | PostgreSQL 16 (Docker container `psalter-db`, `localhost:5435` — `DATABASE_URL`) |
+| Auth | Better Auth 1.6 (precentor login, admin-created accounts only) |
 | Notation | abcjs 6.6.3 (client-only — `dynamic({ ssr: false })` required) |
 | Storage | Cloudflare R2 (tune score sheet JPGs, bucket `gsd-psalter`) |
-| Deployment | Vercel, custom domain `psalter.gsdlabs.dev` |
+| Deployment | Hetzner VPS — PM2 (`scripts/start-with-db-wait.sh`, port 3005) behind the Cloudflare Tunnel; custom domain `psalter.gsdlabs.dev` |
 
 ## Backup & Recovery
 
@@ -38,7 +38,7 @@ These docs in `docs/research/` are the canonical record of our understanding of 
 | [`docs/research/tonic-solfa-notation.md`](docs/research/tonic-solfa-notation.md) | Solfège syntax — pitch syllables, dot subdivisions, hold symbols, underlines, octave subscripts. Use when changing `solfege-parser.ts` or `ocr-solfege-v2.ts`. |
 | [`docs/research/scottish-psalter-structure.md`](docs/research/scottish-psalter-structure.md) | Meter taxonomy (CM/LM/SM/CMD), stanza-vs-verse model, syllabification, phrase boundaries, PHRASE_BREAK placement. Use when changing `annotate-phrase-breaks.ts` or meter-related code. |
 | [`docs/research/tune-digitisation-research.md`](docs/research/tune-digitisation-research.md) | Tune source catalog (Hymnary, de Boer, Sing Psalms), MusicXML→ABC conversion, per-source slur quality. Use when ingesting new tune data. |
-| [`docs/research/visitor-workflows.md`](docs/research/visitor-workflows.md) | **Who actually uses the site, the four user jobs (read, sing, pick-tune, explore), and which routes are latency-critical. Read this before touching the sing view, the modal psalm picker, the precenting left/right navigation, or any caching / prefetch / ISR / Vercel / Cloudflare decision. This is the source of truth for trade-offs about default view mode, default sort order, ISR TTLs, edge caching, and client prefetch priorities.** |
+| [`docs/research/visitor-workflows.md`](docs/research/visitor-workflows.md) | **Who actually uses the site, the four user jobs (read, sing, pick-tune, explore), and which routes are latency-critical. Read this before touching the sing view, the modal psalm picker, the precenting left/right navigation, or any caching / prefetch / ISR / hosting / Cloudflare decision. This is the source of truth for trade-offs about default view mode, default sort order, ISR TTLs, edge caching, and client prefetch priorities.** |
 
 ### Archived docs
 
@@ -65,8 +65,8 @@ Never store raw `airtableusercontent.com` URLs in the database — they expire i
 ### Static rendering
 Public psalm and tune pages use `generateStaticParams` — no runtime DB queries on the read path.
 
-### ISR / T1 / T2 routes — manual Vercel redeploy after Neon changes
-Neon DB content changes are rare (every few months). When you change it, you must trigger a **Vercel production redeploy** — otherwise ISR-cached routes (T1) and tag-cached routes (T2/T3) will keep serving the old content. The `revalidatePath` / `revalidateTag` calls wired in `/api/precent/**` and `/api/dev/melisma-**` invalidate in-request, but full-DB re-imports (e.g. `seedPsalms`, `importAirtable`) need a Vercel redeploy or explicit revalidate to flush every cached psalm/tune page.
+### ISR / T1 / T2 routes — manual redeploy after DB changes
+Database content changes are rare (every few months). When you change it, you must trigger a **production redeploy** (`bash scripts/deploy.sh`) — otherwise ISR-cached routes (T1) and tag-cached routes (T2/T3) will keep serving the old content. The `revalidatePath` / `revalidateTag` calls wired in `/api/precent/**` and `/api/dev/melisma-**` invalidate in-request, but full-DB re-imports (e.g. `seedPsalms`, `importAirtable`) need a redeploy or explicit revalidate to flush every cached psalm/tune page.
 
 ## Mobile-first layout (binding)
 
@@ -78,11 +78,13 @@ The psalter is a **mobile-first** site. Always design + verify CSS at phone widt
 - **Airtable PAT:** stored in `.env` as `AIRTABLE_PAT` (never commit)
 - **Key tables (legacy, for migration only):** Psalms, Scottish Psalter (versification), Tunes, Psalm & Tune CPRC, Events, Verses, 365 Days, Topics (Nave's), Messianic Psalms
 
-## Deployment — stay on preview
+## Deployment
 
-Free Vercel allows **unlimited preview deploys but limited production deploys** on lower tiers; production deploys happen whenever `main` is updated. Therefore: **commit and push iteration-by-iteration to preview branches; only push to `main` when a milestone (issue/PR scope) is fully done and reviewed.**
+**The only supported deploy path is `bash scripts/deploy.sh`.** It builds into whichever build slot is *not* live (`.next` / `.next-build`, recorded in `data/live-dist-dir`), swaps the live slot, and restarts PM2. Never run `npm run build` directly against the live slot — `next build` wipes its dist dir, which destroys the running server's route manifests and 500s every dynamic route.
 
-Preview URLs follow the Vercel preview shape (`<deployment-id>-<git-branch>-<team-slug>.vercel.app` or the `*.vercel.app` form shown in the Vercel dashboard for the deployment). Production URL: `https://psalter.gsdlabs.dev`.
+`master` has gitleaks push protection with `enforce_admins: true`, so **direct pushes are rejected** — commit to a branch, open a PR, and merge.
+
+Production URL: `https://psalter.gsdlabs.dev` (Cloudflare Tunnel → PM2 `psalter` on port 3005).
 
 ## Environment Variables
 

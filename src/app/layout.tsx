@@ -33,19 +33,17 @@ const geistMono = Geist_Mono({
   weight: ["400"],
 });
 
-// Read <distDir>/BUILD_ID at SSR time and surface it as a data-attribute on
-// <html> so DeployStatus can verify the loaded HTML response matches the
-// current build. If it is unreadable (e.g. dev server before the first
-// build), we fall back to "unknown" and DeployStatus treats the verification
-// as inconclusive rather than mismatching.
+// Read <distDir>/BUILD_ID and surface it as a data-attribute on <html> so
+// DeployStatus can verify the loaded HTML response matches the current build.
+// If it is unreadable (e.g. dev server before the first build), we fall back
+// to "unknown" and DeployStatus treats the verification as inconclusive
+// rather than mismatching.
 //
 // The dist dir is NOT always `.next`: production deploys alternate between
 // two slots (`.next` and `.next-build`). See src/lib/build-id.ts.
 function getBuildId(): string {
   return getLiveBuildId() || "unknown";
 }
-
-const buildId = getBuildId();
 
 export const viewport: Viewport = {
   viewportFit: 'cover',
@@ -75,6 +73,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Read at RENDER time, never at module scope. Next writes the BUILD_ID
+  // file just before the "Generating static pages" phase, but this module is
+  // imported much earlier, during "Collecting page data" — so a module-scope
+  // read always misses the file and bakes "unknown" into every prerendered
+  // page, while dynamic routes (rendered per request) read it correctly.
+  // See src/lib/build-id.ts.
+  const buildId = getBuildId();
+
   return (
     <html
       lang="en"

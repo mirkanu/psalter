@@ -30,18 +30,25 @@
 // pinned into the CDN/Cloudflare Tunnel layer.
 
 import { NextResponse } from 'next/server'
-import { getLiveBuildId } from '@/lib/build-id'
+import { readLiveBuildId } from '@/lib/build-id'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  const buildId = getLiveBuildId()
+  const result = readLiveBuildId()
 
-  if (!buildId) {
-    // Missing or unreadable file — same shape as an empty file. Per D-25:
-    // 500, no silent placeholder that would mask a misconfigured deploy.
+  if (!result.ok) {
+    // Per D-25: 500, no silent placeholder that would mask a misconfigured
+    // deploy. The two failure modes are reported distinctly so a missing
+    // file (slot never built / swapped wrong) is distinguishable from a
+    // transient read error (permissions, filesystem hiccup).
     return NextResponse.json(
-      { error: 'BUILD_ID missing' },
+      {
+        error:
+          result.reason === 'missing'
+            ? 'BUILD_ID missing'
+            : 'BUILD_ID unreadable',
+      },
       {
         status: 500,
         headers: { 'Cache-Control': 'no-store' },
@@ -50,7 +57,7 @@ export async function GET() {
   }
 
   return NextResponse.json(
-    { buildId },
+    { buildId: result.buildId },
     {
       headers: {
         // Same policy as /api/deploy-info: per-tab correctness across
