@@ -1,6 +1,21 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Which directory the build output lives in, and which directory the
+  // running server reads from.
+  //
+  // `next build` wipes and rewrites its distDir from scratch. When that is
+  // the same directory the running server is serving from, the live server
+  // loses its route manifests and every dynamic route starts returning 500
+  // ("The client reference manifest for route ... does not exist") for the
+  // whole build — ~15 minutes on this VPS. scripts/deploy.sh therefore
+  // builds into whichever of the two slots (`.next` / `.next-build`) is NOT
+  // live, then starts the server against the newly built slot.
+  //
+  // The runtime value must match the value the build was run with (it is
+  // recorded in the build's required-server-files.json), so the server is
+  // always started with the same PSALTER_DIST_DIR the build used.
+  distDir: process.env.PSALTER_DIST_DIR || '.next',
   async redirects() {
     return [
       {
