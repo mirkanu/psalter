@@ -4,6 +4,14 @@
 **Researched:** 2026-09-27
 **Confidence:** HIGH for the user-jobs taxonomy (direct user description, corroborated by route inspection). HIGH for the caching-state facts (verified against source tree at the same date).
 
+**Updated 2026-11-08 — hosting and caching state moved on; the user-jobs taxonomy did not.**
+The five facts in the TL;DR and the persona analysis in §1 are still current and still binding.
+The *caching state* they sit on is not: the site left Vercel/Neon and returned to a Hetzner VPS
+(Cloudflare Tunnel → PM2 → a local Postgres) on 2026-09-07, and ISR was switched on for the
+public psalm/tune/explore routes after this doc was written. §2 now records the verified
+directives from the current source tree; the §4 default-view question was also settled since
+(Phase 21, D-01) and is annotated below.
+
 **TL;DR — the five facts that matter**
 
 1. **Nobody comes to read psalms.** Every visit is a *sing* visit. Pages exist to support the sing view, not the other way round.
@@ -34,7 +42,7 @@ In **all three flows**, after the first psalm the singer uses the **modal psalm 
 
 **Tune behaviour.** They rarely change the recommended tune. Power-user singers may swap to an alternate tune for a specific psalm (Mode A flow inside the same modal), but the modal is fundamentally a *navigate-to-next-psalm* control, not a tune selector. Most of the time the singer takes the recommended tune as-is. (The precentor is the one who overrides tunes, while building a set; the singer in the pew trusts the chosen tune.)
 
-**Display preference.** Most singers cannot read music and use the **lyrics-only** view. Today the default view is `staff` (set in `SingingView.tsx`, hard-coded in both `useState<ViewMode>('staff')` and the localStorage fallback in `readStoredViewMode()`). The default is a deliberate trade-off: staff-inline is the long-term goal for the congregation (church-wide music-literacy push), so we keep it as the default even though most singers will change it once. **This trade-off is the reason this doc exists — see §4.**
+**Display preference.** Most singers cannot read music and use the **lyrics-only** view. The default view is now `legacy` for fresh visitors (Phase 21, D-01 — `SingingView.tsx` initialises `useState<ViewMode>('legacy')`), with `staff` remaining the localStorage fallback. The default is a deliberate trade-off: staff-inline is the long-term goal for the congregation (church-wide music-literacy push), so the layout stays available even though most singers will change it once. **This trade-off is the reason this doc exists — see §4.**
 
 **Study view.** Infrequently, a singer will switch to the psalm study view (`/psalms/[id]/study`) to read the commentary for the psalm they are singing.
 
@@ -55,19 +63,29 @@ A rare third flow is **tune review** at `/tunes` — used while working toward t
 
 | Route | Persona | Latency-critical? | Cache behaviour today |
 | --- | --- | --- | --- |
-| `/psalms/[id]` (sing view) | Singer on phone | **YES** — every Sunday service hits it; also the modal-picker target | `export const dynamic = 'force-dynamic'` (verified, `src/app/psalms/[id]/page.tsx:1`). No ISR. |
+| `/psalms/[id]` (sing view) | Singer on phone | **YES** — every Sunday service hits it; also the modal-picker target | `force-static` + `revalidate = false` + `generateStaticParams` (verified, `src/app/psalms/[id]/page.tsx`) — prerendered at deploy time (T1), never revalidated. |
 | `/precent/[id]/sing/[pos]` | Precentor on laptop | **YES** — every service, every psalm in the set | `force-dynamic` (verified). Auth-gated; cold path also pays the Better Auth login POST + DB write. |
-| `/psalms/[id]/study` | Singer on phone (rare) | No — infrequent | `force-dynamic` |
+| `/psalms/[id]/study` | Singer on phone (rare) | No — infrequent | `force-static` + `revalidate = false` + `generateStaticParams` (T1) |
 | `/precent/[id]` (set detail) | Precentor on laptop | No — used <1× per service to *create* a set, then never revisited | `force-dynamic` |
 | `/precent` (list) | Precentor on laptop | No — cheap list view | `force-dynamic` |
-| `/psalms` (list) | Singer on phone | No — singer goes here once per session to start; cheap once warm | `force-dynamic` |
-| `/explore/*` | Singer on phone (devotions) | No — low traffic | `force-dynamic` |
-| `/daily*` | Singer on phone (devotions) | No — low traffic | `force-dynamic` |
-| `/tunes*` | Precentor on laptop | No — rare workflow | `force-dynamic` |
+| `/psalms` (list) | Singer on phone | No — singer goes here once per session to start; cheap once warm | `force-static` + `revalidate = false` (T1) |
+| `/explore/*` | Singer on phone (devotions) | No — low traffic | `force-static` + `revalidate = false` + `generateStaticParams` (T1) |
+| `/daily*` | Singer on phone (devotions) | No — low traffic | `/daily` is `force-static`; `/daily/[day]` is `force-dynamic` (it has `generateStaticParams` *and* `force-dynamic` — the latter wins). |
+| `/tunes*` | Precentor on laptop | No — rare workflow | `force-static` + `revalidate = false` + `generateStaticParams` (T1) |
 
-**Verified observation:** every public route currently declares `export const dynamic = 'force-dynamic'`. No Next.js ISR is active anywhere on the site. Caching therefore happens below the framework: in the helper functions (`db/queries/*.ts`) via `unstable_cache`, and at the Cloudflare CDN layer in front of Vercel. The previous ISR experiment that produced 2-3 GB deploys was abandoned before this doc was written.
+**Verified observation (2026-11-08):** the public content routes — `/psalms`, `/psalms/[id]`,
+`/psalms/[id]/study`, `/tunes`, `/tunes/[slug]`, `/explore/*` — are now `force-static` with
+`revalidate = false` and `generateStaticParams`: they are **prerendered at deploy time and
+never revalidated**. The `/precent` subtree stays `force-dynamic` because it is
+session-scoped. That split means **a database change is not visible until a redeploy** — see
+the ISR section of `AGENTS.md`.
 
-**Verified warm-path behaviour:** production TTFB on `/precent/42/sing/1` is ~77 ms warm vs ~1,560 ms cold; `/psalms/42` is ~64 ms warm vs ~1,243 ms cold (per the recent comparison captured in issue #82 thread). Both the edge layer and the in-process `unstable_cache` contribute to the warm path; the cold path is dominated by Chromium cold-launch on the precent view and the Vercel-edge → Neon region handshake.
+Caching below the framework still applies: in the helper functions (`db/queries/*.ts`) via
+`unstable_cache`, and at the Cloudflare edge in front of the VPS. The Cloudflare Cache Rule
+layer (Phase 19, Layer 3) adds `s-maxage` on the T2 route globs; `/psalms/[id]` was measured
+returning `x-nextjs-cache: HIT` with `s-maxage=86400` (issue #95).
+
+**Verified warm-path behaviour:** production TTFB on `/precent/42/sing/1` is ~77 ms warm vs ~1,560 ms cold; `/psalms/42` is ~64 ms warm vs ~1,243 ms cold (per the recent comparison captured in issue #82 thread). Both the edge layer and the in-process `unstable_cache` contribute to the warm path; the cold path is dominated by Chromium cold-launch on the precent view and the app → Postgres round trip.
 
 ---
 
@@ -75,10 +93,10 @@ A rare third flow is **tune review** at `/tunes` — used while working toward t
 
 **Trade-offs are forced by §1's facts, not negotiable.**
 
-- **A 24-hour TTL is functionally no-cache** (Fact 2). Edge or in-process cache misses almost every request; the only requests that hit a cache are back-to-back (warm path) and Sunday peaks (warm path). This argues **against** relying on long-TTL caches for hit-rate and **for** warming strategies (client prefetch on idle/tap, `revalidateTag` on edit, pre-warmed Vercel routes, persistent edge cache for the literal subset of routes a single user actually visits).
+- **A 24-hour TTL is functionally no-cache** (Fact 2). Edge or in-process cache misses almost every request; the only requests that hit a cache are back-to-back (warm path) and Sunday peaks (warm path). This argues **against** relying on long-TTL caches for hit-rate and **for** warming strategies (client prefetch on idle/tap, `revalidateTag` on edit, pre-warmed routes, persistent edge cache for the literal subset of routes a single user actually visits).
 - **Prefetch on hover is the wrong primitive** (Fact 5). On a phone there is no hover; on the desktop banner the user is being told this is the wrong device for them. The `Link` prefetch-on-hover behaviour Next.js gives by default is wasted budget. Prefetch should fire on **idle-after-render** (the sing view is now stable, so the modal-picker target psalm is the most likely next psalm) and on **tap-imminent** (the first touch on the modal trigger). PR #79 begins this work.
 - **The modal psalm picker (Mode C) and the precenting left/right buttons (Mode A)** are the two transitions that must be prefetched. Both push the user to a `/psalms/[id]` or `/precent/[id]/sing/[pos]` URL that costs 1+ second cold. A 50 ms prefetch pays for itself on the first tap.
-- **The sing view itself should be a Vercel `revalidate` route** with a short TTL (or build-time `generateStaticParams` plus tag invalidation) — but only after the deploy-size problem from the previous ISR experiment is solved. The 2-3 GB build artefact was caused by per-page data that doesn't actually need to live in the static bundle; the layer model in issue #82 (DB cache + edge `revalidate` + client prefetch) is designed to keep the static bundle small enough for the free plan.
+- **The sing view is now a prerendered route** (`force-static` + `revalidate = false` + `generateStaticParams`), so it is served as static HTML from the edge without touching the database at request time. The cost of that choice is **staleness**: a psalm or tune edit does not appear until a redeploy. The `revalidatePath` / `revalidateTag` calls wired into `/api/precent/**` handle the paths that matter at request time, but a full re-import of the database still needs `bash scripts/deploy.sh`.
 - **Lyrics-only rendering is dramatically cheaper than staff-inline** (no ABC notation payload, no staff SVG). The default-view decision affects the whole bundle, not just runtime cost. See §4.
 - **The mobile-first design constraint also drives prefetch selection** (Fact 5): on phones the only prefetch signal we have is **idle-after-render** and **tap-imminent**. There is no hover. The precentor desktop view is the only place where hover-prefetch is even possible, and the left/right buttons there are already being tapped within seconds of page load — tap-imminent prefetch covers it.
 
@@ -86,14 +104,19 @@ For the concrete layer-by-layer plan, see issue #82 (*Cold-vs-warm latency — c
 
 ---
 
-## 4. Open question — default view mode
+## 4. Default view mode — settled in Phase 21
 
-**Status: still open as a separate decision; flagged in issue #82.** The current default is `staff` (verified: `SingingView.tsx` hard-codes `'staff'` in both the initial state and the localStorage fallback). Arguments:
+**Status: decided in Phase 21 (D-01).** The default is now `legacy` for fresh visitors
+(verified: `SingingView.tsx` initialises `useState<ViewMode>('legacy')`; the localStorage
+fallback remains `'staff'`). This doc's original question — `lyrics-only` vs `staff` — was the
+pre-Phase-21 framing and no longer describes the choice that was actually made. The original
+arguments are kept below because they still explain *why* the default is a live question.
+Arguments:
 
 - **For `lyrics-only` default:** most visitors can't read music; making them click once on every fresh device to reach the view they actually use is friction. Lyrics-only renders faster and produces a smaller bundle, which matters because Fact 5 means the sing view is opened on phones over often-flaky church Wi-Fi.
 - **For `staff` default:** the congregation's long-term music-literacy goal is to teach people to *see* the staff while they sing. Defaulting to lyrics-only may quietly undermine that goal by hiding staff notation from casual singers. Keeping staff as the default also keeps the sing-view layout identical for staff-literate users (no visual jump when they navigate between psalms).
 
-This doc does not pick a side. It records the trade-off and points at issue #82 as the canonical decision thread.
+This doc does not pick a side — Phase 21 (D-01) did, choosing `legacy` for fresh visitors. The original trade-off is recorded above because it still explains why the default is a live question, and issue #82 remains the canonical thread for the caching work that surrounds it.
 
 ---
 
@@ -106,7 +129,7 @@ This doc does not pick a side. It records the trade-off and points at issue #82 
 - **`src/components/PsalmPickerModal.tsx`** — single component serving Mode A (precent set nav) and Mode C (sing-view jump). Mode B (alternate-tune swap) is currently unused.
 - **`src/components/DesktopOptimisedBanner.tsx`** — the desktop banner that names Fact 5 in plain language.
 - **`src/middleware.ts`** — Better Auth matcher for `/precent` and `/dev`.
-- **`.planning/research/ARCHITECTURE.md` and `STACK.md`** — for the framework, build, and deploy model.
-- **`.planning/research/FEATURES.md` and `PITFALLS.md`** — for the feature backlog and known sharp edges.
+- **`AGENTS.md`** — the canonical project guide: framework, build, deploy model and backup/recovery.
+- **`docs/archive/ARCHITECTURE.md`, `STACK.md`, `FEATURES.md`, `PITFALLS.md`** — historical records of the framework, feature backlog and known sharp edges. Archived and no longer authoritative.
 
 This doc only describes *who uses the site, how, and what that implies*. It is intentionally narrow so it can be cited from issues and PRs without dragging in unrelated decisions.

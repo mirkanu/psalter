@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Public Beta
 status: ready_to_plan
-stopped_at: "Phase 20 Plan 02 complete (PR #118 open, awaiting merge)"
-last_updated: "2026-10-16T11:38:00.000Z"
-last_activity: 2026-10-16 -- Quick task 261016-fqz completed (Phase 21 polish: Legacy view + Tour wording/padding/icon fixes)
+stopped_at: "Phase 21 complete; BUILD_ID render-time fix merged (PR #133) and deploying to production"
+last_updated: "2026-11-08T18:30:00.000Z"
+last_activity: 2026-11-08 -- Docs accuracy audit + backup repair. The daily DB backup had been silently failing for 27 days (GitHub secret had drifted from PSALTER_DB_PASSWORD to the global POSTGRES_PASSWORD, which cannot authenticate to psalter-db) -- fixed, verified by restoring the dump into a scratch DB (34 tables, psalms=150 tunes=172 psalm_versions=184 events=50, exact match) and closed as issue #134. Separately, a production build failed with NO output at "Running TypeScript": the cause was the jest-worker running Next's type check being OOM-killed, not a type error (the same check run in-process passes with 0 errors; the 78 repo-wide tsc errors are all in *.test.*/*.spec.* files, which Next filters out). Added scripts/repro-typecheck.mjs to the repo so this is diagnosable, and documented the failure mode in AGENTS.md. Also audited the docs for stale Vercel/Neon-era content: README.md and CONTRIBUTING.md rewritten against the real Hetzner/PM2/Cloudflare-Tunnel hosting, and the two binding research docs (visitor-workflows.md, cache-tactics.md) corrected -- they had claimed "no Next.js ISR is active anywhere on the site" and "no T2 for HTML", both of which production header measurements contradict.
 progress:
   total_phases: 15
   completed_phases: 6

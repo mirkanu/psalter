@@ -43,7 +43,7 @@ These docs in `docs/research/` are the canonical record of our understanding of 
 
 ### Archived docs
 
-`docs/archive/` holds research docs kept for historical reference but no longer authoritative. They were moved out of `docs/research/` and replaced with newer analysis — see each file's `About.md` for the supersession chain and the GitHub issue that audited it. Do **not** consult these for current behaviour; consult the linked successor doc instead.
+`docs/archive/` holds research docs kept for historical reference but no longer authoritative. They were moved out of `docs/research/` and replaced with newer analysis; each file opens with a note stating what it supersedes and where the current material lives. Do **not** consult these for current behaviour — consult the successor doc in `docs/research/`, or this file, instead.
 
 ### Hard rules derived from these docs
 
@@ -86,6 +86,28 @@ The psalter is a **mobile-first** site. Always design + verify CSS at phone widt
 `master` has gitleaks push protection with `enforce_admins: true`, so **direct pushes are rejected** — commit to a branch, open a PR, and merge.
 
 Production URL: `https://psalter.gsdlabs.dev` (Cloudflare Tunnel → PM2 `psalter` on port 3005).
+
+### A build that fails with no output
+
+`next build` runs its TypeScript check inside a **jest-worker child process** (`next/dist/esm/build/type-check.js`). If that worker is OOM-killed, the parent catches the failure and calls `process.exit(1)` — printing **nothing**. A type error and a killed worker are therefore indistinguishable in the log:
+
+```
+✓ Compiled successfully in 14.2min
+  Running TypeScript ...
+
+BUILD FAILED — the live server was not touched.
+```
+
+Diagnose it by running the same check in-process, which prints real diagnostics:
+
+```sh
+node scripts/repro-typecheck.mjs
+```
+
+Two things to know when reading type-check output:
+
+- `next build` **ignores diagnostics in `*.test.*` and `*.spec.*` files** (`next/dist/lib/typescript/runTypeCheck.js` filters them out), so a non-zero `npx tsc --noEmit` does not by itself mean the build will fail.
+- The check needs roughly 1–1.5 GB. On this 3.7 GB box, before building: check `free -h`, and if free swap is low add headroom (`fallocate -l 4G /home/services/swapfile3 && chmod 600 … && mkswap … && swapon …`). Next preserves a distDir's `cache/` directory across builds, so a warm `<build-slot>/cache/.tsbuildinfo` makes the in-build check incremental and far cheaper — `TS_CACHE_DIR=.next-build/cache node scripts/repro-typecheck.mjs` writes exactly that file.
 
 ## Environment Variables
 
