@@ -1,13 +1,18 @@
 // Public build-version endpoint for the cache-bust mechanism.
 //
-// Returns ONLY `{ buildId: string }` from .next/BUILD_ID — the same
-// 21-character hash Next.js emits at build start (postbuild runs
+// Returns ONLY `{ buildId: string }` from the live slot's BUILD_ID — the
+// same 21-character hash Next.js emits at build start (postbuild runs
 // scripts/capture-build-id.ts which stamps the value into this file).
 // The BuildVersionGuard client component (mounted globally in layout.tsx)
 // fetches this on every psalm-page mount and on bfcache restores, compares
 // the response against localStorage `psalter.lastSeenBuildId`, and hard-
 // reloads the page on mismatch. One hard reload per stale visitor per
 // deploy is the deploy-boundary cost (D-30).
+//
+// The build dir is NOT always `.next`: production deploys alternate between
+// two slots (`.next` / `.next-build`), so this must read whichever slot is
+// live — see src/lib/build-id.ts. Reading a hardcoded `.next` would report
+// the idle slot's build and break the cache-bust across a slot swap.
 //
 // Public endpoint — no auth check, no admin gate. /api/deploy-info is
 // admin-only because it exposes commit SHA + message + deploy timestamp
@@ -24,54 +29,36 @@
 // `no-store` on the 500 paths so a transient filesystem error isn't
 // pinned into the CDN/Cloudflare Tunnel layer.
 
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { NextResponse } from 'next/server'
+import { getLiveBuildId } from '@/lib/build-id'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  try {
-    const buildId = readFileSync(
-      join(process.cwd(), '.next', 'BUILD_ID'),
-      'utf8',
-    ).trim()
+  const buildId = getLiveBuildId()
 
-    if (!buildId) {
-      // Empty file — same shape as a missing file. Per D-25: 500, no
-      // silent placeholder that would mask a misconfigured deploy.
-      return NextResponse.json(
-        { error: 'BUILD_ID missing' },
-        {
-          status: 500,
-          headers: { 'Cache-Control': 'no-store' },
-        },
-      )
-    }
-
+  if (!buildId) {
+    // Missing or unreadable file — same shape as an empty file. Per D-25:
+    // 500, no silent placeholder that would mask a misconfigured deploy.
     return NextResponse.json(
-      { buildId },
-      {
-        headers: {
-          // Same policy as /api/deploy-info: per-tab correctness across
-          // deploys. `private` excludes CDN caches (Cloudflare Tunnel)
-          // from storing this; `max-age=0, must-revalidate` forces the
-          // browser to send a conditional request on every fetch.
-          'Cache-Control': 'private, max-age=0, must-revalidate',
-        },
-      },
-    )
-  } catch {
-    // Filesystem unreadable — happen on a fresh checkout or before the
-    // first build. Per D-25: 500 (NOT a 200 + placeholder). The psalm
-    // page renders fine either way; the cache-bust is best-effort and
-    // silently no-ops on network errors.
-    return NextResponse.json(
-      { error: 'BUILD_ID unreadable' },
+      { error: 'BUILD_ID missing' },
       {
         status: 500,
         headers: { 'Cache-Control': 'no-store' },
       },
     )
   }
+
+  return NextResponse.json(
+    { buildId },
+    {
+      headers: {
+        // Same policy as /api/deploy-info: per-tab correctness across
+        // deploys. `private` excludes CDN caches (Cloudflare Tunnel)
+        // from storing this; `max-age=0, must-revalidate` forces the
+        // browser to send a conditional request on every fetch.
+        'Cache-Control': 'private, max-age=0, must-revalidate',
+      },
+    },
+  )
 }
