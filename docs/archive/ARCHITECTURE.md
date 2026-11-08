@@ -159,7 +159,7 @@ export function isMeterMismatch(
 
 **Recommended shape for `/changelog`:** Server component `page.tsx` fetches session server-side (`auth.api.getSession`) alongside the published posts, passes `isAdmin: boolean` down to a client component (`ChangelogEditor.tsx` or inline in a `ChangelogFeed.tsx`). When `isAdmin`, render editable affordances (edit/delete buttons per post, an "add post" composer) that call the new `/api/admin/changelog/**` routes. When not admin, render the same feed read-only. This avoids a route split (`/changelog` vs `/admin-only/changelog`) since the milestone explicitly asks for *inline* authoring on the public page, and keeps SEO/static-friendliness for the 99% of visitors who aren't admin.
 
-**Trade-off:** Because `/changelog` needs to know `isAdmin` at request time, it cannot be a purely static-rendered page (breaks the "Static rendering" hard rule in CLAUDE.md for *fully public* pages, but that rule is scoped to psalm/tune pages specifically — `/changelog` should follow the same `force-dynamic` pattern already used by `/admin-only/feedback/page.tsx` and `/api/feedback/route.ts`).
+**Trade-off:** Because `/changelog` needs to know `isAdmin` at request time, it cannot be a purely static-rendered page (breaks the "Static rendering" hard rule in the project's `AGENTS.md` — this file used to say `CLAUDE.md`, which was replaced by `AGENTS.md` — for *fully public* pages, but that rule is scoped to psalm/tune pages specifically — `/changelog` should follow the same `force-dynamic` pattern already used by `/admin-only/feedback/page.tsx` and `/api/feedback/route.ts`).
 
 ### Pattern 4: Pure-derivation slugs, not stored slug columns (established convention)
 
@@ -294,8 +294,8 @@ components/TuneTable.tsx: psalmId-aware sort block extended —
 
 ### Anti-Pattern 3: Making `/changelog` fully static when admin state is involved
 
-**What people do:** Reflexively apply the CLAUDE.md "Static rendering... no runtime DB queries on the read path" rule to every public page, including `/changelog`.
-**Why it's wrong:** That rule is scoped to psalm/tune pages in CLAUDE.md specifically because they use `generateStaticParams`. `/changelog` needs a live session check to decide whether to render admin affordances — this is architecturally the same shape as `/admin-only/feedback/page.tsx`, which is already `force-dynamic`.
+**What people do:** Reflexively apply the `AGENTS.md` "Static rendering... no runtime DB queries on the read path" rule to every public page, including `/changelog`. (This file used to say `CLAUDE.md`, which was replaced by `AGENTS.md`.)
+**Why it's wrong:** That rule is scoped to psalm/tune pages in `AGENTS.md` specifically because they use `generateStaticParams`. `/changelog` needs a live session check to decide whether to render admin affordances — this is architecturally the same shape as `/admin-only/feedback/page.tsx`, which is already `force-dynamic`.
 **Do this instead:** Mark `/changelog` `export const dynamic = 'force-dynamic'` (matching the existing convention in `admin-only/feedback/page.tsx` and `api/feedback/route.ts`), and don't fight the framework to force static rendering on a page with session-dependent content.
 
 ### Anti-Pattern 4: A second slug-generation function for tunes

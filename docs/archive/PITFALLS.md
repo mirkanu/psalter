@@ -4,14 +4,16 @@
 **Researched:** 2026-07-29
 **Confidence:** HIGH (grounded in direct inspection of this repo's code, `.env.production`, PM2/docker state, and VPS memory — not generic advice)
 
-> **Note:** This file was rewritten for the v2.0 Public Beta milestone (previously covered v1.0's Airtable/abcjs migration pitfalls, researched 2026-05-07). Those earlier pitfalls (Airtable attachment URL expiry, abcjs SSR incompatibility, copyright, etc.) are now resolved/shipped and are preserved in the "Hard rules" section of the project's `CLAUDE.md` and the `.planning/research/` alignment/notation docs referenced there — this file now focuses on the pitfalls specific to adding v2.0's 6 new capabilities.
+> **Note:** This file was rewritten for the v2.0 Public Beta milestone (previously covered v1.0's Airtable/abcjs migration pitfalls, researched 2026-05-07). Those earlier pitfalls (Airtable attachment URL expiry, abcjs SSR incompatibility, copyright, etc.) are now resolved/shipped and are preserved in the "Hard rules" section of the project's `AGENTS.md` (this file used to say `CLAUDE.md`, which was replaced by `AGENTS.md`) and the `docs/research/` alignment/notation docs referenced there — this file now focuses on the pitfalls specific to adding v2.0's 6 new capabilities.
+>
+> **As of 2026-11-08:** the statements below are a historical record of the v2.0 milestone as researched on 2026-07-29, not a description of the current system. Two have since changed: the `src/middleware.ts` claim below (the file was added the next day, 2026-07-30, in commit `f1b3b2b9`), and the "`/dev/*` is live and publicly writable" risk, which was fixed in Phase 6 (SEC-01/02/03, shipped 2026-07-30). The hosting described here (Vercel + Neon) is also obsolete — see `AGENTS.md` for the current stack.
 
 ## Codebase facts that shape every pitfall below
 
 Verified directly against the running system before writing this doc:
 
 - **PM2 runs `psalter` in `fork` mode, single instance** (not cluster) — confirmed via `pm2 list`. This changes the in-memory rate-limit risk profile from "split across workers" to "wiped on every restart/deploy."
-- **`src/middleware.ts` does not exist.** There is no global route-gating layer. Every `/dev/*` page and every `/api/dev/*` route is responsible for its own auth check.
+- **`src/middleware.ts` does not exist.** *(As of the 2026-07-29 research date. It was added the following day, 2026-07-30, in commit `f1b3b2b9` — "relocate middleware to src/ and extend it over /api/dev/*" — and now provides the global route-gating layer this file says is absent.)* There is no global route-gating layer. Every `/dev/*` page and every `/api/dev/*` route is responsible for its own auth check.
 - **`/dev/melisma-editor` and all 8 of its `/api/dev/*` routes currently have zero session/auth checks** (`grep` for `getSession`/`auth.` returned 0 hits in every one). PROJECT.md calls this page "the de facto tune-data admin UI" — it is live on `psalter.gsdlabs.dev` right now, publicly reachable, unauthenticated, and writes directly to the tunes table.
 - **Tune score images are NOT in R2** despite CLAUDE.md's stack table saying so. They are local files at `public/tunes/` (328 files, 1.4GB), served as Next.js static assets, and are **git-ignored** (`public/tunes/.gitignore: *.jpg`) — meaning there is no version-control safety net if a batch script overwrites them.
 - **VPS memory is already tight at rest:** `free -h` shows 2.5Gi used / 398Mi free / 4.0Gi swap in use, out of 3.7Gi total, before any new batch job runs.
@@ -288,7 +290,7 @@ Airtable's UI display names and its API `field.name` values can drift (fields ge
 
 - Direct repository inspection: `src/app/api/feedback/route.ts`, `src/lib/auth.ts`, `src/lib/precent-auth.ts`, `src/app/api/dev/*/route.ts`, `src/app/dev/melisma-editor/*`, `scripts/migrate-airtable.ts`, `scripts/download-tunes.ts`, `next.config.ts`, `package.json` — read 2026-07-29.
 - Direct VPS state: `pm2 list`, `free -h`, `docker volume ls`, `git check-ignore`/`git ls-files public/tunes` — checked 2026-07-29.
-- Project docs: `.planning/PROJECT.md`, project `CLAUDE.md` (stack table, global secrets-hygiene rules, memory constraints section).
+- Project docs: `.planning/PROJECT.md`, project `AGENTS.md` (this file used to say `CLAUDE.md`, which was replaced by `AGENTS.md`) — stack table, global secrets-hygiene rules, memory constraints section.
 - [Email Deliverability for SaaS: SPF, DKIM, DMARC Setup and Resend Integration](https://dev.to/whoffagents/email-deliverability-for-saas-spf-dkim-dmarc-setup-and-resend-integration-1hpd) — MEDIUM confidence, WebSearch-sourced, cross-checked against multiple Resend-specific setup guides in the same search batch.
 - [How do I set up a custom sending domain in Resend (SPF, DKIM, DMARC) step by step?](https://codeables.dev/article/how-do-i-set-up-a-custom-sending-domain-in-resend-spf-dkim-dmarc-step) — MEDIUM confidence.
 - [Trying to understand sharp memory usage · Issue #349 · lovell/sharp](https://github.com/lovell/sharp/issues/349) — HIGH confidence (official sharp GitHub issue, documents the progressive-JPEG OOM failure mode directly).
