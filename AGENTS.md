@@ -111,6 +111,41 @@ Two things to know when reading type-check output:
 - `next build` **ignores diagnostics in `*.test.*` and `*.spec.*` files** (`next/dist/lib/typescript/runTypeCheck.js` filters them out), so a non-zero `npx tsc --noEmit` does not by itself mean the build will fail.
 - The check needs roughly 1–1.5 GB. On this 3.7 GB box, before building: check `free -h`, and give the build protected memory — see **"Protecting the build from the OOM killer"** below. (Swap headroom is not enough on its own: the type-check worker is killed by the OOM killer, and swapping is far too slow for it.) Next preserves a distDir's `cache/` directory across builds, so a warm `<build-slot>/cache/.tsbuildinfo` makes the in-build check incremental and far cheaper — `TS_CACHE_DIR=.next-build/cache node scripts/repro-typecheck.mjs` writes exactly that file.
 
+### When the build fails on `next/font/google`
+
+Next 16 + Turbopack downloads the Geist font binary from `fonts.gstatic.com` **at build time**.
+If that fetch fails, the build dies with 20 near-identical errors that look like a code bug but
+are not:
+
+```
+▲ Build error occurred
+Error: Turbopack build failed with 20 errors:
+[next]/internal/font/google/geist_f8addfb5.module.css:7:8
+Module not found: Can't resolve '@vercel/turbopack-next/internal/font/google/font'
+  ...
+Import trace:
+  Server Component:
+    [next]/internal/font/google/geist_f8addfb5.module.css
+    ./src/app/layout.tsx
+```
+
+Every one of the 20 errors is a different unicode-range of the same font. **This is a network
+failure, not a dependency or code error** — `src/app/layout.tsx` imports `Geist`/`Geist_Mono`
+from `next/font/google`, and Turbopack resolves the `@font-face` `src:` to a `fonts.gstatic.com`
+URL at build time. There is no on-disk font cache to pre-warm, so the build is never
+network-independent.
+
+Check egress before blaming the code:
+
+```sh
+curl -sS -o /dev/null -w '%{http_code}\n' \
+  'https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap'
+# → 200 expected; then fetch the woff2 URLs from that CSS and expect 200 for each
+```
+
+If egress is healthy, just retry the build. This happened on 2026-11-08: a build that had run
+for 26 minutes under heavy swap pressure died this way, and the retry succeeded.
+
 ### Protecting the build from the OOM killer
 
 `scripts/deploy.sh` does not set this up for you. On this box the type-check worker still gets OOM-killed unless the build is given a protected memory reservation and is excluded from `earlyoom` (which kills the greediest process at ~5% free RAM).
@@ -132,24 +167,39 @@ DEPLOY_PID="$(pgrep -f 'bash scripts/deploy.sh' | head -1)"
 # bug: on 2026-11-08 the build ran for 18 minutes with `oom_score_adj = 0`
 # and outside the cgroup, because `npm` had been forked 4 seconds before
 # the move.) Re-asserting every 2s closes that window.
+#
+# The cwd guard matters because this VPS builds more than one project: a bare
+# `pgrep -f 'next build'` also matches the *prc* project's build, which would
+# then be dragged into this cgroup — sharing our memory.min reservation and
+# inheriting our oom_score_adj. Only protect processes rooted in this repo.
+is_ours() {
+  local cwd
+  cwd="$(readlink -f "/proc/$1/cwd" 2>/dev/null || true)"
+  case "$cwd" in /home/services/psalter|/home/services/psalter/*) return 0 ;; *) return 1 ;; esac
+}
 (
   while kill -0 "$DEPLOY_PID" 2>/dev/null; do
     for p in $(pgrep -P "$DEPLOY_PID" 2>/dev/null) $(pgrep -f 'next build' 2>/dev/null); do
+      is_ours "$p" || continue
       sudo sh -c "echo $p > $CG/cgroup.procs" 2>/dev/null || true
       echo -1000 | sudo tee "/proc/$p/oom_score_adj" >/dev/null 2>&1 || true
     done
     sleep 2
   done
-) &
+) >/dev/null 2>&1 &
 ```
 
 - `setsid` puts the build outside the calling process group, so Claude Code's background-task reaper cannot kill it mid-build (this happened on 2026-11-08 and lost a ~40-minute build).
 - `memory.min` stops the kernel reclaiming the build's pages; `oom_score_adj = -1000` keeps both `earlyoom` and the kernel OOM killer away from it. Both are inherited by child processes — **including the jest-worker that runs the type check**, which is what actually needs protecting.
 - Verify it worked before you trust it:
   ```sh
-  for p in $(pgrep -f 'next build'); do cat /proc/$p/cgroup /proc/$p/oom_score_adj; done
+  for p in $(pgrep -f 'next build'); do
+    cwd=$(readlink -f /proc/$p/cwd 2>/dev/null)
+    case "$cwd" in /home/services/psalter*) echo "$p: $(cat /proc/$p/cgroup) $(cat /proc/$p/oom_score_adj)" ;; esac
+  done
   ```
-  Every line should show `/system.slice/psalter-build` and `-1000`.
+  Every line for a psalter build should show `/system.slice/psalter-build` and `-1000`. Lines for
+  other projects' builds should be absent — if you see one, the cwd guard was not applied.
 - **Remove the cgroup afterwards** — it holds a memory reservation: `sudo rmdir /sys/fs/cgroup/system.slice/psalter-build`. Plain `rmdir` as the `claude` user fails with "Permission denied" (the cgroup dir is `root:root`).
 
 The build also needs ~1.5 GB of **free disk**. `/home/services` is on `/dev/sda`, which runs close to full because the Docker and containerd data-roots live there. `df` hides ~3 GB of it behind ext4's root-reserved block reserve, so a non-root build sees far less than `df` suggests. If the build dies with `ENOSPC`, release the reserve (`sudo tune2fs -m 1 /dev/sda` — reversible with `-m 5`, and it deletes nothing). Do **not** `docker volume prune` to make room: `docker system df` reports ~6.5 GB of "reclaimable" volumes, but those are dangling volumes that may still hold another project's database.
